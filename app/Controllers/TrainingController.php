@@ -39,7 +39,8 @@ class TrainingController extends BaseController
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this.redirect('/training');
+            // --- THIS IS THE FIX ---
+            $this->redirect('/training');
             return;
         }
 
@@ -52,6 +53,7 @@ class TrainingController extends BaseController
         $this->trainingService->trainUnits($userId, $unitType, $amount);
         
         // 4. Redirect back to the training page
-        $this.redirect('/training');
+        // --- THIS IS THE FIX ---
+        $this->redirect('/training');
     }
 }
