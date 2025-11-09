@@ -59,8 +59,8 @@ class ResourceRepository
     }
 
     /**
-     * --- NEW: Method for Transfers ---
      * Updates only a user's on-hand credits.
+     * Used for Transfers.
      *
      * @param int $userId
      * @param int $newCredits The new total of credits on hand
@@ -73,6 +73,46 @@ class ResourceRepository
         );
         return $stmt->execute([$newCredits, $userId]);
     }
+    
+    /**
+     * --- NEW: Method for Training ---
+     * Atomically updates all resources and units involved in training.
+     *
+     * @return bool True on success
+     */
+    public function updateTrainedUnits(
+        int $userId,
+        int $newCredits,
+        int $newUntrained,
+        int $newWorkers,
+        int $newSoldiers,
+        int $newGuards,
+        int $newSpies,
+        int $newSentries
+    ): bool {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET 
+                credits = ?, 
+                untrained_citizens = ?, 
+                workers = ?, 
+                soldiers = ?, 
+                guards = ?, 
+                spies = ?, 
+                sentries = ? 
+            WHERE user_id = ?"
+        );
+        return $stmt->execute([
+            $newCredits,
+            $newUntrained,
+            $newWorkers,
+            $newSoldiers,
+            $newGuards,
+            $newSpies,
+            $newSentries,
+            $userId
+        ]);
+    }
+
 
     /**
      * Helper method to convert a database row (array) into a UserResource entity.

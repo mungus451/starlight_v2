@@ -3,7 +3,8 @@
 // Import our controller and middleware namespaces
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
-use App\Controllers\BankController; // NEW
+use App\Controllers\BankController;
+use App\Controllers\TrainingController;
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -49,11 +50,15 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Phase 2: Dashboard ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
 
-    // --- NEW: Phase 3: Bank Routes ---
+    // --- Phase 3: Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
     $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
     $r->addRoute('POST', '/bank/withdraw', [BankController::class, 'handleWithdraw']);
     $r->addRoute('POST', '/bank/transfer', [BankController::class, 'handleTransfer']);
+
+    // --- Phase 4: Training Routes ---
+    $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
+    $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
 });
 
 // 5. Global Error Handler
@@ -85,17 +90,17 @@ try {
             $vars = $routeInfo[2];
 
             // --- UPDATED: Middleware Check ---
-            // Define which routes are protected
             $protectedRoutes = [
                 '/dashboard',
                 '/bank',
                 '/bank/deposit',
                 '/bank/withdraw',
-                '/bank/transfer'
+                '/bank/transfer',
+                '/training',
+                '/training/train'
             ];
 
             if (in_array($uri, $protectedRoutes)) {
-                // This will run handle(), which redirects and exits if not logged in
                 (new AuthMiddleware())->handle();
             }
             // --- End Middleware Check ---
@@ -112,6 +117,7 @@ try {
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
         echo '<pre>' . $e->getMessage() . '</pre>';
+        // --- THIS IS THE FIX ---
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';
     } else {

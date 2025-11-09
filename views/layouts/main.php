@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- The $title variable can be passed from the controller -->
     <title><?= $title ?? 'StarlightDominion' ?></title>
     <style>
         body {
@@ -16,7 +17,7 @@
             padding-top: 80px; /* Space for the nav */
         }
         
-        /* --- NEW: Navigation Styles --- */
+        /* --- Navigation Styles --- */
         nav {
             background: #1e1e3f;
             border-bottom: 1px solid #3a3a5a;
@@ -77,7 +78,8 @@
         .form-group input[type="email"],
         .form-group input[type="password"],
         .form-group input[type="text"],
-        .form-group input[type="number"] {
+        .form-group input[type="number"],
+        .form-group select {
             padding: 0.75rem;
             border-radius: 5px;
             border: 1px solid #3a3a5a;
@@ -132,10 +134,12 @@
 </head>
 <body>
 
+    <!-- --- UPDATED: Navigation Bar --- -->
     <nav>
         <?php if ($session->has('user_id')): ?>
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
+            <a href="/training">Training</a>
             <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/login">Login</a>
@@ -143,7 +147,8 @@
         <?php endif; ?>
     </nav>
 
-    <div class="container">
+    <div classs="container">
+        <!-- Render Flash Messages -->
         <?php $error = $session->getFlash('error'); ?>
         <?php if ($error): ?>
             <div class="flash flash-error"><?= htmlspecialchars($error) ?></div>
@@ -154,6 +159,7 @@
             <div class="flash flash-success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
+        <!-- This is where our page content (login, dashboard, bank) will be injected -->
         <?= $content ?>
     </div>
 </body>
