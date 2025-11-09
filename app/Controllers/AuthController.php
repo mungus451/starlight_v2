@@ -19,7 +19,6 @@ class AuthController extends BaseController
      */
     public function showLogin(): void
     {
-        // If user is already logged in, send them to the dashboard
         if ($this->authService->isLoggedIn()) {
             $this->redirect('/dashboard');
             return;
@@ -33,17 +32,21 @@ class AuthController extends BaseController
      */
     public function handleLogin(): void
     {
-        // Get data from the form
+        // --- NEW: CSRF Token Validation ---
+        $token = $_POST['csrf_token'] ?? '';
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token. Please try again.');
+            $this->redirect('/login');
+            return;
+        }
+        // --- End CSRF Check ---
+        
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
 
-        // Call the service to attempt login
         if ($this->authService->login($email, $password)) {
-            // Success: Redirect to the dashboard
             $this->redirect('/dashboard');
         } else {
-            // Failure: Redirect back to the login page
-            // The AuthService has already set the flash message
             $this->redirect('/login');
         }
     }
@@ -53,7 +56,6 @@ class AuthController extends BaseController
      */
     public function showRegister(): void
     {
-        // If user is already logged in, send them to the dashboard
         if ($this->authService->isLoggedIn()) {
             $this->redirect('/dashboard');
             return;
@@ -67,19 +69,23 @@ class AuthController extends BaseController
      */
     public function handleRegister(): void
     {
-        // Get data from the form
+        // --- NEW: CSRF Token Validation ---
+        $token = $_POST['csrf_token'] ?? '';
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token. Please try again.');
+            $this->redirect('/register');
+            return;
+        }
+        // --- End CSRF Check ---
+        
         $email = $_POST['email'] ?? '';
         $characterName = $_POST['character_name'] ?? '';
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        // Call the service to attempt registration
         if ($this->authService->register($email, $characterName, $password, $confirmPassword)) {
-            // Success: Redirect to the dashboard (register logs them in)
             $this->redirect('/dashboard');
         } else {
-            // Failure: Redirect back to the register page
-            // The AuthService has already set the flash message
             $this->redirect('/register');
         }
     }
@@ -87,7 +93,6 @@ class AuthController extends BaseController
     /**
      * Logs the user out.
      */
-    // --- THIS IS THE FIX ---
     public function handleLogout(): void
     {
         $this->authService->logout();

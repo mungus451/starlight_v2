@@ -32,7 +32,6 @@ class ResourceRepository
 
     /**
      * Creates the default resource row for a new user.
-     * This relies on the database's DEFAULT values.
      *
      * @param int $userId
      */
@@ -40,6 +39,39 @@ class ResourceRepository
     {
         $stmt = $this->db->prepare("INSERT INTO user_resources (user_id) VALUES (?)");
         $stmt->execute([$userId]);
+    }
+
+    /**
+     * Updates a user's credits and banked credits.
+     * Used for Deposit and Withdraw.
+     *
+     * @param int $userId
+     * @param int $newCredits The new total of credits on hand
+     * @param int $newBankedCredits The new total of banked credits
+     * @return bool True on success
+     */
+    public function updateBankingCredits(int $userId, int $newCredits, int $newBankedCredits): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET credits = ?, banked_credits = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCredits, $newBankedCredits, $userId]);
+    }
+
+    /**
+     * --- NEW: Method for Transfers ---
+     * Updates only a user's on-hand credits.
+     *
+     * @param int $userId
+     * @param int $newCredits The new total of credits on hand
+     * @return bool True on success
+     */
+    public function updateCredits(int $userId, int $newCredits): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET credits = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCredits, $userId]);
     }
 
     /**

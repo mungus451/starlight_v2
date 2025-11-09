@@ -3,6 +3,7 @@
 // Import our controller and middleware namespaces
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
+use App\Controllers\BankController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -47,6 +48,12 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Phase 2: Dashboard ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
+
+    // --- NEW: Phase 3: Bank Routes ---
+    $r->addRoute('GET', '/bank', [BankController::class, 'show']);
+    $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
+    $r->addRoute('POST', '/bank/withdraw', [BankController::class, 'handleWithdraw']);
+    $r->addRoute('POST', '/bank/transfer', [BankController::class, 'handleTransfer']);
 });
 
 // 5. Global Error Handler
@@ -77,11 +84,14 @@ try {
             $handler = $routeInfo[1];
             $vars = $routeInfo[2];
 
-            // --- NEW: Middleware Check ---
+            // --- UPDATED: Middleware Check ---
             // Define which routes are protected
             $protectedRoutes = [
-                '/dashboard'
-                // Future protected routes will be added here
+                '/dashboard',
+                '/bank',
+                '/bank/deposit',
+                '/bank/withdraw',
+                '/bank/transfer'
             ];
 
             if (in_array($uri, $protectedRoutes)) {
@@ -90,7 +100,6 @@ try {
             }
             // --- End Middleware Check ---
 
-            // If the middleware didn't exit, proceed to call the controller
             [$class, $method] = $handler;
             $controller = new $class();
             
@@ -101,7 +110,7 @@ try {
     // Global exception handler
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
-        echo '<h1>ApplicationError:</h1>';
+        echo '<h1>Application Error:</h1>';
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';

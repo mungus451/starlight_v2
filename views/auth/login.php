@@ -1,6 +1,8 @@
 <h1>Login</h1>
 
 <form action="/login" method="POST">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+    
     <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required>

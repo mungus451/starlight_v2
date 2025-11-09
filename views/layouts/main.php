@@ -9,20 +9,48 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: grid;
             place-items: center;
-            min-height: 90vh;
+            min-height: calc(100vh - 80px); /* Adjusted for nav */
             background: #1a1a2e; /* Dark space blue */
             color: #e0e0e0;
             margin: 0;
+            padding-top: 80px; /* Space for the nav */
         }
+        
+        /* --- NEW: Navigation Styles --- */
+        nav {
+            background: #1e1e3f;
+            border-bottom: 1px solid #3a3a5a;
+            padding: 1rem;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            text-align: center;
+            z-index: 10;
+        }
+        nav a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 0 1rem;
+            font-size: 1.1rem;
+        }
+        nav a:hover {
+            color: #f9c74f;
+        }
+        /* --- End Nav Styles --- */
+        
         .container {
             width: 100%;
-            max-width: 400px;
+            max-width: 800px; /* Increased width for dashboard/bank */
             text-align: center;
             background: #1e1e3f; /* Slightly lighter blue */
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid #3a3a5a;
+            margin-bottom: 2rem; /* Add some space at the bottom */
         }
         h1 {
             color: #f9c74f; /* Gold */
@@ -46,7 +74,10 @@
             font-weight: bold;
             color: #c0c0e0;
         }
-        .form-group input {
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
             padding: 0.75rem;
             border-radius: 5px;
             border: 1px solid #3a3a5a;
@@ -100,6 +131,18 @@
     </style>
 </head>
 <body>
+
+    <nav>
+        <?php if ($session->has('user_id')): ?>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/bank">Bank</a>
+            <a href="/logout">Logout</a>
+        <?php else: ?>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        <?php endif; ?>
+    </nav>
+
     <div class="container">
         <?php $error = $session->getFlash('error'); ?>
         <?php if ($error): ?>
