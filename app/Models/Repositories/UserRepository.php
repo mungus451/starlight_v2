@@ -11,11 +11,13 @@ use PDO;
  */
 class UserRepository
 {
-    private PDO $db;
-
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
+    /**
+     * The constructor now accepts a PDO instance (Dependency Injection).
+     * This allows multiple repositories to share a single transaction.
+     */
+    public function __construct(
+        private PDO $db
+    ) {
     }
 
     /**
@@ -72,6 +74,25 @@ class UserRepository
         $stmt->execute([$email, $charName, $passwordHash]);
 
         return (int)$this->db->lastInsertId();
+    }
+    
+    /**
+     * Finds a user by their ID.
+     *
+     * @param int $id
+     * @return User|null
+     */
+    public function findById(int $id): ?User
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($data) {
+            return $this->hydrate($data);
+        }
+
+        return null;
     }
 
     /**

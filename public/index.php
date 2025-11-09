@@ -1,7 +1,9 @@
 <?php
 
-// Import our controller namespace
+// Import our controller and middleware namespaces
 use App\Controllers\AuthController;
+use App\Controllers\DashboardController;
+use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
 session_start();
@@ -43,8 +45,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/register', [AuthController::class, 'handleRegister']);
     $r->addRoute('GET', '/logout', [AuthController::class, 'handleLogout']);
 
-    // --- Phase 2: Dashboard (will be added here) ---
-    // $r->addRoute('GET', '/dashboard', [App\Controllers\DashboardController::class, 'show']);
+    // --- Phase 2: Dashboard ---
+    $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
 });
 
 // 5. Global Error Handler
@@ -75,15 +77,23 @@ try {
             $handler = $routeInfo[1];
             $vars = $routeInfo[2];
 
-            // Instantiate the controller and call the method
-            // $handler is ['App\Controllers\AuthController', 'showLogin']
+            // --- NEW: Middleware Check ---
+            // Define which routes are protected
+            $protectedRoutes = [
+                '/dashboard'
+                // Future protected routes will be added here
+            ];
+
+            if (in_array($uri, $protectedRoutes)) {
+                // This will run handle(), which redirects and exits if not logged in
+                (new AuthMiddleware())->handle();
+            }
+            // --- End Middleware Check ---
+
+            // If the middleware didn't exit, proceed to call the controller
             [$class, $method] = $handler;
-            
-            // This is a simple dependency injector for our controllers
-            // It allows their constructors to be called
             $controller = new $class();
             
-            // Call the method
             call_user_func_array([$controller, $method], $vars);
             break;
     }
@@ -91,7 +101,7 @@ try {
     // Global exception handler
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
-        echo '<h1>Application Error:</h1>';
+        echo '<h1>ApplicationError:</h1>';
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';
