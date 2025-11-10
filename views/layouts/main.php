@@ -78,13 +78,18 @@
         .form-group input[type="password"],
         .form-group input[type="text"],
         .form-group input[type="number"],
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             padding: 0.75rem;
             border-radius: 5px;
             border: 1px solid #3a3a5a;
             background: #2a2a4a;
             color: #e0e0e0;
             font-size: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .form-group textarea {
+            min-height: 80px;
         }
         .btn-submit {
             padding: 0.75rem 1.5rem;
@@ -138,7 +143,8 @@
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
             <a href="/training">Training</a>
-            <a href="/structures">Structures</a> <a href="/logout">Logout</a>
+            <a href="/structures">Structures</a>
+            <a href="/settings">Settings</a> <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/login">Login</a>
             <a href="/register">Register</a>

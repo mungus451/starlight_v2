@@ -5,7 +5,8 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\BankController;
 use App\Controllers\TrainingController;
-use App\Controllers\StructureController; // NEW
+use App\Controllers\StructureController;
+use App\Controllers\SettingsController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -61,9 +62,16 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
     $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
 
-    // --- NEW: Phase 5: Structures Routes ---
+    // --- Phase 5: Structures Routes ---
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
+
+    // --- NEW: Phase 6: Settings Routes ---
+    $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
+    $r->addRoute('POST', '/settings/profile', [SettingsController::class, 'handleProfile']);
+    $r->addRoute('POST', '/settings/email', [SettingsController::class, 'handleEmail']);
+    $r->addRoute('POST', '/settings/password', [SettingsController::class, 'handlePassword']);
+    $r->addRoute('POST', '/settings/security', [SettingsController::class, 'handleSecurity']);
 });
 
 // 5. Global Error Handler
@@ -104,7 +112,12 @@ try {
                 '/training',
                 '/training/train',
                 '/structures',
-                '/structures/upgrade'
+                '/structures/upgrade',
+                '/settings',
+                '/settings/profile',
+                '/settings/email',
+                '/settings/password',
+                '/settings/security'
             ];
 
             if (in_array($uri, $protectedRoutes)) {

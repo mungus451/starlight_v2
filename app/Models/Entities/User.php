@@ -9,16 +9,22 @@ namespace App\Models\Entities;
 class User
 {
     /**
-     * @param int $id The user's unique ID
-     * @param string $email The user's unique email
-     * @param string $characterName The user's unique character name
-     * @param string $passwordHash The user's hashed password
-     * @param string $createdAt The timestamp of when the user was created
+     * @param int $id
+     * @param string $email
+     * @param string $characterName
+     * @param string|null $bio
+     * @param string|null $profile_picture_url
+     * @param string|null $phone_number
+     * @param string $passwordHash
+     * @param string $createdAt
      */
     public function __construct(
         public readonly int $id,
         public readonly string $email,
         public readonly string $characterName,
+        public readonly ?string $bio,
+        public readonly ?string $profile_picture_url,
+        public readonly ?string $phone_number,
         public readonly string $passwordHash,
         public readonly string $createdAt
     ) {

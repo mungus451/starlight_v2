@@ -11,10 +11,6 @@ use PDO;
  */
 class UserRepository
 {
-    /**
-     * The constructor now accepts a PDO instance (Dependency Injection).
-     * This allows multiple repositories to share a single transaction.
-     */
     public function __construct(
         private PDO $db
     ) {
@@ -32,11 +28,7 @@ class UserRepository
         $stmt->execute([$email]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($data) {
-            return $this->hydrate($data);
-        }
-
-        return null;
+        return $data ? $this->hydrate($data) : null;
     }
 
     /**
@@ -51,11 +43,22 @@ class UserRepository
         $stmt->execute([$charName]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($data) {
-            return $this->hydrate($data);
-        }
+        return $data ? $this->hydrate($data) : null;
+    }
 
-        return null;
+    /**
+     * Finds a user by their ID.
+     *
+     * @param int $id
+     * @return User|null
+     */
+    public function findById(int $id): ?User
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $data ? $this->hydrate($data) : null;
     }
 
     /**
@@ -75,25 +78,58 @@ class UserRepository
 
         return (int)$this->db->lastInsertId();
     }
-    
+
+    // --- NEW METHODS FOR SETTINGS ---
+
     /**
-     * Finds a user by their ID.
+     * Updates the non-sensitive profile information for a user.
      *
-     * @param int $id
-     * @return User|null
+     * @param int $userId
+     * @param string $bio
+     * @param string $pfpUrl
+     * @param string $phone
+     * @return bool True on success
      */
-    public function findById(int $id): ?User
+    public function updateProfile(int $userId, string $bio, string $pfpUrl, string $phone): bool
     {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$id]);
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Convert empty strings to null to be stored correctly in the DB
+        $bio = empty($bio) ? null : $bio;
+        $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
+        $phone = empty($phone) ? null : $phone;
 
-        if ($data) {
-            return $this->hydrate($data);
-        }
-
-        return null;
+        $stmt = $this->db->prepare(
+            "UPDATE users SET bio = ?, profile_picture_url = ?, phone_number = ? WHERE id = ?"
+        );
+        return $stmt->execute([$bio, $pfpUrl, $phone, $userId]);
     }
+
+    /**
+     * Updates a user's email address.
+     *
+     * @param int $userId
+     * @param string $newEmail
+     * @return bool True on success
+     */
+    public function updateEmail(int $userId, string $newEmail): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET email = ? WHERE id = ?");
+        return $stmt->execute([$newEmail, $userId]);
+    }
+
+    /**
+     * Updates a user's password hash.
+     *
+     * @param int $userId
+     * @param string $newPasswordHash
+     * @return bool True on success
+     */
+    public function updatePassword(int $userId, string $newPasswordHash): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+        return $stmt->execute([$newPasswordHash, $userId]);
+    }
+
+    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a User entity.
@@ -107,6 +143,9 @@ class UserRepository
             id: (int)$data['id'],
             email: $data['email'],
             characterName: $data['character_name'],
+            bio: $data['bio'] ?? null,
+            profile_picture_url: $data['profile_picture_url'] ?? null,
+            phone_number: $data['phone_number'] ?? null,
             passwordHash: $data['password_hash'],
             createdAt: $data['created_at']
         );

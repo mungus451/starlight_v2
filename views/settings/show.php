@@ -1,0 +1,152 @@
+<style>
+    .settings-container {
+        width: 100%;
+        max-width: 800px;
+        text-align: left;
+    }
+    .settings-container h1 {
+        text-align: center;
+    }
+    .data-card {
+        background: #2a2a4a;
+        border: 1px solid #3a3a5a;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .data-card h3 {
+        color: #f9c74f;
+        margin-top: 0;
+        border-bottom: 1px solid #3a3a5a;
+        padding-bottom: 0.5rem;
+    }
+    .form-group textarea {
+        padding: 0.75rem;
+        border-radius: 5px;
+        border: 1px solid #3a3a5a;
+        background: #2a2a4a;
+        color: #e0e0e0;
+        font-size: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        min-height: 80px;
+    }
+    .form-note {
+        font-size: 0.9rem;
+        color: #c0c0e0;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
+    .divider {
+        border-bottom: 1px solid #3a3a5a;
+        margin: 1.5rem 0;
+    }
+</style>
+
+<div class="settings-container">
+    <h1>Settings</h1>
+
+    <div class="data-card">
+        <h3>Public Profile</h3>
+        <form action="/settings/profile" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            
+            <div class="form-group">
+                <label for="bio">Bio (max 500 characters)</label>
+                <textarea name="bio" id="bio"><?= htmlspecialchars($user->bio ?? '') ?></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="profile_picture_url">Profile Picture URL</label>
+                <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($user->profile_picture_url ?? '') ?>" placeholder="https://your.image.host/img.png">
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Phone Number (optional)</label>
+                <input type="text" name="phone_number" id="phone_number" value="<?= htmlspecialchars($user->phone_number ?? '') ?>">
+            </div>
+
+            <button type="submit" class="btn-submit">Save Profile</button>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <h3>Change Email</h3>
+        <form action="/settings/email" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            
+            <div class="form-group">
+                <label for="email">New Email</label>
+                <input type="email" name="email" id="email" value="<?= htmlspecialchars($user->email ?? '') ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="current_password_email">Current Password (Required)</label>
+                <input type="password" name="current_password_email" id="current_password_email" required>
+            </div>
+            <p class="form-note">You must enter your current password to change your email.</p>
+
+            <button type="submit" class="btn-submit">Update Email</button>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <h3>Change Password</h3>
+        <form action="/settings/password" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            
+            <div class="form-group">
+                <label for="old_password">Current Password</label>
+                <input type="password" name="old_password" id="old_password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="new_password">New Password (min 3 characters)</label>
+                <input type="password" name="new_password" id="new_password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" name="confirm_password" id="confirm_password" required>
+            </div>
+
+            <button type="submit" class="btn-submit">Update Password</button>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <h3>Security Questions</h3>
+        <form action="/settings/security" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            
+            <div class="form-group">
+                <label for="question_1">Question 1</label>
+                <input type="text" name="question_1" id="question_1" value="<?= htmlspecialchars($security->question_1 ?? '') ?>" placeholder="e.g., What city were you born in?" required>
+            </div>
+            <div class="form-group">
+                <label for="answer_1">Answer 1 (Case-sensitive)</label>
+                <input type="password" name="answer_1" id="answer_1" required>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group">
+                <label for="question_2">Question 2</label>
+                <input type="text" name="question_2" id="question_2" value="<?= htmlspecialchars($security->question_2 ?? '') ?>" placeholder="e.g., What was your first pet's name?" required>
+            </div>
+            <div class="form-group">
+                <label for="answer_2">Answer 2 (Case-sensitive)</label>
+                <input type="password" name="answer_2" id="answer_2" required>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group">
+                <label for="current_password_security">Current Password (Required)</label>
+                <input type="password" name="current_password_security" id="current_password_security" required>
+            </div>
+            <p class="form-note">You must enter your current password to update security questions. Your answers will be stored securely and are never displayed.</p>
+
+            <button type="submit" class="btn-submit">Update Security</button>
+        </form>
+    </div>
+</div>
