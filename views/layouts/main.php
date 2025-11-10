@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- The $title variable can be passed from the controller -->
     <title><?= $title ?? 'StarlightDominion' ?></title>
     <style>
         body {
@@ -134,21 +133,19 @@
 </head>
 <body>
 
-    <!-- --- UPDATED: Navigation Bar --- -->
     <nav>
         <?php if ($session->has('user_id')): ?>
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
             <a href="/training">Training</a>
-            <a href="/logout">Logout</a>
+            <a href="/structures">Structures</a> <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/login">Login</a>
             <a href="/register">Register</a>
         <?php endif; ?>
     </nav>
 
-    <div classs="container">
-        <!-- Render Flash Messages -->
+    <div class="container">
         <?php $error = $session->getFlash('error'); ?>
         <?php if ($error): ?>
             <div class="flash flash-error"><?= htmlspecialchars($error) ?></div>
@@ -159,7 +156,6 @@
             <div class="flash flash-success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
-        <!-- This is where our page content (login, dashboard, bank) will be injected -->
         <?= $content ?>
     </div>
 </body>

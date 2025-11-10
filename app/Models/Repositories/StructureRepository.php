@@ -32,7 +32,6 @@ class StructureRepository
 
     /**
      * Creates the default structures row for a new user.
-     * This relies on the database's DEFAULT values.
      *
      * @param int $userId
      */
@@ -41,6 +40,42 @@ class StructureRepository
         $stmt = $this->db->prepare("INSERT INTO user_structures (user_id) VALUES (?)");
         $stmt->execute([$userId]);
     }
+
+    /**
+     * --- NEW: Method for Structures Page ---
+     * Updates the level of a single structure for a user.
+     *
+     * @param int $userId
+     * @param string $columnName The database column to update (e.g., 'fortification_level')
+     * @param int $newLevel The new level for the structure
+     * @return bool True on success
+     */
+    public function updateStructureLevel(int $userId, string $columnName, int $newLevel): bool
+    {
+        // --- SECURITY: Whitelist column names to prevent SQL injection ---
+        $allowedColumns = [
+            'fortification_level',
+            'offense_upgrade_level',
+            'defense_upgrade_level',
+            'spy_upgrade_level',
+            'economy_upgrade_level',
+            'population_level',
+            'armory_level'
+        ];
+
+        if (!in_array($columnName, $allowedColumns)) {
+            // If the column name isn't allowed, log an error and fail
+            error_log("Attempted to update non-whitelisted column: " . $columnName);
+            return false;
+        }
+
+        // The column name is safe to inject into the query
+        $sql = "UPDATE user_structures SET `{$columnName}` = ? WHERE user_id = ?";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$newLevel, $userId]);
+    }
+
 
     /**
      * Helper method to convert a database row (array) into a UserStructure entity.

@@ -5,6 +5,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\BankController;
 use App\Controllers\TrainingController;
+use App\Controllers\StructureController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -59,6 +60,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Phase 4: Training Routes ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
     $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
+
+    // --- NEW: Phase 5: Structures Routes ---
+    $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
+    $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
 });
 
 // 5. Global Error Handler
@@ -97,7 +102,9 @@ try {
                 '/bank/withdraw',
                 '/bank/transfer',
                 '/training',
-                '/training/train'
+                '/training/train',
+                '/structures',
+                '/structures/upgrade'
             ];
 
             if (in_array($uri, $protectedRoutes)) {
@@ -117,7 +124,6 @@ try {
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
         echo '<pre>' . $e->getMessage() . '</pre>';
-        // --- THIS IS THE FIX ---
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';
     } else {
