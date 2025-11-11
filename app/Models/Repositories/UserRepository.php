@@ -137,7 +137,7 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    // --- NEW METHODS FOR ALLIANCE SERVICE ---
+    // --- METHODS FOR ALLIANCE SERVICE ---
 
     /**
      * Assigns a user to an alliance with a specific role.
@@ -187,7 +187,7 @@ class UserRepository
         return $users;
     }
 
-    // --- END NEW METHODS ---
+    // --- END ALLIANCE METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a User entity.

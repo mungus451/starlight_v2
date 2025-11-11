@@ -10,7 +10,8 @@ use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
 use App\Controllers\LevelUpController;
-use App\Controllers\AllianceController; // NEW
+use App\Controllers\AllianceController;
+use App\Controllers\AllianceManagementController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -94,12 +95,19 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
-    // --- NEW: Phase 11: Alliance Routes ---
+    // --- Phase 11: Alliance Routes ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/profile/{id:\d+}', [AllianceController::class, 'showProfile']);
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
+
+    // --- NEW: Phase 12: Alliance Management Routes ---
+    $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceManagementController::class, 'handleApply']);
+    $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceManagementController::class, 'handleCancelApp']);
+    $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
+    $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
+    $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
 });
 
 // 5. Global Error Handler
@@ -140,7 +148,8 @@ try {
                 '/spy', '/spy/conduct', '/spy/reports',
                 '/battle', '/battle/attack', '/battle/reports',
                 '/level-up', '/level-up/spend',
-                '/alliance/list', '/alliance/create', '/alliance/create' // NEW
+                '/alliance/list', '/alliance/create',
+                '/alliance/leave' // NEW
             ];
 
             // Check exact routes
@@ -154,9 +163,17 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/battle/report/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/list/page/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/list/page/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/profile/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/profile/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/apply/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/cancel-app/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/accept-app/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/reject-app/')) { // NEW
                     $isProtected = true;
                 }
             }
@@ -177,7 +194,6 @@ try {
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
-        // --- THIS IS THE FIX ---
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';

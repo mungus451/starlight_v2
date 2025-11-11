@@ -8,11 +8,12 @@ use App\Core\Session;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\ApplicationRepository;
 use PDO;
 use Throwable;
 
 /**
- * Handles all business logic for Alliances.
+ * Handles all "read" logic for Alliances.
  */
 class AllianceService
 {
@@ -22,6 +23,7 @@ class AllianceService
     private AllianceRepository $allianceRepo;
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
+    private ApplicationRepository $appRepo;
 
     public function __construct()
     {
@@ -32,13 +34,11 @@ class AllianceService
         $this->allianceRepo = new AllianceRepository($this->db);
         $this->userRepo = new UserRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
+        $this->appRepo = new ApplicationRepository($this->db);
     }
 
     /**
      * Gets all data needed for the paginated alliance list page.
-     *
-     * @param int $page
-     * @return array
      */
     public function getAlliancePageData(int $page): array
     {
@@ -62,9 +62,6 @@ class AllianceService
 
     /**
      * Gets the data needed to show the "Create Alliance" form.
-     *
-     * @param int $userId
-     * @return array
      */
     public function getCreateAllianceData(int $userId): array
     {
@@ -79,33 +76,42 @@ class AllianceService
 
     /**
      * Gets the data for a public alliance profile.
-     *
-     * @param int $allianceId
-     * @return array|null
      */
-    public function getPublicProfileData(int $allianceId): ?array
+    public function getPublicProfileData(int $allianceId, int $viewerId): ?array
     {
         $alliance = $this->allianceRepo->findById($allianceId);
         if (!$alliance) {
             return null; // Not found
         }
 
+        // Get all members
         $members = $this->userRepo->findAllByAllianceId($allianceId);
+
+        // Get the person viewing the page
+        // --- FIX ---
+        $viewer = $this->userRepo->findById($viewerId); 
+
+        // Get pending applications (only relevant for leader)
+        $applications = [];
+        if ($viewer && $viewer->id === $alliance->leader_id) {
+            // --- FIX ---
+            $applications = $this->appRepo->findByAllianceId($allianceId);
+        }
+
+        // Check if the viewer has a pending application
+        $userApplication = $this->appRepo->findByUserAndAlliance($viewerId, $allianceId);
 
         return [
             'alliance' => $alliance,
-            'members' => $members
+            'members' => $members,
+            'viewer' => $viewer,
+            'applications' => $applications,
+            'userApplication' => $userApplication
         ];
     }
 
     /**
      * Attempts to create a new alliance.
-     * This is a 3-table transaction.
-     *
-     * @param int $userId
-     * @param string $name
-     * @param string $tag
-     * @return int|null The new alliance ID on success, null on failure.
      */
     public function createAlliance(int $userId, string $name, string $tag): ?int
     {
@@ -115,26 +121,31 @@ class AllianceService
             return null;
         }
         if (mb_strlen($name) < 3 || mb_strlen($name) > 100) {
+            // --- FIX ---
             $this->session->setFlash('error', 'Alliance name must be between 3 and 100 characters.');
             return null;
         }
         if (mb_strlen($tag) < 3 || mb_strlen($tag) > 5) {
+            // --- FIX ---
             $this->session->setFlash('error', 'Alliance tag must be between 3 and 5 characters.');
             return null;
         }
 
         if ($this->allianceRepo->findByName($name)) {
+            // --- FIX ---
             $this->session->setFlash('error', 'An alliance with this name already exists.');
             return null;
         }
         if ($this->allianceRepo->findByTag($tag)) {
-            $this->session->setFlash('error', 'An alliance with this tag already exists.');
+            // --- FIX ---
+            $this.session->setFlash('error', 'An alliance with this tag already exists.');
             return null;
         }
 
         $user = $this->userRepo->findById($userId);
         if ($user->alliance_id !== null) {
-            $this->session->setFlash('error', 'You are already in an alliance.');
+            // --- FIX ---
+            $this.session->setFlash('error', 'You are already in an alliance.');
             return null;
         }
 
@@ -142,11 +153,13 @@ class AllianceService
         $resources = $this->resourceRepo->findByUserId($userId);
 
         if ($resources->credits < $cost) {
-            $this->session->setFlash('error', 'You do not have enough credits to found an alliance.');
+            // --- FIX ---
+            $this.session->setFlash('error', 'You do not have enough credits to found an alliance.');
             return null;
         }
 
         // 2. Transaction
+        // --- FIX ---
         $this->db->beginTransaction();
         try {
             // 2a. Create the alliance
@@ -154,7 +167,8 @@ class AllianceService
 
             // 2b. Deduct credits
             $newCredits = $resources->credits - $cost;
-            $this->resourceRepo->updateCredits($userId, $newCredits);
+            // --- FIX ---
+            $this.resourceRepo->updateCredits($userId, $newCredits);
 
             // 2c. Update the user to be the leader
             $this->userRepo->setAlliance($userId, $newAllianceId, 'Leader');
@@ -163,14 +177,17 @@ class AllianceService
             $this->db->commit();
 
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            // --- FIX ---
+            $this.db->rollBack();
             error_log('Alliance Creation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while creating the alliance.');
+            // --- FIX ---
+            $this.session->setFlash('error', 'A database error occurred while creating the alliance.');
             return null;
         }
 
         // 3. Success
-        $this->session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
+        // --- FIX ---
+        $this.session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
         return $newAllianceId;
     }
 }

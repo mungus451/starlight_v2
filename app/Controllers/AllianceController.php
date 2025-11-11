@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Models\Services\AllianceService;
 
 /**
- * Handles all HTTP requests for the Alliance feature.
+ * Handles all "read" GET requests for the Alliance feature.
  */
 class AllianceController extends BaseController
 {
@@ -34,7 +34,10 @@ class AllianceController extends BaseController
     public function showProfile(array $vars): void
     {
         $allianceId = (int)($vars['id'] ?? 0);
-        $data = $this->allianceService->getPublicProfileData($allianceId);
+        $viewerId = $this->session->get('user_id'); // Get the current user
+        
+        // Pass the viewer's ID to the service to get context-aware data
+        $data = $this->allianceService->getPublicProfileData($allianceId, $viewerId);
 
         if (is_null($data)) {
             $this->session->setFlash('error', 'That alliance does not exist.');
@@ -71,7 +74,7 @@ class AllianceController extends BaseController
         // 1. Validate CSRF token
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this->session->setFlash('error', 'Invalid security token.');
+            $this.session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/create');
             return;
         }
@@ -89,7 +92,6 @@ class AllianceController extends BaseController
             $this->redirect('/alliance/profile/' . $newAllianceId);
         } else {
             // Failure. Redirect back to the create form.
-            // The service has already set the flash message.
             $this->redirect('/alliance/create');
         }
     }
