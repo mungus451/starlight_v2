@@ -17,10 +17,8 @@ return [
         'sentries' => ['credits' => 5000, 'citizens' => 1],
     ],
 
-    // --- NEW: Phase 5 ---
-    // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
-    // The key (e.g., 'fortification') MUST match the column name minus '_level'
     'structures' => [
+        // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
         'fortification' => [
             'name' => 'Fortification',
             'base_cost' => 100000,
@@ -56,5 +54,30 @@ return [
             'base_cost' => 120000,
             'multiplier' => 2.1
         ],
+    ],
+    
+    // --- NEW: Phase 7 ---
+    'spy' => [
+        'attack_turn_cost' => 1,
+        'cost_per_spy' => 1000, // Credits
+        
+        // Base chance is (Offense / (Offense + Defense))
+        // This multiplier gives a bonus to the attacker
+        'base_success_multiplier' => 1.5,
+        'base_success_chance_floor' => 0.05, // 5% min chance
+        'base_success_chance_cap' => 0.95,   // 95% max chance
+        
+        // Base chance is (Defense / (Offense + Defense))
+        // This multiplier acts as a "buffer" for the attacker
+        'base_counter_spy_multiplier' => 0.5,
+        'base_counter_spy_chance_cap' => 0.50, // 50% max chance
+        
+        'offense_power_per_level' => 0.1, // 10% bonus per spy_upgrade_level
+        'defense_power_per_level' => 0.1, // 10% bonus per spy_upgrade_level
+        
+        'spies_lost_percent_min' => 0.1,  // 10%
+        'spies_lost_percent_max' => 0.3,  // 30%
+        'sentries_lost_percent_min' => 0.15, // 15%
+        'sentries_lost_percent_max' => 0.35, // 35%
     ]
 ];

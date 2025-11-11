@@ -27,12 +27,12 @@ class StatsRepository
         $stmt->execute([$userId]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // --- THIS IS THE FIX ---
         return $data ? $this->hydrate($data) : null;
     }
 
     /**
      * Creates the default stats row for a new user.
-     * This relies on the database's DEFAULT values.
      *
      * @param int $userId
      */
@@ -40,6 +40,21 @@ class StatsRepository
     {
         $stmt = $this->db->prepare("INSERT INTO user_stats (user_id) VALUES (?)");
         $stmt->execute([$userId]);
+    }
+
+    /**
+     * Updates a user's attack turns.
+     *
+     * @param int $userId
+     * @param int $newAttackTurns
+     * @return bool True on success
+     */
+    public function updateAttackTurns(int $userId, int $newAttackTurns): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET attack_turns = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newAttackTurns, $userId]);
     }
 
     /**

@@ -43,7 +43,6 @@ class ResourceRepository
 
     /**
      * Updates a user's credits and banked credits.
-     * Used for Deposit and Withdraw.
      *
      * @param int $userId
      * @param int $newCredits The new total of credits on hand
@@ -60,7 +59,6 @@ class ResourceRepository
 
     /**
      * Updates only a user's on-hand credits.
-     * Used for Transfers.
      *
      * @param int $userId
      * @param int $newCredits The new total of credits on hand
@@ -75,7 +73,6 @@ class ResourceRepository
     }
     
     /**
-     * --- NEW: Method for Training ---
      * Atomically updates all resources and units involved in training.
      *
      * @return bool True on success
@@ -102,17 +99,44 @@ class ResourceRepository
             WHERE user_id = ?"
         );
         return $stmt->execute([
-            $newCredits,
-            $newUntrained,
-            $newWorkers,
-            $newSoldiers,
-            $newGuards,
-            $newSpies,
-            $newSentries,
-            $userId
+            $newCredits, $newUntrained, $newWorkers, $newSoldiers, $newGuards, $newSpies, $newSentries, $userId
         ]);
     }
 
+    // --- NEW METHODS FOR SPY SERVICE ---
+
+    /**
+     * Updates an attacker's credits and spies after an operation.
+     *
+     * @param int $userId
+     * @param int $newCredits
+     * @param int $newSpies
+     * @return bool True on success
+     */
+    public function updateSpyAttacker(int $userId, int $newCredits, int $newSpies): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET credits = ?, spies = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCredits, $newSpies, $userId]);
+    }
+
+    /**
+     * Updates a defender's sentries after being spied on.
+     *
+     * @param int $userId
+     * @param int $newSentries
+     * @return bool True on success
+     */
+    public function updateSpyDefender(int $userId, int $newSentries): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET sentries = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newSentries, $userId]);
+    }
+
+    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a UserResource entity.

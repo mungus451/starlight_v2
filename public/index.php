@@ -6,7 +6,8 @@ use App\Controllers\DashboardController;
 use App\Controllers\BankController;
 use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
-use App\Controllers\SettingsController; // NEW
+use App\Controllers\SettingsController;
+use App\Controllers\SpyController;
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -66,12 +67,18 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
 
-    // --- NEW: Phase 6: Settings Routes ---
+    // --- Phase 6: Settings Routes ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
     $r->addRoute('POST', '/settings/profile', [SettingsController::class, 'handleProfile']);
     $r->addRoute('POST', '/settings/email', [SettingsController::class, 'handleEmail']);
     $r->addRoute('POST', '/settings/password', [SettingsController::class, 'handlePassword']);
     $r->addRoute('POST', '/settings/security', [SettingsController::class, 'handleSecurity']);
+
+    // --- Phase 7: Spy Routes ---
+    $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
+    $r->addRoute('POST', '/spy/conduct', [SpyController::class, 'handleSpy']);
+    $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
+    $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
 });
 
 // 5. Global Error Handler
@@ -117,10 +124,21 @@ try {
                 '/settings/profile',
                 '/settings/email',
                 '/settings/password',
-                '/settings/security'
+                '/settings/security',
+                '/spy',
+                '/spy/conduct',
+                '/spy/reports'
             ];
 
-            if (in_array($uri, $protectedRoutes)) {
+            // Check exact routes
+            $isProtected = in_array($uri, $protectedRoutes);
+
+            // Check prefixed routes (for routes with parameters like /spy/report/123)
+            if (!$isProtected && str_starts_with($uri, '/spy/report/')) {
+                $isProtected = true;
+            }
+
+            if ($isProtected) {
                 (new AuthMiddleware())->handle();
             }
             // --- End Middleware Check ---
@@ -128,7 +146,7 @@ try {
             [$class, $method] = $handler;
             $controller = new $class();
             
-            call_user_func_array([$controller, $method], $vars);
+            call_user_func_array([$controller, $method], [$vars]);
             break;
     }
 } catch (\Throwable $e) {
@@ -136,6 +154,7 @@ try {
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
+        // --- THIS IS THE FIX ---
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';
