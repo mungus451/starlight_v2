@@ -90,7 +90,6 @@ class UserRepository
      */
     public function updateProfile(int $userId, string $bio, string $pfpUrl, string $phone): bool
     {
-        // Convert empty strings to null to be stored correctly in the DB
         $bio = empty($bio) ? null : $bio;
         $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
         $phone = empty($phone) ? null : $phone;
@@ -127,8 +126,6 @@ class UserRepository
         return $stmt->execute([$newPasswordHash, $userId]);
     }
 
-    // --- NEW METHOD FOR TURN PROCESSOR ---
-
     /**
      * Gets a simple array of all user IDs in the game.
      *
@@ -137,11 +134,60 @@ class UserRepository
     public function getAllUserIds(): array
     {
         $stmt = $this->db->query("SELECT id FROM users ORDER BY id ASC");
-        // Fetch all IDs as a simple, flat array
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    // --- END NEW METHOD ---
+    // --- NEW METHODS FOR ALLIANCE SERVICE ---
+
+    /**
+     * Assigns a user to an alliance with a specific role.
+     *
+     * @param int $userId
+     * @param int $allianceId
+     * @param string $role
+     * @return bool True on success
+     */
+    public function setAlliance(int $userId, int $allianceId, string $role): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET alliance_id = ?, alliance_role = ? WHERE id = ?"
+        );
+        return $stmt->execute([$allianceId, $role, $userId]);
+    }
+
+    /**
+     * Removes a user from their alliance.
+     *
+     * @param int $userId
+     * @return bool True on success
+     */
+    public function leaveAlliance(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET alliance_id = NULL, alliance_role = NULL WHERE id = ?"
+        );
+        return $stmt->execute([$userId]);
+    }
+
+    /**
+     * Finds all users who are members of a specific alliance.
+     *
+     * @param int $allianceId
+     * @return User[]
+     */
+    public function findAllByAllianceId(int $allianceId): array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE alliance_id = ? ORDER BY character_name ASC");
+        $stmt->execute([$allianceId]);
+        
+        $users = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $users[] = $this->hydrate($row);
+        }
+        return $users;
+    }
+
+    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a User entity.
@@ -158,6 +204,8 @@ class UserRepository
             bio: $data['bio'] ?? null,
             profile_picture_url: $data['profile_picture_url'] ?? null,
             phone_number: $data['phone_number'] ?? null,
+            alliance_id: isset($data['alliance_id']) ? (int)$data['alliance_id'] : null,
+            alliance_role: $data['alliance_role'] ?? null,
             passwordHash: $data['password_hash'],
             createdAt: $data['created_at']
         );

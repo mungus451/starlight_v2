@@ -150,7 +150,8 @@
             <a href="/structures">Structures</a>
             <a href="/spy">Spy</a>
             <a href="/battle">Battle</a>
-            <a href="/level-up">Level Up</a> <a href="/settings">Settings</a>
+            <a href="/level-up">Level Up</a>
+            <a href="/alliance/list">Alliance</a> <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/login">Login</a>

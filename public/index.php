@@ -9,7 +9,8 @@ use App\Controllers\StructureController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
-use App\Controllers\LevelUpController; // NEW
+use App\Controllers\LevelUpController;
+use App\Controllers\AllianceController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -89,9 +90,16 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
     $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
 
-    // --- NEW: Phase 9: Level Up Routes ---
+    // --- Phase 9: Level Up Routes ---
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
+
+    // --- NEW: Phase 11: Alliance Routes ---
+    $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
+    $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
+    $r->addRoute('GET', '/alliance/profile/{id:\d+}', [AllianceController::class, 'showProfile']);
+    $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
+    $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 });
 
 // 5. Global Error Handler
@@ -131,7 +139,8 @@ try {
                 '/settings', '/settings/profile', '/settings/email', '/settings/password', '/settings/security',
                 '/spy', '/spy/conduct', '/spy/reports',
                 '/battle', '/battle/attack', '/battle/reports',
-                '/level-up', '/level-up/spend' // NEW
+                '/level-up', '/level-up/spend',
+                '/alliance/list', '/alliance/create', '/alliance/create' // NEW
             ];
 
             // Check exact routes
@@ -144,6 +153,10 @@ try {
                 } elseif (str_starts_with($uri, '/battle/page/')) {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/battle/report/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/list/page/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/profile/')) { // NEW
                     $isProtected = true;
                 }
             }
@@ -164,6 +177,7 @@ try {
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
+        // --- THIS IS THE FIX ---
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';

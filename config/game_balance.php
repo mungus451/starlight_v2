@@ -8,6 +8,7 @@
  */
 
 return [
+    // --- Phase 4 ---
     'training' => [
         // Unit costs are [ 'credits' => X, 'citizens' => Y ]
         'workers'  => ['credits' => 100, 'citizens' => 1],
@@ -16,7 +17,7 @@ return [
         'spies'    => ['credits' => 10000, 'citizens' => 1],
         'sentries' => ['credits' => 5000, 'citizens' => 1],
     ],
-
+    // --- Phase 5 ---
     'structures' => [
         // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
         'fortification' => [
@@ -55,7 +56,7 @@ return [
             'multiplier' => 2.1
         ],
     ],
-    
+    // --- Phase 7 ---
     'spy' => [
         'attack_turn_cost' => 1,
         'cost_per_spy' => 1000, // Credits
@@ -71,7 +72,7 @@ return [
         'sentries_lost_percent_min' => 0.15, // 15%
         'sentries_lost_percent_max' => 0.35, // 35%
     ],
-
+    // --- Phase 8 ---
     'attack' => [
         'attack_turn_cost' => 1,
         'power_per_soldier' => 1.0,
@@ -90,12 +91,12 @@ return [
         'experience_gain_base' => 500,
         'war_prestige_gain_base' => 5,
     ],
-
+    // --- Phase 9 ---
     'level_up' => [
         'cost_per_point' => 1
     ],
 
-    // --- NEW: Phase 10 ---
+    // --- Phase 10 ---
     'turn_processor' => [
         // 0.5% interest per turn
         'bank_interest_rate' => 0.005,
@@ -105,5 +106,10 @@ return [
         
         // 10 new citizens per turn, per level of Population
         'citizen_growth_per_pop_level' => 10
+    ],
+
+    // --- Phase 11 ---
+    'alliance' => [
+        'creation_cost' => 500000 // 50 Million Credits
     ]
 ];
