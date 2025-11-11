@@ -56,8 +56,6 @@ class StatsRepository
         return $stmt->execute([$newAttackTurns, $userId]);
     }
 
-    // --- NEW METHODS FOR ATTACK SERVICE ---
-
     /**
      * Updates an attacker's stats after a battle.
      *
@@ -90,8 +88,6 @@ class StatsRepository
         );
         return $stmt->execute([$newNetWorth, $userId]);
     }
-
-    // --- NEW METHODS FOR PAGINATION ---
 
     /**
      * Gets the total number of registered players.
@@ -129,7 +125,44 @@ class StatsRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // --- END NEW METHODS ---
+    // --- NEW METHOD FOR LEVEL UP SERVICE ---
+
+    /**
+     * Atomically updates all base stats and level up points.
+     *
+     * @return bool True on success
+     */
+    public function updateBaseStats(
+        int $userId,
+        int $newLevelUpPoints,
+        int $newStrength,
+        int $newConstitution,
+        int $newWealth,
+        int $newDexterity,
+        int $newCharisma
+    ): bool {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET 
+                level_up_points = ?, 
+                strength_points = ?, 
+                constitution_points = ?, 
+                wealth_points = ?, 
+                dexterity_points = ?, 
+                charisma_points = ?
+            WHERE user_id = ?"
+        );
+        return $stmt->execute([
+            $newLevelUpPoints,
+            $newStrength,
+            $newConstitution,
+            $newWealth,
+            $newDexterity,
+            $newCharisma,
+            $userId
+        ]);
+    }
+
+    // --- END NEW METHOD ---
 
     /**
      * Helper method to convert a database row (array) into a UserStats entity.

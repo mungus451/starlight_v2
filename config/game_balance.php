@@ -72,30 +72,28 @@ return [
         'sentries_lost_percent_max' => 0.35, // 35%
     ],
 
-    // --- NEW: Phase 8 ---
     'attack' => [
         'attack_turn_cost' => 1,
-        
-        // --- Power Formulas (Coefficients) ---
         'power_per_soldier' => 1.0,
-        'power_per_offense_level' => 0.1, // 10% per level
-        'power_per_strength_point' => 0.05, // 5% per point
-        
+        'power_per_offense_level' => 0.1,
+        'power_per_strength_point' => 0.05,
         'power_per_guard' => 1.0,
-        'power_per_fortification_level' => 0.1, // 10% per level
-        'power_per_defense_level' => 0.1, // 10% per level
-        'power_per_constitution_point' => 0.05, // 5% per point
-        
-        // --- Battle Losses (as % of forces) ---
-        'winner_loss_percent_min' => 0.10, // 10%
-        'winner_loss_percent_max' => 0.20, // 20%
-        'loser_loss_percent_min' => 0.30, // 30%
-        'loser_loss_percent_max' => 0.50, // 50%
-        
-        // --- Spoils of War (as % of defender's total) ---
-        'plunder_percent' => 0.10, // 10% of on-hand credits
-        'net_worth_steal_percent' => 0.05, // 5%
+        'power_per_fortification_level' => 0.1,
+        'power_per_defense_level' => 0.1,
+        'power_per_constitution_point' => 0.05,
+        'winner_loss_percent_min' => 0.10,
+        'winner_loss_percent_max' => 0.20,
+        'loser_loss_percent_min' => 0.30,
+        'loser_loss_percent_max' => 0.50,
+        'plunder_percent' => 0.10,
+        'net_worth_steal_percent' => 0.05,
         'experience_gain_base' => 500,
         'war_prestige_gain_base' => 5,
+    ],
+
+    // --- NEW: Phase 9 ---
+    'level_up' => [
+        // The number of level_up_points required to buy 1 stat point.
+        'cost_per_point' => 1
     ]
 ];

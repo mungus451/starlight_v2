@@ -8,7 +8,8 @@ use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
-use App\Controllers\BattleController; // NEW
+use App\Controllers\BattleController;
+use App\Controllers\LevelUpController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -81,12 +82,16 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
     $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
 
-    // --- NEW: Phase 8: Battle Routes ---
+    // --- Phase 8: Battle Routes ---
     $r->addRoute('GET', '/battle', [BattleController::class, 'show']);
     $r->addRoute('GET', '/battle/page/{page:\d+}', [BattleController::class, 'show']);
     $r->addRoute('POST', '/battle/attack', [BattleController::class, 'handleAttack']);
     $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
     $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
+
+    // --- NEW: Phase 9: Level Up Routes ---
+    $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
+    $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 });
 
 // 5. Global Error Handler
@@ -125,7 +130,8 @@ try {
                 '/structures', '/structures/upgrade',
                 '/settings', '/settings/profile', '/settings/email', '/settings/password', '/settings/security',
                 '/spy', '/spy/conduct', '/spy/reports',
-                '/battle', '/battle/attack', '/battle/reports' // NEW
+                '/battle', '/battle/attack', '/battle/reports',
+                '/level-up', '/level-up/spend' // NEW
             ];
 
             // Check exact routes
@@ -135,9 +141,9 @@ try {
             if (!$isProtected) {
                 if (str_starts_with($uri, '/spy/report/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/battle/page/')) { // NEW
+                } elseif (str_starts_with($uri, '/battle/page/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/battle/report/')) { // NEW
+                } elseif (str_starts_with($uri, '/battle/report/')) {
                     $isProtected = true;
                 }
             }
@@ -150,7 +156,6 @@ try {
             [$class, $method] = $handler;
             $controller = new $class();
             
-            // Pass the $vars array (from the URL) to the controller method
             call_user_func_array([$controller, $method], [$vars]);
             break;
     }
