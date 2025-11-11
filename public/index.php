@@ -8,6 +8,7 @@ use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
+use App\Controllers\BattleController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -79,6 +80,13 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/spy/conduct', [SpyController::class, 'handleSpy']);
     $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
     $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
+
+    // --- NEW: Phase 8: Battle Routes ---
+    $r->addRoute('GET', '/battle', [BattleController::class, 'show']);
+    $r->addRoute('GET', '/battle/page/{page:\d+}', [BattleController::class, 'show']);
+    $r->addRoute('POST', '/battle/attack', [BattleController::class, 'handleAttack']);
+    $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
+    $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
 });
 
 // 5. Global Error Handler
@@ -112,30 +120,26 @@ try {
             // --- UPDATED: Middleware Check ---
             $protectedRoutes = [
                 '/dashboard',
-                '/bank',
-                '/bank/deposit',
-                '/bank/withdraw',
-                '/bank/transfer',
-                '/training',
-                '/training/train',
-                '/structures',
-                '/structures/upgrade',
-                '/settings',
-                '/settings/profile',
-                '/settings/email',
-                '/settings/password',
-                '/settings/security',
-                '/spy',
-                '/spy/conduct',
-                '/spy/reports'
+                '/bank', '/bank/deposit', '/bank/withdraw', '/bank/transfer',
+                '/training', '/training/train',
+                '/structures', '/structures/upgrade',
+                '/settings', '/settings/profile', '/settings/email', '/settings/password', '/settings/security',
+                '/spy', '/spy/conduct', '/spy/reports',
+                '/battle', '/battle/attack', '/battle/reports' // NEW
             ];
 
             // Check exact routes
             $isProtected = in_array($uri, $protectedRoutes);
 
-            // Check prefixed routes (for routes with parameters like /spy/report/123)
-            if (!$isProtected && str_starts_with($uri, '/spy/report/')) {
-                $isProtected = true;
+            // Check prefixed routes (for routes with parameters)
+            if (!$isProtected) {
+                if (str_starts_with($uri, '/spy/report/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/battle/page/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/battle/report/')) { // NEW
+                    $isProtected = true;
+                }
             }
 
             if ($isProtected) {
@@ -146,6 +150,7 @@ try {
             [$class, $method] = $handler;
             $controller = new $class();
             
+            // Pass the $vars array (from the URL) to the controller method
             call_user_func_array([$controller, $method], [$vars]);
             break;
     }
@@ -154,7 +159,6 @@ try {
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
         echo '<h1>Application Error:</h1>';
-        // --- THIS IS THE FIX ---
         echo '<pre>' . $e->getMessage() . '</pre>';
         echo '<pre>File: ' . $e->getFile() . ' on line ' . $e->getLine() . '</pre>';
         echo '<pre>' . $e->getTraceAsString() . '</pre>';

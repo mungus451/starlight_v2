@@ -56,28 +56,46 @@ return [
         ],
     ],
     
-    // --- NEW: Phase 7 ---
     'spy' => [
         'attack_turn_cost' => 1,
         'cost_per_spy' => 1000, // Credits
-        
-        // Base chance is (Offense / (Offense + Defense))
-        // This multiplier gives a bonus to the attacker
         'base_success_multiplier' => 1.5,
         'base_success_chance_floor' => 0.05, // 5% min chance
         'base_success_chance_cap' => 0.95,   // 95% max chance
-        
-        // Base chance is (Defense / (Offense + Defense))
-        // This multiplier acts as a "buffer" for the attacker
         'base_counter_spy_multiplier' => 0.5,
         'base_counter_spy_chance_cap' => 0.50, // 50% max chance
-        
         'offense_power_per_level' => 0.1, // 10% bonus per spy_upgrade_level
         'defense_power_per_level' => 0.1, // 10% bonus per spy_upgrade_level
-        
         'spies_lost_percent_min' => 0.1,  // 10%
         'spies_lost_percent_max' => 0.3,  // 30%
         'sentries_lost_percent_min' => 0.15, // 15%
         'sentries_lost_percent_max' => 0.35, // 35%
+    ],
+
+    // --- NEW: Phase 8 ---
+    'attack' => [
+        'attack_turn_cost' => 1,
+        
+        // --- Power Formulas (Coefficients) ---
+        'power_per_soldier' => 1.0,
+        'power_per_offense_level' => 0.1, // 10% per level
+        'power_per_strength_point' => 0.05, // 5% per point
+        
+        'power_per_guard' => 1.0,
+        'power_per_fortification_level' => 0.1, // 10% per level
+        'power_per_defense_level' => 0.1, // 10% per level
+        'power_per_constitution_point' => 0.05, // 5% per point
+        
+        // --- Battle Losses (as % of forces) ---
+        'winner_loss_percent_min' => 0.10, // 10%
+        'winner_loss_percent_max' => 0.20, // 20%
+        'loser_loss_percent_min' => 0.30, // 30%
+        'loser_loss_percent_max' => 0.50, // 50%
+        
+        // --- Spoils of War (as % of defender's total) ---
+        'plunder_percent' => 0.10, // 10% of on-hand credits
+        'net_worth_steal_percent' => 0.05, // 5%
+        'experience_gain_base' => 500,
+        'war_prestige_gain_base' => 5,
     ]
 ];

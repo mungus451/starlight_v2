@@ -27,7 +27,6 @@ class StatsRepository
         $stmt->execute([$userId]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // --- THIS IS THE FIX ---
         return $data ? $this->hydrate($data) : null;
     }
 
@@ -56,6 +55,81 @@ class StatsRepository
         );
         return $stmt->execute([$newAttackTurns, $userId]);
     }
+
+    // --- NEW METHODS FOR ATTACK SERVICE ---
+
+    /**
+     * Updates an attacker's stats after a battle.
+     *
+     * @return bool True on success
+     */
+    public function updateBattleAttackerStats(int $userId, int $newAttackTurns, int $newNetWorth, int $newExperience, int $newPrestige): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET 
+                attack_turns = ?, 
+                net_worth = ?, 
+                experience = ?, 
+                war_prestige = ? 
+            WHERE user_id = ?"
+        );
+        return $stmt->execute([$newAttackTurns, $newNetWorth, $newExperience, $newPrestige, $userId]);
+    }
+
+    /**
+     * Updates a defender's net worth after a battle.
+     *
+     * @param int $userId
+     * @param int $newNetWorth
+     * @return bool True on success
+     */
+    public function updateBattleDefenderStats(int $userId, int $newNetWorth): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET net_worth = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newNetWorth, $userId]);
+    }
+
+    // --- NEW METHODS FOR PAGINATION ---
+
+    /**
+     * Gets the total number of registered players.
+     *
+     * @return int
+     */
+    public function getTotalPlayerCount(): int
+    {
+        $stmt = $this->db->query("SELECT COUNT(id) as total FROM users");
+        return (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    }
+
+    /**
+     * Gets a paginated list of players, ranked by net worth.
+     *
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    public function getPaginatedPlayers(int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT u.character_name, s.level, s.net_worth, s.war_prestige 
+            FROM user_stats s
+            JOIN users u ON s.user_id = u.id 
+            ORDER BY s.net_worth DESC 
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->bindParam(2, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a UserStats entity.

@@ -103,8 +103,6 @@ class ResourceRepository
         ]);
     }
 
-    // --- NEW METHODS FOR SPY SERVICE ---
-
     /**
      * Updates an attacker's credits and spies after an operation.
      *
@@ -134,6 +132,40 @@ class ResourceRepository
             "UPDATE user_resources SET sentries = ? WHERE user_id = ?"
         );
         return $stmt->execute([$newSentries, $userId]);
+    }
+
+    // --- NEW METHODS FOR ATTACK SERVICE ---
+
+    /**
+     * Updates an attacker's credits and soldiers after a battle.
+     *
+     * @param int $userId
+     * @param int $newCredits
+     * @param int $newSoldiers
+     * @return bool True on success
+     */
+    public function updateBattleAttacker(int $userId, int $newCredits, int $newSoldiers): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET credits = ?, soldiers = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCredits, $newSoldiers, $userId]);
+    }
+
+    /**
+     * Updates a defender's credits and guards after a battle.
+     *
+     * @param int $userId
+     * @param int $newCredits
+     * @param int $newGuards
+     * @return bool True on success
+     */
+    public function updateBattleDefender(int $userId, int $newCredits, int $newGuards): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_resources SET credits = ?, guards = ? WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCredits, $newGuards, $userId]);
     }
 
     // --- END NEW METHODS ---

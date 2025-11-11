@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'StarlightDominion' ?></title>
     <style>
         body {
@@ -149,7 +149,7 @@
             <a href="/training">Training</a>
             <a href="/structures">Structures</a>
             <a href="/spy">Spy</a>
-            <a href="/settings">Settings</a>
+            <a href="/battle">Battle</a> <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/login">Login</a>
