@@ -91,9 +91,19 @@ return [
         'war_prestige_gain_base' => 5,
     ],
 
-    // --- NEW: Phase 9 ---
     'level_up' => [
-        // The number of level_up_points required to buy 1 stat point.
         'cost_per_point' => 1
+    ],
+
+    // --- NEW: Phase 10 ---
+    'turn_processor' => [
+        // 0.5% interest per turn
+        'bank_interest_rate' => 0.005,
+        
+        // 1,000 credits per turn, per level of Economy Upgrade
+        'credit_income_per_econ_level' => 1000,
+        
+        // 10 new citizens per turn, per level of Population
+        'citizen_growth_per_pop_level' => 10
     ]
 ];

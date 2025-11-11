@@ -79,8 +79,6 @@ class UserRepository
         return (int)$this->db->lastInsertId();
     }
 
-    // --- NEW METHODS FOR SETTINGS ---
-
     /**
      * Updates the non-sensitive profile information for a user.
      *
@@ -129,7 +127,21 @@ class UserRepository
         return $stmt->execute([$newPasswordHash, $userId]);
     }
 
-    // --- END NEW METHODS ---
+    // --- NEW METHOD FOR TURN PROCESSOR ---
+
+    /**
+     * Gets a simple array of all user IDs in the game.
+     *
+     * @return int[]
+     */
+    public function getAllUserIds(): array
+    {
+        $stmt = $this->db->query("SELECT id FROM users ORDER BY id ASC");
+        // Fetch all IDs as a simple, flat array
+        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+    // --- END NEW METHOD ---
 
     /**
      * Helper method to convert a database row (array) into a User entity.

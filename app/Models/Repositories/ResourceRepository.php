@@ -134,8 +134,6 @@ class ResourceRepository
         return $stmt->execute([$newSentries, $userId]);
     }
 
-    // --- NEW METHODS FOR ATTACK SERVICE ---
-
     /**
      * Updates an attacker's credits and soldiers after a battle.
      *
@@ -168,7 +166,33 @@ class ResourceRepository
         return $stmt->execute([$newCredits, $newGuards, $userId]);
     }
 
-    // --- END NEW METHODS ---
+    // --- NEW METHOD FOR TURN PROCESSOR ---
+
+    /**
+     * Atomically applies all turn-based income to a user's account.
+     * This uses relative addition (e.g., credits = credits + ?) to be safe.
+     *
+     * @param int $userId
+     * @param int $creditsGained
+     * @param int $interestGained
+     * @param int $citizensGained
+     * @return bool True on success
+     */
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained): bool
+    {
+        $sql = "
+            UPDATE user_resources SET
+                credits = credits + ?,
+                banked_credits = banked_credits + ?,
+                untrained_citizens = untrained_citizens + ?
+            WHERE user_id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $userId]);
+    }
+
+    // --- END NEW METHOD ---
 
     /**
      * Helper method to convert a database row (array) into a UserResource entity.
