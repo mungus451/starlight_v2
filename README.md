@@ -70,7 +70,7 @@ nikic/fast-route: For clean, high-performance routing.
 📁 Project Structure
 This application follows a strict Model-View-Controller (MVC) pattern.
 
-`/usr/local/var/www/starlight_v2/
+`/usr/local/var/www/starlight_v2/ <br>
 ├── app/
 │   ├── Controllers/    # (The "C") Handles HTTP requests.
 │   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).
@@ -99,56 +99,50 @@ This application follows a strict Model-View-Controller (MVC) pattern.
     ├── structures/
     └── training/`
 ⚙️ Installation & Setup (macOS / Homebrew)
+
 1. Prerequisites
 Make sure you have Homebrew installed.
 
-Bash
-
 # Install PHP 8.3
-brew install php@8.3
+`brew install php@8.3`
 
 # Install MariaDB (or MySQL)
-brew install mariadb
-
+`brew install mariadb`
 # Install Composer
-brew install composer
+`brew install composer`
 
 # Start the MariaDB service
-brew services start mariadb
-2. Database Setup
+`brew services start mariadb`
+## 2. Database Setup
 Log in to MariaDB/MySQL:
 
-Bash
-
-mysql -u root
+`mysql -u root`
 Create the new database and user (use the credentials you provided):
 
 SQL
 
-CREATE DATABASE starlightDB;
+`CREATE DATABASE starlightDB;
 CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';
 GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';
 FLUSH PRIVILEGES;
-EXIT;
+EXIT;`
 3. Application Setup
-Place the project files in /usr/local/var/www/starlight_v2.
+`Place the project files in /usr/local/var/www/starlight_v2.`
 
 Install Composer dependencies:
 
-Bash
-
-cd /usr/local/var/www/starlight_v2
+`cd /usr/local/var/www/starlight_v2
 composer install
-Create your .env file: Copy the example file and edit it if necessary (the defaults are already set to your credentials).
+Create your .env file: Copy the example file and edit it if necessary (the defaults are already set to your credentials).`
 
-Bash
+
 
 cp .env.example .env
 Run ALL SQL Migrations (in order): Log back into your database and run all the scripts from the /sql directory one-by-one.
 
-Bash
 
-mysql -u sd_admin -p starlightDB < sql/01_create_users_table.sql
+
+`mysql -u sd_admin -p starlightDB < sql/01_create_users_table.sql
 mysql -u sd_admin -p starlightDB < sql/02_create_user_resources.sql
 mysql -u sd_admin -p starlightDB < sql/03_create_user_stats.sql
 mysql -u sd_admin -p starlightDB < sql/04_create_user_structures.sql
@@ -160,59 +154,47 @@ mysql -u sd_admin -p starlightDB < sql/10_create_alliances_table.sql
 mysql -u sd_admin -p starlightDB < sql/11_alter_users_table_for_alliances.sql
 mysql -u sd_admin -p starlightDB < sql/12_create_alliance_applications.sql
 mysql -u sd_admin -p starlightDB < sql/13_create_alliance_roles.sql
-mysql -u sd_admin -p starlightDB < sql/14_refactor_users_for_roles.sql
+mysql -u sd_admin -p starlightDB < sql/14_refactor_users_for_roles.sql`
 Run the Data Migration: This one-time script is required to create the default alliance roles.
-
-Bash
 
 php migrations/13.1_migrate_roles.php
 🏃 Running the Application
-1. Local Web Server
+## 1. Local Web Server
 Use the PHP built-in server. From the project root (/usr/local/var/www/starlight_v2), run:
 
-Bash
-
-php -S localhost:8000 -t public
-localhost:8000: The host and port.
+`php -S localhost:8000 -t public
+localhost:8000: The host and port.`
 
 -t public: Crucial. This sets the web root to the /public directory, securing the rest of the application.
 
 You can now access the game at: http://localhost:8000
 
-2. Game Loop (Cron Job)
+## 2. Game Loop (Cron Job)
 The game's economy (income, interest) is run by a cron job.
 
 To run it manually:
 
-Bash
-
-php cron/process_turn.php
+`php cron/process_turn.php`
 To set it up to run every 5 minutes (on macOS):
 
 Grant Permissions: cron needs Full Disk Access to run.
 
-Go to System Settings > Privacy & Security > Full Disk Access.
+`Go to System Settings > Privacy & Security > Full Disk Access.`
 
-Click + and use Cmd+Shift+G to go to /usr/local/bin. Add php.
+`Click + and use Cmd+Shift+G to go to /usr/local/bin. Add php.`
 
-Click + and use Cmd+Shift+G to go to /bin. Add zsh (or sh).
+`Click + and use Cmd+Shift+G to go to /bin. Add zsh (or sh).`
 
-Click + and use Cmd+Shift+G to go to /usr/sbin. Add cron.
+`Click + and use Cmd+Shift+G to go to /usr/sbin. Add cron.`
 
-Make sure all three (php, zsh/sh, cron) are toggled ON.
+`Make sure all three (php, zsh/sh, cron) are toggled ON.`
 
 Edit your crontab:
 
-Bash
-
-crontab -e
+`crontab -e`
 Add this line: (Use the path from which php)
 
-Code snippet
-
-*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+`*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1`
 Check the log: You can watch the cron job run:
 
-Bash
-
-tail -f logs/cron.log
+`tail -f logs/cron.log`
