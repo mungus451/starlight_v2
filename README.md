@@ -126,6 +126,8 @@ Log in to MariaDB/MySQL:
 `FLUSH PRIVILEGES;`<br>
 `EXIT;`<br>
 
+<h4>Use the database.sql file provided to match the schema.</h4>
+
 3. Application Setup
 `Place the project files in /usr/local/var/www/starlight_v2.`
 
