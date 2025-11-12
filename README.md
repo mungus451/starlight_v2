@@ -117,15 +117,14 @@ Make sure you have Homebrew installed.
 Log in to MariaDB/MySQL:
 
 `mysql -u root`
-Create the new database and user (use the credentials you provided):
+<h6> Create the new database and user (use the credentials you provided):
 
-SQL
+`CREATE DATABASE starlightDB;`
+`CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`
+`GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';`
+`FLUSH PRIVILEGES;`
+`EXIT;`
 
-`CREATE DATABASE starlightDB;
-CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';
-GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;`
 3. Application Setup
 `Place the project files in /usr/local/var/www/starlight_v2.`
 
@@ -137,27 +136,6 @@ Create your .env file: Copy the example file and edit it if necessary (the defau
 
 
 
-cp .env.example .env
-Run ALL SQL Migrations (in order): Log back into your database and run all the scripts from the /sql directory one-by-one.
-
-
-
-`mysql -u sd_admin -p starlightDB < sql/01_create_users_table.sql
-mysql -u sd_admin -p starlightDB < sql/02_create_user_resources.sql
-mysql -u sd_admin -p starlightDB < sql/03_create_user_stats.sql
-mysql -u sd_admin -p starlightDB < sql/04_create_user_structures.sql
-mysql -u sd_admin -p starlightDB < sql/05_alter_users_table.sql
-mysql -u sd_admin -p starlightDB < sql/06_create_user_security.sql
-mysql -u sd_admin -p starlightDB < sql/07_create_spy_reports.sql
-mysql -u sd_admin -p starlightDB < sql/08_create_battle_reports.sql
-mysql -u sd_admin -p starlightDB < sql/10_create_alliances_table.sql
-mysql -u sd_admin -p starlightDB < sql/11_alter_users_table_for_alliances.sql
-mysql -u sd_admin -p starlightDB < sql/12_create_alliance_applications.sql
-mysql -u sd_admin -p starlightDB < sql/13_create_alliance_roles.sql
-mysql -u sd_admin -p starlightDB < sql/14_refactor_users_for_roles.sql`
-Run the Data Migration: This one-time script is required to create the default alliance roles.
-
-php migrations/13.1_migrate_roles.php
 🏃 Running the Application
 ## 1. Local Web Server
 Use the PHP built-in server. From the project root (/usr/local/var/www/starlight_v2), run:
