@@ -70,7 +70,7 @@ nikic/fast-route: For clean, high-performance routing.
 📁 Project Structure
 This application follows a strict Model-View-Controller (MVC) pattern.
 
-/usr/local/var/www/starlight_v2/
+`/usr/local/var/www/starlight_v2/
 ├── app/
 │   ├── Controllers/    # (The "C") Handles HTTP requests.
 │   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).
@@ -97,7 +97,7 @@ This application follows a strict Model-View-Controller (MVC) pattern.
     ├── settings/
     ├── spy/
     ├── structures/
-    └── training/
+    └── training/`
 ⚙️ Installation & Setup (macOS / Homebrew)
 1. Prerequisites
 Make sure you have Homebrew installed.
