@@ -7,13 +7,14 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: grid;
-            place-items: center;
-            min-height: calc(100vh - 80px); /* Adjusted for nav */
+            /* DELETED: display: grid; */
+            /* DELETED: place-items: center; */
+            min-height: 100vh; /* CHANGED: Ensures background fills height */
             background: #1a1a2e; /* Dark space blue */
             color: #e0e0e0;
             margin: 0;
             padding-top: 80px; /* Space for the nav */
+            box-sizing: border-box; /* NEW: Better height calculation */
         }
         
         /* --- Navigation Styles --- */
@@ -43,15 +44,30 @@
         
         .container {
             width: 100%;
-            max-width: 800px; /* Increased width for dashboard/bank */
+            max-width: 800px;
             text-align: center;
-            background: #1e1e3f; /* Slightly lighter blue */
+            background: #1e1e3f;
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid #3a3a5a;
-            margin-bottom: 2rem; /* Add some space at the bottom */
+            margin: 2rem auto 2rem auto; /* CHANGED: Now handles its own centering */
         }
+
+        /* NEW: Full-width container for dashboards */
+        .container-full {
+            width: 100%;
+            max-width: 1600px;
+            text-align: left; /* CHANGED: Child content will align left */
+            background: #1e1e3f;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #3a3a5a;
+            margin: 2rem auto 2rem auto; /* CHANGED: Now handles its own centering */
+            box-sizing: border-box;
+        }
+
         h1 {
             color: #f9c74f; /* Gold */
             margin-top: 0;
@@ -160,8 +176,19 @@
             <a href="/register">Register</a>
         <?php endif; ?>
     </nav>
-
-    <div class="container">
+    
+    <?php 
+    // Check if a layoutMode is set and if it's 'full'.
+    // If not set, it will default to the standard 'constrained' container.
+    if (isset($layoutMode) && $layoutMode === 'full'): 
+    ?>
+        <!-- NEW: Full-width, 1600px container -->
+        <div class="container-full">
+    <?php else: ?>
+        <!-- The original constrained 800px container -->
+        <div class="container">
+    <?php endif; ?>
+    
         <?php $error = $session->getFlash('error'); ?>
         <?php if ($error): ?>
             <div class="flash flash-error"><?= htmlspecialchars($error) ?></div>

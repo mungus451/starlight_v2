@@ -27,6 +27,9 @@ class StructureController extends BaseController
         // Get all data (structures, resources, costs) from the service
         $data = $this->structureService->getStructureData($userId);
 
+        // NEW: Tell the layout to render in full-width mode
+        $data['layoutMode'] = 'full';
+
         $this->render('structures/show.php', $data + ['title' => 'Structures']);
     }
 
