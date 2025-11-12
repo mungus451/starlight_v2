@@ -4,33 +4,33 @@ StarlightDominion V2 is a complete rewrite of a classic browser-based space stra
 ✨ Features
 The application is built as a series of "vertical slices," with the following features fully implemented:
 
-Authentication: Secure user registration and login.
+<h1>Authentication:</h1> Secure user registration and login.
 
-Dynamic Dashboard: A central hub showing a player's real-time resources, stats, and structures.
+<h1>Dynamic Dashboard:</h1> A central hub showing a player's real-time resources, stats, and structures.
 
-Bank: Securely deposit, withdraw, and transfer credits to other players.
+<h1>Bank:</h1> Securely deposit, withdraw, and transfer credits to other players.
 
-Training: Train untrained citizens into specialized units (workers, soldiers, spies, etc.) using game-balanced costs.
+<h1>Training:</h1> Train untrained citizens into specialized units (workers, soldiers, spies, etc.) using game-balanced costs.
 
-Structures: Upgrade your dominion's structures (Fortification, Economy, etc.) using dynamically calculated costs.
+<h1>Structures:</h1> Upgrade your dominion's structures (Fortification, Economy, etc.) using dynamically calculated costs.
 
-Espionage: Launch "all-in" spy operations against other players, costing attack turns and resources.
+<h1>Espionage:</h1> Launch "all-in" spy operations against other players, costing attack turns and resources.
 
-Spy Reports: A detailed inbox for viewing the results and intel gathered from spy operations.
+<h1>Spy Reports:</h1> A detailed inbox for viewing the results and intel gathered from spy operations.
 
-Battle (PvP): A full-featured "all-in" attack system.
+<h1>Battle (PvP):</h1> A full-featured "all-in" attack system.
 
-Leaderboard: A paginated leaderboard of all players, ranked by net worth, is built into the battle page for target selection.
+<h1>Leaderboard:</h1> A paginated leaderboard of all players, ranked by net worth, is built into the battle page for target selection.
 
-Dynamic Combat: Battle outcomes are calculated based on unit counts, stats (strength, constitution), and structure levels (offense, defense).
+<h1>Dynamic Combat:</h1> Battle outcomes are calculated based on unit counts, stats (strength, constitution), and structure levels (offense, defense).
 
-Spoils of War: Victors plunder credits and steal net worth.
+<h1>Spoils of War:</h1> Victors plunder credits and steal net worth.
 
-Battle Reports: A detailed inbox for viewing all battle outcomes.
+<h1>Battle Reports:</h1> A detailed inbox for viewing all battle outcomes.
 
-Level Up: Spend level-up points to increase your character's five core stats.
+<h1>Level Up:</h1> Spend level-up points to increase your character's five core stats.
 
-Settings: A multi-part page to update your profile, change your email, update your password, and set security questions (all sensitive actions are gated by a password check).
+<h1>Settings: </h1> A multi-part page to update your profile, change your email, update your password, and set security questions (all sensitive actions are gated by a password check).
 
 Alliances (Full System):
 
@@ -57,18 +57,18 @@ Create, edit, and delete custom roles with granular permissions (e.g., can_kick_
 Game Loop (Cron): A standalone "heartbeat" script that processes turn-based income (credits, interest, citizens) for all players.
 
 🚀 Tech Stack
-PHP 8.3
+# PHP 8.3
 
-MariaDB (or MySQL)
+# MariaDB (or MySQL)
 
-Composer for package management
+# Composer for package management
 
-vlucas/phpdotenv: For managing environment variables.
+# vlucas/phpdotenv: For managing environment variables.
 
-nikic/fast-route: For clean, high-performance routing.
+# nikic/fast-route: For clean, high-performance routing.
 
 📁 Project Structure
-This application follows a strict Model-View-Controller (MVC) pattern.
+### This application follows a strict Model-View-Controller (MVC) pattern.
 
 `/usr/local/var/www/starlight_v2/` <br>
 `├── app/` <br>
