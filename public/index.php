@@ -12,7 +12,8 @@ use App\Controllers\BattleController;
 use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
 use App\Controllers\AllianceManagementController;
-use App\Controllers\AllianceRoleController; // NEW
+use App\Controllers\AllianceRoleController;
+use App\Controllers\PagesController; // NEW: Import PagesController
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -46,7 +47,8 @@ if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
 $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     // Landing Page Route
-    $r->addRoute('GET', '/', [AuthController::class, 'showLogin']);
+    $r->addRoute('GET', '/', [PagesController::class, 'showHome']); // UPDATED
+    $r->addRoute('GET', '/contact', [PagesController::class, 'showContact']); // NEW
 
     // --- Phase 1: Auth Routes ---
     $r->addRoute('GET', '/login', [AuthController::class, 'showLogin']);

@@ -154,6 +154,8 @@
             <a href="/alliance/list">Alliance</a> <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         <?php else: ?>
+            <a href="/">Home</a>
+            <a href="/contact">Contact</a>
             <a href="/login">Login</a>
             <a href="/register">Register</a>
         <?php endif; ?>
