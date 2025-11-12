@@ -117,13 +117,13 @@ Make sure you have Homebrew installed.
 Log in to MariaDB/MySQL:
 
 `mysql -u root`
-<h6> Create the new database and user (use the credentials you provided):
+<h6> Create the new database and user (use the credentials you provided): </h6>
 
-`CREATE DATABASE starlightDB;`
-`CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`
-`GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';`
-`FLUSH PRIVILEGES;`
-`EXIT;`
+`CREATE DATABASE starlightDB;`<br>
+`CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`<br>
+`GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';`<br>
+`FLUSH PRIVILEGES;`<br>
+`EXIT;`<br>
 
 3. Application Setup
 `Place the project files in /usr/local/var/www/starlight_v2.`
