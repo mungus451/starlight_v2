@@ -1,30 +1,58 @@
 <style>
-    /* Add some dashboard-specific styles */
+    :root {
+        --bg: radial-gradient(circle at 10% 0%, #0c101e 0%, #050712 42%, #02030a 75%);
+        --panel: rgba(12, 14, 25, 0.68);
+        --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.08), rgba(13, 15, 27, 0.75));
+        --border: rgba(255, 255, 255, 0.035);
+        --accent: #2dd1d1;
+        --text: #eff1ff;
+        --muted: #a8afd4;
+        --radius: 18px;
+        --shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+        background: var(--bg);
+    }
+
     .dashboard-grid {
         text-align: left;
         width: 100%;
-        max-width: 1200px; /* Widen container for multi-column */
-        
-        /* --- NEW: CSS Grid Layout --- */
+        max-width: 1200px;
+        margin: 0 auto; /* hard-center */
+        padding: 1.5rem 1.5rem 3.5rem;
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3-column layout */
+        grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
+        position: relative;
+        box-sizing: border-box;
     }
-    
-    /* --- NEW: Responsive Grid --- */
+
+    /* center the overlay too so it doesn't "pull" to the right */
+    .dashboard-grid::before {
+        content: "";
+        position: absolute;
+        inset: -80px 0 0 0; /* no negative horizontal stretch */
+        background-image:
+            linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 0),
+            linear-gradient(0deg, rgba(255,255,255,0.018) 1px, transparent 0);
+        background-size: 120px 120px;
+        pointer-events: none;
+        z-index: -1;
+    }
+
     @media (max-width: 1024px) {
         .dashboard-grid {
-            grid-template-columns: repeat(2, 1fr); /* 2-column layout for tablets */
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-grid {
-            grid-template-columns: 1fr; /* 1-column layout for mobile */
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    /* --- NEW: Grid Span Utilities --- */
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .grid-span-1 { grid-column: span 1; }
     .grid-span-2 { grid-column: span 2; }
     .grid-span-3 { grid-column: span 3; }
@@ -33,9 +61,8 @@
         .md-grid-span-1 { grid-column: span 1; }
         .md-grid-span-2 { grid-column: span 2; }
     }
-    
+
     @media (max-width: 768px) {
-        /* On mobile, force all to span 1 column */
         .sm-grid-span-1 { grid-column: span 1; }
         .grid-span-1, .grid-span-2, .grid-span-3,
         .md-grid-span-1, .md-grid-span-2 {
@@ -43,91 +70,117 @@
         }
     }
 
-
     .welcome-header {
         text-align: center;
-        color: #c0c0e0;
-        font-size: 1.2rem;
-        margin-top: -1rem;
-        margin-bottom: 0.5rem; /* Reduced bottom margin */
+        color: var(--muted);
+        font-size: 1rem;
+        margin-top: -0.25rem;
+        margin-bottom: 0.35rem;
     }
-    
+
     .data-card {
-        background: #2a2a4a;
-        border: 1px solid #3a3a5a;
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 0; /* Grid gap now handles spacing */
-        display: flex; /* Added for vertical flex */
-        flex-direction: column; /* Added for vertical flex */
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.05rem 1.25rem 1.15rem;
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        backdrop-filter: blur(6px);
+        box-shadow: var(--shadow);
+        transition: transform 0.1s ease-out, border 0.1s ease-out;
     }
+    .data-card:hover {
+        transform: translateY(-1px);
+        border: 1px solid rgba(45, 209, 209, 0.25);
+    }
+
     .data-card h1 {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
+        color: #fff;
+        letter-spacing: -0.03em;
     }
     .data-card h3 {
-        color: #f9c74f;
+        color: #fff;
         margin-top: 0;
-        margin-bottom: 1rem;
-        border-bottom: 1px solid #3a3a5a;
-        padding-bottom: 0.75rem;
+        margin-bottom: 0.85rem;
+        border-bottom: 1px solid rgba(233, 219, 255, 0.03);
+        padding-bottom: 0.5rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
     }
-    
-    /* --- UPDATED: List Styles --- */
+    .data-card h3::before {
+        content: "";
+        width: 4px;
+        height: 16px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #2dd1d1, rgba(2, 3, 10, 0));
+        box-shadow: 0 0 20px rgba(45, 209, 209, 0.35);
+    }
+
     .data-card ul {
         list-style: none;
         padding-left: 0;
         margin: 0;
         display: flex;
         flex-direction: column;
-        height: 100%; /* Make list fill card */
+        height: 100%;
+        gap: 0.35rem;
     }
     .data-card li {
-        font-size: 1rem;
+        font-size: 0.9rem;
         color: #e0e0e0;
-        padding: 0.75rem 0.25rem;
+        padding: 0.55rem 0.25rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #3a3a5a;
+        border-bottom: 1px solid rgba(58, 58, 90, 0.08);
+        gap: 1rem;
     }
     .data-card li:last-child {
         border-bottom: none;
-        margin-top: auto; /* Push last item down in flex */
+        margin-top: auto;
     }
-    
-    /* Key-Value Spans */
+
     .data-card li span:first-child {
-        font-weight: bold;
-        color: #c0c0e0;
+        font-weight: 500;
+        color: rgba(239, 241, 255, 0.7);
+        font-size: 0.85rem;
     }
     .data-card li span:last-child {
-        font-weight: bold;
-        color: #e0e0e0;
+        font-weight: 600;
+        color: #fff;
         text-align: right;
+        font-size: 0.85rem;
     }
 
-    /* --- NEW: Structure Grid (for inside the structures card) --- */
-    .structure-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0 1.5rem; /* Only column gap */
-    }
-    
-    @media (max-width: 768px) {
-        .structure-grid {
-            grid-template-columns: 1fr; /* Stack structures on mobile */
-            gap: 0;
-        }
-    }
-
-    /* --- NEW: Action Link in List --- */
     .data-card li a {
-        color: #7683f5;
-        font-weight: bold;
+        color: #2dd1d1;
+        font-weight: 600;
         text-decoration: none;
+        font-size: 0.78rem;
     }
     .data-card li a:hover {
         text-decoration: underline;
+    }
+
+    .structure-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 1.5rem;
+    }
+    .structure-grid li {
+        border-bottom: none;
+        padding: 0.3rem 0.25rem;
+    }
+    @media (max-width: 768px) {
+        .structure-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
     }
 
     .logout-link {
@@ -135,20 +188,23 @@
         width: 100%;
         text-align: center;
         padding: 0.75rem 1.5rem;
-        border-radius: 5px;
+        border-radius: 12px;
         text-decoration: none;
-        font-weight: bold;
-        font-size: 1rem;
-        transition: all 0.2s ease;
-        background: #e53e3e; /* Red */
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.15s ease;
+        background: linear-gradient(135deg, rgba(232, 65, 95, 0.9) 0%, rgba(196, 41, 62, 0.9) 100%);
         color: white;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.02);
         cursor: pointer;
-        margin-top: 0; /* Handled by grid gap */
-        box-sizing: border-box; /* Ensures padding doesn't break width */
+        margin-top: 0;
+        box-sizing: border-box;
+        box-shadow: 0 10px 30px rgba(196, 41, 62, 0.3);
+        backdrop-filter: blur(4px);
     }
     .logout-link:hover {
-        background: #c53030;
+        filter: brightness(1.03);
+        transform: translateY(-1px);
     }
 </style>
 
@@ -241,6 +297,5 @@
         </ul>
     </div>
 
-    <!-- Logout Link -->
     <a href="/logout" class="logout-link grid-span-3 sm-grid-span-1">Logout</a>
 </div>

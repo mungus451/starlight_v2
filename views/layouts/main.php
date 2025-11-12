@@ -4,19 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'StarlightDominion' ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            /* DELETED: display: grid; */
-            /* DELETED: place-items: center; */
-            min-height: 100vh; /* CHANGED: Ensures background fills height */
-            background: #1a1a2e; /* Dark space blue */
+            min-height: 100vh;
+            background-image: url("/background.avif"); /* root-level background */
+            background-size: cover;                    /* fill the viewport */
+            background-position: center top;           /* center it nicely */
+            background-repeat: no-repeat;              /* no tiling */
+            background-attachment: fixed;              /* subtle parallax feel */
             color: #e0e0e0;
             margin: 0;
-            padding-top: 80px; /* Space for the nav */
-            box-sizing: border-box; /* NEW: Better height calculation */
+            padding-top: 80px; 
+            box-sizing: border-box;
         }
-        
         /* --- Navigation Styles --- */
         nav {
             background: #1e1e3f;
