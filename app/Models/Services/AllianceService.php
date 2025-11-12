@@ -9,6 +9,7 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\ApplicationRepository;
+use App\Models\Repositories\AllianceRoleRepository;
 use PDO;
 use Throwable;
 
@@ -24,6 +25,7 @@ class AllianceService
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private ApplicationRepository $appRepo;
+    private AllianceRoleRepository $roleRepo;
 
     public function __construct()
     {
@@ -35,6 +37,7 @@ class AllianceService
         $this->userRepo = new UserRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->appRepo = new ApplicationRepository($this->db);
+        $this->roleRepo = new AllianceRoleRepository($this->db);
     }
 
     /**
@@ -88,25 +91,32 @@ class AllianceService
         $members = $this->userRepo->findAllByAllianceId($allianceId);
 
         // Get the person viewing the page
-        // --- FIX ---
         $viewer = $this->userRepo->findById($viewerId); 
+        $viewerRole = null;
+        if ($viewer && $viewer->alliance_id === $allianceId) {
+            $viewerRole = $this->roleRepo->findById($viewer->alliance_role_id);
+        }
 
-        // Get pending applications (only relevant for leader)
+        // Get pending applications (only relevant for those with permission)
         $applications = [];
-        if ($viewer && $viewer->id === $alliance->leader_id) {
-            // --- FIX ---
+        if ($viewerRole && $viewerRole->can_manage_applications) {
             $applications = $this->appRepo->findByAllianceId($allianceId);
         }
 
         // Check if the viewer has a pending application
         $userApplication = $this->appRepo->findByUserAndAlliance($viewerId, $allianceId);
 
+        // Get all available roles for this alliance (for dropdowns)
+        $roles = $this->roleRepo->findByAllianceId($allianceId);
+
         return [
             'alliance' => $alliance,
             'members' => $members,
             'viewer' => $viewer,
+            'viewerRole' => $viewerRole, // The viewer's role object (or null)
             'applications' => $applications,
-            'userApplication' => $userApplication
+            'userApplication' => $userApplication,
+            'roles' => $roles
         ];
     }
 
@@ -121,31 +131,26 @@ class AllianceService
             return null;
         }
         if (mb_strlen($name) < 3 || mb_strlen($name) > 100) {
-            // --- FIX ---
             $this->session->setFlash('error', 'Alliance name must be between 3 and 100 characters.');
             return null;
         }
         if (mb_strlen($tag) < 3 || mb_strlen($tag) > 5) {
-            // --- FIX ---
             $this->session->setFlash('error', 'Alliance tag must be between 3 and 5 characters.');
             return null;
         }
 
         if ($this->allianceRepo->findByName($name)) {
-            // --- FIX ---
             $this->session->setFlash('error', 'An alliance with this name already exists.');
             return null;
         }
         if ($this->allianceRepo->findByTag($tag)) {
-            // --- FIX ---
-            $this.session->setFlash('error', 'An alliance with this tag already exists.');
+            $this->session->setFlash('error', 'An alliance with this tag already exists.');
             return null;
         }
 
         $user = $this->userRepo->findById($userId);
         if ($user->alliance_id !== null) {
-            // --- FIX ---
-            $this.session->setFlash('error', 'You are already in an alliance.');
+            $this->session->setFlash('error', 'You are already in an alliance.');
             return null;
         }
 
@@ -153,41 +158,45 @@ class AllianceService
         $resources = $this->resourceRepo->findByUserId($userId);
 
         if ($resources->credits < $cost) {
-            // --- FIX ---
-            $this.session->setFlash('error', 'You do not have enough credits to found an alliance.');
+            $this->session->setFlash('error', 'You do not have enough credits to found an alliance.');
             return null;
         }
 
         // 2. Transaction
-        // --- FIX ---
         $this->db->beginTransaction();
         try {
             // 2a. Create the alliance
             $newAllianceId = $this->allianceRepo->create($name, $tag, $userId);
 
-            // 2b. Deduct credits
+            // 2b. Create the default roles
+            $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
+                'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
+                'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
+                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1
+            ]);
+            
+            $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
+            $this->roleRepo->create($newAllianceId, 'Member', 9, []); // No perms by default
+
+            // 2c. Deduct credits
             $newCredits = $resources->credits - $cost;
-            // --- FIX ---
-            $this.resourceRepo->updateCredits($userId, $newCredits);
+            $this->resourceRepo->updateCredits($userId, $newCredits);
 
-            // 2c. Update the user to be the leader
-            $this->userRepo->setAlliance($userId, $newAllianceId, 'Leader');
+            // 2d. Update the user to be the leader
+            $this->userRepo->setAlliance($userId, $newAllianceId, $leaderRoleId);
 
-            // 2d. Commit
+            // 2e. Commit
             $this->db->commit();
 
         } catch (Throwable $e) {
-            // --- FIX ---
-            $this.db->rollBack();
+            $this->db->rollBack();
             error_log('Alliance Creation Error: ' . $e->getMessage());
-            // --- FIX ---
-            $this.session->setFlash('error', 'A database error occurred while creating the alliance.');
+            $this->session->setFlash('error', 'A database error occurred while creating the alliance.');
             return null;
         }
 
         // 3. Success
-        // --- FIX ---
-        $this.session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
+        $this->session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
         return $newAllianceId;
     }
 }

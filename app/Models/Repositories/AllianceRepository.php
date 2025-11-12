@@ -17,11 +17,6 @@ class AllianceRepository
 
     /**
      * Creates a new alliance.
-     *
-     * @param string $name
-     * @param string $tag
-     * @param int $leaderId
-     * @return int The ID of the newly created alliance.
      */
     public function create(string $name, string $tag, int $leaderId): int
     {
@@ -35,9 +30,6 @@ class AllianceRepository
 
     /**
      * Finds an alliance by its ID.
-     *
-     * @param int $id
-     * @return Alliance|null
      */
     public function findById(int $id): ?Alliance
     {
@@ -50,9 +42,6 @@ class AllianceRepository
 
     /**
      * Finds an alliance by its name.
-     *
-     * @param string $name
-     * @return Alliance|null
      */
     public function findByName(string $name): ?Alliance
     {
@@ -65,9 +54,6 @@ class AllianceRepository
 
     /**
      * Finds an alliance by its tag.
-     *
-     * @param string $tag
-     * @return Alliance|null
      */
     public function findByTag(string $tag): ?Alliance
     {
@@ -80,8 +66,6 @@ class AllianceRepository
 
     /**
      * Gets the total number of alliances.
-     *
-     * @return int
      */
     public function getTotalCount(): int
     {
@@ -91,10 +75,6 @@ class AllianceRepository
 
     /**
      * Gets a paginated list of alliances, ranked by net worth.
-     *
-     * @param int $limit
-     * @param int $offset
-     * @return array
      */
     public function getPaginatedAlliances(int $limit, int $offset): array
     {
@@ -116,11 +96,31 @@ class AllianceRepository
         return $alliances;
     }
 
+    // --- NEW METHOD FOR PHASE 13 ---
+    
+    /**
+     * Updates an alliance's public profile.
+     *
+     * @param int $allianceId
+     * @param string $description
+     * @param string $pfpUrl
+     * @return bool
+     */
+    public function updateProfile(int $allianceId, string $description, string $pfpUrl): bool
+    {
+        $description = empty($description) ? null : $description;
+        $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
+
+        $stmt = $this->db->prepare(
+            "UPDATE alliances SET description = ?, profile_picture_url = ? WHERE id = ?"
+        );
+        return $stmt->execute([$description, $pfpUrl, $allianceId]);
+    }
+
+    // --- END NEW METHOD ---
+
     /**
      * Helper method to convert a database row into an Alliance entity.
-     *
-     * @param array $data
-     * @return Alliance
      */
     private function hydrate(array $data): Alliance
     {

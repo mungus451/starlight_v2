@@ -3,6 +3,9 @@
 namespace App\Controllers;
 
 use App\Models\Services\AllianceManagementService;
+use App\Models\Repositories\ApplicationRepository;
+use App\Models\Repositories\UserRepository;
+use App\Core\Database;
 
 /**
  * Handles all "write" POST requests for alliance management.
@@ -34,7 +37,6 @@ class AllianceManagementController extends BaseController
 
         $this->mgmtService->applyToAlliance($userId, $allianceId);
         
-        // Redirect back to the profile page of the alliance they applied to
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -45,7 +47,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this.session->setFlash('error', 'Invalid security token.');
+            $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
         }
@@ -54,9 +56,7 @@ class AllianceManagementController extends BaseController
         $appId = (int)($vars['id'] ?? 0);
 
         // We need the alliance ID to redirect back
-        $app = (new \App\Models\Repositories\ApplicationRepository(
-            \App\Core\Database::getInstance()
-        ))->findById($appId);
+        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
         $allianceId = $app ? $app->alliance_id : 'list';
 
         $this->mgmtService->cancelApplication($userId, $appId);
@@ -71,21 +71,18 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this.session->setFlash('error', 'Invalid security token.');
+            $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/dashboard');
             return;
         }
 
         $userId = $this->session->get('user_id');
-        $user = (new \App\Models\Repositories\UserRepository(
-            \App\Core\Database::getInstance()
-        ))->findById($userId);
+        $user = (new UserRepository(Database::getInstance()))->findById($userId);
         
         $allianceId = $user->alliance_id ?? 'list';
 
         $this->mgmtService->leaveAlliance($userId);
         
-        // Redirect to the profile they just left
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -96,7 +93,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this.session->setFlash('error', 'Invalid security token.');
+            $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
         }
@@ -104,10 +101,7 @@ class AllianceManagementController extends BaseController
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        // We need the alliance ID to redirect back
-        $app = (new \App\Models\Repositories\ApplicationRepository(
-            \App\Core\Database::getInstance()
-        ))->findById($appId);
+        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
         $allianceId = $app ? $app->alliance_id : 'list';
 
         $this->mgmtService->acceptApplication($adminId, $appId);
@@ -122,7 +116,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this.session->setFlash('error', 'Invalid security token.');
+            $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
         }
@@ -130,14 +124,83 @@ class AllianceManagementController extends BaseController
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        // We need the alliance ID to redirect back
-        $app = (new \App\Models\Repositories\ApplicationRepository(
-            \App\Core\Database::getInstance()
-        ))->findById($appId);
+        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
         $allianceId = $app ? $app->alliance_id : 'list';
 
         $this->mgmtService->rejectApplication($adminId, $appId);
         
-        $this.redirect('/alliance/profile/' . $allianceId);
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+    
+    // --- NEW METHODS FOR PHASE 13 ---
+
+    /**
+     * Handles updating the alliance's public profile (desc, image).
+     */
+    public function handleUpdateProfile(): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $adminId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
+        $allianceId = $user->alliance_id ?? 0;
+
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+
+        $description = (string)($_POST['description'] ?? '');
+        $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
+
+        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl);
+        
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
+    /**
+     * Handles kicking a member from the alliance.
+     */
+    public function handleKickMember(array $vars): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $adminId = $this->session->get('user_id');
+        $targetUserId = (int)($vars['id'] ?? 0);
+        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+
+        $this->mgmtService->kickMember($adminId, $targetUserId);
+        
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
+    /**
+     * Handles assigning a new role to a member.
+     */
+    public function handleAssignRole(): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $adminId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+
+        $targetUserId = (int)($_POST['target_user_id'] ?? 0);
+        $newRoleId = (int)($_POST['role_id'] ?? 0);
+
+        $this->mgmtService->changeMemberRole($adminId, $targetUserId, $newRoleId);
+        
+        $this->redirect('/alliance/profile/' . $allianceId);
     }
 }

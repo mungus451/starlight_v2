@@ -31,34 +31,11 @@
     .alliance-description {
         font-size: 1rem;
         color: #c0c0e0;
-        white-space: pre-wrap; /* Respects newlines in the description */
+        white-space: pre-wrap; /* Respects newlines */
     }
     
     /* Member List */
-    .member-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-    }
-    .member-item {
-        font-size: 1.1rem;
-        color: #e0e0e0;
-        padding: 0.5rem;
-        background: #1e1e3f;
-        border-radius: 5px;
-    }
-    .member-item .role {
-        font-size: 0.9rem;
-        color: #f9c74f;
-        font-weight: bold;
-        display: block;
-    }
-    
-    /* Application List */
-    .application-list {
+    .member-list, .application-list {
         list-style: none;
         padding: 0;
         margin: 0;
@@ -66,28 +43,49 @@
         flex-direction: column;
         gap: 0.5rem;
     }
-    .app-item {
+    .member-item, .app-item {
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
         background: #1e1e3f;
-        padding: 0.75rem;
+        padding: 0.75rem 1rem;
         border-radius: 5px;
+        border: 1px solid #3a3a5a;
     }
-    .app-item-actions {
+    .member-item-info .role {
+        font-size: 0.9rem;
+        color: #f9c74f;
+        font-weight: bold;
+        display: block;
+    }
+    .member-item-info .name {
+        font-size: 1.1rem;
+        color: #e0e0e0;
+    }
+    .member-item-actions {
         display: flex;
         gap: 0.5rem;
+        flex-wrap: wrap;
     }
-    .app-item-actions .btn-submit {
+    .member-item-actions .btn-submit, .app-item-actions .btn-submit {
         margin-top: 0;
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
     }
-    .btn-accept {
-        background: #4CAF50; /* Green */
-    }
-    .btn-reject {
-        background: #e53e3e; /* Red */
+    .btn-accept { background: #4CAF50; }
+    .btn-reject { background: #e53e3e; }
+    .btn-manage { background: #7683f5; }
+    
+    .form-group textarea {
+        padding: 0.75rem;
+        border-radius: 5px;
+        border: 1px solid #3a3a5a;
+        background: #2a2a4a;
+        color: #e0e0e0;
+        font-size: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        min-height: 80px;
     }
 </style>
 
@@ -123,11 +121,13 @@
         elseif ($viewer->alliance_id === $alliance->id): ?>
         
             <?php // Case 2a: Viewer is the Leader
-            if ($viewer->alliance_role === 'Leader'): ?>
+            if ($viewerRole && $viewerRole->name === 'Leader'): ?>
                 <p style="color: #c0c0e0; text-align: center;">You are the leader of this alliance.</p>
-                <?php // Case 2b: Viewer is a regular member
+                <a href="/alliance/roles" class="btn-submit btn-manage" style="display:block; text-align:center;">Manage Alliance Roles</a>
+                
+            <?php // Case 2b: Viewer is a regular member
             else: ?>
-                <form action="/alliance/leave" method="POST">
+                <form action="/alliance/leave" method="POST" onsubmit="return confirm('Are you sure you want to leave this alliance?');">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                     <button type="submit" class="btn-submit btn-reject">Leave Alliance</button>
                 </form>
@@ -139,7 +139,28 @@
         <?php endif; ?>
     </div>
     
-    <?php if ($viewer->id === $alliance->leader_id && !empty($applications)): ?>
+    <?php if ($viewerRole && $viewerRole->can_edit_profile): ?>
+        <div class="data-card">
+            <h3>Edit Alliance Profile</h3>
+            <form action="/alliance/profile/edit" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                
+                <div class="form-group">
+                    <label for="description">Alliance Description</label>
+                    <textarea name="description" id="description"><?= htmlspecialchars($alliance->description ?? '') ?></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="profile_picture_url">Profile Picture URL</label>
+                    <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($alliance->profile_picture_url ?? '') ?>" placeholder="https://your.image.host/img.png">
+                </div>
+                
+                <button type="submit" class="btn-submit">Save Changes</button>
+            </form>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($viewerRole && $viewerRole->can_manage_applications && !empty($applications)): ?>
         <div class="data-card">
             <h3>Pending Applications (<?= count($applications) ?>)</h3>
             <ul class="application-list">
@@ -174,8 +195,44 @@
         <ul class="member-list">
             <?php foreach ($members as $member): ?>
                 <li class="member-item">
-                    <span class="role"><?= htmlspecialchars($member->alliance_role ?? 'Member') ?></span>
-                    <?= htmlspecialchars($member->characterName) ?>
+                    <div class="member-item-info">
+                        <span class="role"><?= htmlspecialchars($member['alliance_role_name'] ?? 'Role-less') ?></span>
+                        <span class="name"><?= htmlspecialchars($member['character_name']) ?></span>
+                    </div>
+                    
+                    <?php 
+                    $canManage = $viewerRole && ($viewerRole->can_kick_members || $viewerRole->can_manage_roles);
+                    $isNotSelf = $viewer->id !== $member['id'];
+                    $isNotLeader = $member['alliance_role_name'] !== 'Leader';
+                    
+                    if ($canManage && $isNotSelf && $isNotLeader): 
+                    ?>
+                        <div class="member-item-actions">
+                            <?php if ($viewerRole->can_manage_roles): ?>
+                                <form action="/alliance/role/assign" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <input type="hidden" name="target_user_id" value="<?= $member['id'] ?>">
+                                    <select name="role_id" onchange="this.form.submit()">
+                                        <option value="">Assign Role...</option>
+                                        <?php foreach ($roles as $role): 
+                                            if ($role->name === 'Leader') continue; // Can't assign Leader
+                                        ?>
+                                            <option value="<?= $role->id ?>" <?= $role->id == $member['alliance_role_id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($role->name) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                            <?php endif; ?>
+                            
+                            <?php if ($viewerRole->can_kick_members): ?>
+                                <form action="/alliance/kick/<?= $member['id'] ?>" method="POST" onsubmit="return confirm('Are you sure you want to kick this member?');">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <button type="submit" class="btn-submit btn-reject">Kick</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </li>
             <?php endforeach; ?>
         </ul>

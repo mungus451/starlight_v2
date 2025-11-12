@@ -11,7 +11,8 @@ use App\Controllers\SpyController;
 use App\Controllers\BattleController;
 use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
-use App\Controllers\AllianceManagementController; // NEW
+use App\Controllers\AllianceManagementController;
+use App\Controllers\AllianceRoleController; // NEW
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -102,12 +103,21 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 
-    // --- NEW: Phase 12: Alliance Management Routes ---
+    // --- Phase 12: Alliance Management Routes ---
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceManagementController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceManagementController::class, 'handleCancelApp']);
     $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
     $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
     $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
+    
+    // --- NEW: Phase 13: Alliance Admin Routes ---
+    $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
+    $r->addRoute('POST', '/alliance/kick/{id:\d+}', [AllianceManagementController::class, 'handleKickMember']);
+    $r->addRoute('POST', '/alliance/role/assign', [AllianceManagementController::class, 'handleAssignRole']);
+    $r->addRoute('GET', '/alliance/roles', [AllianceRoleController::class, 'showAll']);
+    $r->addRoute('POST', '/alliance/roles/create', [AllianceRoleController::class, 'handleCreate']);
+    $r->addRoute('POST', '/alliance/roles/update/{id:\d+}', [AllianceRoleController::class, 'handleUpdate']);
+    $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceRoleController::class, 'handleDelete']);
 });
 
 // 5. Global Error Handler
@@ -149,7 +159,11 @@ try {
                 '/battle', '/battle/attack', '/battle/reports',
                 '/level-up', '/level-up/spend',
                 '/alliance/list', '/alliance/create',
-                '/alliance/leave' // NEW
+                '/alliance/leave',
+                '/alliance/profile/edit', // NEW
+                '/alliance/role/assign',  // NEW
+                '/alliance/roles',        // NEW
+                '/alliance/roles/create'  // NEW
             ];
 
             // Check exact routes
@@ -167,13 +181,19 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/profile/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/apply/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/apply/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/cancel-app/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/cancel-app/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/accept-app/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/accept-app/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/reject-app/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/reject-app/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/kick/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/roles/update/')) { // NEW
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/roles/delete/')) { // NEW
                     $isProtected = true;
                 }
             }

@@ -74,7 +74,7 @@ class AllianceController extends BaseController
         // 1. Validate CSRF token
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            $this.session->setFlash('error', 'Invalid security token.');
+            $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/create');
             return;
         }

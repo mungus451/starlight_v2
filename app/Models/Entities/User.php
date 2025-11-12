@@ -15,8 +15,8 @@ class User
      * @param string|null $bio
      * @param string|null $profile_picture_url
      * @param string|null $phone_number
-     * @param int|null $alliance_id (NEW)
-     * @param string|null $alliance_role (NEW)
+     * @param int|null $alliance_id
+     * @param int|null $alliance_role_id (REPLACED)
      * @param string $passwordHash
      * @param string $createdAt
      */
@@ -28,7 +28,7 @@ class User
         public readonly ?string $profile_picture_url,
         public readonly ?string $phone_number,
         public readonly ?int $alliance_id,
-        public readonly ?string $alliance_role,
+        public readonly ?int $alliance_role_id, // This line was changed
         public readonly string $passwordHash,
         public readonly string $createdAt
     ) {
