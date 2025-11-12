@@ -70,34 +70,35 @@ nikic/fast-route: For clean, high-performance routing.
 📁 Project Structure
 This application follows a strict Model-View-Controller (MVC) pattern.
 
-`/usr/local/var/www/starlight_v2/ <br>
-├── app/
-│   ├── Controllers/    # (The "C") Handles HTTP requests.
-│   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).
-│   ├── Middleware/     # Protects routes (e.g., AuthMiddleware).
-│   └── Models/
-│       ├── Entities/       # "Dumb" data objects (User, Alliance, etc.)
-│       ├── Repositories/   # (The "M") All SQL queries live here.
-│       └── Services/       # (The "M") All business logic lives here.
-├── config/             # Game balance and app settings.
-├── cron/               # Standalone scripts for the game loop.
-├── logs/               # Error and cron logs.
-├── public/             # The *only* web-accessible directory.
-│   └── index.php       # (The "Front Controller") All requests come here.
-├── sql/                # All database migration scripts (in order).
-├── vendor/             # Composer packages.
-└── views/              # (The "V") All "dumb" HTML/PHP templates.
-    ├── alliance/
-    ├── auth/
-    ├── bank/
-    ├── battle/
-    ├── dashboard/
-    ├── layouts/        # Main layout (header/footer).
-    ├── level_up/
-    ├── settings/
-    ├── spy/
-    ├── structures/
-    └── training/`
+`/usr/local/var/www/starlight_v2/` <br>
+`├── app/` <br>
+`│   ├── Controllers/    # (The "C") Handles HTTP requests.` <br>
+`│   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).` <br>
+`│   ├── Middleware/     # Protects routes (e.g., AuthMiddleware).` <br>
+`│   └── Models/` <br>
+`│       ├── Entities/       # "Dumb" data objects (User, Alliance, etc.)` <br>
+`│       ├── Repositories/   # (The "M") All SQL queries live here.` <br>
+`│       └── Services/       # (The "M") All business logic lives here.` <br>
+`├── config/             # Game balance and app settings.` <br>
+`├── cron/               # Standalone scripts for the game loop.` <br>
+`├── logs/               # Error and cron logs.` <br>
+`├── public/             # The *only* web-accessible directory.` <br>
+`│   └── index.php       # (The "Front Controller") All requests come here.` <br>
+`├── sql/                # All database migration scripts (in order).` <br>
+`├── vendor/             # Composer packages.` <br>
+`└── views/              # (The "V") All "dumb" HTML/PHP templates.` <br>
+`    ├── alliance/` <br>
+`    ├── auth/` <br>
+`    ├── bank/` <br>
+`    ├── battle/` <br>
+`    ├── dashboard/` <br>
+`    ├── layouts/        # Main layout (header/footer).` <br>
+`    ├── level_up/` <br>
+`    ├── settings/` <br>
+`    ├── spy/` <br>
+`    ├── structures/` <br>
+`    └── training/` <br>
+
 ⚙️ Installation & Setup (macOS / Homebrew)
 
 1. Prerequisites
@@ -117,7 +118,7 @@ Make sure you have Homebrew installed.
 Log in to MariaDB/MySQL:
 
 `mysql -u root`
-<h6> Create the new database and user (use the credentials you provided): </h6>
+<h3> Create the new database and user (use the credentials you provided): </h6>
 
 `CREATE DATABASE starlightDB;`<br>
 `CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`<br>
