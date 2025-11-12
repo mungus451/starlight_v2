@@ -4,33 +4,33 @@ StarlightDominion V2 is a complete rewrite of a classic browser-based space stra
 ✨ Features
 The application is built as a series of "vertical slices," with the following features fully implemented:
 
-<h1>Authentication:</h1> Secure user registration and login.
+<h6>Authentication:</h6> Secure user registration and login.
 
-<h1>Dynamic Dashboard:</h1> A central hub showing a player's real-time resources, stats, and structures.
+<h6>Dynamic Dashboard:</h6> A central hub showing a player's real-time resources, stats, and structures.
 
-<h1>Bank:</h1> Securely deposit, withdraw, and transfer credits to other players.
+<h6>Bank:</h6> Securely deposit, withdraw, and transfer credits to other players.
 
-<h1>Training:</h1> Train untrained citizens into specialized units (workers, soldiers, spies, etc.) using game-balanced costs.
+<h6>Training:</h6> Train untrained citizens into specialized units (workers, soldiers, spies, etc.) using game-balanced costs.
 
-<h1>Structures:</h1> Upgrade your dominion's structures (Fortification, Economy, etc.) using dynamically calculated costs.
+<h6>Structures:</h6> Upgrade your dominion's structures (Fortification, Economy, etc.) using dynamically calculated costs.
 
-<h1>Espionage:</h1> Launch "all-in" spy operations against other players, costing attack turns and resources.
+<h6>Espionage:</h6> Launch "all-in" spy operations against other players, costing attack turns and resources.
 
-<h1>Spy Reports:</h1> A detailed inbox for viewing the results and intel gathered from spy operations.
+<h6>Spy Reports:</h6> A detailed inbox for viewing the results and intel gathered from spy operations.
 
-<h1>Battle (PvP):</h1> A full-featured "all-in" attack system.
+<h6>Battle (PvP):</h6> A full-featured "all-in" attack system.
 
-<h1>Leaderboard:</h1> A paginated leaderboard of all players, ranked by net worth, is built into the battle page for target selection.
+<h6>Leaderboard:</h6> A paginated leaderboard of all players, ranked by net worth, is built into the battle page for target selection.
 
-<h1>Dynamic Combat:</h1> Battle outcomes are calculated based on unit counts, stats (strength, constitution), and structure levels (offense, defense).
+<h6>Dynamic Combat:</h6> Battle outcomes are calculated based on unit counts, stats (strength, constitution), and structure levels (offense, defense).
 
-<h1>Spoils of War:</h1> Victors plunder credits and steal net worth.
+<h6>Spoils of War:</h6> Victors plunder credits and steal net worth.
 
-<h1>Battle Reports:</h1> A detailed inbox for viewing all battle outcomes.
+<h6>Battle Reports:</h6> A detailed inbox for viewing all battle outcomes.
 
-<h1>Level Up:</h1> Spend level-up points to increase your character's five core stats.
+<h6>Level Up:</h6> Spend level-up points to increase your character's five core stats.
 
-<h1>Settings: </h1> A multi-part page to update your profile, change your email, update your password, and set security questions (all sensitive actions are gated by a password check).
+<h6>Settings: </h6> A multi-part page to update your profile, change your email, update your password, and set security questions (all sensitive actions are gated by a password check).
 
 Alliances (Full System):
 
