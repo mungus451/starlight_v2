@@ -21,6 +21,8 @@ class UserStats
      * @param int $wealth_points
      * @param int $dexterity_points
      * @param int $charisma_points
+     * @param int $deposit_charges (NEW)
+     * @param string|null $last_deposit_at (NEW)
      */
     public function __construct(
         public readonly int $user_id,
@@ -35,7 +37,9 @@ class UserStats
         public readonly int $constitution_points,
         public readonly int $wealth_points,
         public readonly int $dexterity_points,
-        public readonly int $charisma_points
+        public readonly int $charisma_points,
+        public readonly int $deposit_charges,     // ADDED
+        public readonly ?string $last_deposit_at  // ADDED
     ) {
     }
 }

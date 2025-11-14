@@ -337,3 +337,9 @@ CREATE TABLE `user_unit_loadouts` (
   CONSTRAINT `fk_armory_loadout_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Bank Updates
+
+ALTER TABLE `user_stats`
+    ADD COLUMN `deposit_charges` INT NOT NULL DEFAULT 4 AFTER `charisma_points`,
+    ADD COLUMN `last_deposit_at` TIMESTAMP NULL DEFAULT NULL AFTER `deposit_charges`;
+

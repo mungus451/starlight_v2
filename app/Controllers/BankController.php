@@ -23,11 +23,14 @@ class BankController extends BaseController
     public function show(): void
     {
         $userId = $this->session->get('user_id');
-        $resources = $this->bankService->getBankData($userId);
+        
+        // --- THIS IS THE UPDATE ---
+        // getBankData() now returns an array with resources, stats, and config
+        $data = $this->bankService->getBankData($userId);
 
-        $this->render('bank/show.php', [
+        $this->render('bank/show.php', $data + [
             'title' => 'Bank',
-            'resources' => $resources
+            'layoutMode' => 'full' // Use the full-width layout
         ]);
     }
 

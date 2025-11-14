@@ -2,13 +2,17 @@
 
 namespace App\Models\Services;
 
+use App\Core\Config;
 use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Entities\UserResource;
+use App\Models\Entities\UserStats;
 use PDO;
 use Throwable;
+use DateTime;
 
 /**
  * Handles all business logic for the Bank.
@@ -17,34 +21,70 @@ class BankService
 {
     private PDO $db;
     private Session $session;
+    private Config $config;
     private ResourceRepository $resourceRepo;
     private UserRepository $userRepo;
+    private StatsRepository $statsRepo;
 
     public function __construct()
     {
         $this->db = Database::getInstance();
         $this->session = new Session();
+        $this->config = new Config(); // NEW
         
-        // This service needs two repositories:
-        // ResourceRepository to move credits
-        // UserRepository to find users for transfers
+        // This service now needs three repositories
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->userRepo = new UserRepository($this->db);
+        $this->statsRepo = new StatsRepository($this->db); // NEW
     }
 
     /**
-     * Gets the resource data needed for the Bank view.
+     * Gets the resource and stats data needed for the Bank view.
+     * This method now also handles deposit charge regeneration.
      *
      * @param int $userId
-     * @return UserResource|null
+     * @return array
      */
-    public function getBankData(int $userId): ?UserResource
+    public function getBankData(int $userId): array
     {
-        return $this->resourceRepo->findByUserId($userId);
+        $stats = $this->statsRepo->findByUserId($userId);
+        $bankConfig = $this->config->get('bank');
+        
+        // --- Calculate Charge Regeneration ---
+        $currentCharges = $stats->deposit_charges;
+        $maxCharges = $bankConfig['deposit_max_charges'];
+
+        if ($currentCharges < $maxCharges && $stats->last_deposit_at !== null) {
+            $lastDepositTime = new DateTime($stats->last_deposit_at);
+            $now = new DateTime();
+            $hoursPassed = ($now->getTimestamp() - $lastDepositTime->getTimestamp()) / 3600;
+            
+            $regenHours = $bankConfig['deposit_charge_regen_hours'];
+            $chargesToRegen = floor($hoursPassed / $regenHours);
+
+            if ($chargesToRegen > 0) {
+                // Calculate how many charges we can *actually* add
+                $chargesToAdd = min($chargesToRegen, $maxCharges - $currentCharges);
+                
+                if ($chargesToAdd > 0) {
+                    $this->statsRepo->regenerateDepositCharges($userId, $chargesToAdd);
+                    // Re-fetch stats to show the user the updated value
+                    $stats = $this->statsRepo->findByUserId($userId);
+                }
+            }
+        }
+        // --- End Charge Regeneration ---
+
+        return [
+            'resources' => $this->resourceRepo->findByUserId($userId),
+            'stats' => $stats,
+            'bankConfig' => $bankConfig
+        ];
     }
 
     /**
      * Handles depositing credits from hand into the bank.
+     * Now includes new validation for 80% limit and deposit charges.
      *
      * @param int $userId
      * @param int $amount
@@ -58,19 +98,56 @@ class BankService
         }
 
         $resources = $this->resourceRepo->findByUserId($userId);
+        $stats = $this->statsRepo->findByUserId($userId);
+        $bankConfig = $this->config->get('bank');
 
+        // --- NEW VALIDATION ---
+        
+        // 1. Check 80% Limit
+        $depositLimit = floor($resources->credits * $bankConfig['deposit_percent_limit']);
+        if ($amount > $depositLimit && $depositLimit > 0) {
+            $this->session->setFlash('error', 'You can only deposit up to 80% (' . number_format($depositLimit) . ') of your on-hand credits at a time.');
+            return false;
+        }
+        // Handle case where user has lots of credits but 80% is 0 (rounding)
+        if ($amount > 0 && $depositLimit <= 0 && $resources->credits > 0) {
+             $this->session->setFlash('error', 'Amount is too small to meet the 80% deposit rule.');
+            return false;
+        }
+
+        // 2. Check Deposit Charges (Regeneration is handled in getBankData)
+        if ($stats->deposit_charges <= 0) {
+            $this->session->setFlash('error', 'You have no deposit charges left. One regenerates every ' . $bankConfig['deposit_charge_regen_hours'] . ' hours.');
+            return false;
+        }
+        
+        // 3. Check if user has enough credits (existing check)
         if ($resources->credits < $amount) {
             $this->session->setFlash('error', 'You do not have enough credits on hand to deposit.');
             return false;
         }
+        // --- END NEW VALIDATION ---
 
         $newCredits = $resources->credits - $amount;
         $newBanked = $resources->banked_credits + $amount;
-
-        if ($this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked)) {
+        
+        // --- NEW TRANSACTION: Must update two tables ---
+        $this->db->beginTransaction();
+        try {
+            // 1. Update resources (credits)
+            $this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked);
+            
+            // 2. Update stats (charges)
+            $this->statsRepo->updateDepositCharges($userId, $stats->deposit_charges - 1);
+            
+            $this->db->commit();
+            
             $this->session->setFlash('success', 'You successfully deposited ' . number_format($amount) . ' credits.');
             return true;
-        } else {
+
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            error_log("Bank Deposit Error: " . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. Please try again.');
             return false;
         }
@@ -100,6 +177,7 @@ class BankService
         $newCredits = $resources->credits + $amount;
         $newBanked = $resources->banked_credits - $amount;
 
+        // This is a single-table operation, so we can use the simple repo method
         if ($this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked)) {
             $this->session->setFlash('success', 'You successfully withdrew ' . number_format($amount) . ' credits.');
             return true;

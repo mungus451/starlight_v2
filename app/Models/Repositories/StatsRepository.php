@@ -125,8 +125,6 @@ class StatsRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // --- NEW METHOD FOR LEVEL UP SERVICE ---
-
     /**
      * Atomically updates all base stats and level up points.
      *
@@ -162,7 +160,43 @@ class StatsRepository
         ]);
     }
 
-    // --- END NEW METHOD ---
+    /**
+     * --- NEW METHOD FOR BANK ---
+     * Updates a user's deposit charges and sets the last deposit timestamp.
+     *
+     * @param int $userId
+     * @param int $newCharges
+     * @return bool
+     */
+    public function updateDepositCharges(int $userId, int $newCharges): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET 
+                deposit_charges = ?, 
+                last_deposit_at = NOW() 
+            WHERE user_id = ?"
+        );
+        return $stmt->execute([$newCharges, $userId]);
+    }
+
+    /**
+     * --- NEW METHOD FOR BANK ---
+     * Regenerates deposit charges for a user.
+     *
+     * @param int $userId
+     * @param int $chargesToRegen
+     * @return bool
+     */
+    public function regenerateDepositCharges(int $userId, int $chargesToRegen): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE user_stats SET 
+                deposit_charges = deposit_charges + ?
+            WHERE user_id = ?"
+        );
+        return $stmt->execute([$chargesToRegen, $userId]);
+    }
+
 
     /**
      * Helper method to convert a database row (array) into a UserStats entity.
@@ -185,7 +219,9 @@ class StatsRepository
             constitution_points: (int)$data['constitution_points'],
             wealth_points: (int)$data['wealth_points'],
             dexterity_points: (int)$data['dexterity_points'],
-            charisma_points: (int)$data['charisma_points']
+            charisma_points: (int)$data['charisma_points'],
+            deposit_charges: (int)$data['deposit_charges'],
+            last_deposit_at: $data['last_deposit_at']
         );
     }
 }
