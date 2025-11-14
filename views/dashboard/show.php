@@ -11,10 +11,6 @@
         --shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
     }
 
-    body {
-        background: var(--bg);
-    }
-
     .dashboard-grid {
         text-align: left;
         width: 100%;

@@ -8,6 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
     <style>
+        /* --- CSS FIX: Global box sizing and responsive padding --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             min-height: 100vh;
@@ -19,7 +24,6 @@
             color: #e0e0e0;
             margin: 0;
             padding-top: 80px; 
-            box-sizing: border-box;
         }
         /* --- Navigation Styles --- */
         nav {
@@ -30,7 +34,6 @@
             position: absolute;
             top: 0;
             left: 0;
-            box-sizing: border-box;
             text-align: center;
             z-index: 10;
         }
@@ -55,21 +58,28 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid #3a3a5a;
-            margin: 2rem auto 2rem auto; /* CHANGED: Now handles its own centering */
+            margin: 2rem auto;
         }
 
-        /* NEW: Full-width container for dashboards */
+        /* Full-width container */
         .container-full {
             width: 100%;
             max-width: 1600px;
-            text-align: left; /* CHANGED: Child content will align left */
+            text-align: left;
             background: #1e1e3f;
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid #3a3a5a;
-            margin: 2rem auto 2rem auto; /* CHANGED: Now handles its own centering */
-            box-sizing: border-box;
+            margin: 2rem auto;
+        }
+
+        /* --- CSS FIX: Reduce padding on mobile devices --- */
+        @media (max-width: 768px) {
+            .container, .container-full {
+                padding: 1rem;
+                margin: 1rem auto;
+            }
         }
 
         h1 {
@@ -168,10 +178,12 @@
             <a href="/bank">Bank</a>
             <a href="/training">Training</a>
             <a href="/structures">Structures</a>
+            <a href="/armory">Armory</a>
             <a href="/spy">Spy</a>
             <a href="/battle">Battle</a>
             <a href="/level-up">Level Up</a>
-            <a href="/alliance/list">Alliance</a> <a href="/settings">Settings</a>
+            <a href="/alliance/list">Alliance</a>
+            <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         <?php else: ?>
             <a href="/">Home</a>
@@ -186,10 +198,8 @@
     // If not set, it will default to the standard 'constrained' container.
     if (isset($layoutMode) && $layoutMode === 'full'): 
     ?>
-        <!-- NEW: Full-width, 1600px container -->
         <div class="container-full">
     <?php else: ?>
-        <!-- The original constrained 800px container -->
         <div class="container">
     <?php endif; ?>
     

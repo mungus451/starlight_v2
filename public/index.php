@@ -13,7 +13,8 @@ use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
 use App\Controllers\AllianceManagementController;
 use App\Controllers\AllianceRoleController;
-use App\Controllers\PagesController; // NEW: Import PagesController
+use App\Controllers\ArmoryController; // NEW: Import ArmoryController
+use App\Controllers\PagesController;
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -47,8 +48,8 @@ if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
 $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     // Landing Page Route
-    $r->addRoute('GET', '/', [PagesController::class, 'showHome']); // UPDATED
-    $r->addRoute('GET', '/contact', [PagesController::class, 'showContact']); // NEW
+    $r->addRoute('GET', '/', [PagesController::class, 'showHome']);
+    $r->addRoute('GET', '/contact', [PagesController::class, 'showContact']);
 
     // --- Phase 1: Auth Routes ---
     $r->addRoute('GET', '/login', [AuthController::class, 'showLogin']);
@@ -73,6 +74,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Phase 5: Structures Routes ---
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
+
+    // --- NEW: Armory Routes ---
+    $r->addRoute('GET', '/armory', [ArmoryController::class, 'show']);
+    $r->addRoute('POST', '/armory/manufacture', [ArmoryController::class, 'handleManufacture']);
+    $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
 
     // --- Phase 6: Settings Routes ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
@@ -112,7 +118,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
     $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
     
-    // --- NEW: Phase 13: Alliance Admin Routes ---
+    // --- Phase 13: Alliance Admin Routes ---
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
     $r->addRoute('POST', '/alliance/kick/{id:\d+}', [AllianceManagementController::class, 'handleKickMember']);
     $r->addRoute('POST', '/alliance/role/assign', [AllianceManagementController::class, 'handleAssignRole']);
@@ -156,16 +162,17 @@ try {
                 '/bank', '/bank/deposit', '/bank/withdraw', '/bank/transfer',
                 '/training', '/training/train',
                 '/structures', '/structures/upgrade',
+                '/armory', '/armory/manufacture', '/armory/equip', // NEW
                 '/settings', '/settings/profile', '/settings/email', '/settings/password', '/settings/security',
                 '/spy', '/spy/conduct', '/spy/reports',
                 '/battle', '/battle/attack', '/battle/reports',
                 '/level-up', '/level-up/spend',
                 '/alliance/list', '/alliance/create',
                 '/alliance/leave',
-                '/alliance/profile/edit', // NEW
-                '/alliance/role/assign',  // NEW
-                '/alliance/roles',        // NEW
-                '/alliance/roles/create'  // NEW
+                '/alliance/profile/edit',
+                '/alliance/role/assign',
+                '/alliance/roles',
+                '/alliance/roles/create'
             ];
 
             // Check exact routes
@@ -191,11 +198,11 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/reject-app/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/kick/')) { // NEW
+} elseif (str_starts_with($uri, '/alliance/kick/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/roles/update/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/roles/update/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/roles/delete/')) { // NEW
+                } elseif (str_starts_with($uri, '/alliance/roles/delete/')) {
                     $isProtected = true;
                 }
             }

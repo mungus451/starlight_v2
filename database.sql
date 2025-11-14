@@ -311,3 +311,29 @@ ALTER TABLE `users`
         FOREIGN KEY (`alliance_role_id`) 
         REFERENCES `alliance_roles`(`id`)
         ON DELETE SET NULL; -- If a role is deleted, the user becomes "role-less"
+
+        --
+-- Table structure for table `user_armory_inventory`
+-- Tracks the quantity of each item a user has manufactured.
+--
+CREATE TABLE `user_armory_inventory` (
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `item_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'e.g., ''pulse_rifle''',
+  `quantity` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`user_id`,`item_key`),
+  CONSTRAINT `fk_armory_inv_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `user_unit_loadouts`
+-- Tracks which item is currently equipped for a unit''s category slot.
+--
+CREATE TABLE `user_unit_loadouts` (
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `unit_key` varchar(25) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'e.g., ''soldier''',
+  `category_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'e.g., ''main_weapon''',
+  `item_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'e.g., ''pulse_rifle''',
+  PRIMARY KEY (`user_id`,`unit_key`,`category_key`),
+  CONSTRAINT `fk_armory_loadout_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

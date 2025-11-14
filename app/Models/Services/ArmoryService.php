@@ -1,0 +1,277 @@
+<?php
+
+namespace App\Models\Services;
+
+use App\Core\Config;
+use App\Core\Database;
+use App\Core\Session;
+use App\Models\Repositories\ArmoryRepository;
+use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository;
+use PDO;
+use Throwable;
+
+/**
+ * Handles all business logic for the Armory (Manufacturing & Equipping).
+ */
+class ArmoryService
+{
+    private PDO $db;
+    private Session $session;
+    private Config $config;
+    private ArmoryRepository $armoryRepo;
+    private ResourceRepository $resourceRepo;
+    private StructureRepository $structureRepo;
+    private array $armoryConfig;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance();
+        $this->session = new Session();
+        $this->config = new Config();
+        
+        // This service needs 3 repositories
+        $this->armoryRepo = new ArmoryRepository($this->db);
+        $this->resourceRepo = new ResourceRepository($this->db);
+        $this->structureRepo = new StructureRepository($this->db);
+        
+        // Load the armory config once
+        $this->armoryConfig = $this->config->get('armory_items', []);
+    }
+
+    /**
+     * Gets all data needed to render the full Armory UI.
+     *
+     * @param int $userId
+     * @return array
+     */
+    public function getArmoryData(int $userId): array
+    {
+        // Get all data in parallel
+        $userResources = $this->resourceRepo->findByUserId($userId);
+        $userStructures = $this->structureRepo->findByUserId($userId);
+        $inventory = $this->armoryRepo->getInventory($userId);
+        $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
+
+        // --- Create the item lookup map to fix the view error ---
+        $itemLookup = [];
+        foreach ($this->armoryConfig as $unitData) {
+            foreach ($unitData['categories'] as $categoryData) {
+                foreach ($categoryData['items'] as $itemKey => $item) {
+                    $itemLookup[$itemKey] = $item['name'];
+                }
+            }
+        }
+
+        return [
+            'armoryConfig' => $this->armoryConfig,
+            'userResources' => $userResources,
+            'userStructures' => $userStructures,
+            'inventory' => $inventory,
+            'loadouts' => $loadouts,
+            'itemLookup' => $itemLookup, // Pass the new map to the view
+        ];
+    }
+
+    /**
+     * Attempts to manufacture (or upgrade) a specific quantity of an item.
+     * This implements the "consumptive upgrade" logic.
+     *
+     * @param int $userId
+     * @param string $itemKey
+     * @param int $quantity
+     * @return bool True on success
+     */
+    public function manufactureItem(int $userId, string $itemKey, int $quantity): bool
+    {
+        // 1. Validation (Input)
+        if ($quantity <= 0) {
+            $this->session->setFlash('error', 'Quantity must be a positive number.');
+            return false;
+        }
+
+        $item = $this->findItemByKey($itemKey);
+        if (is_null($item)) {
+            $this->session->setFlash('error', 'Invalid item selected.');
+            return false;
+        }
+
+        // 2. Get User Data
+        $userResources = $this->resourceRepo->findByUserId($userId);
+        $userStructures = $this->structureRepo->findByUserId($userId);
+        $inventory = $this->armoryRepo->getInventory($userId);
+
+        // 3. Check Prerequisites
+        // Check 3a: Armory Level
+        $levelReq = $item['armory_level_req'] ?? 0;
+        if ($userStructures->armory_level < $levelReq) {
+            $this->session->setFlash('error', "You must have an Armory (Level {$levelReq}) to manufacture this item.");
+            return false;
+        }
+
+        // Check 3b: Total Cost
+        $totalCost = $item['cost'] * $quantity;
+        if ($userResources->credits < $totalCost) {
+            $this->session->setFlash('error', 'You do not have enough credits.');
+            return false;
+        }
+
+        // Check 3c: Consumable Prerequisite Item (if not Tier 1)
+        $prereqKey = $item['requires'] ?? null;
+        if ($prereqKey) {
+            $prereqInStock = $inventory[$prereqKey] ?? 0;
+            if ($prereqInStock < $quantity) {
+                $prereqItem = $this->findItemByKey($prereqKey);
+                $this->session->setFlash('error', "You do not have enough " . ($prereqItem['name'] ?? $prereqKey) . ". You need {$quantity} and have {$prereqInStock}.");
+                return false;
+            }
+        }
+        
+        // 4. Execute Transaction
+        $this->db->beginTransaction();
+        try {
+            // 4a. Deduct Credits
+            $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
+
+            // 4b. Deduct Prerequisite Item (if applicable)
+            if ($prereqKey) {
+                $this->armoryRepo->updateItemQuantity($userId, $prereqKey, -$quantity);
+            }
+
+            // 4c. Add New Item
+            $this->armoryRepo->updateItemQuantity($userId, $itemKey, +$quantity);
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            error_log('Armory Manufacture Error: ' . $e->getMessage());
+            $this->session->setFlash('error', 'A database error occurred during manufacturing.');
+            return false;
+        }
+
+        $this->session->setFlash('success', "Successfully manufactured {$quantity}x " . $item['name'] . ".");
+        return true;
+    }
+
+    /**
+     * Equips an item to a unit's loadout slot.
+     *
+     * @param int $userId
+     * @param string $unitKey
+     * @param string $categoryKey
+     * @param string $itemKey
+     * @return bool True on success
+     */
+    public function equipItem(int $userId, string $unitKey, string $categoryKey, string $itemKey): bool
+    {
+        // 1. Validate inputs
+        if (empty($unitKey) || empty($categoryKey)) {
+            $this->session->setFlash('error', 'Invalid loadout data provided.');
+            return false;
+        }
+        
+        // 2. Check that this is a valid assignment
+        // Handle "None Equipped"
+        if (empty($itemKey)) {
+            // --- THIS IS THE FIX ---
+            // This call will now succeed because the method exists
+            $this->armoryRepo->clearLoadoutSlot($userId, $unitKey, $categoryKey); 
+            $this->session->setFlash('success', "Loadout slot cleared for " . $this->armoryConfig[$unitKey]['title'] . ".");
+            return true;
+        }
+
+        $item = $this->findItemByKey($itemKey);
+        $isValid = isset($this->armoryConfig[$unitKey]['categories'][$categoryKey]['items'][$itemKey]);
+
+        if (!$item || !$isValid) {
+            $this->session->setFlash('error', 'That item cannot be equipped to that slot.');
+            return false;
+        }
+        
+        // (We do NOT check for quantity here. A user can equip an item they
+        // have 0 of. The battle logic will handle the bonus calculation.)
+
+        // 3. Execute Update
+        $this->armoryRepo->setLoadout($userId, $unitKey, $categoryKey, $itemKey);
+        $this->session->setFlash('success', $item['name'] . " is now the standard issue for all " . $this->armoryConfig[$unitKey]['title'] . ".");
+        return true;
+    }
+
+    /**
+     * Calculates the total stat bonus for a unit stack based on their loadout
+     * and the available inventory.
+     *
+     * @param int $userId
+     * @param string $unitKey (e.g., 'soldier')
+     * @param string $statType (e.g., 'attack' or 'defense')
+     * @param int $unitCount (e.g., 1000 soldiers)
+     * @return int The total aggregate bonus.
+     */
+    public function getAggregateBonus(int $userId, string $unitKey, string $statType, int $unitCount): int
+    {
+        if ($unitCount <= 0) {
+            return 0;
+        }
+
+        // 1. Get all required data
+        $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
+        $inventory = $this->armoryRepo->getInventory($userId);
+        
+        // 2. Get the categories for this unit (e.g., 'main_weapon', 'sidearm', ...)
+        $categories = $this->armoryConfig[$unitKey]['categories'] ?? [];
+        if (empty($categories)) {
+            return 0; // This unit has no armory slots
+        }
+
+        $totalBonus = 0;
+
+        // 3. Loop through each category slot for the unit
+        foreach ($categories as $categoryKey => $categoryData) {
+            
+            // 4. Find what item is equipped in this slot
+            $equippedItemKey = $loadouts[$unitKey][$categoryKey] ?? null;
+            if (!$equippedItemKey) {
+                continue; // Nothing equipped in this slot
+            }
+
+            // 5. Get the item's details and stat bonus
+            $item = $this->findItemByKey($equippedItemKey);
+            $itemBonus = $item[$statType] ?? 0;
+            if (!$item || $itemBonus === 0) {
+                continue; // This item doesn't provide the stat we're looking for
+            }
+
+            // 6. Get the inventory count for this item
+            $itemInStock = $inventory[$equippedItemKey] ?? 0;
+            if ($itemInStock === 0) {
+                continue; // User equipped an item they have 0 of
+            }
+
+            // 7. This is our core logic: min(units, items_in_stock)
+            $eligibleUnits = min($unitCount, $itemInStock);
+
+            // 8. Add the bonus for those units
+            $totalBonus += ($eligibleUnits * $itemBonus);
+        }
+
+        return $totalBonus;
+    }
+
+    /**
+     * Helper function to find an item's data from the nested config array.
+     *
+     * @param string $itemKey
+     * @return array|null
+     */
+    private function findItemByKey(string $itemKey): ?array
+    {
+        foreach ($this->armoryConfig as $unitData) {
+            foreach ($unitData['categories'] as $categoryData) {
+                if (isset($categoryData['items'][$itemKey])) {
+                    return $categoryData['items'][$itemKey];
+                }
+            }
+        }
+        return null;
+    }
+}

@@ -10,6 +10,7 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
+use App\Models\Services\ArmoryService; // NEW: Import ArmoryService
 use PDO;
 use Throwable;
 
@@ -26,6 +27,7 @@ class SpyService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private SpyRepository $spyRepo;
+    private ArmoryService $armoryService; // NEW: Add ArmoryService property
 
     public function __construct()
     {
@@ -33,12 +35,12 @@ class SpyService
         $this->session = new Session();
         $this->config = new Config();
         
-        // This service needs all five repositories for its complex logic
         $this->userRepo = new UserRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->structureRepo = new StructureRepository($this->db);
         $this->statsRepo = new StatsRepository($this->db);
         $this->spyRepo = new SpyRepository($this->db);
+        $this->armoryService = new ArmoryService(); // NEW: Instantiate ArmoryService
     }
 
     /**
@@ -124,21 +126,37 @@ class SpyService
         $turnCost = $config['attack_turn_cost'];
 
         if ($spiesSent <= 0) {
-            $this->session->setFlash('error', 'You have no spies to send.');
+            $this.session->setFlash('error', 'You have no spies to send.');
             return false;
         }
         if ($attackerResources->credits < $creditCost) {
-            $this->session->setFlash('error', 'You do not have enough credits to send all your spies.');
+            $this.session->setFlash('error', 'You do not have enough credits to send all your spies.');
             return false;
         }
         if ($attackerStats->attack_turns < $turnCost) {
-            $this->session->setFlash('error', 'You do not have enough attack turns.');
+            $this.session->setFlash('error', 'You do not have enough attack turns.');
             return false;
         }
 
-        // --- 4. Calculate Spy Roll (Success/Failure) ---
-        $offense = $spiesSent * (1 + ($attackerStructures->spy_upgrade_level * $config['offense_power_per_level']));
-        $defense = $defenderResources->sentries * (1 + ($defenderStructures->spy_upgrade_level * $config['defense_power_per_level']));
+        // --- 4. Calculate Spy Roll (REVISED WITH ARMORY) ---
+        
+        // 4a. Spy Offense
+        // Using an implicit base power of 1.0 for spies
+        $baseSpyPower = $spiesSent * ($config['base_power_per_spy'] ?? 1.0); 
+        $attackerArmoryBonus = $this->armoryService->getAggregateBonus($attackerId, 'spy', 'attack', $spiesSent);
+        $totalSpyBasePower = $baseSpyPower + $attackerArmoryBonus;
+        
+        $offense = $totalSpyBasePower * (1 + ($attackerStructures->spy_upgrade_level * $config['offense_power_per_level']));
+
+        // 4b. Sentry Defense
+        // Using an implicit base power of 1.0 for sentries
+        $baseSentryPower = $defenderResources->sentries * ($config['base_power_per_sentry'] ?? 1.0);
+        $defenderArmoryBonus = $this->armoryService->getAggregateBonus($defender->id, 'sentry', 'defense', $defenderResources->sentries);
+        $totalSentryBasePower = $baseSentryPower + $defenderArmoryBonus;
+
+        $defense = $totalSentryBasePower * (1 + ($defenderStructures->spy_upgrade_level * $config['defense_power_per_level']));
+
+        
         $totalPower = $offense + $defense;
 
         $successChance = $totalPower > 0 ? ($offense / $totalPower) * $config['base_success_multiplier'] : 1;
@@ -205,7 +223,7 @@ class SpyService
             // 8f. Rollback on failure
             $this->db->rollBack();
             error_log('Spy Operation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. The operation was cancelled.');
+            $this.session->setFlash('error', 'A database error occurred. The operation was cancelled.');
             return false;
         }
 
@@ -214,7 +232,7 @@ class SpyService
         if ($isCaught && $sentriesLost > 0) {
             $message .= " You destroyed {$sentriesLost} enemy sentries.";
         }
-        $this->session->setFlash('success', $message);
+        $this.session->setFlash('success', $message);
         return true;
     }
 }

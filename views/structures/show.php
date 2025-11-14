@@ -13,10 +13,6 @@
         --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
     }
 
-    body {
-        background: var(--bg);
-    }
-
     .structures-container {
         width: 100%;
         max-width: 1400px;

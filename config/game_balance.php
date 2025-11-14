@@ -74,6 +74,8 @@ return [
     'spy' => [
         'attack_turn_cost' => 1,
         'cost_per_spy' => 1000, // Credits
+        'base_power_per_spy' => 1.0, // NEW: Base spy power
+        'base_power_per_sentry' => 1.0, // NEW: Base sentry power
         'base_success_multiplier' => 1.5,
         'base_success_chance_floor' => 0.05, // 5% min chance
         'base_success_chance_cap' => 0.95,   // 95% max chance

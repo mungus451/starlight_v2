@@ -10,6 +10,7 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\BattleRepository;
+use App\Models\Services\ArmoryService; // NEW: Import ArmoryService
 use PDO;
 use Throwable;
 
@@ -26,6 +27,7 @@ class AttackService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private BattleRepository $battleRepo;
+    private ArmoryService $armoryService; // NEW: Add ArmoryService property
 
     public function __construct()
     {
@@ -38,6 +40,7 @@ class AttackService
         $this->structureRepo = new StructureRepository($this->db);
         $this->statsRepo = new StatsRepository($this->db);
         $this->battleRepo = new BattleRepository($this->db);
+        $this->armoryService = new ArmoryService(); // NEW: Instantiate ArmoryService
     }
 
     /**
@@ -112,7 +115,7 @@ class AttackService
         $defender = $this->userRepo->findByCharacterName($targetName);
 
         if (!$defender) {
-            $this.session->setFlash('error', "Character '{$targetName}' not found.");
+            $this->session->setFlash('error', "Character '{$targetName}' not found.");
             return false;
         }
         if ($defender->id === $attackerId) {
@@ -138,17 +141,34 @@ class AttackService
             return false;
         }
         if ($attackerStats->attack_turns < $turnCost) {
-            $this.session->setFlash('error', 'You do not have enough attack turns.');
+            $this->session->setFlash('error', 'You do not have enough attack turns.');
             return false;
         }
 
-        // --- 4. Calculate Battle Power ---
-        $offensePower = ($soldiersSent * $config['power_per_soldier']) * (1 + ($attackerStructures->offense_upgrade_level * $config['power_per_offense_level']) + 
-             ($attackerStats->strength_points * $config['power_per_strength_point']));
+        // --- 4. Calculate Battle Power (REVISED WITH ARMORY) ---
+
+        // 4a. Attacker Offense Power
+        $baseSoldierPower = $soldiersSent * $config['power_per_soldier'];
+        $attackerArmoryBonus = $this->armoryService->getAggregateBonus($attackerId, 'soldier', 'attack', $soldiersSent);
+        $totalAttackerBasePower = $baseSoldierPower + $attackerArmoryBonus;
         
-        $defensePower = ($defenderResources->guards * $config['power_per_guard']) * (1 + ($defenderStructures->fortification_level * $config['power_per_fortification_level']) + 
-             ($defenderStructures->defense_upgrade_level * $config['power_per_defense_level']) + 
-             ($defenderStats->constitution_points * $config['power_per_constitution_point']));
+        $offensePower = $totalAttackerBasePower * (
+            1 + 
+            ($attackerStructures->offense_upgrade_level * $config['power_per_offense_level']) + 
+            ($attackerStats->strength_points * $config['power_per_strength_point'])
+        );
+        
+        // 4b. Defender Defense Power
+        $baseGuardPower = $defenderResources->guards * $config['power_per_guard'];
+        $defenderArmoryBonus = $this->armoryService->getAggregateBonus($defender->id, 'guard', 'defense', $defenderResources->guards);
+        $totalDefenderBasePower = $baseGuardPower + $defenderArmoryBonus;
+
+        $defensePower = $totalDefenderBasePower * (
+            1 + 
+            ($defenderStructures->fortification_level * $config['power_per_fortification_level']) + 
+            ($defenderStructures->defense_upgrade_level * $config['power_per_defense_level']) + 
+            ($defenderStats->constitution_points * $config['power_per_constitution_point'])
+        );
 
         // --- 5. Determine Outcome ---
         $attackResult = 'defeat'; // Default
