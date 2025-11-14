@@ -27,7 +27,12 @@ class TrainingController extends BaseController
         // Get both resources and costs from the service
         $data = $this->trainingService->getTrainingData($userId);
 
-        $this->render('training/show.php', $data + ['title' => 'Training']);
+        // --- THIS IS THE FIX ---
+        // Render in full-width mode to match Structures/Armory
+        $this->render('training/show.php', $data + [
+            'title' => 'Training',
+            'layoutMode' => 'full'
+        ]);
     }
 
     /**
