@@ -16,7 +16,7 @@ use App\Controllers\AllianceRoleController;
 use App\Controllers\ArmoryController;
 use App\Controllers\PagesController;
 use App\Controllers\ProfileController;
-use App\Controllers\FileController; // --- NEW ---
+use App\Controllers\FileController;
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -66,8 +66,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Public Profile Route ---
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
 
-    // --- NEW: Secure File Serving Route ---
+    // --- Secure File Serving Routes ---
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
+    $r->addRoute('GET', '/serve/alliance-avatar/{filename}', [FileController::class, 'showAllianceAvatar']); // --- NEW ---
 
     // --- Phase 3: Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
@@ -222,7 +223,9 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/invite/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/serve/avatar/')) { // --- NEW ---
+                } elseif (str_starts_with($uri, '/serve/avatar/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/serve/alliance-avatar/')) { // --- NEW ---
                     $isProtected = true;
                 }
             }

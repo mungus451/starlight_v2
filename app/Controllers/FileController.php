@@ -66,4 +66,49 @@ class FileController extends BaseController
         readfile($filePath);
         exit;
     }
+    
+    /**
+     * --- NEW METHOD ---
+     * Serves an alliance's avatar.
+     * This route is protected by AuthMiddleware in index.php.
+     *
+     * @param array $vars ['filename' => string]
+     */
+    public function showAllianceAvatar(array $vars): void
+    {
+        $filename = $vars['filename'] ?? '';
+
+        // 1. Basic validation
+        if (empty($filename) || str_contains($filename, '..') || str_contains($filename, '/')) {
+            http_response_code(404);
+            echo '404 - Not Found';
+            return;
+        }
+
+        // 2. Check if file exists in the correct directory
+        $filePath = $this->storageRoot . '/alliance_avatars/' . $filename;
+        if (!file_exists($filePath) || !is_readable($filePath)) {
+            http_response_code(404);
+            echo '404 - Not Found';
+            return;
+        }
+
+        // 3. Get MIME type
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($filePath);
+
+        // 4. Validate MIME type is an image
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            http_response_code(404);
+            echo '404 - Not a valid image';
+            return;
+        }
+
+        // 5. Stream the file
+        header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filePath));
+        readfile($filePath);
+        exit;
+    }
 }

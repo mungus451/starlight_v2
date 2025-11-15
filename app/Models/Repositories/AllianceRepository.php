@@ -96,28 +96,28 @@ class AllianceRepository
         return $alliances;
     }
 
-    // --- NEW METHOD FOR PHASE 13 ---
+    // --- METHOD MODIFIED FOR FILE UPLOADS ---
     
     /**
      * Updates an alliance's public profile.
      *
      * @param int $allianceId
      * @param string $description
-     * @param string $pfpUrl
+     * @param string|null $profile_picture_filename (This now stores a filename, not a URL)
      * @return bool
      */
-    public function updateProfile(int $allianceId, string $description, string $pfpUrl): bool
+    public function updateProfile(int $allianceId, string $description, ?string $profile_picture_filename): bool
     {
         $description = empty($description) ? null : $description;
-        $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
+        // $profile_picture_filename can be null, so no check needed
 
         $stmt = $this->db->prepare(
             "UPDATE alliances SET description = ?, profile_picture_url = ? WHERE id = ?"
         );
-        return $stmt->execute([$description, $pfpUrl, $allianceId]);
+        return $stmt->execute([$description, $profile_picture_filename, $allianceId]);
     }
 
-    // --- END NEW METHOD ---
+    // --- END MODIFIED METHOD ---
 
     /**
      * Helper method to convert a database row into an Alliance entity.

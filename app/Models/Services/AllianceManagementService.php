@@ -8,7 +8,7 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
-use App\Models\Services\AlliancePolicyService; 
+use App\Models\Services\AlliancePolicyService;
 use PDO;
 use Throwable;
 
@@ -23,7 +23,13 @@ class AllianceManagementService
     private UserRepository $userRepo;
     private ApplicationRepository $appRepo;
     private AllianceRoleRepository $roleRepo;
-    private AlliancePolicyService $policyService; // --- NEW ---
+    private AlliancePolicyService $policyService;
+    
+    /**
+     * --- NEW ---
+     * Defines the server-side base path for the private 'storage' directory.
+     */
+    private string $storageRoot;
 
     public function __construct()
     {
@@ -34,7 +40,11 @@ class AllianceManagementService
         $this->userRepo = new UserRepository($this->db);
         $this->appRepo = new ApplicationRepository($this->db);
         $this->roleRepo = new AllianceRoleRepository($this->db);
-        $this->policyService = new AlliancePolicyService(); // --- NEW ---
+        $this->policyService = new AlliancePolicyService();
+        
+        // --- NEW ---
+        // Define the storage root relative to this file
+        $this->storageRoot = realpath(__DIR__ . '/../../../storage');
     }
 
     /**
@@ -231,39 +241,149 @@ class AllianceManagementService
             return false;
         }
         
-        $this.session->setFlash('success', $targetUser->characterName . ' has accepted your invite and joined the alliance!');
+        $this->session->setFlash('success', $targetUser->characterName . ' has accepted your invite and joined the alliance!');
         return true;
     }
 
     
-    // --- METHODS FOR PHASE 13 ---
+    // --- METHOD MODIFIED FOR FILE UPLOADS ---
 
     /**
      * Updates an alliance's public profile.
+     *
+     * @param int $adminId
+     * @param int $allianceId
+     * @param string $description
+     * @param array $file The $_FILES['profile_picture'] array
+     * @param bool $removePhoto True if the "Remove Photo" checkbox was checked
+     * @return bool
      */
-    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl): bool
+    public function updateProfile(int $adminId, int $allianceId, string $description, array $file, bool $removePhoto): bool
     {
         if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
             $this->session->setFlash('error', 'You do not have permission to edit the profile.');
             return false;
         }
         
-        if (!empty($pfpUrl) && !filter_var($pfpUrl, FILTER_VALIDATE_URL)) {
-            $this->session->setFlash('error', 'Profile picture must be a valid URL.');
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if (!$alliance) {
+            $this->session->setFlash('error', 'Alliance not found.');
             return false;
         }
 
-        $this->allianceRepo->updateProfile($allianceId, $description, $pfpUrl);
+        $currentPfpFilename = $alliance->profile_picture_url;
+        $newPfpFilename = $currentPfpFilename;
+
+        // --- Logic Branch 1: Remove Photo ---
+        if ($removePhoto) {
+            $this->deleteAvatarFile($currentPfpFilename);
+            $newPfpFilename = null; // Set to NULL in DB
+        }
+        
+        // --- Logic Branch 2: New File Uploaded ---
+        elseif (isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
+            // A new file is present, process it
+            $validatedFilename = $this->processUploadedAvatar($file, $allianceId, $currentPfpFilename);
+            
+            if ($validatedFilename === null) {
+                // processUploadedAvatar sets its own flash error
+                return false; 
+            }
+            $newPfpFilename = $validatedFilename;
+        }
+
+        // --- Logic Branch 3: No change ---
+        // (Handled by defaults)
+
+        $this->allianceRepo->updateProfile($allianceId, $description, $newPfpFilename);
         $this->session->setFlash('success', 'Alliance profile updated.');
         return true;
     }
+    
+    // --- NEW FILE UPLOAD METHODS (Adapted from SettingsService) ---
+
+    /**
+     * Validates and saves a new alliance avatar, and deletes the old one.
+     *
+     * @param array $file The file array from $_FILES
+     * @param int $allianceId The alliance ID for naming
+     * @param string|null $currentPfpFilename The filename of the old avatar to delete
+     * @return string|null The new *filename* on success, or null on failure
+     */
+    private function processUploadedAvatar(array $file, int $allianceId, ?string $currentPfpFilename): ?string
+    {
+        // 1. Validate Upload Error
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->session->setFlash('error', 'An error occurred during file upload. Code: ' . $file['error']);
+            return null;
+        }
+
+        // 2. Validate Size (2MB limit)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            $this->session->setFlash('error', 'File is too large. Maximum size is 2MB.');
+            return null;
+        }
+
+        // 3. Validate Type
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            $this->session->setFlash('error', 'Uploaded file is not a valid image.');
+            return null;
+        }
+
+        $mime = $imageInfo['mime'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        if (!in_array($mime, $allowedMimes)) {
+            $this->session->setFlash('error', 'Invalid file type. Allowed types: JPEG, PNG, GIF, WebP, AVIF.');
+            return null;
+        }
+        
+        // 4. Generate New Path
+        $extension = image_type_to_extension($imageInfo[2]); // e.g., '.jpeg'
+        $filename = "alliance_{$allianceId}_" . time() . $extension;
+        
+        // Save to the private 'storage/alliance_avatars' directory
+        $uploadDir = $this->storageRoot . '/alliance_avatars/';
+        $filePath = $uploadDir . $filename; // Full server path
+
+        // 5. Move File
+        if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+            $this->session->setFlash('error', 'Failed to save uploaded file. Check server permissions.');
+            return null;
+        }
+        
+        // 6. Delete old file (only after new one is successfully moved)
+        $this->deleteAvatarFile($currentPfpFilename);
+
+        return $filename;
+    }
+
+    /**
+     * Safely deletes an old alliance avatar file from the server.
+     *
+     * @param string|null $filename The filename from the DB
+     */
+    private function deleteAvatarFile(?string $filename): void
+    {
+        if (empty($filename)) {
+            return; // No file to delete
+        }
+        
+        $filePath = $this->storageRoot . '/alliance_avatars/' . $filename;
+        
+        if (file_exists($filePath) && is_writable($filePath)) {
+            @unlink($filePath);
+        }
+    }
+
+    // --- END NEW FILE UPLOAD METHODS ---
 
     /**
      * Kicks a member from an alliance.
      */
     public function kickMember(int $adminId, int $targetUserId): bool
     {
-        // --- 1. GET DATA (REFACTORED) ---
+        // --- 1. GET DATA ---
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
         
@@ -280,7 +400,7 @@ class AllianceManagementService
             return false;
         }
         
-        // --- 2. AUTHORIZATION (REFACTORED) ---
+        // --- 2. AUTHORIZATION ---
         $authError = $this->policyService->canKick($adminUser, $adminRole, $targetUser, $targetRole);
         if ($authError !== null) {
             $this->session->setFlash('error', $authError);
@@ -298,7 +418,7 @@ class AllianceManagementService
      */
     public function changeMemberRole(int $adminId, int $targetUserId, int $newRoleId): bool
     {
-        // --- 1. GET DATA (REFACTORED) ---
+        // --- 1. GET DATA ---
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
         
@@ -316,11 +436,11 @@ class AllianceManagementService
             return false;
         }
         if (!$newRole) {
-            $this.session->setFlash('error', 'The selected role does not exist.');
+            $this->session->setFlash('error', 'The selected role does not exist.');
             return false;
         }
 
-        // --- 2. AUTHORIZATION (REFACTORED) ---
+        // --- 2. AUTHORIZATION ---
         $authError = $this->policyService->canAssignRole($adminUser, $adminRole, $targetUser, $targetRole, $newRole);
         if ($authError !== null) {
             $this->session->setFlash('error', $authError);
@@ -358,7 +478,7 @@ class AllianceManagementService
     {
         $role = $this->roleRepo->findById($roleId);
         if (!$role) {
-            $this.session->setFlash('error', 'Role not found.');
+            $this->session->setFlash('error', 'Role not found.');
             return false;
         }
 
@@ -369,12 +489,12 @@ class AllianceManagementService
         
         // Prevent editing default roles
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this.session->setFlash('error', 'You cannot edit default roles.');
+            $this->session->setFlash('error', 'You cannot edit default roles.');
             return false;
         }
 
         $this->roleRepo->update($roleId, $name, $permissions);
-        $this.session->setFlash('success', "Role '{$name}' updated.");
+        $this->session->setFlash('success', "Role '{$name}' updated.");
         return true;
     }
 
@@ -390,13 +510,13 @@ class AllianceManagementService
         }
 
         if (!$this->checkPermission($adminId, $role->alliance_id, 'can_manage_roles')) {
-            $this->session->setFlash('error', 'You do not have permission to delete roles.');
+            $this->session->setFlash('error', 'You do not have permission to delete roles. Maybe you should ask the leader nicely ;)');
             return false;
         }
 
         // Prevent deleting default roles
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this.session->setFlash('error', 'You cannot delete default roles.');
+            $this->session->setFlash('error', 'You cannot delete default roles.');
             return false;
         }
         

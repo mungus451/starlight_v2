@@ -83,7 +83,7 @@ class AllianceManagementController extends BaseController
 
         $this->mgmtService->leaveAlliance($userId);
         
-        $this->redirect('/alliance/profile/' . $allianceId);
+        $this.redirect('/alliance/profile/' . $allianceId);
     }
 
     /**
@@ -158,6 +158,7 @@ class AllianceManagementController extends BaseController
     // --- METHODS FOR PHASE 13 ---
 
     /**
+     * --- METHOD MODIFIED FOR FILE UPLOADS ---
      * Handles updating the alliance's public profile (desc, image).
      */
     public function handleUpdateProfile(): void
@@ -173,10 +174,17 @@ class AllianceManagementController extends BaseController
             return;
         }
 
+        // --- Get data from form ---
         $description = (string)($_POST['description'] ?? '');
-        $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
+        
+        // Get file upload data, defaulting to "no file" error
+        $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
+        
+        // Check if the "remove" checkbox was sent
+        $removePhoto = isset($_POST['remove_picture']) && $_POST['remove_picture'] === '1';
 
-        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl);
+        // --- Pass all data to the service ---
+        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $file, $removePhoto);
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
