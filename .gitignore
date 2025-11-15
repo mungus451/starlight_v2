@@ -15,3 +15,4 @@
 #User Uploaded Data
 /public/uploads/avatars/*
 /storage/avatars/*
+/storage/alliance_avatars/*
