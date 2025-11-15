@@ -47,11 +47,15 @@ class AllianceRoleController extends BaseController
 
         $roles = $this->roleRepo->findByAllianceId($allianceId);
 
-        $this->render('alliance/manage_roles.php', [
+        // --- THIS IS THE CHANGE ---
+        $data = [
             'title' => 'Manage Alliance Roles',
             'roles' => $roles,
-            'alliance_id' => $allianceId
-        ]);
+            'alliance_id' => $allianceId,
+            'layoutMode' => 'full' // Use the full-width layout
+        ];
+
+        $this->render('alliance/manage_roles.php', $data);
     }
 
     /**

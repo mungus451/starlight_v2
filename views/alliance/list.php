@@ -1,53 +1,100 @@
+<?php
+// --- Helper variables from the controller ---
+/* @var \App\Models\Entities\Alliance[] $alliances */
+/* @var array $pagination */
+/* @var int $perPage */
+?>
+
 <style>
-    .alliance-container {
+    :root {
+        --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.07), rgba(13, 15, 27, 0.6));
+        --border: rgba(255, 255, 255, 0.03);
+        --accent: #2dd1d1;
+        --accent-2: #f9c74f;
+        --text: #eff1ff;
+        --muted: #a8afd4;
+        --radius: 18px;
+        --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* --- Base Container --- */
+    .alliance-container-full {
         width: 100%;
-        max-width: 800px;
-        text-align: left;
+        max-width: 1400px;
+        margin-inline: auto;
+        padding: 0;
+        position: relative;
     }
-    .alliance-container h1 {
+
+    .alliance-container-full h1 {
         text-align: center;
+        margin-bottom: 2rem;
+        font-size: clamp(2.1rem, 3vw, 2.6rem);
+        letter-spacing: -0.03em;
+        color: #fff;
+        padding-top: 1.5rem;
     }
-    .data-card {
-        background: #2a2a4a;
-        border: 1px solid #3a3a5a;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-    .data-card h3 {
-        color: #f9c74f;
-        margin-top: 0;
-        border-bottom: 1px solid #3a3a5a;
-        padding-bottom: 0.5rem;
+
+    /* --- List Table (from Battle) --- */
+    .alliance-table-container {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        box-shadow: var(--shadow);
+        overflow-x: auto;
+        max-width: 1000px;
+        margin: 0 auto 1.5rem auto;
     }
     
-    /* Alliance List Table */
+    .alliance-table-container .btn-submit {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto 1.5rem auto;
+        text-align: center;
+    }
+
     .alliance-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 1rem;
+        min-width: 600px;
     }
     .alliance-table th, .alliance-table td {
-        padding: 0.75rem;
+        padding: 0.75rem 1rem;
         text-align: left;
-        border-bottom: 1px solid #3a3a5a;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
     }
     .alliance-table th {
-        color: #f9c74f;
+        color: var(--accent-2);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
-    .alliance-table tr:nth-child(even) {
-        background: #2a2a4a;
+    .alliance-table tr:last-child td {
+        border-bottom: none;
     }
-    .alliance-table a {
-        color: #7683f5;
-        font-weight: bold;
+
+    .alliance-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    .alliance-name a {
+        color: var(--text);
         text-decoration: none;
     }
-    .alliance-table a:hover {
+    .alliance-name a:hover {
         text-decoration: underline;
+        color: var(--accent);
     }
-    
-    /* Pagination */
+    .alliance-tag {
+        font-weight: 700;
+        color: var(--accent-2);
+        font-size: 1.1rem;
+    }
+
+    /* --- Pagination (from Battle) --- */
     .pagination {
         display: flex;
         justify-content: center;
@@ -56,29 +103,32 @@
         margin-top: 1.5rem;
     }
     .pagination a, .pagination span {
-        color: #e0e0e0;
+        color: var(--muted);
         text-decoration: none;
         padding: 0.5rem 0.75rem;
         border-radius: 5px;
-        border: 1px solid #3a3a5a;
+        border: 1px solid var(--border);
+        background: var(--card);
     }
     .pagination a:hover {
-        background: #3a3a5a;
+        background: rgba(255,255,255, 0.03);
+        color: #fff;
+        border-color: var(--accent);
     }
     .pagination span {
-        background: #5a67d8;
-        color: white;
-        border-color: #5a67d8;
+        background: var(--accent);
+        color: #02030a;
+        border-color: var(--accent);
         font-weight: bold;
     }
 </style>
 
-<div class="alliance-container">
+<div class="alliance-container-full">
     <h1>Alliances</h1>
 
-    <div class="data-card">
-        <h3>Find an Alliance</h3>
-        <a href="/alliance/create" class="btn-submit" style="text-align: center; display: block; margin-bottom: 1.5rem;">
+    <div class="alliance-table-container">
+        
+        <a href="/alliance/create" class="btn-submit" style="background: var(--accent); color: #02030a;">
             Found a New Alliance
         </a>
 
@@ -92,15 +142,19 @@
             </thead>
             <tbody>
                 <?php if (empty($alliances)): ?>
-                    <tr><td colspan="3" style="text-align: center;">There are no alliances... yet.</td></tr>
+                    <tr><td colspan="3" style="text-align: center; color: var(--muted); padding: 2rem;">There are no alliances... yet.</td></tr>
                 <?php else: ?>
                     <?php foreach ($alliances as $alliance): ?>
                         <tr>
-                            <td>[<?= htmlspecialchars($alliance->tag) ?>]</td>
                             <td>
-                                <a href="/alliance/profile/<?= $alliance->id ?>">
-                                    <?= htmlspecialchars($alliance->name) ?>
-                                </a>
+                                <span class="alliance-tag">[<?= htmlspecialchars($alliance->tag) ?>]</span>
+                            </td>
+                            <td>
+                                <span class="alliance-name">
+                                    <a href="/alliance/profile/<?= $alliance->id ?>">
+                                        <?= htmlspecialchars($alliance->name) ?>
+                                    </a>
+                                </span>
                             </td>
                             <td><?= number_format($alliance->net_worth) ?></td>
                         </tr>

@@ -25,6 +25,9 @@ class AllianceController extends BaseController
         $page = (int)($vars['page'] ?? 1);
         $data = $this->allianceService->getAlliancePageData($page);
 
+        // --- Use full-width layout ---
+        $data['layoutMode'] = 'full';
+
         $this->render('alliance/list.php', $data + ['title' => 'Alliances']);
     }
 
@@ -45,6 +48,9 @@ class AllianceController extends BaseController
             return;
         }
 
+        // --- Use full-width layout ---
+        $data['layoutMode'] = 'full';
+
         $this->render('alliance/profile.php', $data + ['title' => $data['alliance']->name]);
     }
 
@@ -59,9 +65,12 @@ class AllianceController extends BaseController
         // If user is already in an alliance, redirect them to their alliance profile
         if ($data['user'] && $data['user']->alliance_id !== null) {
             $this->session->setFlash('error', 'You are already in an alliance.');
-            $this->redirect('/alliance/profile/' . $data['user']->alliance_id);
+            $this->redirect('/alliance/profile/'. $data['user']->alliance_id);
             return;
         }
+
+        // --- Use full-width layout ---
+        $data['layoutMode'] = 'full';
 
         $this->render('alliance/create.php', $data + ['title' => 'Create Alliance']);
     }

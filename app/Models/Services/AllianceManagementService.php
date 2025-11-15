@@ -8,6 +8,7 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
+use App\Models\Services\AlliancePolicyService; 
 use PDO;
 use Throwable;
 
@@ -22,6 +23,7 @@ class AllianceManagementService
     private UserRepository $userRepo;
     private ApplicationRepository $appRepo;
     private AllianceRoleRepository $roleRepo;
+    private AlliancePolicyService $policyService; // --- NEW ---
 
     public function __construct()
     {
@@ -32,6 +34,7 @@ class AllianceManagementService
         $this->userRepo = new UserRepository($this->db);
         $this->appRepo = new ApplicationRepository($this->db);
         $this->roleRepo = new AllianceRoleRepository($this->db);
+        $this->policyService = new AlliancePolicyService(); // --- NEW ---
     }
 
     /**
@@ -200,7 +203,7 @@ class AllianceManagementService
             return false;
         }
         if ($targetUser->alliance_id !== null) {
-            $this->session->setFlash('error', 'That player is already in an alliance.');
+            $this.session->setFlash('error', 'That player is already in an alliance.');
             return false;
         }
         
@@ -233,7 +236,7 @@ class AllianceManagementService
     }
 
     
-    // --- NEW METHODS FOR PHASE 13 ---
+    // --- METHODS FOR PHASE 13 ---
 
     /**
      * Updates an alliance's public profile.
@@ -260,42 +263,31 @@ class AllianceManagementService
      */
     public function kickMember(int $adminId, int $targetUserId): bool
     {
+        // --- 1. GET DATA (REFACTORED) ---
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
-
-        if (!$adminUser || !$targetUser || $adminUser->alliance_id === null) {
-            $this->session->setFlash('error', 'Invalid operation.');
-            return false;
-        }
         
-        if ($adminUser->alliance_id !== $targetUser->alliance_id) {
-            $this->session->setFlash('error', 'This user is not in your alliance.');
+        if (!$adminUser || !$targetUser) {
+            $this->session->setFlash('error', 'Invalid operation.');
             return false;
         }
 
         $adminRole = $this->roleRepo->findById($adminUser->alliance_role_id);
-        // --- THIS IS THE FIX ---
-        $targetRole = null;
-        if ($targetUser->alliance_role_id !== null) {
-            $targetRole = $this->roleRepo->findById($targetUser->alliance_role_id);
-        }
+        $targetRole = $this->roleRepo->findById($targetUser->alliance_role_id); // findById handles null correctly
 
-        if (!$adminRole || !$adminRole->can_kick_members) {
-            $this->session->setFlash('error', 'You do not have permission to kick members.');
+        if (!$adminRole) {
+            $this->session->setFlash('error', 'You do not have an administrative role.');
             return false;
         }
         
-        if ($targetRole && $targetRole->name === 'Leader') {
-            $this->session->setFlash('error', 'You cannot kick the alliance Leader.');
-            return false;
-        }
-        
-        // Check for role hierarchy (e.g., Officer can't kick Officer)
-        if ($targetRole && $adminRole->sort_order >= $targetRole->sort_order) {
-            $this->session->setFlash('error', 'You can only kick members with a lower role than your own.');
+        // --- 2. AUTHORIZATION (REFACTORED) ---
+        $authError = $this->policyService->canKick($adminUser, $adminRole, $targetUser, $targetRole);
+        if ($authError !== null) {
+            $this->session->setFlash('error', $authError);
             return false;
         }
 
+        // --- 3. EXECUTION ---
         $this->userRepo->leaveAlliance($targetUserId);
         $this->session->setFlash('success', $targetUser->characterName . ' has been kicked from the alliance.');
         return true;
@@ -306,43 +298,36 @@ class AllianceManagementService
      */
     public function changeMemberRole(int $adminId, int $targetUserId, int $newRoleId): bool
     {
+        // --- 1. GET DATA (REFACTORED) ---
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
-
-        if (!$adminUser || !$targetUser || $adminUser->alliance_id === null) {
+        
+        if (!$adminUser || !$targetUser) {
             $this->session->setFlash('error', 'Invalid operation.');
             return false;
         }
 
         $adminRole = $this->roleRepo->findById($adminUser->alliance_role_id);
-        // --- THIS IS THE FIX ---
-        $targetRole = null;
-        if ($targetUser->alliance_role_id !== null) {
-            $targetRole = $this->roleRepo->findById($targetUser->alliance_role_id);
-        }
-        
+        $targetRole = $this->roleRepo->findById($targetUser->alliance_role_id);
         $newRole = $this->roleRepo->findById($newRoleId);
 
-        if (!$adminRole || !$adminRole->can_manage_roles) {
-            $this->session->setFlash('error', 'You do not have permission to manage roles.');
+        if (!$adminRole) {
+            $this->session->setFlash('error', 'You do not have an administrative role.');
             return false;
         }
-        
-        if ($targetUser->alliance_id !== $adminUser->alliance_id || !$newRole || $newRole->alliance_id !== $adminUser->alliance_id) {
-            $this->session->setFlash('error', 'Target user or role is not in your alliance.');
-            return false;
-        }
-
-        if (($targetRole && $targetRole->name === 'Leader') || $newRole->name === 'Leader') {
-            $this->session->setFlash('error', 'You cannot promote to or demote from the Leader role.');
-            return false;
-        }
-        
-        if ($adminRole->sort_order >= $newRole->sort_order) {
-            $this->session->setFlash('error', 'You can only assign roles with a lower rank than your own.');
+        if (!$newRole) {
+            $this.session->setFlash('error', 'The selected role does not exist.');
             return false;
         }
 
+        // --- 2. AUTHORIZATION (REFACTORED) ---
+        $authError = $this->policyService->canAssignRole($adminUser, $adminRole, $targetUser, $targetRole, $newRole);
+        if ($authError !== null) {
+            $this->session->setFlash('error', $authError);
+            return false;
+        }
+
+        // --- 3. EXECUTION ---
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
         $this->session->setFlash('success', $targetUser->characterName . "'s role has been updated to " . $newRole->name . ".");
         return true;
@@ -389,7 +374,7 @@ class AllianceManagementService
         }
 
         $this->roleRepo->update($roleId, $name, $permissions);
-        $this->session->setFlash('success', "Role '{$name}' updated.");
+        $this.session->setFlash('success', "Role '{$name}' updated.");
         return true;
     }
 
@@ -411,7 +396,7 @@ class AllianceManagementService
 
         // Prevent deleting default roles
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this->session->setFlash('error', 'You cannot delete default roles.');
+            $this.session->setFlash('error', 'You cannot delete default roles.');
             return false;
         }
         
