@@ -61,6 +61,7 @@ class SpyController extends BaseController
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Displays the list of past spy reports.
      */
     public function showReports(): void
@@ -71,11 +72,13 @@ class SpyController extends BaseController
         $this->render('spy/reports.php', [
             'title' => 'Spy Reports',
             'reports' => $reports,
+            'userId' => $userId, // Pass the user's ID to the view
             'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Displays a single, detailed spy report.
      * The {id} is passed in from the router.
      */
@@ -96,6 +99,7 @@ class SpyController extends BaseController
         $this->render('spy/report_view.php', [
             'title' => 'Spy Report #' . $report->id,
             'report' => $report,
+            'userId' => $userId, // Pass the user's ID to the view
             'layoutMode' => 'full' // Add full-width layout
         ]);
     }

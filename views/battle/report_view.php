@@ -1,18 +1,39 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\BattleReport $report */
+/* @var int $userId */
 
-// --- Determine result text and CSS class ---
-$resultText = match($report->attack_result) {
-    'victory' => 'VICTORY',
-    'defeat' => 'DEFEAT',
-    'stalemate' => 'STALEMATE'
-};
-$resultClass = $report->attack_result;
+// --- NEW LOGIC ---
+$viewerIsAttacker = ($report->attacker_id === $userId);
 
-// --- Determine if the viewer is the attacker or defender ---
-// (We assume the viewer is always the attacker for this report view)
-$viewerIsAttacker = true; 
+// Determine names and labels
+$viewerName = $viewerIsAttacker ? $report->attacker_name : $report->defender_name;
+$opponentName = $viewerIsAttacker ? $report->defender_name : $report->attacker_name;
+$viewerLabel = $viewerIsAttacker ? "Attacker" : "Defender";
+$opponentLabel = $viewerIsAttacker ? "Defender" : "Attacker";
+
+// Determine result text and CSS class from the *viewer's* perspective
+if ($viewerIsAttacker) {
+    $resultText = match($report->attack_result) {
+        'victory' => 'VICTORY',
+        'defeat' => 'DEFEAT',
+        'stalemate' => 'STALEMATE'
+    };
+    $resultClass = $report->attack_result;
+} else {
+    // Invert result for defender
+    $resultText = match($report->attack_result) {
+        'victory' => 'DEFEAT', // Attacker victory is defender's defeat
+        'defeat' => 'VICTORY', // Attacker defeat is defender's victory
+        'stalemate' => 'STALEMATE'
+    };
+    $resultClass = match($report->attack_result) {
+        'victory' => 'defeat',
+        'defeat' => 'victory',
+        'stalemate' => 'stalemate',
+    };
+}
+// --- END NEW LOGIC ---
 ?>
 
 <style>
@@ -47,7 +68,7 @@ $viewerIsAttacker = true;
         padding-top: 1.5rem;
     }
     
-    /* --- NEW HEADER CARD --- */
+    /* --- MODIFIED HEADER CARD --- */
     .report-header-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -56,14 +77,14 @@ $viewerIsAttacker = true;
         box-shadow: var(--shadow);
         backdrop-filter: blur(6px);
         display: grid;
-        grid-template-columns: 1fr auto 1fr; /* Attacker | Result | Defender */
+        grid-template-columns: 1fr auto 1fr; /* Player | Result | Player */
         align-items: center;
         gap: 1rem;
         margin-bottom: 1.5rem;
     }
     
     .header-player { text-align: left; }
-    .header-player.defender { text-align: right; }
+    .header-player.opponent { text-align: right; }
     
     .header-player-name {
         font-size: 1.5rem;
@@ -87,6 +108,7 @@ $viewerIsAttacker = true;
         margin-top: 0.25rem;
     }
     
+    /* Result colors are for the VIEWER */
     .result-victory { color: var(--accent-green); }
     .result-defeat { color: var(--accent-red); }
     .result-stalemate { color: var(--accent-2); }
@@ -96,11 +118,11 @@ $viewerIsAttacker = true;
             grid-template-columns: 1fr; /* Stack all */
             text-align: center;
         }
-        .header-player.defender { text-align: center; }
+        .header-player.opponent { text-align: center; }
         .header-result { order: -1; } /* Move result to top */
     }
     
-    /* --- NEW ENGAGEMENT SUMMARY CARD --- */
+    /* --- ENGAGEMENT SUMMARY CARD --- */
     .summary-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -112,7 +134,7 @@ $viewerIsAttacker = true;
     .summary-card h3 {
         color: #fff;
         margin-top: 0;
-        margin-bottom: 1.5rem; /* More space */
+        margin-bottom: 1.5rem;
         border-bottom: 1px solid var(--border);
         padding-bottom: 0.75rem;
         font-size: 1.1rem;
@@ -141,10 +163,10 @@ $viewerIsAttacker = true;
         margin: 0;
         display: flex;
         flex-direction: column;
-        gap: 0.75rem; /* More spacing */
+        gap: 0.75rem;
     }
     .summary-col li {
-        font-size: 0.95rem; /* Larger font */
+        font-size: 0.95rem;
         color: #e0e0e0;
         padding: 0.35rem 0.25rem;
         display: flex;
@@ -173,7 +195,6 @@ $viewerIsAttacker = true;
     .value-gain { color: var(--accent-green) !important; }
     .value-neutral { color: var(--accent-2) !important; }
 
-    /* Responsive Grid */
     @media (max-width: 768px) {
         .summary-grid {
             grid-template-columns: 1fr; /* Stack columns on mobile */
@@ -185,9 +206,9 @@ $viewerIsAttacker = true;
     <h1>Battle Report</h1>
 
     <div class="report-header-card">
-        <div class="header-player attacker">
-            <span class="header-player-name"><?= htmlspecialchars($report->attacker_name) ?></span>
-            <span class="header-player-label">(You) - Attacker</span>
+        <div class="header-player">
+            <span class="header-player-name"><?= htmlspecialchars($viewerName) ?></span>
+            <span class="header-player-label">(You) - <?= $viewerLabel ?></span>
         </div>
         
         <div class="header-result">
@@ -195,9 +216,9 @@ $viewerIsAttacker = true;
             <div class="header-result-id">Battle ID: <?= $report->id ?></div>
         </div>
         
-        <div class="header-player defender">
-            <span class="header-player-name"><?= htmlspecialchars($report->defender_name) ?></span>
-            <span class="header-player-label">(Opponent) - Defender</span>
+        <div class="header-player opponent">
+            <span class="header-player-name"><?= htmlspecialchars($opponentName) ?></span>
+            <span class="header-player-label">(Opponent) - <?= $opponentLabel ?></span>
         </div>
     </div>
 
@@ -206,7 +227,7 @@ $viewerIsAttacker = true;
         
         <div class="summary-grid">
             <div class="summary-col">
-                <h4>Your Attack</h4>
+                <h4>Attack: <?= htmlspecialchars($report->attacker_name) ?></h4>
                 <ul>
                     <li>
                         <span>Attack Strength:</span>
@@ -232,7 +253,7 @@ $viewerIsAttacker = true;
             </div>
             
             <div class="summary-col">
-                <h4>Opponent's Defense</h4>
+                <h4>Defense: <?= htmlspecialchars($report->defender_name) ?></h4>
                 <ul>
                     <li>
                         <span>Defense Strength:</span>
@@ -243,12 +264,12 @@ $viewerIsAttacker = true;
                         <span class="value value-loss">- <?= number_format($report->defender_guards_lost) ?></span>
                     </li>
                     <li>
-                        <span>Credits Plundered:</span>
-                        <span class="value value-gain">+ <?= number_format($report->credits_plundered) ?></span>
+                        <span>Credits Lost:</span>
+                        <span class="value value-loss">- <?= number_format($report->credits_plundered) ?></span>
                     </li>
                     <li>
-                        <span>Net Worth Stolen:</span>
-                        <span class="value value-gain">+ <?= number_format($report->net_worth_stolen) ?></span>
+                        <span>Net Worth Lost:</span>
+                        <span class="value value-loss">- <?= number_format($report->net_worth_stolen) ?></span>
                     </li>
                     <li>
                         <span>Attack Type:</span>

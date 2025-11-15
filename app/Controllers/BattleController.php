@@ -62,6 +62,7 @@ class BattleController extends BaseController
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Displays the list of past battle reports.
      */
     public function showReports(): void
@@ -73,11 +74,13 @@ class BattleController extends BaseController
         $this->render('battle/reports.php', [
             'title' => 'Battle Reports',
             'reports' => $reports,
+            'userId' => $userId, // Pass the user's ID to the view
             'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Displays a single, detailed battle report.
      * The {id} is passed in from the router.
      */
@@ -99,6 +102,7 @@ class BattleController extends BaseController
         $this->render('battle/report_view.php', [
             'title' => 'Battle Report #' . $report->id,
             'report' => $report,
+            'userId' => $userId, // Pass the user's ID to the view
             'layoutMode' => 'full' // Add full-width layout
         ]);
     }

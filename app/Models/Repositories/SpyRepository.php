@@ -52,6 +52,7 @@ class SpyRepository
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Finds the 50 most recent reports for an attacker.
      *
      * @param int $attackerId
@@ -60,9 +61,10 @@ class SpyRepository
     public function findReportsByAttackerId(int $attackerId): array
     {
         $sql = "
-            SELECT r.*, d.character_name as defender_name 
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
             FROM spy_reports r
             JOIN users d ON r.defender_id = d.id 
+            JOIN users a ON r.attacker_id = a.id
             WHERE r.attacker_id = ? 
             ORDER BY r.created_at DESC 
             LIMIT 50
@@ -80,24 +82,54 @@ class SpyRepository
     }
 
     /**
-     * Finds a single report by its ID, ensuring the viewer is the attacker.
+     * --- NEW METHOD ---
+     * Finds the 50 most recent reports for a defender.
      *
-     * @param int $reportId
-     * @param int $attackerId
-     * @return SpyReport|null
+     * @param int $defenderId
+     * @return SpyReport[]
      */
-    public function findReportById(int $reportId, int $attackerId): ?SpyReport
+    public function findReportsByDefenderId(int $defenderId): array
     {
         $sql = "
             SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
             FROM spy_reports r
             JOIN users d ON r.defender_id = d.id
             JOIN users a ON r.attacker_id = a.id
-            WHERE r.id = ? AND r.attacker_id = ?
+            WHERE r.defender_id = ? 
+            ORDER BY r.created_at DESC 
+            LIMIT 50
         ";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$reportId, $attackerId]);
+        $stmt->execute([$defenderId]);
+        
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
+     * --- MODIFIED METHOD ---
+     * Finds a single report by its ID, ensuring the viewer is the attacker or defender.
+     *
+     * @param int $reportId
+     * @param int $viewerId
+     * @return SpyReport|null
+     */
+    public function findReportById(int $reportId, int $viewerId): ?SpyReport
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM spy_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.id = ? AND (r.attacker_id = ? OR r.defender_id = ?)
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$reportId, $viewerId, $viewerId]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // --- THIS IS THE FIX ---

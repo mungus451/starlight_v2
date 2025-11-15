@@ -1,6 +1,7 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\SpyReport[] $reports */
+/* @var int $userId */
 ?>
 
 <style>
@@ -119,15 +120,33 @@
                 <li style="text-align: center; color: var(--muted); padding: 2rem;">You have no spy reports.</li>
             <?php else: ?>
                 <?php foreach ($reports as $report): ?>
+                    <?php
+                        // --- NEW LOGIC ---
+                        $isAttacker = ($report->attacker_id === $userId);
+                        $opponentName = $isAttacker ? $report->defender_name : $report->attacker_name;
+                        $title = $isAttacker ? "vs. " . htmlspecialchars($opponentName) : "from " . htmlspecialchars($opponentName);
+
+                        // Determine viewer's result (success = intel gathered)
+                        if ($isAttacker) {
+                            $viewerResult = $report->operation_result; // 'success' or 'failure'
+                            $viewerResultText = ucfirst($viewerResult);
+                        } else {
+                            // Invert result for defender
+                            $viewerResult = ($report->operation_result === 'success') ? 'failure' : 'success';
+                            $viewerResultText = ($report->operation_result === 'success') ? 'Failed (Breached)' : 'Success (Defended)';
+                        }
+                        $resultClass = $viewerResult; // 'success' or 'failure'
+                        // --- END NEW LOGIC ---
+                    ?>
                     <li class="report-item">
                         <div>
                             <a href="/spy/report/<?= $report->id ?>">
-                                Report #<?= $report->id ?> (vs. <?= htmlspecialchars($report->defender_name ?? 'Unknown') ?>)
+                                Report #<?= $report->id ?> (<?= $title ?>)
                             </a>
                             <span class="report-date"><?= $report->created_at ?></span>
                         </div>
-                        <span class="report-item-result <?= $report->operation_result ?>">
-                            <?= htmlspecialchars(ucfirst($report->operation_result)) ?>
+                        <span class="report-item-result <?= $resultClass ?>">
+                            <?= htmlspecialchars($viewerResultText) ?>
                         </span>
                     </li>
                 <?php endforeach; ?>

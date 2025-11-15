@@ -1,13 +1,27 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\SpyReport $report */
+/* @var int $userId */
 
-// --- Determine result text and CSS class ---
-$resultText = match($report->operation_result) {
-    'success' => 'OPERATION SUCCESSFUL',
-    'failure' => 'OPERATION FAILED'
-};
-$resultClass = $report->operation_result; // 'success' or 'failure'
+// --- NEW LOGIC ---
+$viewerIsAttacker = ($report->attacker_id === $userId);
+
+// Determine names and labels
+$viewerName = $viewerIsAttacker ? $report->attacker_name : $report->defender_name;
+$opponentName = $viewerIsAttacker ? $report->defender_name : $report->attacker_name;
+$viewerLabel = $viewerIsAttacker ? "Operator" : "Target";
+$opponentLabel = $viewerIsAttacker ? "Target" : "Operator";
+
+// Determine result text and CSS class from the *viewer's* perspective
+if ($viewerIsAttacker) {
+    $resultText = ($report->operation_result === 'success') ? 'OPERATION SUCCESSFUL' : 'OPERATION FAILED';
+    $resultClass = $report->operation_result;
+} else {
+    // Invert result for defender
+    $resultText = ($report->operation_result === 'success') ? 'OPERATION FAILED' : 'OPERATION SUCCESSFUL';
+    $resultClass = ($report->operation_result === 'success') ? 'failure' : 'success';
+}
+// --- END NEW LOGIC ---
 ?>
 
 <style>
@@ -59,7 +73,7 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
     }
     
     .header-player { text-align: left; }
-    .header-player.defender { text-align: right; }
+    .header-player.opponent { text-align: right; }
     
     .header-player-name {
         font-size: 1.5rem;
@@ -83,6 +97,7 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
         margin-top: 0.25rem;
     }
     
+    /* Result colors are for the VIEWER */
     .result-success { color: var(--accent-green); }
     .result-failure { color: var(--accent-red); }
     
@@ -91,7 +106,7 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
             grid-template-columns: 1fr; /* Stack all */
             text-align: center;
         }
-        .header-player.defender { text-align: center; }
+        .header-player.opponent { text-align: center; }
         .header-result { order: -1; } /* Move result to top */
     }
     
@@ -174,6 +189,14 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
         font-style: italic;
         line-height: 1.5;
     }
+    
+    .intel-header {
+        color: var(--accent-blue);
+        margin: 1.5rem 0 1rem 0;
+        font-size: 1rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+    }
 
     /* Responsive Grid */
     @media (max-width: 768px) {
@@ -187,9 +210,9 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
     <h1>Spy Report</h1>
 
     <div class="report-header-card">
-        <div class="header-player attacker">
-            <span class="header-player-name"><?= htmlspecialchars($report->attacker_name) ?></span>
-            <span class="header-player-label">(You) - Operator</span>
+        <div class="header-player">
+            <span class="header-player-name"><?= htmlspecialchars($viewerName) ?></span>
+            <span class="header-player-label">(You) - <?= $viewerLabel ?></span>
         </div>
         
         <div class="header-result">
@@ -197,9 +220,9 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
             <div class="header-result-id">Operation ID: <?= $report->id ?></div>
         </div>
         
-        <div class="header-player defender">
-            <span class="header-player-name"><?= htmlspecialchars($report->defender_name) ?></span>
-            <span class="header-player-label">(Opponent) - Target</span>
+        <div class="header-player opponent">
+            <span class="header-player-name"><?= htmlspecialchars($opponentName) ?></span>
+            <span class="header-player-label">(Opponent) - <?= $opponentLabel ?></span>
         </div>
     </div>
 
@@ -208,7 +231,7 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
         
         <div class="summary-grid">
             <div class="summary-col">
-                <h4>Operation Details</h4>
+                <h4>Operation: <?= htmlspecialchars($report->attacker_name) ?></h4>
                 <ul>
                     <li>
                         <span>Spies Sent:</span>
@@ -218,78 +241,33 @@ $resultClass = $report->operation_result; // 'success' or 'failure'
                         <span>Spies Lost:</span>
                         <span class="value value-loss">- <?= number_format($report->spies_lost_attacker) ?></span>
                     </li>
-                    <li>
-                        <span>Sentries Destroyed:</span>
-                        <span class="value value-gain">+ <?= number_format($report->sentries_lost_defender) ?></span>
-                    </li>
                 </ul>
             </div>
             
             <div class="summary-col">
-                <h4>Intel Gathered</h4>
+                <h4>Defense: <?= htmlspecialchars($report->defender_name) ?></h4>
+                <ul>
+                    <li>
+                        <span>Sentries Lost:</span>
+                        <span class="value value-loss">- <?= number_format($report->sentries_lost_defender) ?></span>
+                    </li>
+                </ul>
+                
+                <h4 class="intel-header">Intel Gathered</h4>
                 
                 <?php if ($report->operation_result === 'success'): ?>
                     <ul>
-                        <li>
-                            <span>Credits:</span>
-                            <span class="value"><?= number_format($report->credits_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Gemstones:</span>
-                            <span class="value"><?= number_format($report->gemstones_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Workers:</span>
-                            <span class="value"><?= number_format($report->workers_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Soldiers:</span>
-                            <span class="value"><?= number_format($report->soldiers_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Guards:</span>
-                            <span class="value"><?= number_format($report->guards_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Spies:</span>
-                            <span class="value"><?= number_format($report->spies_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Sentries:</span>
-                            <span class="value"><?= number_format($report->sentries_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Fortification:</span>
-                            <span class="value">Level <?= number_format($report->fortification_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Offense Upgrade:</span>
-                            <span class="value">Level <?= number_format($report->offense_upgrade_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Defense Upgrade:</span>
-                            <span class="value">Level <?= number_format($report->defense_upgrade_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Spy Upgrade:</span>
-                            <span class="value">Level <?= number_format($report->spy_upgrade_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Economy Upgrade:</span>
-                            <span class="value">Level <?= number_format($report->economy_upgrade_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Population:</span>
-                            <span class="value">Level <?= number_format($report->population_level_seen) ?></span>
-                        </li>
-                        <li>
-                            <span>Armory:</span>
-                            <span class="value">Level <?= number_format($report->armory_level_seen) ?></span>
-                        </li>
+                        <li><span>Credits:</span> <span class="value"><?= number_format($report->credits_seen) ?></span></li>
+                        <li><span>Gemstones:</span> <span class="value"><?= number_format($report->gemstones_seen) ?></span></li>
+                        <li><span>Soldiers:</span> <span class="value"><?= number_format($report->soldiers_seen) ?></span></li>
+                        <li><span>Guards:</span> <span class="value"><?= number_format($report->guards_seen) ?></span></li>
+                        <li><span>Sentries:</span> <span class="value"><?= number_format($report->sentries_seen) ?></span></li>
+                        <li><span>Fortification:</span> <span class="value">Lvl <?= number_format($report->fortification_level_seen) ?></span></li>
+                        <li><span>Armory:</span> <span class="value">Lvl <?= number_format($report->armory_level_seen) ?></span></li>
                     </ul>
                 <?php else: ?>
                     <p class="no-intel-msg">
-                        Your spies were unable to gather any intel.
+                        No intel was gathered during this operation.
                     </p>
                 <?php endif; ?>
             </div>

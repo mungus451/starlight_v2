@@ -84,24 +84,52 @@ class BattleRepository
     }
 
     /**
-     * Finds a single report by its ID, ensuring the viewer is the attacker.
+     * Finds the 50 most recent reports for a defender.
      *
-     * @param int $reportId
-     * @param int $attackerId
-     * @return BattleReport|null
+     * @param int $defenderId
+     * @return BattleReport[]
      */
-    public function findReportById(int $reportId, int $attackerId): ?BattleReport
+    public function findReportsByDefenderId(int $defenderId): array
     {
         $sql = "
             SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
             FROM battle_reports r
             JOIN users d ON r.defender_id = d.id
             JOIN users a ON r.attacker_id = a.id
-            WHERE r.id = ? AND r.attacker_id = ?
+            WHERE r.defender_id = ? 
+            ORDER BY r.created_at DESC 
+            LIMIT 50
         ";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$reportId, $attackerId]);
+        $stmt->execute([$defenderId]);
+        
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
+     * Finds a single report by its ID, ensuring the viewer is either the attacker or defender.
+     *
+     * @param int $reportId
+     * @param int $viewerId
+     * @return BattleReport|null
+     */
+    public function findReportById(int $reportId, int $viewerId): ?BattleReport
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.id = ? AND (r.attacker_id = ? OR r.defender_id = ?)
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$reportId, $viewerId, $viewerId]); // Pass viewerId for both checks
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $data ? $this->hydrate($data) : null;

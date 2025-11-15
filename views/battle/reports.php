@@ -1,6 +1,7 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\BattleReport[] $reports */
+/* @var int $userId */
 ?>
 
 <style>
@@ -10,6 +11,7 @@
         --accent: #2dd1d1;
         --accent-2: #f9c74f;
         --accent-red: #e53e3e;
+        --accent-green: #4CAF50; /* Added green */
         --text: #eff1ff;
         --muted: #a8afd4;
         --radius: 18px;
@@ -97,8 +99,10 @@
         padding: 0.25rem 0.5rem;
         border-radius: 6px;
     }
+    
+    /* --- MODIFIED: Use specific classes for viewer's result --- */
     .report-item-result.victory {
-        color: #4CAF50;
+        color: var(--accent-green);
     }
     .report-item-result.defeat {
         color: var(--accent-red);
@@ -120,15 +124,34 @@
                 <li style="text-align: center; color: var(--muted); padding: 2rem;">You have no battle reports.</li>
             <?php else: ?>
                 <?php foreach ($reports as $report): ?>
+                    <?php
+                        // --- NEW LOGIC ---
+                        $isAttacker = ($report->attacker_id === $userId);
+                        $opponentName = $isAttacker ? $report->defender_name : $report->attacker_name;
+                        $title = $isAttacker ? "vs. " . htmlspecialchars($opponentName) : "from " . htmlspecialchars($opponentName);
+                        
+                        // Determine viewer's result
+                        $viewerResult = $report->attack_result; // Attacker's result
+                        if (!$isAttacker) {
+                            // Invert result for defender
+                            $viewerResult = match($report->attack_result) {
+                                'victory' => 'defeat',
+                                'defeat' => 'victory',
+                                'stalemate' => 'stalemate',
+                            };
+                        }
+                        $resultClass = $viewerResult; // 'victory', 'defeat', or 'stalemate'
+                        // --- END NEW LOGIC ---
+                    ?>
                     <li class="report-item">
                         <div>
                             <a href="/battle/report/<?= $report->id ?>">
-                                Report #<?= $report->id ?> (vs. <?= htmlspecialchars($report->defender_name ?? 'Unknown') ?>)
+                                Report #<?= $report->id ?> (<?= $title ?>)
                             </a>
                             <span class="report-date"><?= $report->created_at ?></span>
                         </div>
-                        <span class="report-item-result <?= $report->attack_result ?>">
-                            <?= htmlspecialchars(ucfirst($report->attack_result)) ?>
+                        <span class="report-item-result <?= $resultClass ?>">
+                            <?= htmlspecialchars(ucfirst($viewerResult)) ?>
                         </span>
                     </li>
                 <?php endforeach; ?>

@@ -81,19 +81,32 @@ class AttackService
     }
 
     /**
-     * Gets the list of battle reports for the user.
+     * Gets a unified list of battle reports (offensive and defensive) for the user.
      */
     public function getBattleReports(int $userId): array
     {
-        return $this->battleRepo->findReportsByAttackerId($userId);
+        // 1. Get both sets of reports
+        $offensiveReports = $this->battleRepo->findReportsByAttackerId($userId);
+        $defensiveReports = $this->battleRepo->findReportsByDefenderId($userId);
+        
+        // 2. Merge them into a single array
+        $allReports = array_merge($offensiveReports, $defensiveReports);
+        
+        // 3. Sort the combined array by date, descending
+        usort($allReports, function($a, $b) {
+            // We use <=> for safe comparison. $b vs $a for descending order.
+            return $b->created_at <=> $a->created_at;
+        });
+        
+        return $allReports;
     }
 
     /**
-     * Gets a single, specific battle report.
+     * Gets a single, specific battle report, ensuring the viewer was involved.
      */
-    public function getBattleReport(int $reportId, int $userId): ?\App\Models\Entities\BattleReport
+    public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport
     {
-        return $this->battleRepo->findReportById($reportId, $userId);
+        return $this->battleRepo->findReportById($reportId, $viewerId);
     }
 
     /**
@@ -251,7 +264,7 @@ class AttackService
             // 8g. Rollback on failure
             // --- THIS IS THE FIX ---
             $this->db->rollBack();
-            error_log('Attack Operation Error: ' . $e->getMessage());
+            error_log('Attack Operation Error: '. $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. The attack was cancelled.');
             return false;
         }

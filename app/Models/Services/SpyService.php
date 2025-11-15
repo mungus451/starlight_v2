@@ -27,7 +27,7 @@ class SpyService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private SpyRepository $spyRepo;
-    private ArmoryService $armoryService; // NEW: Add ArmoryService property
+    private ArmoryService $armoryService;
 
     public function __construct()
     {
@@ -40,7 +40,7 @@ class SpyService
         $this->structureRepo = new StructureRepository($this->db);
         $this->statsRepo = new StatsRepository($this->db);
         $this->spyRepo = new SpyRepository($this->db);
-        $this->armoryService = new ArmoryService(); // NEW: Instantiate ArmoryService
+        $this->armoryService = new ArmoryService();
     }
 
     /**
@@ -71,36 +71,51 @@ class SpyService
             'resources' => $resources,
             'stats' => $stats,
             'costs' => $costs,
-            'targets' => $targets, // --- NEW ---
-            'pagination' => [      // --- NEW ---
+            'targets' => $targets,
+            'pagination' => [
                 'currentPage' => $page,
                 'totalPages' => $totalPages
             ],
-            'perPage' => $perPage   // --- NEW ---
+            'perPage' => $perPage
         ];
     }
 
     /**
-     * Gets the list of spy reports for the user.
+     * --- MODIFIED METHOD ---
+     * Gets the list of spy reports for the user (offensive and defensive).
      *
      * @param int $userId
      * @return array
      */
     public function getSpyReports(int $userId): array
     {
-        return $this->spyRepo->findReportsByAttackerId($userId);
+        // 1. Get both sets of reports
+        $offensiveReports = $this->spyRepo->findReportsByAttackerId($userId);
+        $defensiveReports = $this->spyRepo->findReportsByDefenderId($userId);
+
+        // 2. Merge them into a single array
+        $allReports = array_merge($offensiveReports, $defensiveReports);
+
+        // 3. Sort the combined array by date, descending
+        usort($allReports, function($a, $b) {
+            // We use <=> for safe comparison. $b vs $a for descending order.
+            return $b->created_at <=> $a->created_at;
+        });
+
+        return $allReports;
     }
 
     /**
+     * --- MODIFIED METHOD ---
      * Gets a single, specific spy report, ensuring the user owns it.
      *
      * @param int $reportId
-     * @param int $userId
+     * @param int $viewerId
      * @return \App\Models\Entities\SpyReport|null
      */
-    public function getSpyReport(int $reportId, int $userId): ?\App\Models\Entities\SpyReport
+    public function getSpyReport(int $reportId, int $viewerId): ?\App\Models\Entities\SpyReport
     {
-        return $this->spyRepo->findReportById($reportId, $userId);
+        return $this->spyRepo->findReportById($reportId, $viewerId);
     }
 
     /**
