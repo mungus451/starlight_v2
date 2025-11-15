@@ -86,8 +86,8 @@
     }
     
     .player-avatar {
-        width: 100px; /* Was 60px */
-        height: 100px; /* Was 60px */
+        width: 100px;
+        height: 100px;
         flex-shrink: 0;
         border-radius: 50%;
         background: #1e1e3f;
@@ -95,7 +95,7 @@
         object-fit: cover;
     }
     .player-avatar-svg {
-        padding: 1.5rem; /* Was 0.85rem */
+        padding: 1.5rem;
         color: var(--muted);
     }
     
@@ -293,12 +293,12 @@
         
         <ul class="card-stats-list">
             <li>
-                <span>Economy Income / Turn</span>
-                <span class="value-green">+ <?= number_format($incomeBreakdown['base_credits']) ?></span>
+                <span>Credit Income / Turn</span>
+                <span class="value-green value-total">+ <?= number_format($incomeBreakdown['total_credit_income']) ?></span>
             </li>
             <li>
                 <span>Bank Interest / Turn</span>
-                <span class="value-green">+ <?= number_format($incomeBreakdown['interest']) ?></span>
+                <span class="value-green value-total">+ <?= number_format($incomeBreakdown['interest']) ?></span>
             </li>
             <li>
                 <span>Credits on Hand</span>
@@ -309,17 +309,43 @@
                 <span><?= number_format($resources->banked_credits) ?></span>
             </li>
         </ul>
+        
         <div class="card-breakdown" id="breakdown-income">
+            <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
             <ul>
                 <li>
                     <span>Base from Economy (Lvl <?= $incomeBreakdown['econ_level'] ?>)</span>
-                    <span>+ <?= number_format($incomeBreakdown['base_credits']) ?></span>
+                    <span>+ <?= number_format($incomeBreakdown['econ_income']) ?></span>
                 </li>
+                <li>
+                    <span>Base from Workers (<?= number_format($incomeBreakdown['worker_count']) ?>)</span>
+                    <span>+ <?= number_format($incomeBreakdown['worker_income']) ?></span>
+                </li>
+                <li>
+                    <span>Subtotal (Base Production)</span>
+                    <span>= <?= number_format($incomeBreakdown['base_production']) ?></span>
+                </li>
+                <li>
+                    <span>Wealth Bonus (<?= $incomeBreakdown['stat_bonus_pct'] * 100 ?>%)</span>
+                    <span>+ <?= number_format( (int)floor($incomeBreakdown['base_production'] * $incomeBreakdown['stat_bonus_pct']) ) ?></span>
+                </li>
+                 <li>
+                    <span>Armory Bonus (from Loadout)</span>
+                    <span>+ <?= number_format($incomeBreakdown['armory_bonus']) ?></span>
+                </li>
+            </ul>
+            <br>
+            <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
+            <ul>
                 <li>
                     <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
                     <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
                 </li>
-                <li>
+            </ul>
+            <br>
+            <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
+            <ul>
+                 <li>
                     <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
                     <span>+ <?= number_format($incomeBreakdown['total_citizens']) ?></span>
                 </li>
@@ -339,6 +365,7 @@
             </li>
             <li><span>Strength</span> <span><?= number_format($stats->strength_points) ?></span></li>
             <li><span>Constitution</span> <span><?= number_format($stats->constitution_points) ?></span></li>
+            <li><span>Wealth</span> <span><?= number_format($stats->wealth_points) ?></span></li>
             <li><span>Attack Turns</span> <span><?= number_format($stats->attack_turns) ?></span></li>
         </ul>
     </div>

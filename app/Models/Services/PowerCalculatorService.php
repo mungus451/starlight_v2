@@ -76,7 +76,6 @@ class PowerCalculatorService
     }
 
     /**
-     * --- NEW METHOD ---
      * Calculates a user's total Defense Power and its components.
      *
      * @param int $userId
@@ -129,7 +128,6 @@ class PowerCalculatorService
     }
 
     /**
-     * --- NEW METHOD ---
      * Calculates a user's total Spy Offense Power and its components.
      *
      * @param int $userId
@@ -172,7 +170,6 @@ class PowerCalculatorService
     }
 
     /**
-     * --- NEW METHOD ---
      * Calculates a user's total Sentry Defense Power and its components.
      *
      * @param int $userId
@@ -215,38 +212,63 @@ class PowerCalculatorService
     }
 
     /**
-     * --- NEW METHOD ---
-     * Calculates a user's total income per turn and its components.
+     * --- MODIFIED METHOD ---
+     * Calculates a user's total income per turn and its components,
+     * including workers, stats, and armory bonuses.
      *
+     * @param int $userId
      * @param UserResource $resources
+     * @param UserStats $stats
      * @param UserStructure $structures
      * @return array A detailed breakdown of the calculation
      */
     public function calculateIncomePerTurn(
+        int $userId,
         UserResource $resources,
+        UserStats $stats,
         UserStructure $structures
     ): array {
         $config = $this->config->get('game_balance.turn_processor');
         
-        // 1. Credit Income
-        $creditIncome = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
+        // 1. Base Production
+        $econIncome = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
+        $workerIncome = $resources->workers * $config['credit_income_per_worker'];
+        $baseProduction = $econIncome + $workerIncome;
+
+        // 2. Percentage Bonuses (from stats)
+        $statBonusPct = $stats->wealth_points * $config['credit_bonus_per_wealth_point'];
         
-        // 2. Interest Income
+        // 3. Flat Bonuses (from armory)
+        // We assume 'credit_bonus' in armory_items.php is a FLAT value per worker
+        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
+        
+        // 4. Total Credit Income (for Credits on Hand)
+        // (Base Production * (1 + Stat %)) + Flat Armory Bonus
+        $totalCreditIncome = (int)floor($baseProduction * (1 + $statBonusPct)) + $armoryBonus;
+        
+        // 5. Interest Income (for Banked Credits)
         $interestIncome = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
         
-        // 3. Citizen Income
+        // 6. Citizen Income
         $citizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
-        
-        // 4. Total "Net" Credits
-        $totalCredits = $creditIncome + $interestIncome;
 
         return [
-            'total_credits' => $totalCredits,
-            'base_credits' => $creditIncome,
+            'total_credit_income' => $totalCreditIncome, // Econ + Workers + Stat% + Armory
             'interest' => $interestIncome,
             'total_citizens' => $citizenIncome,
+            
+            // Breakdown components
+            'econ_income' => $econIncome,
+            'worker_income' => $workerIncome,
+            'base_production' => $baseProduction,
+            'stat_bonus_pct' => $statBonusPct,
+            'armory_bonus' => $armoryBonus,
+            
+            // Source data for view
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
+            'worker_count' => $resources->workers,
+            'wealth_points' => $stats->wealth_points,
             'banked_credits' => $resources->banked_credits,
             'interest_rate_pct' => $config['bank_interest_rate']
         ];

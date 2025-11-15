@@ -53,15 +53,42 @@ class DashboardService
         $structures = $this->structureRepository->findByUserId($userId);
 
         // 2. Get all calculation breakdowns from the new service
-        $incomeBreakdown = $this->powerCalculator->calculateIncomePerTurn($resources, $structures);
         
-        $offenseBreakdown = $this->powerCalculator->calculateOffensePower($userId, $resources, $stats, $structures);
+        // --- THIS IS THE FIX ---
+        // Passed all four required arguments instead of just two
+        $incomeBreakdown = $this->powerCalculator->calculateIncomePerTurn(
+            $userId,
+            $resources,
+            $stats,
+            $structures
+        );
+        // --- END FIX ---
         
-        $defenseBreakdown = $this->powerCalculator->calculateDefensePower($userId, $resources, $stats, $structures);
+        $offenseBreakdown = $this->powerCalculator->calculateOffensePower(
+            $userId,
+            $resources,
+            $stats,
+            $structures
+        );
         
-        $spyBreakdown = $this->powerCalculator->calculateSpyPower($userId, $resources, $structures);
+        $defenseBreakdown = $this->powerCalculator->calculateDefensePower(
+            $userId,
+            $resources,
+            $stats,
+            $structures
+        );
         
-        $sentryBreakdown = $this->powerCalculator->calculateSentryPower($userId, $resources, $structures);
+        $spyBreakdown = $this->powerCalculator->calculateSpyPower(
+            $userId,
+            $resources,
+            $structures
+        );
+        
+        $sentryBreakdown = $this->powerCalculator->calculateSentryPower(
+            $userId,
+            $resources,
+            $structures
+        );
 
         // 3. Return everything in a single array
         return [

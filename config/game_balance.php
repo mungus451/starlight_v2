@@ -120,6 +120,12 @@ return [
         // 1,000 credits per turn, per level of Economy Upgrade
         'credit_income_per_econ_level' => 1000,
         
+        // --- NEW: Income from workers ---
+        'credit_income_per_worker' => 100,
+
+        // --- NEW: Bonus from stats ---
+        'credit_bonus_per_wealth_point' => 0.005, // 0.5% bonus to econ/worker income
+        
         // 10 new citizens per turn, per level of Population
         'citizen_growth_per_pop_level' => 10
     ],

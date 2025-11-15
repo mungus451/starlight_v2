@@ -64,7 +64,7 @@ return [
                     'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 45, 'cost' => 40000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 1],
                     'emp_charge' => ['name' => 'EMP Charge', 'attack' => 50, 'cost' => 60000, 'notes' => 'Weakens shields/tech.', 'requires' => 'plasma_grenade', 'armory_level_req' => 2],
                     'nano_cluster_bomb' => ['name' => 'Nano Cluster Bomb', 'attack' => 70, 'cost' => 90000, 'notes' => 'Drone swarms shred troops.', 'requires' => 'emp_charge', 'armory_level_req' => 3],
-                    'void_charge' => ['name' => 'Void Charge', 'attack' => 150, 'cost' => 140000, 'notes' => 'Creates gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 4],
+                    'void_charge' => ['name' => 'Void Charge', 'attack' => 150, 'cost' => 140000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 4],
                 ]
             ]
         ]
@@ -271,11 +271,12 @@ return [
                 'title' => 'Resource Enhancement Tools',
                 'slots' => 1,
                 'items' => [
-                    'resource_scanner' => ['name' => 'Resource Scanner', 'attack' => 0, 'cost' => 5000, 'notes' => 'Finds hidden resource deposits.'],
-                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'attack' => 0, 'cost' => 7500, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 1],
-                    'harvester_drone' => ['name' => 'Harvester Drone', 'attack' => 0, 'cost' => 10000, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 2],
-                    'matter_converter' => ['name' => 'Matter Converter', 'attack' => 0, 'cost' => 12500, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 3],
-                    'genesis_device' => ['name' => 'Genesis Device', 'attack' => 0, 'cost' => 15000, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 4],
+                    // --- NEW: Added 'credit_bonus' as a percent (0.01 = 1%) ---
+                    'resource_scanner' => ['name' => 'Resource Scanner', 'attack' => 0, 'credit_bonus' => 0.01, 'cost' => 5000, 'notes' => 'Finds hidden resource deposits.'],
+                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'attack' => 0, 'credit_bonus' => 0.02, 'cost' => 7500, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 1],
+                    'harvester_drone' => ['name' => 'Harvester Drone', 'attack' => 0, 'credit_bonus' => 0.03, 'cost' => 10000, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 2],
+                    'matter_converter' => ['name' => 'Matter Converter', 'attack' => 0, 'credit_bonus' => 0.04, 'cost' => 12500, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 3],
+                    'genesis_device' => ['name' => 'Genesis Device', 'attack' => 0, 'credit_bonus' => 0.05, 'cost' => 15000, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 4],
                 ]
             ],
             'exo_rig_plating' => [

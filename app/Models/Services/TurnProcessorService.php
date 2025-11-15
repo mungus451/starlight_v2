@@ -74,22 +74,28 @@ class TurnProcessorService
             // 1. Get all required data
             $resources = $this->resourceRepo->findByUserId($userId);
             $structures = $this->structureRepo->findByUserId($userId);
+            $stats = $this->statsRepo->findByUserId($userId); // <-- This was the missing piece
 
-            if (!$resources || !$structures) {
+            if (!$resources || !$structures || !$stats) {
                 // User might be new or data is missing, skip them.
-                throw new \Exception('User resource or structure data not found.');
+                throw new \Exception('User resource, structure, or stats data not found.');
             }
 
             // 2. Calculate all income (REFACTORED)
             $incomeBreakdown = $this->powerCalculatorService->calculateIncomePerTurn(
+                $userId,
                 $resources,
+                $stats,
                 $structures
             );
             
-            $creditsGained = $incomeBreakdown['base_credits'];
+            // --- THIS IS THE BUG FIX ---
+            // Use the calculated totals from the service
+            $creditsGained = $incomeBreakdown['total_credit_income'];
             $interestGained = $incomeBreakdown['interest'];
             $citizensGained = $incomeBreakdown['total_citizens'];
             $attackTurnsGained = 1; // Grant 1 attack turn per... turn
+            // --- END BUG FIX ---
 
             // 3. Apply income using the atomic repository method
             $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained);
