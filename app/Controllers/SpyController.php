@@ -19,11 +19,18 @@ class SpyController extends BaseController
 
     /**
      * Displays the main spy page (conduct operation).
+     * --- THIS METHOD IS UPDATED ---
      */
-    public function show(): void
+    public function show(array $vars): void
     {
         $userId = $this->session->get('user_id');
-        $data = $this->spyService->getSpyData($userId);
+        // --- NEW: Get page from router ---
+        $page = (int)($vars['page'] ?? 1);
+        
+        // --- NEW: Pass page to service ---
+        $data = $this->spyService->getSpyData($userId, $page);
+
+        $data['layoutMode'] = 'full';
 
         $this->render('spy/show.php', $data + ['title' => 'Espionage']);
     }
@@ -63,7 +70,8 @@ class SpyController extends BaseController
 
         $this->render('spy/reports.php', [
             'title' => 'Spy Reports',
-            'reports' => $reports
+            'reports' => $reports,
+            'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 
@@ -81,15 +89,14 @@ class SpyController extends BaseController
         if (is_null($report)) {
             // Report not found or doesn't belong to the user
             $this->session->setFlash('error', 'Spy report not found.');
-            // --- THIS IS THE FIX ---
             $this->redirect('/spy/reports');
             return;
         }
 
-        // --- THIS IS THE FIX ---
         $this->render('spy/report_view.php', [
             'title' => 'Spy Report #' . $report->id,
-            'report' => $report
+            'report' => $report,
+            'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 }

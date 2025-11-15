@@ -10,7 +10,7 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
-use App\Models\Services\ArmoryService; // NEW: Import ArmoryService
+use App\Models\Services\ArmoryService; 
 use PDO;
 use Throwable;
 
@@ -47,18 +47,36 @@ class SpyService
      * Gets all data needed to render the main spy page.
      *
      * @param int $userId
+     * @param int $page The current page number
      * @return array
      */
-    public function getSpyData(int $userId): array
+    public function getSpyData(int $userId, int $page): array
     {
+        // 1. Get Attacker's info
         $resources = $this->resourceRepo->findByUserId($userId);
         $stats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.spy', []);
 
+        // 2. Get Pagination config
+        $perPage = $this->config->get('app.leaderboard.per_page', 25);
+        $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
+        $totalPages = (int)ceil($totalTargets / $perPage);
+        $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
+        $offset = ($page - 1) * $perPage;
+
+        // 3. Get Player Target List
+        $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $userId);
+
         return [
             'resources' => $resources,
             'stats' => $stats,
-            'costs' => $costs
+            'costs' => $costs,
+            'targets' => $targets, // --- NEW ---
+            'pagination' => [      // --- NEW ---
+                'currentPage' => $page,
+                'totalPages' => $totalPages
+            ],
+            'perPage' => $perPage   // --- NEW ---
         ];
     }
 
@@ -126,15 +144,15 @@ class SpyService
         $turnCost = $config['attack_turn_cost'];
 
         if ($spiesSent <= 0) {
-            $this.session->setFlash('error', 'You have no spies to send.');
+            $this->session->setFlash('error', 'You have no spies to send.');
             return false;
         }
         if ($attackerResources->credits < $creditCost) {
-            $this.session->setFlash('error', 'You do not have enough credits to send all your spies.');
+            $this->session->setFlash('error', 'You do not have enough credits to send all your spies.');
             return false;
         }
         if ($attackerStats->attack_turns < $turnCost) {
-            $this.session->setFlash('error', 'You do not have enough attack turns.');
+            $this->session->setFlash('error', 'You do not have enough attack turns.');
             return false;
         }
 
@@ -223,7 +241,7 @@ class SpyService
             // 8f. Rollback on failure
             $this->db->rollBack();
             error_log('Spy Operation Error: ' . $e->getMessage());
-            $this.session->setFlash('error', 'A database error occurred. The operation was cancelled.');
+            $this->session->setFlash('error', 'A database error occurred. The operation was cancelled.');
             return false;
         }
 
@@ -232,7 +250,7 @@ class SpyService
         if ($isCaught && $sentriesLost > 0) {
             $message .= " You destroyed {$sentriesLost} enemy sentries.";
         }
-        $this.session->setFlash('success', $message);
+        $this->session->setFlash('success', $message);
         return true;
     }
 }

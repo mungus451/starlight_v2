@@ -93,6 +93,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Phase 7: Spy Routes ---
     $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
+    $r->addRoute('GET', '/spy/page/{page:\d+}', [SpyController::class, 'show']); // --- NEW ---
     $r->addRoute('POST', '/spy/conduct', [SpyController::class, 'handleSpy']);
     $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
     $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
@@ -122,7 +123,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
     $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
     
-    // --- NEW: Alliance Invite Route (Phase 3) ---
+    // --- Alliance Invite Route (Phase 3) ---
     $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceManagementController::class, 'handleInvite']);
     
     // --- Phase 13: Alliance Admin Routes ---
@@ -189,6 +190,8 @@ try {
             if (!$isProtected) {
                 if (str_starts_with($uri, '/spy/report/')) {
                     $isProtected = true;
+                } elseif (str_starts_with($uri, '/spy/page/')) { // --- NEW ---
+                    $isProtected = true;
                 } elseif (str_starts_with($uri, '/battle/page/')) {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/battle/report/')) {
@@ -213,7 +216,7 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/profile/')) { // Player profile
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/invite/')) { // NEW: Protect invite route
+                } elseif (str_starts_with($uri, '/alliance/invite/')) {
                     $isProtected = true;
                 }
             }
