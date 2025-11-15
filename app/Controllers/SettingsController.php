@@ -25,6 +25,10 @@ class SettingsController extends BaseController
         $userId = $this->session->get('user_id');
         $data = $this->settingsService->getSettingsData($userId);
 
+        // --- THIS IS THE CHANGE ---
+        // Tell the layout to render in full-width mode
+        $data['layoutMode'] = 'full';
+
         $this->render('settings/show.php', $data + ['title' => 'Settings']);
     }
 
@@ -74,7 +78,6 @@ class SettingsController extends BaseController
         $newEmail = (string)($_POST['email'] ?? '');
         $password = (string)($_POST['current_password_email'] ?? '');
 
-        // --- THIS IS THE FIX ---
         $this->settingsService->updateEmail($userId, $newEmail, $password);
         
         $this->redirect('/settings');
@@ -97,7 +100,6 @@ class SettingsController extends BaseController
         $newPass = (string)($_POST['new_password'] ?? '');
         $confirmPass = (string)($_POST['confirm_password'] ?? '');
 
-        // --- THIS IS THE FIX ---
         $this->settingsService->updatePassword($userId, $oldPass, $newPass, $confirmPass);
         
         $this->redirect('/settings');
@@ -122,7 +124,6 @@ class SettingsController extends BaseController
         $a2 = (string)($_POST['answer_2'] ?? '');
         $password = (string)($_POST['current_password_security'] ?? '');
 
-        // --- THIS IS THE FIX ---
         $this->settingsService->updateSecurityQuestions($userId, $q1, $a1, $q2, $a2, $password);
         
         $this->redirect('/settings');

@@ -37,6 +37,10 @@ class DashboardController extends BaseController
         // 1. Call the service to get all our data in one array
         $data = $this->dashboardService->getDashboardData((int)$userId);
 
+        // --- THIS IS THE CHANGE ---
+        // Tell the layout to render in full-width mode
+        $data['layoutMode'] = 'full';
+
         // 2. Render the "dumb" view, passing in the data
         // BaseController::render() will extract the array keys
         // into $user, $resources, $stats, and $structures variables

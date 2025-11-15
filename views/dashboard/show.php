@@ -14,9 +14,10 @@
     .dashboard-grid {
         text-align: left;
         width: 100%;
-        max-width: 1200px;
-        margin: 0 auto; /* hard-center */
-        padding: 1.5rem 1.5rem 3.5rem;
+        /* --- CHANGE 1: max-width and padding removed --- */
+        /* max-width: 1200px; */ /* REMOVED */
+        margin: 0 auto;
+        /* padding: 1.5rem 1.5rem 3.5rem; */ /* REMOVED */
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
@@ -203,7 +204,7 @@
         transform: translateY(-1px);
     }
 
-    /* --- NEW AVATAR STYLES --- */
+    /* --- AVATAR STYLES --- */
     .character-card-header {
         display: flex;
         gap: 1rem;
@@ -218,11 +219,30 @@
         background: #1e1e3f;
         border: 2px solid rgba(45, 209, 209, 0.5);
         object-fit: cover;
+        /* --- CHANGE 2: Added transition --- */
+        transition: all 0.2s ease-out;
     }
     .character-card-header h3 {
         margin-bottom: 0; /* Remove margin from h3 */
         border-bottom: none;
         padding-bottom: 0;
+    }
+    
+    /* --- CHANGE 3: Added SVG styles --- */
+    .character-avatar-svg {
+        padding: 0.85rem;
+        color: #a8afd4;
+    }
+    
+    /* --- CHANGE 4: Added Desktop media query --- */
+    @media (min-width: 1025px) {
+        .character-avatar {
+            width: 100px;
+            height: 100px;
+        }
+        .character-avatar-svg {
+            padding: 1.5rem;
+        }
     }
 </style>
 
@@ -238,12 +258,13 @@
             <?php if ($user->profile_picture_url): ?>
                 <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="character-avatar">
             <?php else: ?>
-                <svg class="character-avatar" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 0.85rem; color: #a8afd4;">
+                <svg class="character-avatar character-avatar-svg" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                 </svg>
             <?php endif; ?>
             <h3>Character</h3>
         </div>
+
         <ul>
             <li><span>Level:</span> <span><?= $stats->level ?></span></li>
             <li><span>Net Worth:</span> <span><?= number_format($stats->net_worth) ?></span></li>
