@@ -13,5 +13,5 @@
 .DS_Store
 
 #User Uploaded Data
-
 /public/uploads/avatars/*
+/storage/avatars/*

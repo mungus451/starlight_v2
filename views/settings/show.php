@@ -164,14 +164,16 @@
                 <div class="form-group">
                     <label>Profile Picture (Max 2MB)</label>
                     <div class="pfp-preview-container">
+                        
+                        <?php // --- THIS BLOCK IS CHANGED --- ?>
                         <?php if ($user->profile_picture_url): ?>
-                            <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Current Avatar" class="pfp-preview">
+                            <img src="/serve/avatar/<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Current Avatar" class="pfp-preview">
                         <?php else: ?>
                             <svg class="pfp-preview" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 1.25rem; color: #a8afd4;">
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                             </svg>
                         <?php endif; ?>
-
+                        
                         <div class="pfp-upload-group">
                             <input type="file" name="profile_picture" id="profile_picture" accept="image/jpeg,image/png,image/gif,image/webp,image/avif">
                             
@@ -276,4 +278,4 @@
         </div>
 
     </div> 
-</div> 
+</div>

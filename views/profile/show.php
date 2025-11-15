@@ -240,8 +240,10 @@
     <div class="profile-grid">
 
         <div class="data-card profile-header-card">
+            
+            <?php // --- THIS BLOCK IS CHANGED --- ?>
             <?php if ($profile['profile_picture_url']): ?>
-                <img src="<?= htmlspecialchars($profile['profile_picture_url']) ?>" alt="Avatar" class="profile-avatar">
+                <img src="/serve/avatar/<?= htmlspecialchars($profile['profile_picture_url']) ?>" alt="Avatar" class="profile-avatar">
             <?php else: ?>
                 <svg class="profile-avatar profile-avatar-svg" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>

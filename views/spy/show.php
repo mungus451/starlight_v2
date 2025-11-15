@@ -316,13 +316,16 @@ $turn_cost = $costs['attack_turn_cost'];
                             
                             <td>
                                 <div class="player-cell">
+                                    
+                                    <?php // --- THIS BLOCK IS CHANGED --- ?>
                                     <?php if ($target['profile_picture_url']): ?>
-                                        <img src="<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-spy-modal">
+                                        <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-spy-modal">
                                     <?php else: ?>
                                         <svg class="player-avatar player-avatar-svg btn-spy-modal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                         </svg>
                                     <?php endif; ?>
+                                    
                                     <div>
                                         <span class="player-name">
                                             <a href="/profile/<?= $target['id'] ?>"><?= htmlspecialchars($target['character_name']) ?></a>

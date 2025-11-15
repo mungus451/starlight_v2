@@ -15,7 +15,8 @@ use App\Controllers\AllianceManagementController;
 use App\Controllers\AllianceRoleController;
 use App\Controllers\ArmoryController;
 use App\Controllers\PagesController;
-use App\Controllers\ProfileController; // Import ProfileController
+use App\Controllers\ProfileController;
+use App\Controllers\FileController; // --- NEW ---
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -65,6 +66,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Public Profile Route ---
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
 
+    // --- NEW: Secure File Serving Route ---
+    $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
+
     // --- Phase 3: Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
     $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
@@ -93,7 +97,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Phase 7: Spy Routes ---
     $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
-    $r->addRoute('GET', '/spy/page/{page:\d+}', [SpyController::class, 'show']); // --- NEW ---
+    $r->addRoute('GET', '/spy/page/{page:\d+}', [SpyController::class, 'show']);
     $r->addRoute('POST', '/spy/conduct', [SpyController::class, 'handleSpy']);
     $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
     $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
@@ -190,7 +194,7 @@ try {
             if (!$isProtected) {
                 if (str_starts_with($uri, '/spy/report/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/spy/page/')) { // --- NEW ---
+                } elseif (str_starts_with($uri, '/spy/page/')) {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/battle/page/')) {
                     $isProtected = true;
@@ -217,6 +221,8 @@ try {
                 } elseif (str_starts_with($uri, '/profile/')) { // Player profile
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/invite/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/serve/avatar/')) { // --- NEW ---
                     $isProtected = true;
                 }
             }
