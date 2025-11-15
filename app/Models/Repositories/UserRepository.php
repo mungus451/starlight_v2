@@ -67,9 +67,15 @@ class UserRepository
 
     /**
      * Updates the non-sensitive profile information for a user.
+     * ---
+     * FIX: Changed $bio, $pfpUrl, and $phone to be nullable (?string)
+     * to match the service logic and prevent TypeErrors.
+     * ---
      */
-    public function updateProfile(int $userId, string $bio, string $pfpUrl, string $phone): bool
+    public function updateProfile(int $userId, ?string $bio, ?string $pfpUrl, ?string $phone): bool
     {
+        // SQL already handles null values correctly, so no changes needed here.
+        // We just needed to update the method signature above.
         $bio = empty($bio) ? null : $bio;
         $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
         $phone = empty($phone) ? null : $phone;
