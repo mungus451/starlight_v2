@@ -1,343 +1,448 @@
+<?php
+// --- Helper variables from the controller ---
+/* @var \App\Models\Entities\User $user */
+/* @var \App\Models\Entities\UserResource $resources */
+/* @var \App\Models\Entities\UserStats $stats */
+/* @var \App\Models\Entities\UserStructure $structures */
+/* @var array $incomeBreakdown */
+/* @var array $offenseBreakdown */
+/* @var array $defenseBreakdown */
+/* @var array $spyBreakdown */
+/* @var array $sentryBreakdown */
+?>
+
 <style>
     :root {
-        --bg: radial-gradient(circle at 10% 0%, #0c101e 0%, #050712 42%, #02030a 75%);
-        --panel: rgba(12, 14, 25, 0.68);
+        --bg-panel: rgba(12, 14, 25, 0.68);
         --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.08), rgba(13, 15, 27, 0.75));
         --border: rgba(255, 255, 255, 0.035);
         --accent: #2dd1d1;
+        --accent-2: #f9c74f;
+        --accent-green: #4CAF50;
+        --accent-red: #e53e3e;
+        --accent-blue: #7683f5;
         --text: #eff1ff;
         --muted: #a8afd4;
         --radius: 18px;
         --shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
     }
 
+    /* --- Base Grid (from V1 Screenshot) --- */
     .dashboard-grid {
         text-align: left;
         width: 100%;
-        /* --- CHANGE 1: max-width and padding removed --- */
-        /* max-width: 1200px; */ /* REMOVED */
         margin: 0 auto;
-        /* padding: 1.5rem 1.5rem 3.5rem; */ /* REMOVED */
         display: grid;
         grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: auto auto auto 1fr; /* Define rows */
         gap: 1.5rem;
         position: relative;
-        box-sizing: border-box;
     }
 
-    /* center the overlay too so it doesn't "pull" to the right */
-    .dashboard-grid::before {
-        content: "";
-        position: absolute;
-        inset: -80px 0 0 0; /* no negative horizontal stretch */
-        background-image:
-            linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 0),
-            linear-gradient(0deg, rgba(255,255,255,0.018) 1px, transparent 0);
-        background-size: 120px 120px;
-        pointer-events: none;
-        z-index: -1;
-    }
-
-    @media (max-width: 1024px) {
+    /* --- Grid Spans --- */
+    .grid-col-span-1 { grid-column: span 1; }
+    .grid-col-span-2 { grid-column: span 2; }
+    .grid-col-span-3 { grid-column: span 3; }
+    .grid-row-span-2 { grid-row: span 2; }
+    
+    /* --- Responsive Grid --- */
+    @media (max-width: 1200px) {
         .dashboard-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr; /* 2 columns */
         }
+        /* Make main cards span full width */
+        .grid-col-span-2 { grid-column: span 2; }
+        .grid-row-span-2 { grid-row: span 1; } /* Stack rows */
     }
-
     @media (max-width: 768px) {
         .dashboard-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr; /* 1 column */
         }
-    }
-
-    .grid-span-1 { grid-column: span 1; }
-    .grid-span-2 { grid-column: span 2; }
-    .grid-span-3 { grid-column: span 3; }
-
-    @media (max-width: 1024px) {
-        .md-grid-span-1 { grid-column: span 1; }
-        .md-grid-span-2 { grid-column: span 2; }
-    }
-
-    @media (max-width: 768px) {
-        .sm-grid-span-1 { grid-column: span 1; }
-        .grid-span-1, .grid-span-2, .grid-span-3,
-        .md-grid-span-1, .md-grid-span-2 {
+        /* All items span 1 column */
+        .grid-col-span-1, .grid-col-span-2, .grid-col-span-3 {
             grid-column: span 1;
         }
     }
 
-    .welcome-header {
-        text-align: center;
-        color: var(--muted);
-        font-size: 1rem;
-        margin-top: -0.25rem;
-        margin-bottom: 0.35rem;
+    /* --- Player Header (V1 Style) --- */
+    .player-header {
+        grid-column: 1 / -1; /* Full width */
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(6px);
     }
-
+    .player-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .player-avatar {
+        width: 100px; /* Was 60px */
+        height: 100px; /* Was 60px */
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #1e1e3f;
+        border: 2px solid var(--accent);
+        object-fit: cover;
+    }
+    .player-avatar-svg {
+        padding: 1.5rem; /* Was 0.85rem */
+        color: var(--muted);
+    }
+    
+    .player-info h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #fff;
+    }
+    .player-info .sub-text {
+        font-size: 0.9rem;
+        color: var(--muted);
+        display: block;
+    }
+    .player-info .sub-text a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .player-info .sub-text a:hover {
+        text-decoration: underline;
+    }
+    .player-stats {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        text-align: right;
+    }
+    .player-stat {
+        flex-grow: 1;
+    }
+    .player-stat span {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    .player-stat strong {
+        font-size: 1.3rem;
+        color: #fff;
+        font-weight: 600;
+    }
+    
+    /* --- Main Data Card (V1 Style) --- */
     .data-card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.05rem 1.25rem 1.15rem;
-        margin-bottom: 0;
-        display: flex;
-        flex-direction: column;
-        backdrop-filter: blur(6px);
+        padding: 1.25rem 1.5rem;
         box-shadow: var(--shadow);
-        transition: transform 0.1s ease-out, border 0.1s ease-out;
-    }
-    .data-card:hover {
-        transform: translateY(-1px);
-        border: 1px solid rgba(45, 209, 209, 0.25);
-    }
-
-    .data-card h1 {
-        margin-bottom: 0.25rem;
-        color: #fff;
-        letter-spacing: -0.03em;
-    }
-    .data-card h3 {
-        color: #fff;
-        margin-top: 0;
-        margin-bottom: 0.85rem;
-        border-bottom: 1px solid rgba(233, 219, 255, 0.03);
-        padding-bottom: 0.5rem;
-        font-size: 0.9rem;
-        letter-spacing: 0.02em;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-    .data-card h3::before {
-        content: "";
-        width: 4px;
-        height: 16px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, #2dd1d1, rgba(2, 3, 10, 0));
-        box-shadow: 0 0 20px rgba(45, 209, 209, 0.35);
-    }
-
-    .data-card ul {
-        list-style: none;
-        padding-left: 0;
-        margin: 0;
+        backdrop-filter: blur(6px);
         display: flex;
         flex-direction: column;
-        height: 100%;
-        gap: 0.35rem;
     }
-    .data-card li {
-        font-size: 0.9rem;
-        color: #e0e0e0;
-        padding: 0.55rem 0.25rem;
+    
+    .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(58, 58, 90, 0.08);
-        gap: 1rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
     }
-    .data-card li:last-child {
-        border-bottom: none;
-        margin-top: auto;
-    }
-
-    .data-card li span:first-child {
-        font-weight: 500;
-        color: rgba(239, 241, 255, 0.7);
-        font-size: 0.85rem;
-    }
-    .data-card li span:last-child {
-        font-weight: 600;
+    .card-header h3 {
         color: #fff;
-        text-align: right;
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.02em;
+    }
+    .card-toggle {
         font-size: 0.85rem;
-    }
-
-    .data-card li a {
-        color: #2dd1d1;
-        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
         text-decoration: none;
-        font-size: 0.78rem;
     }
-    .data-card li a:hover {
+    .card-toggle:hover {
+        color: var(--accent);
         text-decoration: underline;
     }
-
-    .structure-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0 1.5rem;
+    
+    /* Stats List */
+    .card-stats-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem 0;
+        flex-grow: 1;
     }
-    .structure-grid li {
-        border-bottom: none;
-        padding: 0.3rem 0.25rem;
-    }
-    @media (max-width: 768px) {
-        .structure-grid {
-            grid-template-columns: 1fr;
-            gap: 0;
-        }
-    }
-
-    .logout-link {
-        display: block;
-        width: 100%;
-        text-align: center;
-        padding: 0.75rem 1.5rem;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.15s ease;
-        background: linear-gradient(135deg, rgba(232, 65, 95, 0.9) 0%, rgba(196, 41, 62, 0.9) 100%);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.02);
-        cursor: pointer;
-        margin-top: 0;
-        box-sizing: border-box;
-        box-shadow: 0 10px 30px rgba(196, 41, 62, 0.3);
-        backdrop-filter: blur(4px);
-    }
-    .logout-link:hover {
-        filter: brightness(1.03);
-        transform: translateY(-1px);
-    }
-
-    /* --- AVATAR STYLES --- */
-    .character-card-header {
+    .card-stats-list li {
         display: flex;
-        gap: 1rem;
+        justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.85rem; /* Replaces h3 margin */
+        padding: 0.6rem 0.25rem;
+        border-bottom: 1px solid rgba(58, 58, 90, 0.08);
     }
-    .character-avatar {
-        width: 60px;
-        height: 60px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: #1e1e3f;
-        border: 2px solid rgba(45, 209, 209, 0.5);
-        object-fit: cover;
-        /* --- CHANGE 2: Added transition --- */
-        transition: all 0.2s ease-out;
-    }
-    .character-card-header h3 {
-        margin-bottom: 0; /* Remove margin from h3 */
+    .card-stats-list li:last-child {
         border-bottom: none;
-        padding-bottom: 0;
+    }
+    .card-stats-list li span:first-child {
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+    .card-stats-list li span:last-child {
+        font-size: 1.1rem;
+        color: var(--text);
+        font-weight: 600;
     }
     
-    /* --- CHANGE 3: Added SVG styles --- */
-    .character-avatar-svg {
-        padding: 0.85rem;
-        color: #a8afd4;
+    /* Value Colors */
+    .value-total {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
     }
-    
-    /* --- CHANGE 4: Added Desktop media query --- */
-    @media (min-width: 1025px) {
-        .character-avatar {
-            width: 100px;
-            height: 100px;
-        }
-        .character-avatar-svg {
-            padding: 1.5rem;
-        }
+    .value-green { color: var(--accent-green) !important; }
+    .value-blue { color: var(--accent-blue) !important; }
+    .value-red { color: var(--accent-red) !important; }
+
+    /* Breakdown (Inline Card) */
+    .card-breakdown {
+        display: none; /* Hidden by default */
+        background: rgba(5, 7, 18, 0.4);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    .card-breakdown.active {
+        display: block;
+    }
+    .card-breakdown ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .card-breakdown li {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding: 0.35rem 0;
+    }
+    .card-breakdown li span:last-child {
+        color: var(--text);
+        font-weight: 600;
     }
 </style>
 
 <div class="dashboard-grid">
-    <div class="data-card grid-span-3 sm-grid-span-1" style="text-align: center;">
-        <h1>Dashboard</h1>
-        <p class="welcome-header">Welcome, Commander <?= htmlspecialchars($user->characterName) ?></p>
-    </div>
 
-    <div class="data-card grid-span-1 sm-grid-span-1">
-        
-        <div class="character-card-header">
+    <div class="player-header">
+        <div class="player-info">
             <?php if ($user->profile_picture_url): ?>
-                <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="character-avatar">
+                <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="player-avatar">
             <?php else: ?>
-                <svg class="character-avatar character-avatar-svg" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg class="player-avatar player-avatar-svg" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                 </svg>
             <?php endif; ?>
-            <h3>Character</h3>
-        </div>
-
-        <ul>
-            <li><span>Level:</span> <span><?= $stats->level ?></span></li>
-            <li><span>Net Worth:</span> <span><?= number_format($stats->net_worth) ?></span></li>
-            <li><span>Experience:</span> <span><?= number_format($stats->experience) ?></span></li>
-            <li><span>War Prestige:</span> <span><?= number_format($stats->war_prestige) ?></span></li>
-        </ul>
-    </div>
-
-    <div class="data-card grid-span-1 sm-grid-span-1">
-        <h3>Resources</h3>
-        <ul>
-            <li><span>Credits:</span> <span><?= number_format($resources->credits) ?></span></li>
-            <li><span>Gemstones:</span> <span><?= number_format($resources->gemstones) ?></span></li>
-            <li><span>Citizens:</span> <span><?= number_format($resources->untrained_citizens) ?></span></li>
-            <li><span>Workers:</span> <span><?= number_format($resources->workers) ?></span></li>
-        </ul>
-    </div>
-
-    <div class="data-card grid-span-1 sm-grid-span-1">
-        <h3>Military</h3>
-        <ul>
-            <li><span>Soldiers:</span> <span><?= number_format($resources->soldiers) ?></span></li>
-            <li><span>Guards:</span> <span><?= number_format($resources->guards) ?></span></li>
-            <li><span>Spies:</span> <span><?= number_format($resources->spies) ?></span></li>
-            <li><span>Sentries:</span> <span><?= number_format($resources->sentries) ?></span></li>
-        </ul>
-    </div>
-    
-    <div class="data-card grid-span-1 sm-grid-span-1">
-        <h3>Actions</h3>
-        <ul>
-            <li><span>Attack Turns:</span> <span><?= number_format($stats->attack_turns) ?></span></li>
-            <li>
-                <span>Level Up Points:</span> 
-                <span>
-                    <?= number_format($stats->level_up_points) ?> 
-                    <?php if ($stats->level_up_points > 0): ?>
-                        <a href="/level-up">(Spend)</a>
+            <div>
+                <h2><?= htmlspecialchars($user->characterName) ?></h2>
+                <span class="sub-text">
+                    <?php if ($user->alliance_id): ?>
+                        <a href="/alliance/profile/<?= $user->alliance_id ?>">View Alliance</a>
+                    <?php else: ?>
+                        <a href="/alliance/list">Find an Alliance</a>
                     <?php endif; ?>
                 </span>
+            </div>
+        </div>
+        <div class="player-stats">
+            <div class="player-stat">
+                <span>Level</span>
+                <strong><?= $stats->level ?></strong>
+            </div>
+            <div class="player-stat">
+                <span>Credits</span>
+                <strong><?= number_format($resources->credits) ?></strong>
+            </div>
+            <div class="player-stat">
+                <span>Citizens</span>
+                <strong><?= number_format($resources->untrained_citizens) ?></strong>
+            </div>
+            <div class="player-stat">
+                <span>Workers</span>
+                <strong><?= number_format($resources->workers) ?></strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card grid-col-span-2">
+        <div class="card-header">
+            <h3>Economic Overview</h3>
+            <a class="card-toggle" data-target="breakdown-income">Show Breakdown</a>
+        </div>
+        
+        <ul class="card-stats-list">
+            <li>
+                <span>Economy Income / Turn</span>
+                <span class="value-green">+ <?= number_format($incomeBreakdown['base_credits']) ?></span>
+            </li>
+            <li>
+                <span>Bank Interest / Turn</span>
+                <span class="value-green">+ <?= number_format($incomeBreakdown['interest']) ?></span>
+            </li>
+            <li>
+                <span>Credits on Hand</span>
+                <span><?= number_format($resources->credits) ?></span>
+            </li>
+            <li>
+                <span>Banked Credits</span>
+                <span><?= number_format($resources->banked_credits) ?></span>
             </li>
         </ul>
+        <div class="card-breakdown" id="breakdown-income">
+            <ul>
+                <li>
+                    <span>Base from Economy (Lvl <?= $incomeBreakdown['econ_level'] ?>)</span>
+                    <span>+ <?= number_format($incomeBreakdown['base_credits']) ?></span>
+                </li>
+                <li>
+                    <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
+                    <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
+                </li>
+                <li>
+                    <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
+                    <span>+ <?= number_format($incomeBreakdown['total_citizens']) ?></span>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <div class="data-card grid-span-2 md-grid-span-1 sm-grid-span-1">
-        <h3>Alliance</h3>
-        <ul>
-            <?php if ($user->alliance_id !== null): ?>
-                <li>
-                    <span>Status:</span>
-                    <span><a href="/alliance/profile/<?= $user->alliance_id ?>">View Alliance</a></span>
-                </li>
-            <?php else: ?>
-                <li>
-                    <span>Status:</span>
-                    <span><a href="/alliance/list">Find an Alliance</a></span>
-                </li>
-            <?php endif; ?>
+    <div class="data-card grid-col-span-1">
+        <div class="card-header">
+            <h3>Stats</h3>
+            <a href="/level-up" class="card-toggle">Spend Points</a>
+        </div>
+        <ul class="card-stats-list">
+            <li>
+                <span>Points to Spend</span>
+                <span class="value-green"><?= number_format($stats->level_up_points) ?></span>
+            </li>
+            <li><span>Strength</span> <span><?= number_format($stats->strength_points) ?></span></li>
+            <li><span>Constitution</span> <span><?= number_format($stats->constitution_points) ?></span></li>
+            <li><span>Attack Turns</span> <span><?= number_format($stats->attack_turns) ?></span></li>
         </ul>
     </div>
 
-    <div class="data-card grid-span-3 sm-grid-span-1">
-        <h3>Structures</h3>
-        <ul class="structure-grid">
-            <li><span>Fortification:</span> <span>Level <?= $structures->fortification_level ?></span></li>
-            <li><span>Spy Upgrade:</span> <span>Level <?= $structures->spy_upgrade_level ?></span></li>
-            <li><span>Offense Upgrade:</span> <span>Level <?= $structures->offense_upgrade_level ?></span></li>
-            <li><span>Economy Upgrade:</span> <span>Level <?= $structures->economy_upgrade_level ?></span></li>
-            <li><span>Defense Upgrade:</span> <span>Level <?= $structures->defense_upgrade_level ?></span></li>
-            <li><span>Population:</span> <span>Level <?= $structures->population_level ?></span></li>
-            <li class="grid-span-1"><span>Armory:</span> <span>Level <?= $structures->armory_level ?></span></li>
+    <div class="data-card grid-col-span-2 grid-row-span-2">
+        <div class="card-header">
+            <h3>Military Command</h3>
+            <a class="card-toggle" data-target="breakdown-military">Show Breakdown</a>
+        </div>
+        <ul class="card-stats-list">
+            <li>
+                <span>Offense Power</span>
+                <span class="value-red value-total"><?= number_format($offenseBreakdown['total']) ?></span>
+            </li>
+            <li>
+                <span>Defense Rating</span>
+                <span class="value-blue value-total"><?= number_format($defenseBreakdown['total']) ?></span>
+            </li>
+            <li>
+                <span>Spy Power</span>
+                <span class="value-green"><?= number_format($spyBreakdown['total']) ?></span>
+            </li>
+            <li>
+                <span>Sentry Power</span>
+                <span class="value-green"><?= number_format($sentryBreakdown['total']) ?></span>
+            </li>
+        </ul>
+        <div class="card-breakdown" id="breakdown-military">
+            <strong>Offense Power (<?= number_format($offenseBreakdown['unit_count']) ?> Soldiers)</strong>
+            <ul>
+                <li><span>Base Soldier Power</span> <span><?= number_format($offenseBreakdown['base_unit_power']) ?></span></li>
+                <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($offenseBreakdown['armory_bonus']) ?></span></li>
+                <li><span>Offense Lvl <?= $offenseBreakdown['structure_level'] ?> Bonus</span> <span>+ <?= $offenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
+                <li><span>Strength (<?= $offenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $offenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
+            </ul>
+            <br>
+            <strong>Defense Rating (<?= number_format($defenseBreakdown['unit_count']) ?> Guards)</strong>
+            <ul>
+                <li><span>Base Guard Power</span> <span><?= number_format($defenseBreakdown['base_unit_power']) ?></span></li>
+                <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($defenseBreakdown['armory_bonus']) ?></span></li>
+                <li><span>Structure (Fort <?= $defenseBreakdown['fort_level'] ?> + Def <?= $defenseBreakdown['def_level'] ?>)</span> <span>+ <?= $defenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
+                <li><span>Constitution (<?= $defenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $defenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="data-card grid-col-span-1">
+        <div class="card-header">
+            <h3>Military Units</h3>
+            <a href="/training" class="card-toggle">Train</a>
+        </div>
+        <ul class="card-stats-list">
+            <li><span>Soldiers</span> <span><?= number_format($resources->soldiers) ?></span></li>
+            <li><span>Guards</span> <span><?= number_format($resources->guards) ?></span></li>
+            <li><span>Spies</span> <span><?= number_format($resources->spies) ?></span></li>
+            <li><span>Sentries</span> <span><?= number_format($resources->sentries) ?></span></li>
         </ul>
     </div>
 
-    <a href="/logout" class="logout-link grid-span-3 sm-grid-span-1">Logout</a>
+    <div class="data-card grid-col-span-1">
+        <div class="card-header">
+            <h3>Structures</h3>
+            <a href="/structures" class="card-toggle">Upgrade</a>
+        </div>
+        <ul class="card-stats-list">
+            <li><span>Fortification</span> <span>Lvl <?= $structures->fortification_level ?></span></li>
+            <li><span>Offense Upgrade</span> <span>Lvl <?= $structures->offense_upgrade_level ?></span></li>
+            <li><span>Defense Upgrade</span> <span>Lvl <?= $structures->defense_upgrade_level ?></span></li>
+            <li><span>Spy Upgrade</span> <span>Lvl <?= $structures->spy_upgrade_level ?></span></li>
+            <li><span>Economy</span> <span>Lvl <?= $structures->economy_upgrade_level ?></span></li>
+            <li><span>Population</span> <span>Lvl <?= $structures->population_level ?></span></li>
+            <li><span>Armory</span> <span>Lvl <?= $structures->armory_level ?></span></li>
+        </ul>
+    </div>
+
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // JS for the "Show Breakdown" toggles
+    document.querySelectorAll('.card-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-target');
+            if (!targetId) {
+                // If no target, it's a link (like "Train" or "Spend Points"), so follow it
+                window.location.href = this.href;
+                return;
+            }
+
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                if (targetElement.classList.contains('active')) {
+                    // It's active, hide it
+                    targetElement.classList.remove('active');
+                    this.textContent = 'Show Breakdown';
+                } else {
+                    // It's hidden, show it
+                    targetElement.classList.add('active');
+                    this.textContent = 'Hide Breakdown';
+                }
+            }
+        });
+    });
+});
+</script>

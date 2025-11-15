@@ -10,7 +10,8 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\BattleRepository;
-use App\Models\Services\ArmoryService; // NEW: Import ArmoryService
+use App\Models\Services\ArmoryService;
+use App\Models\Services\PowerCalculatorService; // Import new service
 use PDO;
 use Throwable;
 
@@ -27,7 +28,8 @@ class AttackService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private BattleRepository $battleRepo;
-    private ArmoryService $armoryService; // NEW: Add ArmoryService property
+    private ArmoryService $armoryService;
+    private PowerCalculatorService $powerCalculatorService; // Add new service property
 
     public function __construct()
     {
@@ -40,12 +42,14 @@ class AttackService
         $this->structureRepo = new StructureRepository($this->db);
         $this->statsRepo = new StatsRepository($this->db);
         $this->battleRepo = new BattleRepository($this->db);
-        $this->armoryService = new ArmoryService(); // NEW: Instantiate ArmoryService
+        
+        // Instantiate services
+        $this->armoryService = new ArmoryService();
+        $this->powerCalculatorService = new PowerCalculatorService(); // Instantiate new service
     }
 
     /**
      * Gets all data needed for the main Battle page.
-     * --- THIS METHOD IS UPDATED FOR THE NEW UI ---
      */
     public function getAttackPageData(int $userId, int $page): array
     {
@@ -57,21 +61,19 @@ class AttackService
         // 2. Get Pagination config
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
         
-        // --- NEW: Use new repo methods to get target count (excluding self) ---
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
         $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
         $offset = ($page - 1) * $perPage;
 
         // 3. Get Player Target List
-        // --- NEW: Use new repo method to get rich data ---
         $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $userId);
 
         return [
             'attackerResources' => $attackerResources,
             'attackerStats' => $attackerStats,
             'costs' => $costs,
-            'targets' => $targets, // --- RENAMED 'players' to 'targets' ---
+            'targets' => $targets,
             'pagination' => [
                 'currentPage' => $page,
                 'totalPages' => $totalPages
@@ -94,7 +96,6 @@ class AttackService
         
         // 3. Sort the combined array by date, descending
         usort($allReports, function($a, $b) {
-            // We use <=> for safe comparison. $b vs $a for descending order.
             return $b->created_at <=> $a->created_at;
         });
         
@@ -162,30 +163,25 @@ class AttackService
             return false;
         }
 
-        // --- 4. Calculate Battle Power (REVISED WITH ARMORY) ---
+        // --- 4. Calculate Battle Power (REFACTORED) ---
 
         // 4a. Attacker Offense Power
-        $baseSoldierPower = $soldiersSent * $config['power_per_soldier'];
-        $attackerArmoryBonus = $this->armoryService->getAggregateBonus($attackerId, 'soldier', 'attack', $soldiersSent);
-        $totalAttackerBasePower = $baseSoldierPower + $attackerArmoryBonus;
-        
-        $offensePower = $totalAttackerBasePower * (
-            1 + 
-            ($attackerStructures->offense_upgrade_level * $config['power_per_offense_level']) + 
-            ($attackerStats->strength_points * $config['power_per_strength_point'])
+        $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
+            $attackerId,
+            $attackerResources,
+            $attackerStats,
+            $attackerStructures
         );
+        $offensePower = $offensePowerBreakdown['total'];
         
         // 4b. Defender Defense Power
-        $baseGuardPower = $defenderResources->guards * $config['power_per_guard'];
-        $defenderArmoryBonus = $this->armoryService->getAggregateBonus($defender->id, 'guard', 'defense', $defenderResources->guards);
-        $totalDefenderBasePower = $baseGuardPower + $defenderArmoryBonus;
-
-        $defensePower = $totalDefenderBasePower * (
-            1 + 
-            ($defenderStructures->fortification_level * $config['power_per_fortification_level']) + 
-            ($defenderStructures->defense_upgrade_level * $config['power_per_defense_level']) + 
-            ($defenderStats->constitution_points * $config['power_per_constitution_point'])
+        $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
+            $defender->id,
+            $defenderResources,
+            $defenderStats,
+            $defenderStructures
         );
+        $defensePower = $defensePowerBreakdown['total'];
 
         // --- 5. Determine Outcome ---
         $attackResult = 'defeat'; // Default

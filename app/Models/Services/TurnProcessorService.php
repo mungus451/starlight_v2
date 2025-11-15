@@ -7,7 +7,8 @@ use App\Core\Database;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
-use App\Models\Repositories\StatsRepository; // 1. Must be use'd
+use App\Models\Repositories\StatsRepository;
+use App\Models\Services\PowerCalculatorService; // Import new service
 use PDO;
 use Throwable;
 
@@ -22,7 +23,8 @@ class TurnProcessorService
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
-    private StatsRepository $statsRepo; // 2. Must be declared
+    private StatsRepository $statsRepo;
+    private PowerCalculatorService $powerCalculatorService; // Add new service property
 
     public function __construct()
     {
@@ -32,7 +34,10 @@ class TurnProcessorService
         $this->userRepo = new UserRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->structureRepo = new StructureRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db); // 3. Must be instantiated
+        $this->statsRepo = new StatsRepository($this->db);
+        
+        // Instantiate services
+        $this->powerCalculatorService = new PowerCalculatorService(); // Instantiate new service
     }
 
     /**
@@ -67,7 +72,6 @@ class TurnProcessorService
         $this->db->beginTransaction();
         try {
             // 1. Get all required data
-            $config = $this->config->get('game_balance.turn_processor');
             $resources = $this->resourceRepo->findByUserId($userId);
             $structures = $this->structureRepo->findByUserId($userId);
 
@@ -76,10 +80,15 @@ class TurnProcessorService
                 throw new \Exception('User resource or structure data not found.');
             }
 
-            // 2. Calculate all income
-            $creditsGained = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
-            $citizensGained = $structures->population_level * $config['citizen_growth_per_pop_level'];
-            $interestGained = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
+            // 2. Calculate all income (REFACTORED)
+            $incomeBreakdown = $this->powerCalculatorService->calculateIncomePerTurn(
+                $resources,
+                $structures
+            );
+            
+            $creditsGained = $incomeBreakdown['base_credits'];
+            $interestGained = $incomeBreakdown['interest'];
+            $citizensGained = $incomeBreakdown['total_citizens'];
             $attackTurnsGained = 1; // Grant 1 attack turn per... turn
 
             // 3. Apply income using the atomic repository method

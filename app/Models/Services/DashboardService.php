@@ -7,6 +7,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Services\PowerCalculatorService; // Import the new service
 use PDO;
 
 /**
@@ -19,6 +20,7 @@ class DashboardService
     private ResourceRepository $resourceRepository;
     private StatsRepository $statsRepository;
     private StructureRepository $structureRepository;
+    private PowerCalculatorService $powerCalculator; // Add new service property
 
     public function __construct()
     {
@@ -29,32 +31,49 @@ class DashboardService
         $this->resourceRepository = new ResourceRepository($this->db);
         $this->statsRepository = new StatsRepository($this->db);
         $this->structureRepository = new StructureRepository($this->db);
+
+        // Initialize the calculator service
+        $this->powerCalculator = new PowerCalculatorService();
     }
 
     /**
-     * Fetches all data required for the user's dashboard.
+     * --- MODIFIED METHOD ---
+     * Fetches all data required for the user's dashboard,
+     * including detailed calculation breakdowns.
      *
      * @param int $userId The ID of the logged-in user
      * @return array An associative array with all dashboard data
      */
     public function getDashboardData(int $userId): array
     {
-        // For our clean MVC, we'll make separate calls.
-        // In a high-traffic app, this could be one optimized SQL query.
-        
+        // 1. Fetch all core data entities
         $user = $this->userRepository->findById($userId);
         $resources = $this->resourceRepository->findByUserId($userId);
         $stats = $this->statsRepository->findByUserId($userId);
         $structures = $this->structureRepository->findByUserId($userId);
 
-        // Because our AuthService uses a transaction, we can be confident
-        // that if the $user exists, all other data rows will also exist.
+        // 2. Get all calculation breakdowns from the new service
+        $incomeBreakdown = $this->powerCalculator->calculateIncomePerTurn($resources, $structures);
+        
+        $offenseBreakdown = $this->powerCalculator->calculateOffensePower($userId, $resources, $stats, $structures);
+        
+        $defenseBreakdown = $this->powerCalculator->calculateDefensePower($userId, $resources, $stats, $structures);
+        
+        $spyBreakdown = $this->powerCalculator->calculateSpyPower($userId, $resources, $structures);
+        
+        $sentryBreakdown = $this->powerCalculator->calculateSentryPower($userId, $resources, $structures);
 
+        // 3. Return everything in a single array
         return [
             'user' => $user,
             'resources' => $resources,
             'stats' => $stats,
             'structures' => $structures,
+            'incomeBreakdown' => $incomeBreakdown,
+            'offenseBreakdown' => $offenseBreakdown,
+            'defenseBreakdown' => $defenseBreakdown,
+            'spyBreakdown' => $spyBreakdown,
+            'sentryBreakdown' => $sentryBreakdown,
         ];
     }
 }

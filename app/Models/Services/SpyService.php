@@ -11,6 +11,7 @@ use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
 use App\Models\Services\ArmoryService; 
+use App\Models\Services\PowerCalculatorService; // Import new service
 use PDO;
 use Throwable;
 
@@ -28,6 +29,7 @@ class SpyService
     private StatsRepository $statsRepo;
     private SpyRepository $spyRepo;
     private ArmoryService $armoryService;
+    private PowerCalculatorService $powerCalculatorService; // Add new service property
 
     public function __construct()
     {
@@ -40,7 +42,10 @@ class SpyService
         $this->structureRepo = new StructureRepository($this->db);
         $this->statsRepo = new StatsRepository($this->db);
         $this->spyRepo = new SpyRepository($this->db);
+        
+        // Instantiate services
         $this->armoryService = new ArmoryService();
+        $this->powerCalculatorService = new PowerCalculatorService(); // Instantiate new service
     }
 
     /**
@@ -81,7 +86,6 @@ class SpyService
     }
 
     /**
-     * --- MODIFIED METHOD ---
      * Gets the list of spy reports for the user (offensive and defensive).
      *
      * @param int $userId
@@ -106,7 +110,6 @@ class SpyService
     }
 
     /**
-     * --- MODIFIED METHOD ---
      * Gets a single, specific spy report, ensuring the user owns it.
      *
      * @param int $reportId
@@ -171,24 +174,23 @@ class SpyService
             return false;
         }
 
-        // --- 4. Calculate Spy Roll (REVISED WITH ARMORY) ---
+        // --- 4. Calculate Spy Roll (REFACTORED) ---
         
         // 4a. Spy Offense
-        // Using an implicit base power of 1.0 for spies
-        $baseSpyPower = $spiesSent * ($config['base_power_per_spy'] ?? 1.0); 
-        $attackerArmoryBonus = $this->armoryService->getAggregateBonus($attackerId, 'spy', 'attack', $spiesSent);
-        $totalSpyBasePower = $baseSpyPower + $attackerArmoryBonus;
-        
-        $offense = $totalSpyBasePower * (1 + ($attackerStructures->spy_upgrade_level * $config['offense_power_per_level']));
+        $offenseBreakdown = $this->powerCalculatorService->calculateSpyPower(
+            $attackerId,
+            $attackerResources,
+            $attackerStructures
+        );
+        $offense = $offenseBreakdown['total'];
 
         // 4b. Sentry Defense
-        // Using an implicit base power of 1.0 for sentries
-        $baseSentryPower = $defenderResources->sentries * ($config['base_power_per_sentry'] ?? 1.0);
-        $defenderArmoryBonus = $this->armoryService->getAggregateBonus($defender->id, 'sentry', 'defense', $defenderResources->sentries);
-        $totalSentryBasePower = $baseSentryPower + $defenderArmoryBonus;
-
-        $defense = $totalSentryBasePower * (1 + ($defenderStructures->spy_upgrade_level * $config['defense_power_per_level']));
-
+        $defenseBreakdown = $this->powerCalculatorService->calculateSentryPower(
+            $defender->id,
+            $defenderResources,
+            $defenderStructures
+        );
+        $defense = $defenseBreakdown['total'];
         
         $totalPower = $offense + $defense;
 
