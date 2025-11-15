@@ -202,18 +202,48 @@
         filter: brightness(1.03);
         transform: translateY(-1px);
     }
+
+    /* --- NEW AVATAR STYLES --- */
+    .character-card-header {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 0.85rem; /* Replaces h3 margin */
+    }
+    .character-avatar {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #1e1e3f;
+        border: 2px solid rgba(45, 209, 209, 0.5);
+        object-fit: cover;
+    }
+    .character-card-header h3 {
+        margin-bottom: 0; /* Remove margin from h3 */
+        border-bottom: none;
+        padding-bottom: 0;
+    }
 </style>
 
 <div class="dashboard-grid">
-    <!-- Header Card -->
     <div class="data-card grid-span-3 sm-grid-span-1" style="text-align: center;">
         <h1>Dashboard</h1>
         <p class="welcome-header">Welcome, Commander <?= htmlspecialchars($user->characterName) ?></p>
     </div>
 
-    <!-- Character Card -->
     <div class="data-card grid-span-1 sm-grid-span-1">
-        <h3>Character</h3>
+        
+        <div class="character-card-header">
+            <?php if ($user->profile_picture_url): ?>
+                <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="character-avatar">
+            <?php else: ?>
+                <svg class="character-avatar" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 0.85rem; color: #a8afd4;">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                </svg>
+            <?php endif; ?>
+            <h3>Character</h3>
+        </div>
         <ul>
             <li><span>Level:</span> <span><?= $stats->level ?></span></li>
             <li><span>Net Worth:</span> <span><?= number_format($stats->net_worth) ?></span></li>
@@ -222,7 +252,6 @@
         </ul>
     </div>
 
-    <!-- Resources Card -->
     <div class="data-card grid-span-1 sm-grid-span-1">
         <h3>Resources</h3>
         <ul>
@@ -233,7 +262,6 @@
         </ul>
     </div>
 
-    <!-- Military Card -->
     <div class="data-card grid-span-1 sm-grid-span-1">
         <h3>Military</h3>
         <ul>
@@ -244,7 +272,6 @@
         </ul>
     </div>
     
-    <!-- Actions Card -->
     <div class="data-card grid-span-1 sm-grid-span-1">
         <h3>Actions</h3>
         <ul>
@@ -261,7 +288,6 @@
         </ul>
     </div>
 
-    <!-- Alliance Card -->
     <div class="data-card grid-span-2 md-grid-span-1 sm-grid-span-1">
         <h3>Alliance</h3>
         <ul>
@@ -279,7 +305,6 @@
         </ul>
     </div>
 
-    <!-- Structures Card -->
     <div class="data-card grid-span-3 sm-grid-span-1">
         <h3>Structures</h3>
         <ul class="structure-grid">

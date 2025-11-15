@@ -41,11 +41,19 @@ class SettingsController extends BaseController
         }
 
         $userId = $this->session->get('user_id');
+        
+        // Get data from form
         $bio = (string)($_POST['bio'] ?? '');
-        $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
         $phone = (string)($_POST['phone_number'] ?? '');
+        
+        // Get file upload data, defaulting to "no file" error
+        $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
+        
+        // Check if the "remove" checkbox was sent
+        $removePhoto = isset($_POST['remove_picture']) && $_POST['remove_picture'] === '1';
 
-        $this->settingsService->updateProfile($userId, $bio, $pfpUrl, $phone);
+        // Pass all data, including the file array, to the service
+        $this->settingsService->updateProfile($userId, $bio, $file, $phone, $removePhoto);
         
         $this->redirect('/settings');
     }

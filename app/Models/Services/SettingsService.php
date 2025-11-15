@@ -19,6 +19,12 @@ class SettingsService
     private UserRepository $userRepo;
     private SecurityRepository $securityRepo;
 
+    /**
+     * Defines the server-side base path for the public directory.
+     * e.g., /usr/local/var/www/starlight_v2/public
+     */
+    private string $publicRoot;
+
     public function __construct()
     {
         $this->db = Database::getInstance();
@@ -27,6 +33,10 @@ class SettingsService
         // This service needs both repositories
         $this->userRepo = new UserRepository($this->db);
         $this->securityRepo = new SecurityRepository($this->db);
+
+        // Define the public root relative to this file
+        // __DIR__ is /app/Models/Services, so ../../../ is /
+        $this->publicRoot = realpath(__DIR__ . '/../../../public');
     }
 
     /**
@@ -47,15 +57,16 @@ class SettingsService
     }
 
     /**
-     * Updates non-sensitive user profile information.
+     * Updates user profile information, now handling file uploads.
      *
      * @param int $userId
      * @param string $bio
-     * @param string $pfpUrl
+     * @param array $file The $_FILES['profile_picture'] array
      * @param string $phone
+     * @param bool $removePhoto True if the "Remove Photo" checkbox was checked
      * @return bool True on success
      */
-    public function updateProfile(int $userId, string $bio, string $pfpUrl, string $phone): bool
+    public function updateProfile(int $userId, string $bio, array $file, string $phone, bool $removePhoto): bool
     {
         // Simple validation (can be expanded)
         if (mb_strlen($bio) > 500) { // Using mb_strlen for multi-byte characters
@@ -63,20 +74,122 @@ class SettingsService
             return false;
         }
 
-        if (!empty($pfpUrl) && !filter_var($pfpUrl, FILTER_VALIDATE_URL)) {
-            $this->session->setFlash('error', 'Profile picture must be a valid URL.');
+        // Get the current user data *before* making changes
+        $user = $this->userRepo->findById($userId);
+        if (!$user) {
+            $this->session->setFlash('error', 'User not found.');
             return false;
         }
         
-        // TODO: Add phone number validation if desired
+        $currentPfpUrl = $user->profile_picture_url;
+        $newPfpUrl = $currentPfpUrl; // Default to old URL
 
-        if ($this->userRepo->updateProfile($userId, $bio, $pfpUrl, $phone)) {
+        // --- Logic Branch 1: Remove Photo ---
+        if ($removePhoto) {
+            $this->deleteAvatarFile($currentPfpUrl);
+            $newPfpUrl = null; // Set to NULL in DB
+        }
+        
+        // --- Logic Branch 2: New File Uploaded ---
+        // Check if a file was *actually* uploaded, not just an empty form field
+        elseif (isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
+            // A new file is present, process it
+            $validatedUrl = $this->processUploadedAvatar($file, $userId, $currentPfpUrl);
+            
+            if ($validatedUrl === null) {
+                // processUploadedAvatar sets its own flash error
+                return false; 
+            }
+            $newPfpUrl = $validatedUrl;
+        }
+
+        // --- Logic Branch 3: No change ---
+        // If $removePhoto is false AND no new file was uploaded,
+        // $newPfpUrl remains $currentPfpUrl, so only bio/phone will be updated.
+
+        if ($this->userRepo->updateProfile($userId, $bio, $newPfpUrl, $phone)) {
             $this->session->setFlash('success', 'Profile updated successfully.');
             return true;
         }
 
         $this->session->setFlash('error', 'A database error occurred.');
         return false;
+    }
+
+    /**
+     * Validates and saves a new avatar, and deletes the old one.
+     *
+     * @param array $file The file array from $_FILES
+     * @param int $userId The user ID for naming
+     * @param string|null $currentPfpUrl The URL of the old avatar to delete
+     * @return string|null The new web-accessible URL on success, or null on failure
+     */
+    private function processUploadedAvatar(array $file, int $userId, ?string $currentPfpUrl): ?string
+    {
+        // 1. Validate Upload Error
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->session->setFlash('error', 'An error occurred during file upload. Code: ' . $file['error']);
+            return null;
+        }
+
+        // 2. Validate Size (2MB limit)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            $this->session->setFlash('error', 'File is too large. Maximum size is 2MB.');
+            return null;
+        }
+
+        // 3. Validate Type
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            $this->session->setFlash('error', 'Uploaded file is not a valid image.');
+            return null;
+        }
+
+        $mime = $imageInfo['mime'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        if (!in_array($mime, $allowedMimes)) {
+            $this->session->setFlash('error', 'Invalid file type. Allowed types: JPEG, PNG, GIF, WebP, AVIF.');
+            return null;
+        }
+        
+        // 4. Generate New Path and URL
+        $extension = image_type_to_extension($imageInfo[2]); // e.g., '.jpeg'
+        $filename = "user_{$userId}_" . time() . $extension;
+        
+        $uploadDir = $this->publicRoot . '/uploads/avatars/';
+        $filePath = $uploadDir . $filename; // Full server path
+        $webPath = "/uploads/avatars/" . $filename; // Public URL
+
+        // 5. Move File
+        if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+            $this->session->setFlash('error', 'Failed to save uploaded file. Check server permissions.');
+            return null;
+        }
+        
+        // 6. Delete old file (only after new one is successfully moved)
+        $this->deleteAvatarFile($currentPfpUrl);
+
+        return $webPath;
+    }
+
+    /**
+     * Safely deletes an old avatar file from the server.
+     *
+     * @param string|null $webPath The web path from the DB (e.g., /uploads/avatars/...)
+     */
+    private function deleteAvatarFile(?string $webPath): void
+    {
+        if (empty($webPath)) {
+            return; // No file to delete
+        }
+        
+        // Create the full, absolute server path from the web path
+        $filePath = $this->publicRoot . $webPath;
+        
+        // Check that the file exists and is writable before trying to delete
+        if (file_exists($filePath) && is_writable($filePath)) {
+            @unlink($filePath);
+        }
     }
 
     /**

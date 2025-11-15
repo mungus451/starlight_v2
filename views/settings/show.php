@@ -40,6 +40,38 @@
         border-bottom: 1px solid #3a3a5a;
         margin: 1.5rem 0;
     }
+
+    /* --- NEW STYLES --- */
+    .pfp-preview-container {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .pfp-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #3a3a5a;
+        border: 2px solid #5a67d8;
+        object-fit: cover;
+    }
+    .pfp-upload-group {
+        flex-grow: 1;
+    }
+    .remove-pfp-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+    .remove-pfp-group label {
+        margin-bottom: 0;
+    }
+    .remove-pfp-group input {
+        width: 1.1rem;
+        height: 1.1rem;
+    }
 </style>
 
 <div class="settings-container">
@@ -47,7 +79,7 @@
 
     <div class="data-card">
         <h3>Public Profile</h3>
-        <form action="/settings/profile" method="POST">
+        <form action="/settings/profile" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             
             <div class="form-group">
@@ -56,10 +88,28 @@
             </div>
             
             <div class="form-group">
-                <label for="profile_picture_url">Profile Picture URL</label>
-                <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($user->profile_picture_url ?? '') ?>" placeholder="https://your.image.host/img.png">
-            </div>
+                <label>Profile Picture (Max 2MB)</label>
+                <div class="pfp-preview-container">
+                    <?php if ($user->profile_picture_url): ?>
+                        <img src="<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Current Avatar" class="pfp-preview">
+                    <?php else: ?>
+                        <svg class="pfp-preview" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 1.25rem; color: #a8afd4;">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                        </svg>
+                    <?php endif; ?>
 
+                    <div class="pfp-upload-group">
+                        <input type="file" name="profile_picture" id="profile_picture" accept="image/jpeg,image/png,image/gif,image/webp,image/avif">
+                        
+                        <?php if ($user->profile_picture_url): ?>
+                        <div class="remove-pfp-group">
+                            <input type="checkbox" name="remove_picture" id="remove_picture" value="1">
+                            <label for="remove_picture">Remove current picture</label>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="phone_number">Phone Number (optional)</label>
                 <input type="text" name="phone_number" id="phone_number" value="<?= htmlspecialchars($user->phone_number ?? '') ?>">
