@@ -43,8 +43,14 @@ class StructureService
     {
         $structures = $this->structureRepo->findByUserId($userId);
         $resources = $this->resourceRepo->findByUserId($userId);
-        $structureFormulas = $this->config->get('game_balance.structures', []);
         
+        // --- NEW: Load all relevant game balance configs ---
+        $structureFormulas = $this->config->get('game_balance.structures', []);
+        $turnConfig = $this->config->get('game_balance.turn_processor', []);
+        $attackConfig = $this->config->get('game_balance.attack', []);
+        $spyConfig = $this->config->get('game_balance.spy', []);
+        // --- END NEW ---
+
         $costs = [];
         
         // Loop over the config file to ensure we get all structures
@@ -64,7 +70,12 @@ class StructureService
             'structures' => $structures,
             'resources' => $resources,
             'costs' => $costs, // Array of calculated costs for the *next* level
-            'structureFormulas' => $structureFormulas // The raw config data (for names)
+            'structureFormulas' => $structureFormulas, // The raw config data (for names)
+            
+            // --- NEW: Pass extra configs to the view ---
+            'turnConfig' => $turnConfig,
+            'attackConfig' => $attackConfig,
+            'spyConfig' => $spyConfig
         ];
     }
 

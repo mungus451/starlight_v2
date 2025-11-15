@@ -17,8 +17,9 @@
         width: 100%;
         max-width: 1400px;
         text-align: left;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns now */
+        /* --- CHANGED: This is no longer a grid, but a flex column --- */
+        display: flex;
+        flex-direction: column;
         gap: 1.5rem;
         margin-inline: auto;
         padding: 1.5rem 1.5rem 3.5rem;
@@ -40,7 +41,7 @@
 
     .structures-container h1 {
         text-align: center;
-        grid-column: 1 / -1;
+        /* --- REMOVED grid-column --- */
         margin-bottom: 0.25rem;
         font-size: clamp(2.1rem, 3vw, 2.6rem);
         letter-spacing: -0.03em;
@@ -48,12 +49,44 @@
     }
 
     .structures-subtitle {
-        grid-column: 1 / -1;
+        /* --- REMOVED grid-column --- */
         text-align: center;
         color: var(--muted);
         margin-bottom: 1rem;
         font-size: 0.85rem;
+        margin-top: -1rem; /* Pull up closer to title */
     }
+
+    /* --- NEW: Top Grid for Finances + Controls --- */
+    .top-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .controls-card {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        justify-content: flex-end;
+    }
+    .btn-control {
+        padding: 0.6rem 1rem;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-control:hover {
+        background: rgba(255,255,255, 0.03);
+        color: #fff;
+        border-color: rgba(45, 209, 209, 0.4);
+    }
+    /* --- END NEW --- */
+
 
     /* Sidebar / info card */
     .data-card {
@@ -102,6 +135,14 @@
         font-size: 0.75rem;
     }
 
+    /* --- NEW: Main grid for structures --- */
+    .structure-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+
+
     /* Category header */
     .structure-category-header {
         grid-column: 1 / -1;
@@ -142,7 +183,8 @@
     }
 
     .card-header {
-        padding: 1rem 1.25rem 0.6rem;
+        /* --- CHANGED: Added padding-bottom --- */
+        padding: 1rem 1.25rem 1rem;
         background: rgba(6, 7, 14, 0.35);
         cursor: pointer;
         display: flex;
@@ -161,6 +203,15 @@
         font-size: 0.75rem;
         color: rgba(232, 232, 255, 0.35);
     }
+    
+    /* --- NEW: Benefit Stat in Header --- */
+    .card-header-stat {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--accent); /* Teal */
+        padding-top: 0.35rem;
+    }
+    /* --- END NEW --- */
 
     .card-body {
         padding: 0 1.25rem;
@@ -246,8 +297,12 @@
 
     /* Responsive */
     @media (max-width: 980px) {
-        .structures-container {
+        /* --- CHANGED: Stack both top grid and structure grid --- */
+        .top-grid, .structure-grid {
             grid-template-columns: 1fr;
+        }
+        .controls-card {
+            justify-content: center; /* Center buttons on mobile */
         }
     }
 </style>
@@ -267,82 +322,133 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
     <h1>Structures</h1>
     <p class="structures-subtitle">Expand a structure to view its description, next level, and upgrade cost.</p>
 
-    <!-- Sidebar: Finances -->
-    <div class="data-card">
-        <h3>Finances</h3>
-        <ul>
-            <li>
-                <span>Credits:</span>
-                <span class="data-badge"><?= number_format($resources->credits) ?></span>
-            </li>
-        </ul>
+    <div class="top-grid">
+        <div class="data-card">
+            <h3>Finances</h3>
+            <ul>
+                <li>
+                    <span>Credits:</span>
+                    <span class="data-badge"><?= number_format($resources->credits) ?></span>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="controls-card">
+            <button class="btn-control" id="btn-expand-all">Expand All</button>
+            <button class="btn-control" id="btn-collapse-all">Collapse All</button>
+        </div>
     </div>
+    <div class="structure-grid">
+        <?php
+        foreach ($categoryOrder as $categoryName):
+            if (!isset($groupedStructures[$categoryName])) continue;
 
-    <?php
-    foreach ($categoryOrder as $categoryName):
-        if (!isset($groupedStructures[$categoryName])) continue;
-
-        $structuresInCategory = $groupedStructures[$categoryName];
-    ?>
-        <h2 class="structure-category-header"><?= htmlspecialchars($categoryName) ?></h2>
-
-        <?php foreach ($structuresInCategory as $details):
-            $key = $details['key'];
-            $columnName = $key . '_level';
-            $currentLevel = $structures->{$columnName} ?? 0;
-            $nextLevel = $currentLevel + 1;
-            $upgradeCost = $costs[$key] ?? 0;
-            $displayName = $details['name'] ?? 'Unknown';
-            $description = $details['description'] ?? 'No description available.';
-            $canAfford = $resources->credits >= $upgradeCost;
+            $structuresInCategory = $groupedStructures[$categoryName];
         ?>
-            <div class="structure-card">
-                <div class="card-header">
-                    <h4><?= htmlspecialchars($displayName) ?></h4>
-                    <span>Current Level: <?= $currentLevel ?></span>
-                </div>
+            <h2 class="structure-category-header"><?= htmlspecialchars($categoryName) ?></h2>
 
-                <div class="card-body">
-                    <p><?= htmlspecialchars($description) ?></p>
-                    <div class="cost">
-                        <span>Next Level</span>
-                        <strong><?= $nextLevel ?></strong>
+            <?php foreach ($structuresInCategory as $details):
+                $key = $details['key'];
+                $columnName = $key . '_level';
+                $currentLevel = $structures->{$columnName} ?? 0;
+                $nextLevel = $currentLevel + 1;
+                $upgradeCost = $costs[$key] ?? 0;
+                $displayName = $details['name'] ?? 'Unknown';
+                $description = $details['description'] ?? 'No description available.';
+                $canAfford = $resources->credits >= $upgradeCost;
+                
+                // --- NEW: Benefit Text Logic ---
+                $benefitText = '';
+                switch ($key) {
+                    case 'economy_upgrade':
+                        $val = $turnConfig['credit_income_per_econ_level'] ?? 0;
+                        $benefitText = "+ " . number_format($val) . " Credits / Turn";
+                        break;
+                    case 'population':
+                        $val = $turnConfig['citizen_growth_per_pop_level'] ?? 0;
+                        $benefitText = "+ " . number_format($val) . " Citizens / Turn";
+                        break;
+                    case 'offense_upgrade':
+                        $val = ($attackConfig['power_per_offense_level'] ?? 0) * 100;
+                        $benefitText = "+ " . $val . "% Soldier Power";
+                        break;
+                    case 'fortification':
+                        $val = ($attackConfig['power_per_fortification_level'] ?? 0) * 100;
+                        $benefitText = "+ " . $val . "% Guard Power";
+                        break;
+                    case 'defense_upgrade':
+                        $val = ($attackConfig['power_per_defense_level'] ?? 0) * 100;
+                        $benefitText = "+ " . $val . "% Defense Power";
+                        break;
+                    case 'spy_upgrade':
+                        $val = ($spyConfig['offense_power_per_level'] ?? 0) * 100;
+                        $benefitText = "+ " . $val . "% Spy/Sentry Power";
+                        break;
+                    case 'armory':
+                        $benefitText = "Unlocks & Upgrades Item Tiers";
+                        break;
+                }
+                // --- END NEW Benefit Text Logic ---
+            ?>
+                <div class="structure-card">
+                    <div class="card-header">
+                        <h4><?= htmlspecialchars($displayName) ?></h4>
+                        
+                        <?php if ($benefitText): ?>
+                            <span class="card-header-stat"><?= htmlspecialchars($benefitText) ?></span>
+                        <?php endif; ?>
+                        
+                        <span>Current Level: <?= $currentLevel ?></span>
                     </div>
-                    <div class="cost">
-                        <span>Cost</span>
-                        <span class="cost-pill"><?= number_format($upgradeCost) ?> C</span>
+
+                    <div class="card-body">
+                        <p><?= htmlspecialchars($description) ?></p>
+                        <div class="cost">
+                            <span>Next Level</span>
+                            <strong><?= $nextLevel ?></strong>
+                        </div>
+                        <div class="cost">
+                            <span>Cost</span>
+                            <span class="cost-pill"><?= number_format($upgradeCost) ?> C</span>
+                        </div>
+                        <?php if (!$canAfford): ?>
+                            <div class="cost" style="color: rgba(252, 122, 122, 0.9);">
+                                <span>Status</span>
+                                <span>Not enough credits</span>
+                            </div>
+                        <?php else: ?>
+                            <div class="cost" style="color: rgba(191, 255, 217, 0.8);">
+                                <span>Status</span>
+                                <span>Affordable</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <?php if (!$canAfford): ?>
-                        <div class="cost" style="color: rgba(252, 122, 122, 0.9);">
-                            <span>Status</span>
-                            <span>Not enough credits</span>
-                        </div>
-                    <?php else: ?>
-                        <div class="cost" style="color: rgba(191, 255, 217, 0.8);">
-                            <span>Status</span>
-                            <span>Affordable</span>
-                        </div>
-                    <?php endif; ?>
-                </div>
 
-                <div class="card-footer">
-                    <form action="/structures/upgrade" method="POST">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                        <input type="hidden" name="structure_key" value="<?= htmlspecialchars($key) ?>">
+                    <div class="card-footer">
+                        <form action="/structures/upgrade" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                            <input type="hidden" name="structure_key" value="<?= htmlspecialchars($key) ?>">
 
-                        <button type="submit" class="btn-submit" <?= !$canAfford ? 'disabled' : '' ?>>
-                            <?= $canAfford ? 'Upgrade to Level ' . $nextLevel : 'Not Enough Credits' ?>
-                        </button>
-                    </form>
+                            <button type="submit" class="btn-submit" <?= !$canAfford ? 'disabled' : '' ?>>
+                                <?= $canAfford ? 'Upgrade to Level ' . $nextLevel : 'Not Enough Credits' ?>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
-    <?php endforeach; ?>
 
-</div>
+    </div> </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- NEW: Get all cards for expand/collapse ---
+        const allCards = document.querySelectorAll('.structure-card');
+        const expandAllBtn = document.getElementById('btn-expand-all');
+        const collapseAllBtn = document.getElementById('btn-collapse-all');
+
+        // --- Individual Card Toggling (Unchanged) ---
         const allHeaders = document.querySelectorAll('.card-header');
         allHeaders.forEach(header => {
             header.addEventListener('click', function() {
@@ -352,5 +458,24 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
                 }
             });
         });
+
+        // --- NEW: Expand All Button ---
+        if (expandAllBtn) {
+            expandAllBtn.addEventListener('click', function() {
+                allCards.forEach(card => {
+                    card.classList.add('is-expanded');
+                });
+            });
+        }
+        
+        // --- NEW: Collapse All Button ---
+        if (collapseAllBtn) {
+            collapseAllBtn.addEventListener('click', function() {
+                allCards.forEach(card => {
+                    card.classList.remove('is-expanded');
+                });
+            });
+        }
+
     });
 </script>
