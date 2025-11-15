@@ -11,3 +11,7 @@
 .idea/
 .vscode/
 .DS_Store
+
+#User Uploaded Data
+
+/public/uploads/
