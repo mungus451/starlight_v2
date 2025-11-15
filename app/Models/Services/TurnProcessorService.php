@@ -7,6 +7,7 @@ use App\Core\Database;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\StatsRepository; // 1. Must be use'd
 use PDO;
 use Throwable;
 
@@ -21,6 +22,7 @@ class TurnProcessorService
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
+    private StatsRepository $statsRepo; // 2. Must be declared
 
     public function __construct()
     {
@@ -30,6 +32,7 @@ class TurnProcessorService
         $this->userRepo = new UserRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->structureRepo = new StructureRepository($this->db);
+        $this->statsRepo = new StatsRepository($this->db); // 3. Must be instantiated
     }
 
     /**
@@ -77,16 +80,20 @@ class TurnProcessorService
             $creditsGained = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
             $citizensGained = $structures->population_level * $config['citizen_growth_per_pop_level'];
             $interestGained = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
+            $attackTurnsGained = 1; // Grant 1 attack turn per... turn
 
             // 3. Apply income using the atomic repository method
             $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained);
+            
+            // 4. Apply attack turns using the new atomic method
+            $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
-            // 4. Commit this user's transaction
+            // 5. Commit this user's transaction
             $this->db->commit();
             return true;
 
         } catch (Throwable $e) {
-            // 5. Rollback on failure for this user
+            // 6. Rollback on failure for this user
             $this->db->rollBack();
             error_log("Failed to process turn for user {$userId}: " . $e->getMessage());
             return false;

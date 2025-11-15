@@ -102,7 +102,7 @@ class StatsRepository
     }
     
     /**
-     * --- NEW: Gets the total number of *targetable* players ---
+     * --- Gets the total number of *targetable* players ---
      *
      * @param int $excludeUserId The ID of the current user, to exclude them
      * @return int
@@ -141,7 +141,7 @@ class StatsRepository
     }
     
     /**
-     * --- NEW: Gets a paginated list of targets with rich data ---
+     * --- Gets a paginated list of targets with rich data ---
      *
      * @param int $limit
      * @param int $offset
@@ -211,7 +211,7 @@ class StatsRepository
     }
 
     /**
-     * --- NEW METHOD FOR BANK ---
+     * 
      * Updates a user's deposit charges and sets the last deposit timestamp.
      *
      * @param int $userId
@@ -230,7 +230,7 @@ class StatsRepository
     }
 
     /**
-     * --- NEW METHOD FOR BANK ---
+     *
      * Regenerates deposit charges for a user.
      *
      * @param int $userId
@@ -247,6 +247,25 @@ class StatsRepository
         return $stmt->execute([$chargesToRegen, $userId]);
     }
 
+    /**
+     * --- METHOD FOR TURN PROCESSOR ---
+     * Atomically applies turn-based attack turns to a user's account.
+     *
+     * @param int $userId
+     * @param int $turnsToGrant
+     * @return bool
+     */
+    public function applyTurnAttackTurn(int $userId, int $turnsToGrant): bool
+    {
+        $sql = "
+            UPDATE user_stats SET
+                attack_turns = attack_turns + ?
+            WHERE user_id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$turnsToGrant, $userId]);
+    }
 
     /**
      * Helper method to convert a database row (array) into a UserStats entity.

@@ -1,6 +1,13 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\SpyReport $report */
+
+// --- Determine result text and CSS class ---
+$resultText = match($report->operation_result) {
+    'success' => 'OPERATION SUCCESSFUL',
+    'failure' => 'OPERATION FAILED'
+};
+$resultClass = $report->operation_result; // 'success' or 'failure'
 ?>
 
 <style>
@@ -11,7 +18,7 @@
         --accent-2: #f9c74f;
         --accent-red: #e53e3e;
         --accent-green: #4CAF50;
-        --accent-blue: #7683f5;
+        --accent-blue: #7683f5; /* Spy color */
         --text: #eff1ff;
         --muted: #a8afd4;
         --radius: 18px;
@@ -35,16 +42,61 @@
         color: #fff;
         padding-top: 1.5rem;
     }
-
-    /* --- Grid Layout --- */
-    .report-grid {
+    
+    /* --- HEADER CARD --- */
+    .report-header-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(6px);
         display: grid;
-        grid-template-columns: 1fr; /* 1 column layout */
-        gap: 1.5rem;
+        grid-template-columns: 1fr auto 1fr; /* Attacker | Result | Defender */
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
     
-    /* --- Shared Card Styles (from Profile) --- */
-    .data-card {
+    .header-player { text-align: left; }
+    .header-player.defender { text-align: right; }
+    
+    .header-player-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+    .header-player-label {
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+    
+    .header-result { text-align: center; }
+    .header-result-text {
+        font-size: 2.2rem;
+        font-weight: 900;
+        font-family: "Orbitron", sans-serif;
+    }
+    .header-result-id {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.25rem;
+    }
+    
+    .result-success { color: var(--accent-green); }
+    .result-failure { color: var(--accent-red); }
+    
+    @media (max-width: 600px) {
+        .report-header-card {
+            grid-template-columns: 1fr; /* Stack all */
+            text-align: center;
+        }
+        .header-player.defender { text-align: center; }
+        .header-result { order: -1; } /* Move result to top */
+    }
+    
+    /* --- ENGAGEMENT SUMMARY CARD --- */
+    .summary-card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -52,155 +104,200 @@
         box-shadow: var(--shadow);
         backdrop-filter: blur(6px);
     }
-    .data-card h3 {
+    .summary-card h3 {
         color: #fff;
         margin-top: 0;
-        margin-bottom: 0.85rem;
-        border-bottom: 1px solid rgba(233, 219, 255, 0.03);
-        padding-bottom: 0.5rem;
-        font-size: 0.9rem;
+        margin-bottom: 1.5rem; /* More space */
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
+        font-size: 1.1rem;
         letter-spacing: 0.02em;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
+        text-align: center;
         text-transform: uppercase;
     }
-    .data-card h3::before {
-        content: "";
-        width: 4px;
-        height: 16px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, var(--accent-blue), rgba(2, 3, 10, 0));
-        box-shadow: 0 0 20px rgba(118, 131, 245, 0.35);
-    }
-    .data-card ul {
-        list-style: none;
-        padding-left: 0;
-        margin: 0;
-        /* --- NEW: Grid for intel --- */
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.35rem 1.5rem;
-    }
-    .data-card li {
-        font-size: 0.9rem;
-        color: #e0e0e0;
-        padding: 0.55rem 0.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(58, 58, 90, 0.08);
-        gap: 1rem;
-    }
-    .data-card li:last-child {
-        border-bottom: none;
-    }
-    .data-card li span:first-child {
-        font-weight: 500;
-        color: rgba(239, 241, 255, 0.7);
-        font-size: 0.85rem;
-    }
-    .data-card li span:last-child, .data-card li .value {
-        font-weight: 600;
-        color: #fff;
-        text-align: right;
-        font-size: 0.85rem;
-    }
-
-    /* --- Header Card --- */
-    .summary-card {
-        text-align: center;
-    }
-    .report-header {
-        font-size: 1.2rem;
-        color: var(--muted);
-        margin-bottom: 1rem;
-    }
-    .report-header strong {
-        color: var(--text);
-    }
-    .report-result {
-        font-weight: 700;
-        font-size: 1.5rem;
-    }
-    .result-success { color: var(--accent-green); }
-    .result-failure { color: var(--accent-red); }
     
     .summary-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem 1.5rem;
-        text-align: left;
+        grid-template-columns: 1fr 1fr; /* Two columns */
+        gap: 1.5rem 2.5rem;
     }
     
-    /* Responsive Grids */
-    @media (max-width: 768px) {
-        .data-card ul {
-            grid-template-columns: 1fr; /* Stack intel list */
-        }
+    .summary-col h4 {
+        color: var(--accent-blue); /* Spy theme */
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
     }
-    @media (max-width: 500px) {
+    
+    .summary-col ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem; /* More spacing */
+    }
+    .summary-col li {
+        font-size: 0.95rem; /* Larger font */
+        color: #e0e0e0;
+        padding: 0.35rem 0.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(58, 58, 90, 0.15);
+        gap: 1rem;
+    }
+    .summary-col li:last-child {
+        border-bottom: none;
+    }
+    .summary-col li span:first-child {
+        font-weight: 500;
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+    .summary-col li span:last-child, .summary-col li .value {
+        font-weight: 600;
+        color: #fff;
+        text-align: right;
+        font-size: 0.95rem;
+    }
+    
+    /* Value colors */
+    .value-loss { color: var(--accent-red) !important; }
+    .value-gain { color: var(--accent-green) !important; }
+    .value-neutral { color: var(--accent-2) !important; }
+    .no-intel-msg {
+        text-align: center;
+        color: var(--muted);
+        padding: 2rem 0;
+        font-style: italic;
+        line-height: 1.5;
+    }
+
+    /* Responsive Grid */
+    @media (max-width: 768px) {
         .summary-grid {
-            grid-template-columns: 1fr; /* Stack summary list */
+            grid-template-columns: 1fr; /* Stack columns on mobile */
         }
     }
 </style>
 
 <div class="report-view-container-full">
-    <h1>Spy Report #<?= $report->id ?></h1>
+    <h1>Spy Report</h1>
 
-    <div class="report-grid">
-        
-        <div class="data-card summary-card">
-            <p class="report-header">
-                Operation against <strong><?= htmlspecialchars($report->defender_name) ?></strong> on <?= $report->created_at ?>
-            </p>
-            
-            <?php
-                $resultText = match($report->operation_result) {
-                    'success' => 'Operation Successful',
-                    'failure' => 'Operation Failed'
-                };
-            ?>
-            <span class="report-result result-<?= $report->operation_result ?>">
-                <?= $resultText ?>
-            </span>
-            
-            <ul class="summary-grid" style="margin-top: 1.5rem;">
-                <li><span>Spies Sent:</span> <span class="value"><?= number_format($report->spies_sent) ?></span></li>
-                <li><span>Spies Lost:</span> <span class="value" style="color: var(--accent-red);"><?= number_format($report->spies_lost_attacker) ?></span></li>
-                <li><span>Sentries Destroyed:</span> <span class="value" style="color: var(--accent-green);"><?= number_format($report->sentries_lost_defender) ?></span></li>
-            </ul>
+    <div class="report-header-card">
+        <div class="header-player attacker">
+            <span class="header-player-name"><?= htmlspecialchars($report->attacker_name) ?></span>
+            <span class="header-player-label">(You) - Operator</span>
         </div>
+        
+        <div class="header-result">
+            <span class="header-result-text result-<?= $resultClass ?>"><?= $resultText ?></span>
+            <div class="header-result-id">Operation ID: <?= $report->id ?></div>
+        </div>
+        
+        <div class="header-player defender">
+            <span class="header-player-name"><?= htmlspecialchars($report->defender_name) ?></span>
+            <span class="header-player-label">(Opponent) - Target</span>
+        </div>
+    </div>
 
-        <div class="data-card">
-            <h3>Intel Gathered</h3>
-            <?php if ($report->operation_result === 'success'): ?>
+    <div class="summary-card">
+        <h3>Operation Summary</h3>
+        
+        <div class="summary-grid">
+            <div class="summary-col">
+                <h4>Operation Details</h4>
                 <ul>
-                    <li><span>Credits:</span> <span class="value"><?= number_format($report->credits_seen) ?></span></li>
-                    <li><span>Gemstones:</span> <span class="value"><?= number_format($report->gemstones_seen) ?></span></li>
-                    
-                    <li><span>Workers:</span> <span class="value"><?= number_format($report->workers_seen) ?></span></li>
-                    <li><span>Soldiers:</span> <span class="value"><?= number_format($report->soldiers_seen) ?></span></li>
-                    <li><span>Guards:</span> <span class="value"><?= number_format($report->guards_seen) ?></span></li>
-                    <li><span>Spies:</span> <span class="value"><?= number_format($report->spies_seen) ?></span></li>
-                    <li><span>Sentries:</span> <span class="value"><?= number_format($report->sentries_seen) ?></span></li>
-                    
-                    <li><span>Fortification:</span> <span class="value">Level <?= number_format($report->fortification_level_seen) ?></span></li>
-                    <li><span>Offense Upgrade:</span> <span class="value">Level <?= number_format($report->offense_upgrade_level_seen) ?></span></li>
-                    <li><span>Defense Upgrade:</span> <span class="value">Level <?= number_format($report->defense_upgrade_level_seen) ?></span></li>
-                    <li><span>Spy Upgrade:</span> <span class="value">Level <?= number_format($report->spy_upgrade_level_seen) ?></span></li>
-                    <li><span>Economy Upgrade:</span> <span class="value">Level <?= number_format($report->economy_upgrade_level_seen) ?></span></li>
-                    <li><span>Population:</span> <span class="value">Level <?= number_format($report->population_level_seen) ?></span></li>
-                    <li><span>Armory:</span> <span class="value">Level <?= number_format($report->armory_level_seen) ?></span></li>
+                    <li>
+                        <span>Spies Sent:</span>
+                        <span class="value"><?= number_format($report->spies_sent) ?></span>
+                    </li>
+                    <li>
+                        <span>Spies Lost:</span>
+                        <span class="value value-loss">- <?= number_format($report->spies_lost_attacker) ?></span>
+                    </li>
+                    <li>
+                        <span>Sentries Destroyed:</span>
+                        <span class="value value-gain">+ <?= number_format($report->sentries_lost_defender) ?></span>
+                    </li>
                 </ul>
-            <?php else: ?>
-                <p style="text-align: center; color: var(--muted); padding: 1rem 0;">
-                    Your spies were unable to gather any intel.
-                </p>
-            <?php endif; ?>
+            </div>
+            
+            <div class="summary-col">
+                <h4>Intel Gathered</h4>
+                
+                <?php if ($report->operation_result === 'success'): ?>
+                    <ul>
+                        <li>
+                            <span>Credits:</span>
+                            <span class="value"><?= number_format($report->credits_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Gemstones:</span>
+                            <span class="value"><?= number_format($report->gemstones_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Workers:</span>
+                            <span class="value"><?= number_format($report->workers_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Soldiers:</span>
+                            <span class="value"><?= number_format($report->soldiers_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Guards:</span>
+                            <span class="value"><?= number_format($report->guards_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Spies:</span>
+                            <span class="value"><?= number_format($report->spies_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Sentries:</span>
+                            <span class="value"><?= number_format($report->sentries_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Fortification:</span>
+                            <span class="value">Level <?= number_format($report->fortification_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Offense Upgrade:</span>
+                            <span class="value">Level <?= number_format($report->offense_upgrade_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Defense Upgrade:</span>
+                            <span class="value">Level <?= number_format($report->defense_upgrade_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Spy Upgrade:</span>
+                            <span class="value">Level <?= number_format($report->spy_upgrade_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Economy Upgrade:</span>
+                            <span class="value">Level <?= number_format($report->economy_upgrade_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Population:</span>
+                            <span class="value">Level <?= number_format($report->population_level_seen) ?></span>
+                        </li>
+                        <li>
+                            <span>Armory:</span>
+                            <span class="value">Level <?= number_format($report->armory_level_seen) ?></span>
+                        </li>
+                    </ul>
+                <?php else: ?>
+                    <p class="no-intel-msg">
+                        Your spies were unable to gather any intel.
+                    </p>
+                <?php endif; ?>
+            </div>
         </div>
+    </div>
 
-        <a href="/spy/reports" class="btn-submit" style="text-align: center; background: var(--accent-blue);">Back to Reports</a>
-        
-    </div> </div>
+    <a href="/spy/reports" class="btn-submit" style="text-align: center; max-width: 400px; margin: 1.5rem auto 0; display: block; background: var(--accent-blue);">
+        Back to Reports
+    </a>
+
+</div>
