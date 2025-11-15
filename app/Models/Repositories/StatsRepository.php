@@ -91,6 +91,7 @@ class StatsRepository
 
     /**
      * Gets the total number of registered players.
+     * (This is the old method, we will keep it but create a new one for targets)
      *
      * @return int
      */
@@ -99,9 +100,23 @@ class StatsRepository
         $stmt = $this->db->query("SELECT COUNT(id) as total FROM users");
         return (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
     }
+    
+    /**
+     * --- NEW: Gets the total number of *targetable* players ---
+     *
+     * @param int $excludeUserId The ID of the current user, to exclude them
+     * @return int
+     */
+    public function getTotalTargetCount(int $excludeUserId): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(id) as total FROM users WHERE id != ?");
+        $stmt->execute([$excludeUserId]);
+        return (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    }
 
     /**
      * Gets a paginated list of players, ranked by net worth.
+     * (This is the old, simple method. We'll use the new one below.)
      *
      * @param int $limit
      * @param int $offset
@@ -120,6 +135,41 @@ class StatsRepository
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(1, $limit, PDO::PARAM_INT);
         $stmt->bindParam(2, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * --- NEW: Gets a paginated list of targets with rich data ---
+     *
+     * @param int $limit
+     * @param int $offset
+     * @param int $excludeUserId The ID of the current user
+     * @return array
+     */
+    public function getPaginatedTargetList(int $limit, int $offset, int $excludeUserId): array
+    {
+        $sql = "
+            SELECT 
+                u.id, 
+                u.character_name, 
+                u.profile_picture_url, 
+                s.level, 
+                r.credits, 
+                r.soldiers AS army_size
+            FROM users u
+            JOIN user_stats s ON u.id = s.user_id
+            JOIN user_resources r ON u.id = r.user_id
+            WHERE u.id != ?
+            ORDER BY s.net_worth DESC 
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $excludeUserId, PDO::PARAM_INT);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->bindParam(3, $offset, PDO::PARAM_INT);
         $stmt->execute();
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

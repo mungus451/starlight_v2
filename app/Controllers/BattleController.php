@@ -27,9 +27,12 @@ class BattleController extends BaseController
         $page = (int)($vars['page'] ?? 1);
         
         // Get all data (attacker stats, player list, pagination) from the service
+        // This data is now the new, rich data from Phase 1a
         $data = $this->attackService->getAttackPageData($userId, $page);
 
-        // --- THIS IS THE FIX ---
+        // --- THIS IS THE CHANGE ---
+        $data['layoutMode'] = 'full';
+
         $this->render('battle/show.php', $data + ['title' => 'Battle']);
     }
 
@@ -42,7 +45,6 @@ class BattleController extends BaseController
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            // --- THIS IS THE FIX ---
             $this->redirect('/battle');
             return;
         }
@@ -56,7 +58,6 @@ class BattleController extends BaseController
         $this->attackService->conductAttack($userId, $targetName, $attackType);
         
         // 4. Redirect to the reports page to see the new report
-        // --- THIS IS THE FIX ---
         $this->redirect('/battle/reports');
     }
 
@@ -68,10 +69,11 @@ class BattleController extends BaseController
         $userId = $this->session->get('user_id');
         $reports = $this->attackService->getBattleReports($userId);
 
-        // --- THIS IS THE FIX ---
+        // --- THIS IS THE CHANGE ---
         $this->render('battle/reports.php', [
             'title' => 'Battle Reports',
-            'reports' => $reports
+            'reports' => $reports,
+            'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 
@@ -89,15 +91,15 @@ class BattleController extends BaseController
         if (is_null($report)) {
             // Report not found or doesn't belong to the user
             $this->session->setFlash('error', 'Battle report not found.');
-            // --- THIS IS THE FIX ---
             $this->redirect('/battle/reports');
             return;
         }
 
-        // --- THIS IS THE FIX ---
+        // --- THIS IS THE CHANGE ---
         $this->render('battle/report_view.php', [
             'title' => 'Battle Report #' . $report->id,
-            'report' => $report
+            'report' => $report,
+            'layoutMode' => 'full' // Add full-width layout
         ]);
     }
 }

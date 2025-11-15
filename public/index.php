@@ -13,8 +13,9 @@ use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
 use App\Controllers\AllianceManagementController;
 use App\Controllers\AllianceRoleController;
-use App\Controllers\ArmoryController; // NEW: Import ArmoryController
+use App\Controllers\ArmoryController;
 use App\Controllers\PagesController;
+use App\Controllers\ProfileController; // Import ProfileController
 use App\Middleware\AuthMiddleware;
 
 // Start the session, which will be needed for authentication
@@ -61,6 +62,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Phase 2: Dashboard ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
 
+    // --- Public Profile Route ---
+    $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
+
     // --- Phase 3: Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
     $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
@@ -75,7 +79,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
 
-    // --- NEW: Armory Routes ---
+    // --- Armory Routes ---
     $r->addRoute('GET', '/armory', [ArmoryController::class, 'show']);
     $r->addRoute('POST', '/armory/manufacture', [ArmoryController::class, 'handleManufacture']);
     $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
@@ -117,6 +121,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
     $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
     $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
+    
+    // --- NEW: Alliance Invite Route (Phase 3) ---
+    $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceManagementController::class, 'handleInvite']);
     
     // --- Phase 13: Alliance Admin Routes ---
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
@@ -162,7 +169,7 @@ try {
                 '/bank', '/bank/deposit', '/bank/withdraw', '/bank/transfer',
                 '/training', '/training/train',
                 '/structures', '/structures/upgrade',
-                '/armory', '/armory/manufacture', '/armory/equip', // NEW
+                '/armory', '/armory/manufacture', '/armory/equip',
                 '/settings', '/settings/profile', '/settings/email', '/settings/password', '/settings/security',
                 '/spy', '/spy/conduct', '/spy/reports',
                 '/battle', '/battle/attack', '/battle/reports',
@@ -188,7 +195,7 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/list/page/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/profile/')) {
+                } elseif (str_starts_with($uri, '/alliance/profile/')) { // Alliance profile
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/apply/')) {
                     $isProtected = true;
@@ -198,11 +205,15 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/reject-app/')) {
                     $isProtected = true;
-} elseif (str_starts_with($uri, '/alliance/kick/')) {
+                } elseif (str_starts_with($uri, '/alliance/kick/')) {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/roles/update/')) {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/alliance/roles/delete/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/profile/')) { // Player profile
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/invite/')) { // NEW: Protect invite route
                     $isProtected = true;
                 }
             }

@@ -132,7 +132,30 @@ class AllianceManagementController extends BaseController
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
-    // --- NEW METHODS FOR PHASE 13 ---
+    // --- NEW METHOD FOR PHASE 3 ---
+    /**
+     * Handles a member's request to INVITE a user from their profile page.
+     */
+    public function handleInvite(array $vars): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $inviterId = $this->session->get('user_id');
+        $targetUserId = (int)($vars['id'] ?? 0);
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/profile/' . $targetUserId);
+            return;
+        }
+        
+        // The service handles all logic and flash messages
+        $this->mgmtService->inviteUser($inviterId, $targetUserId);
+        
+        // Redirect back to the profile page
+        $this->redirect('/profile/' . $targetUserId);
+    }
+
+    // --- METHODS FOR PHASE 13 ---
 
     /**
      * Handles updating the alliance's public profile (desc, image).

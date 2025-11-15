@@ -45,29 +45,33 @@ class AttackService
 
     /**
      * Gets all data needed for the main Battle page.
+     * --- THIS METHOD IS UPDATED FOR THE NEW UI ---
      */
     public function getAttackPageData(int $userId, int $page): array
     {
-        // 1. Get Attacker's info
+        // 1. Get Attacker's info (unchanged)
         $attackerResources = $this->resourceRepo->findByUserId($userId);
         $attackerStats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.attack', []);
 
         // 2. Get Pagination config
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
-        $totalPlayers = $this->statsRepo->getTotalPlayerCount();
-        $totalPages = (int)ceil($totalPlayers / $perPage);
+        
+        // --- NEW: Use new repo methods to get target count (excluding self) ---
+        $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
+        $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
         $offset = ($page - 1) * $perPage;
 
-        // 3. Get Player List
-        $players = $this->statsRepo->getPaginatedPlayers($perPage, $offset);
+        // 3. Get Player Target List
+        // --- NEW: Use new repo method to get rich data ---
+        $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $userId);
 
         return [
             'attackerResources' => $attackerResources,
             'attackerStats' => $attackerStats,
             'costs' => $costs,
-            'players' => $players,
+            'targets' => $targets, // --- RENAMED 'players' to 'targets' ---
             'pagination' => [
                 'currentPage' => $page,
                 'totalPages' => $totalPages

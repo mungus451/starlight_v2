@@ -175,6 +175,64 @@ class AllianceManagementService
         return true;
     }
 
+    /**
+     * An alliance member with invite perms invites a user.
+     * This bypasses the application system and adds them directly.
+     */
+    public function inviteUser(int $inviterId, int $targetUserId): bool
+    {
+        // 1. Get Inviter and check permissions
+        $inviterUser = $this->userRepo->findById($inviterId);
+        if (!$inviterUser || $inviterUser->alliance_id === null) {
+            $this->session->setFlash('error', 'You must be in an alliance to invite players.');
+            return false;
+        }
+
+        if (!$this->checkPermission($inviterId, $inviterUser->alliance_id, 'can_invite_members')) {
+            $this->session->setFlash('error', 'You do not have permission to invite members.');
+            return false;
+        }
+        
+        // 2. Get Target User and check eligibility
+        $targetUser = $this->userRepo->findById($targetUserId);
+        if (!$targetUser) {
+            $this->session->setFlash('error', 'Target player not found.');
+            return false;
+        }
+        if ($targetUser->alliance_id !== null) {
+            $this->session->setFlash('error', 'That player is already in an alliance.');
+            return false;
+        }
+        
+        // 3. Get the default "Recruit" role for the inviter's alliance
+        $recruitRole = $this->roleRepo->findDefaultRole($inviterUser->alliance_id, 'Recruit');
+        if (!$recruitRole) {
+            $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found for your alliance.');
+            return false;
+        }
+        
+        // 4. Transaction: Add user to alliance, clear their old apps
+        $this->db->beginTransaction();
+        try {
+            // 4a. Set the user's alliance and role
+            $this->userRepo->setAlliance($targetUser->id, $inviterUser->alliance_id, $recruitRole->id);
+
+            // 4b. Delete ALL other pending applications for this user
+            $this->appRepo->deleteByUser($targetUser->id);
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            error_log('Invite User Error: ' . $e->getMessage());
+            $this->session->setFlash('error', 'A database error occurred while sending the invite.');
+            return false;
+        }
+        
+        $this.session->setFlash('success', $targetUser->characterName . ' has accepted your invite and joined the alliance!');
+        return true;
+    }
+
+    
     // --- NEW METHODS FOR PHASE 13 ---
 
     /**
