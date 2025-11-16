@@ -83,7 +83,7 @@ class AllianceManagementController extends BaseController
 
         $this->mgmtService->leaveAlliance($userId);
         
-        $this.redirect('/alliance/profile/' . $allianceId);
+        $this->redirect('/alliance/profile/' . $allianceId);
     }
 
     /**
@@ -132,7 +132,6 @@ class AllianceManagementController extends BaseController
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
-    // --- NEW METHOD FOR PHASE 3 ---
     /**
      * Handles a member's request to INVITE a user from their profile page.
      */
@@ -155,10 +154,36 @@ class AllianceManagementController extends BaseController
         $this->redirect('/profile/' . $targetUserId);
     }
 
+    /**
+     * Handles a member's request to DONATE to their alliance bank.
+     */
+    public function handleDonation(): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $donatorUserId = $this->session->get('user_id');
+        
+        // Get user's alliance ID for redirect
+        $user = (new UserRepository(Database::getInstance()))->findById($donatorUserId);
+        $allianceId = $user->alliance_id ?? 'list';
+
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+        
+        $amount = (int)($_POST['amount'] ?? 0);
+
+        // The service handles all logic and flash messages
+        $this->mgmtService->donateToAlliance($donatorUserId, $amount);
+        
+        // Redirect back to the alliance profile page
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
     // --- METHODS FOR PHASE 13 ---
 
     /**
-     * --- METHOD MODIFIED FOR FILE UPLOADS ---
      * Handles updating the alliance's public profile (desc, image).
      */
     public function handleUpdateProfile(): void
@@ -174,17 +199,10 @@ class AllianceManagementController extends BaseController
             return;
         }
 
-        // --- Get data from form ---
         $description = (string)($_POST['description'] ?? '');
-        
-        // Get file upload data, defaulting to "no file" error
-        $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
-        
-        // Check if the "remove" checkbox was sent
-        $removePhoto = isset($_POST['remove_picture']) && $_POST['remove_picture'] === '1';
+        $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
 
-        // --- Pass all data to the service ---
-        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $file, $removePhoto);
+        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl);
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -232,6 +250,93 @@ class AllianceManagementController extends BaseController
 
         $this->mgmtService->changeMemberRole($adminId, $targetUserId, $newRoleId);
         
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+    
+    // --- NEW METHODS FOR PHASE 5 (LOANS) ---
+
+    /**
+     * Handles a user's request for a loan.
+     */
+    public function handleLoanRequest(): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $userId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($userId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+        
+        $amount = (int)($_POST['amount'] ?? 0);
+        $this->mgmtService->requestLoan($userId, $amount);
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
+    /**
+     * Handles an admin's approval of a loan.
+     */
+    public function handleLoanApprove(array $vars): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $adminId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+        
+        $loanId = (int)($vars['id'] ?? 0);
+        $this->mgmtService->approveLoan($adminId, $loanId);
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
+    /**
+     * Handles an admin's denial of a loan.
+     */
+    public function handleLoanDeny(array $vars): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $adminId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+        
+        $loanId = (int)($vars['id'] ?? 0);
+        $this->mgmtService->denyLoan($adminId, $loanId);
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
+
+    /**
+     * Handles a user's repayment of a loan.
+     */
+    public function handleLoanRepay(array $vars): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        $userId = $this->session->get('user_id');
+        $user = (new UserRepository(Database::getInstance()))->findById($userId);
+        $allianceId = $user->alliance_id ?? 'list';
+        
+        if (!$this->csrfService->validateToken($token)) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+        
+        $loanId = (int)($vars['id'] ?? 0);
+        $amount = (int)($_POST['amount'] ?? 0);
+        $this->mgmtService->repayLoan($userId, $loanId, $amount);
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 }

@@ -14,5 +14,10 @@ return [
     // --- Phase 11 ---
     'alliance_list' => [
         'per_page' => 25
+    ],
+    
+    // --- NEW: Phase 15.4 (Alliance Forum) ---
+    'forum' => [
+        'topics_per_page' => 25
     ]
 ];

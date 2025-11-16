@@ -7,6 +7,28 @@
 /* @var \App\Models\Entities\AllianceApplication[] $applications */
 /* @var \App\Models\Entities\AllianceApplication|null $userApplication */
 /* @var \App\Models\Entities\AllianceRole[] $roles */
+/* @var \App\Models\Entities\AllianceBankLog[] $bankLogs */
+/* @var \App\Models\Entities\AllianceLoan[] $loans */ // --- NEW ---
+
+// --- NEW ---
+$isMember = ($viewer->alliance_id === $alliance->id);
+$canManageBank = ($viewerRole && $viewerRole->can_manage_bank);
+
+// --- NEW: Filter loans for display ---
+$pendingLoans = [];
+$activeLoans = [];
+$historicalLoans = []; // Paid or Denied
+if ($isMember && isset($loans)) {
+    foreach ($loans as $loan) {
+        if ($loan->status === 'pending') {
+            $pendingLoans[] = $loan;
+        } elseif ($loan->status === 'active') {
+            $activeLoans[] = $loan;
+        } else {
+            $historicalLoans[] = $loan;
+        }
+    }
+}
 ?>
 
 <style>
@@ -170,48 +192,133 @@
         text-align: center;
     }
     
-    /* --- NEW: PFP Upload Styles (from settings/show) --- */
-    .pfp-preview-container {
+    /* --- Treasury Card --- */
+    .treasury-balance {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--accent-2);
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .amount-input-group {
         display: flex;
-        gap: 1rem;
-        align-items: center;
-        margin-bottom: 1rem;
+        gap: 0.5rem;
     }
-    .pfp-preview {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: #1e1e3f;
-        border: 2px solid var(--accent-soft);
-        object-fit: cover;
-    }
-    .pfp-upload-group {
+    .amount-input-group input {
         flex-grow: 1;
+        min-width: 50px;
     }
-    .remove-pfp-group {
+    .amount-input-group .btn-submit {
+        width: auto;
+        flex-shrink: 0;
+    }
+    
+    /* --- Bank Log List --- */
+    .log-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
         display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .log-item {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+        background: rgba(13, 15, 27, 0.7);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        font-size: 0.9rem;
+    }
+    .log-message {
+        color: var(--muted);
+        word-break: break-word; /* --- NEW --- */
+    }
+    .log-amount {
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+    .log-amount.positive {
+        color: var(--accent-green);
+    }
+    .log-amount.negative {
+        color: var(--accent-red);
+    }
+    
+    /* --- NEW: Loan Styles --- */
+    .loan-card-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 1.5rem;
+    }
+    .loan-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .loan-item {
+        background: rgba(13, 15, 27, 0.7);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+    .loan-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1rem;
+        color: var(--text);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    .loan-item-details {
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+    .loan-item-actions {
+        display: flex;
         gap: 0.5rem;
         margin-top: 0.75rem;
     }
-    .remove-pfp-group label {
-        margin-bottom: 0;
+    .loan-item-actions .btn-submit {
+        padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
-        color: var(--muted);
+        width: auto;
     }
-    .remove-pfp-group input {
-        width: 1.1rem;
-        height: 1.1rem;
+    .loan-repay-form {
+        margin-top: 1rem;
+        border-top: 1px solid var(--border);
+        padding-top: 1rem;
+    }
+    .loan-repay-form .btn-submit {
+        width: 100%;
+    }
+    .loan-status-paid { color: var(--accent-green); }
+    .loan-status-denied { color: var(--accent-red); }
+    .loan-status-active { color: var(--accent-blue); }
+    
+    @media (max-width: 980px) {
+        .loan-card-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <div class="alliance-container-full">
 
     <div class="profile-header-card">
-        
-        <?php // --- THIS BLOCK IS CHANGED --- ?>
         <?php if ($alliance->profile_picture_url): ?>
-            <img src="/serve/alliance-avatar/<?= htmlspecialchars($alliance->profile_picture_url) ?>" alt="Avatar" class="profile-avatar">
+            <img src="<?= htmlspecialchars($alliance->profile_picture_url) ?>" alt="Avatar" class="profile-avatar">
         <?php else: ?>
             <svg class="profile-avatar profile-avatar-svg" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
@@ -247,12 +354,13 @@
                 <?php endif; ?>
 
             <?php // Case 2: Viewer IS a member of THIS alliance
-            elseif ($viewer->alliance_id === $alliance->id): ?>
+            elseif ($isMember): ?>
             
                 <?php // Case 2a: Viewer is the Leader
                 if ($viewerRole && $viewerRole->name === 'Leader'): ?>
                     <p class="action-message">You are the leader of this alliance.</p>
                     <a href="/alliance/roles" class="btn-submit btn-manage">Manage Alliance Roles</a>
+                    <a href="/alliance/structures" class="btn-submit" style="margin-top: 0.75rem;">Manage Structures</a>
                     
                 <?php // Case 2b: Viewer is a regular member
                 else: ?>
@@ -260,6 +368,13 @@
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                         <button type="submit" class="btn-submit btn-reject">Leave Alliance</button>
                     </form>
+                    
+                    <?php if ($canManageBank || ($viewerRole && $viewerRole->can_manage_structures)): ?>
+                        <p class="action-message" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">Admin Actions:</p>
+                        <?php if ($viewerRole && $viewerRole->can_manage_structures): ?>
+                             <a href="/alliance/structures" class="btn-submit">Manage Structures</a>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             <?php // Case 3: Viewer is in a DIFFERENT alliance
@@ -278,9 +393,7 @@
         <?php if ($viewerRole && $viewerRole->can_edit_profile): ?>
             <div class="item-card grid-col-span-2">
                 <h4>Edit Alliance Profile</h4>
-                
-                <?php // --- THIS FORM IS CHANGED --- ?>
-                <form action="/alliance/profile/edit" method="POST" enctype="multipart/form-data">
+                <form action="/alliance/profile/edit" method="POST">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                     
                     <div class="form-group">
@@ -289,33 +402,147 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Profile Picture (Max 2MB)</label>
-                        <div class="pfp-preview-container">
-                            <?php if ($alliance->profile_picture_url): ?>
-                                <img src="/serve/alliance-avatar/<?= htmlspecialchars($alliance->profile_picture_url) ?>" alt="Current Avatar" class="pfp-preview">
-                            <?php else: ?>
-                                <svg class="pfp-preview" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 1.25rem; color: #a8afd4;">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                </svg>
-                            <?php endif; ?>
-
-                            <div class="pfp-upload-group">
-                                <input type="file" name="profile_picture" id="profile_picture" accept="image/jpeg,image/png,image/gif,image/webp,image/avif">
-                                
-                                <?php if ($alliance->profile_picture_url): ?>
-                                <div class="remove-pfp-group">
-                                    <input type="checkbox" name="remove_picture" id="remove_picture" value="1">
-                                    <label for="remove_picture">Remove current picture</label>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
+                        <label for="profile_picture_url">Profile Picture URL</label>
+                        <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($alliance->profile_picture_url ?? '') ?>" placeholder="https://your.image.host/img.png">
                     </div>
                     
                     <button type="submit" class="btn-submit">Save Changes</button>
                 </form>
             </div>
         <?php endif; ?>
+        
+        <?php if ($isMember): // Show Treasury and Logs only to members ?>
+            <div class="item-card">
+                <h4>Treasury</h4>
+                <div class="treasury-balance">
+                    <?= number_format($alliance->bank_credits) ?>
+                    <span style="font-size: 1rem; color: var(--accent-2);">Credits</span>
+                </div>
+                
+                <form action="/alliance/donate" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                    <div class="form-group">
+                        <label for="donate-amount-display">Amount to Donate</label>
+                        <div class="amount-input-group">
+                            <input type="text" id="donate-amount-display" class="formatted-amount" placeholder="e.g., 1,000,000" required>
+                            <input type="hidden" name="amount" id="donate-amount-hidden" value="0">
+                            <button type="button" class="btn-submit" id="btn-max-donate">Max</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Donate</button>
+                </form>
+            </div>
+            
+            <div class="item-card">
+                <h4>Bank Logs</h4>
+                <ul class="log-list">
+                    <?php if (empty($bankLogs)): ?>
+                        <li class="log-item" style="justify-content: center; color: var(--muted);">
+                            No transactions yet.
+                        </li>
+                    <?php else: ?>
+                        <?php foreach ($bankLogs as $log): ?>
+                            <li class="log-item">
+                                <span class="log-message">
+                                    <span style="color: var(--muted);"><?= (new DateTime($log->created_at))->format('M d - H:i') ?></span>
+                                    <br>
+                                    <?= htmlspecialchars($log->message) ?>
+                                </span>
+                                <span class="log-amount <?= $log->amount >= 0 ? 'positive' : 'negative' ?>">
+                                    <?= $log->amount >= 0 ? '+' : '' ?><?= number_format($log->amount) ?>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        <?php endif; // --- END $isMember check --- ?>
+        
+        <?php // --- NEW: ALLIANCE LOANS CARD --- ?>
+        <?php if ($isMember): ?>
+            <div class="item-card grid-col-span-2">
+                <h4>Alliance Loans</h4>
+                <div class="loan-card-grid">
+                    <div>
+                        <h5>Request a Loan</h5>
+                        <form action="/alliance/loan/request" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                            <div class="form-group">
+                                <label for="loan-request-display">Amount to Request</label>
+                                <input type="text" id="loan-request-display" class="formatted-amount" placeholder="e.g., 1,000,000" required>
+                                <input type="hidden" name="amount" id="loan-request-hidden" value="0">
+                            </div>
+                            <button type="submit" class="btn-submit">Submit Request</button>
+                        </form>
+                    </div>
+                    
+                    <div>
+                        <h5>Pending Loans (<?= count($pendingLoans) ?>)</h5>
+                        <ul class="loan-list">
+                            <?php if (empty($pendingLoans)): ?>
+                                <li class="loan-item" style="color: var(--muted); justify-content: center;">No pending requests.</li>
+                            <?php endif; ?>
+                            <?php foreach ($pendingLoans as $loan): ?>
+                                <li class="loan-item">
+                                    <div class="loan-item-header">
+                                        <span><?= htmlspecialchars($loan->character_name) ?></span>
+                                        <span><?= number_format($loan->amount_requested) ?> C</span>
+                                    </div>
+                                    <div class="loan-item-details">
+                                        Requested on <?= (new DateTime($loan->created_at))->format('M d, Y') ?>
+                                    </div>
+                                    <?php if ($canManageBank): ?>
+                                        <div class="loan-item-actions">
+                                            <form action="/alliance/loan/approve/<?= $loan->id ?>" method="POST">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <button type="submit" class="btn-submit btn-accept">Approve</button>
+                                            </form>
+                                            <form action="/alliance/loan/deny/<?= $loan->id ?>" method="POST">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <button type="submit" class="btn-submit btn-reject">Deny</button>
+                                            </form>
+                                        </div>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        
+                        <h5 style="margin-top: 1.5rem;">Active Loans (<?= count($activeLoans) ?>)</h5>
+                        <ul class="loan-list">
+                            <?php if (empty($activeLoans)): ?>
+                                <li class="loan-item" style="color: var(--muted); justify-content: center;">No active loans.</li>
+                            <?php endif; ?>
+                            <?php foreach ($activeLoans as $loan): ?>
+                                <li class="loan-item">
+                                    <div class="loan-item-header">
+                                        <span><?= htmlspecialchars($loan->character_name) ?></span>
+                                        <span class="loan-status-active"><?= number_format($loan->amount_to_repay) ?> C Owed</span>
+                                    </div>
+                                    <div class="loan-item-details">
+                                        Approved on <?= (new DateTime($loan->updated_at))->format('M d, Y') ?>
+                                    </div>
+                                    
+                                    <?php if ($loan->user_id === $viewer->id): ?>
+                                        <form action="/alliance/loan/repay/<?= $loan->id ?>" method="POST" class="loan-repay-form">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                            <div class="form-group">
+                                                <label for="repay-amount-display-<?= $loan->id ?>">Repayment Amount</label>
+                                                <div class="amount-input-group">
+                                                    <input type="text" id="repay-amount-display-<?= $loan->id ?>" class="formatted-amount repay-amount-display" placeholder="Amount" required>
+                                                    <input type="hidden" name="amount" id="repay-amount-hidden-<?= $loan->id ?>" class="repay-amount-hidden" value="0">
+                                                    <button type="button" class="btn-submit btn-max-repay" data-loan-id="<?= $loan->id ?>" data-max-repay="<?= $loan->amount_to_repay ?>">Max</button>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn-submit">Make Repayment</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        <?php endif; // --- END $isMember check for loans --- ?>
         
         <?php if ($viewerRole && $viewerRole->can_manage_applications && !empty($applications)): ?>
             <div class="item-card grid-col-span-2">
@@ -392,3 +619,80 @@
 
     </div>
 </div>
+
+<?php // --- SCRIPT BLOCK UPDATED --- ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- Helper Functions (from bank/show.php) ---
+    function formatNumber(numStr) {
+        if (!numStr) return '';
+        // Handle potential floating point errors if a non-integer string is passed
+        const num = parseInt(numStr, 10);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('en-US');
+    }
+
+    function unformatNumber(str) {
+        return str.replace(/[^0-9]/g, '');
+    }
+
+    function setupInputMask(displayInput, hiddenInput) {
+        if (displayInput && hiddenInput) {
+            displayInput.addEventListener('input', function(e) {
+                const rawValue = unformatNumber(e.target.value);
+                const numValue = rawValue ? parseInt(rawValue, 10) : 0;
+                hiddenInput.value = numValue;
+                e.target.value = (numValue === 0) ? '' : formatNumber(rawValue);
+            });
+        }
+    }
+    
+    // --- Setup for Donation Form ---
+    setupInputMask(document.getElementById('donate-amount-display'), document.getElementById('donate-amount-hidden'));
+    
+    const maxDonateBtn = document.getElementById('btn-max-donate');
+    if (maxDonateBtn) {
+        maxDonateBtn.addEventListener('click', function() {
+            const creditsEl = document.getElementById('global-user-credits');
+            const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
+            
+            const displayInput = document.getElementById('donate-amount-display');
+            const hiddenInput = document.getElementById('donate-amount-hidden');
+            
+            displayInput.value = (USER_CREDITS > 0) ? formatNumber(USER_CREDITS.toString()) : '';
+            hiddenInput.value = USER_CREDITS;
+        });
+    }
+
+    // --- NEW: Setup for Loan Request Form ---
+    setupInputMask(document.getElementById('loan-request-display'), document.getElementById('loan-request-hidden'));
+    
+    // --- NEW: Setup for all Repay Forms ---
+    document.querySelectorAll('.repay-amount-display').forEach(displayInput => {
+        const hiddenInput = displayInput.parentElement.querySelector('.repay-amount-hidden');
+        setupInputMask(displayInput, hiddenInput);
+    });
+
+    document.querySelectorAll('.btn-max-repay').forEach(button => {
+        button.addEventListener('click', function() {
+            const loanId = this.getAttribute('data-loan-id');
+            const maxRepay = parseInt(this.getAttribute('data-max-repay'), 10);
+            
+            const creditsEl = document.getElementById('global-user-credits');
+            const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
+            
+            // User can only repay what they have, or what they owe, whichever is less
+            const actualMax = Math.min(USER_CREDITS, maxRepay);
+
+            const displayInput = document.getElementById('repay-amount-display-' + loanId);
+            const hiddenInput = document.getElementById('repay-amount-hidden-' + loanId);
+            
+            if (displayInput && hiddenInput) {
+                displayInput.value = (actualMax > 0) ? formatNumber(actualMax.toString()) : '';
+                hiddenInput.value = actualMax;
+            }
+        });
+    });
+});
+</script>

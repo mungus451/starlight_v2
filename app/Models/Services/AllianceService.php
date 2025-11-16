@@ -10,6 +10,9 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
+use App\Models\Repositories\AllianceBankLogRepository;
+// --- NEW REPOSITORY TO INJECT ---
+use App\Models\Repositories\AllianceLoanRepository;
 use PDO;
 use Throwable;
 
@@ -26,6 +29,10 @@ class AllianceService
     private ResourceRepository $resourceRepo;
     private ApplicationRepository $appRepo;
     private AllianceRoleRepository $roleRepo;
+    private AllianceBankLogRepository $bankLogRepo;
+    
+    // --- NEW PROPERTY ---
+    private AllianceLoanRepository $loanRepo;
 
     public function __construct()
     {
@@ -38,6 +45,10 @@ class AllianceService
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->appRepo = new ApplicationRepository($this->db);
         $this->roleRepo = new AllianceRoleRepository($this->db);
+        $this->bankLogRepo = new AllianceBankLogRepository($this->db);
+        
+        // --- NEW REPOSITORY ---
+        $this->loanRepo = new AllianceLoanRepository($this->db);
     }
 
     /**
@@ -108,6 +119,13 @@ class AllianceService
 
         // Get all available roles for this alliance (for dropdowns)
         $roles = $this->roleRepo->findByAllianceId($allianceId);
+        
+        // Get Bank Logs
+        $bankLogs = $this->bankLogRepo->findLogsByAllianceId($allianceId);
+        
+        // --- NEW: Get Alliance Loans ---
+        $loans = $this->loanRepo->findByAllianceId($allianceId);
+        // --- END NEW ---
 
         return [
             'alliance' => $alliance,
@@ -116,7 +134,9 @@ class AllianceService
             'viewerRole' => $viewerRole, // The viewer's role object (or null)
             'applications' => $applications,
             'userApplication' => $userApplication,
-            'roles' => $roles
+            'roles' => $roles,
+            'bankLogs' => $bankLogs,
+            'loans' => $loans // --- NEW ---
         ];
     }
 

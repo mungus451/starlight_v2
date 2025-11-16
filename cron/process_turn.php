@@ -26,13 +26,17 @@ $startTime = microtime(true);
 try {
     // We instantiate the service directly
     $service = new \App\Models\Services\TurnProcessorService();
-    $processedCount = $service->processAllUsers();
+    
+    // --- THIS IS THE CHANGE ---
+    // The service now returns an array with counts for both users and alliances
+    $processedCounts = $service->processAllUsers();
     
     $endTime = microtime(true);
     $duration = round($endTime - $startTime, 2);
     
     echo "Turn processing complete. \n";
-    echo "Processed {$processedCount} users in {$duration} seconds. \n";
+    // Updated echo to show both counts
+    echo "Processed {$processedCounts['users']} users and {$processedCounts['alliances']} alliances in {$duration} seconds. \n";
 
 } catch (\Throwable $e) {
     $errorMessage = "CRITICAL CRON ERROR: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "\n";

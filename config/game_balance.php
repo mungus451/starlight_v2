@@ -133,5 +133,17 @@ return [
     // --- Phase 11 ---
     'alliance' => [
         'creation_cost' => 500000 // 500,000 Credits, not 50 Million
+    ],
+    
+    // --- NEW: Phase 2 (Alliance Treasury) ---
+    'alliance_treasury' => [
+        // A standard tax on all battle plunder
+        'battle_tax_rate' => 0.03, // 3%
+        
+        // A separate "tribute" tax, as seen in V1 logs
+        'tribute_tax_rate' => 0.05, // 5%
+        
+        // Interest rate for the alliance bank, applied per turn
+        'bank_interest_rate' => 0.005 // 0.5%
     ]
 ];

@@ -96,28 +96,80 @@ class AllianceRepository
         return $alliances;
     }
 
-    // --- METHOD MODIFIED FOR FILE UPLOADS ---
-    
     /**
      * Updates an alliance's public profile.
      *
      * @param int $allianceId
      * @param string $description
-     * @param string|null $profile_picture_filename (This now stores a filename, not a URL)
+     * @param string $pfpUrl
      * @return bool
      */
-    public function updateProfile(int $allianceId, string $description, ?string $profile_picture_filename): bool
+    public function updateProfile(int $allianceId, string $description, string $pfpUrl): bool
     {
         $description = empty($description) ? null : $description;
-        // $profile_picture_filename can be null, so no check needed
+        $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
 
         $stmt = $this->db->prepare(
             "UPDATE alliances SET description = ?, profile_picture_url = ? WHERE id = ?"
         );
-        return $stmt->execute([$description, $profile_picture_filename, $allianceId]);
+        return $stmt->execute([$description, $pfpUrl, $allianceId]);
+    }
+    
+    /**
+     * Atomically updates an alliance's bank balance by a relative amount.
+     * (e.g., amountChange = +1000 or -500)
+     *
+     * @param int $allianceId
+     * @param int $amountChange The (positive or negative) amount to change the balance by.
+     * @return bool
+     */
+    public function updateBankCreditsRelative(int $allianceId, int $amountChange): bool
+    {
+        $sql = "
+            UPDATE alliances 
+            SET bank_credits = GREATEST(0, CAST(bank_credits AS SIGNED) + CAST(? AS SIGNED)) 
+            WHERE id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$amountChange, $allianceId]);
     }
 
-    // --- END MODIFIED METHOD ---
+    // --- NEW METHODS FOR PHASE 2 (TREASURY AUTOMATION) ---
+
+    /**
+     * Gets all alliances from the database.
+     * Used by the TurnProcessorService.
+     *
+     * @return Alliance[]
+     */
+    public function getAllAlliances(): array
+    {
+        $stmt = $this->db->query("SELECT * FROM alliances ORDER BY id ASC");
+        
+        $alliances = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $alliances[] = $this->hydrate($row);
+        }
+        return $alliances;
+    }
+
+    /**
+     * Updates an alliance's last_compound_at timestamp.
+     * Used by the TurnProcessorService after applying interest.
+     *
+     * @param int $allianceId
+     * @return bool
+     */
+    public function updateLastCompoundAt(int $allianceId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE alliances SET last_compound_at = NOW() WHERE id = ?"
+        );
+        return $stmt->execute([$allianceId]);
+    }
+
+    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row into an Alliance entity.
@@ -130,8 +182,11 @@ class AllianceRepository
             tag: $data['tag'],
             description: $data['description'] ?? null,
             profile_picture_url: $data['profile_picture_url'] ?? null,
+            is_joinable: (bool)$data['is_joinable'],
             leader_id: (int)$data['leader_id'],
             net_worth: (int)$data['net_worth'],
+            bank_credits: (int)$data['bank_credits'],
+            last_compound_at: $data['last_compound_at'] ?? null,
             created_at: $data['created_at']
         );
     }

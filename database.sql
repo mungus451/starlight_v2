@@ -343,3 +343,374 @@ ALTER TABLE `user_stats`
     ADD COLUMN `deposit_charges` INT NOT NULL DEFAULT 4 AFTER `charisma_points`,
     ADD COLUMN `last_deposit_at` TIMESTAMP NULL DEFAULT NULL AFTER `deposit_charges`;
 
+--
+-- --------------------------------------------------------
+--
+-- PHASE 12: ALLIANCE TREASURY (CORE)
+--
+-- Add new treasury columns to the 'alliances' table
+ALTER TABLE `alliances`
+    ADD COLUMN `bank_credits` BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER `net_worth`,
+    ADD COLUMN `is_joinable` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0=Application, 1=Open' AFTER `profile_picture_url`,
+    ADD COLUMN `last_compound_at` TIMESTAMP NULL DEFAULT NULL AFTER `bank_credits`;
+
+--
+-- Table structure for table `alliance_bank_logs`
+-- Tracks all transactions (donations, taxes, structure costs)
+--
+CREATE TABLE `alliance_bank_logs` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NULL DEFAULT NULL COMMENT 'User involved (donator, taxee)',
+    `log_type` VARCHAR(50) NOT NULL COMMENT 'e.g., ''donation'', ''battle_tax'', ''interest''',
+    `amount` BIGINT NOT NULL COMMENT 'Positive (income) or negative (expense)',
+    `message` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    
+    KEY `idx_alliance_logs` (`alliance_id`, `created_at` DESC),
+    
+    CONSTRAINT `fk_bank_log_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_bank_log_user`
+        FOREIGN KEY (`user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE SET NULL -- Keep log even if user is deleted
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- --------------------------------------------------------
+--
+-- PHASE 13: ALLIANCE STRUCTURES
+--
+-- Table structure for table `alliance_structures_definitions`
+-- Defines all purchasable alliance-wide upgrades
+--
+CREATE TABLE `alliance_structures_definitions` (
+    `structure_key` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT NOT NULL,
+    `base_cost` BIGINT UNSIGNED NOT NULL,
+    `cost_multiplier` DECIMAL(5,2) NOT NULL DEFAULT 1.5,
+    `bonus_text` VARCHAR(255) NOT NULL,
+    `bonuses_json` JSON NOT NULL,
+    
+    PRIMARY KEY (`structure_key`),
+    CONSTRAINT `chk_bonuses_json` CHECK (JSON_VALID(`bonuses_json`))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `alliance_structures`
+-- Tracks the level of structures an alliance currently owns
+--
+CREATE TABLE `alliance_structures` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `structure_key` VARCHAR(50) NOT NULL,
+    `level` INT UNSIGNED NOT NULL DEFAULT 1,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_alliance_structure` (`alliance_id`, `structure_key`),
+    
+    CONSTRAINT `fk_as_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_as_structure_def`
+        FOREIGN KEY (`structure_key`) 
+        REFERENCES `alliance_structures_definitions`(`structure_key`)
+        ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- --------------------------------------------------------
+--
+-- PHASE 14: ALLIANCE FORUM
+--
+-- Table structure for table `alliance_forum_topics`
+-- Defines a single "thread" or "topic" in an alliance forum
+--
+CREATE TABLE `alliance_forum_topics` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NOT NULL COMMENT 'Author/Creator of the topic',
+    `title` VARCHAR(255) NOT NULL,
+    `is_locked` TINYINT(1) NOT NULL DEFAULT 0,
+    `is_pinned` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_reply_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_reply_user_id` INT UNSIGNED NULL DEFAULT NULL,
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_alliance_forum_topics` (`alliance_id`, `last_reply_at` DESC),
+    
+    CONSTRAINT `fk_aft_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_aft_user`
+        FOREIGN KEY (`user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_aft_last_reply_user`
+        FOREIGN KEY (`last_reply_user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE SET NULL
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `alliance_forum_posts`
+-- Defines a single post (reply) within an alliance forum topic
+--
+CREATE TABLE `alliance_forum_posts` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `topic_id` INT UNSIGNED NOT NULL,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NOT NULL COMMENT 'Author of the post',
+    `content` TEXT NOT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_alliance_forum_posts` (`topic_id`, `created_at` ASC),
+    
+    CONSTRAINT `fk_afp_topic`
+        FOREIGN KEY (`topic_id`) 
+        REFERENCES `alliance_forum_topics`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_afp_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_afp_user`
+        FOREIGN KEY (`user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- --------------------------------------------------------
+--
+-- PHASE 15: ALLIANCE LOANS
+--
+-- Table structure for table `alliance_loans`
+-- Tracks member loan requests from the alliance bank
+--
+CREATE TABLE `alliance_loans` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NOT NULL COMMENT 'The user (borrower) requesting the loan',
+    `amount_requested` BIGINT UNSIGNED NOT NULL,
+    `amount_to_repay` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    `status` ENUM('pending', 'active', 'paid', 'denied') NOT NULL DEFAULT 'pending',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_alliance_loans_status` (`alliance_id`, `status`),
+    KEY `idx_user_loans` (`user_id`, `status`),
+    
+    CONSTRAINT `fk_loan_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_loan_user`
+        FOREIGN KEY (`user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- --------------------------------------------------------
+--
+-- PHASE 16a: DIPLOMACY
+--
+-- Add new permission column to 'alliance_roles'
+ALTER TABLE `alliance_roles`
+    ADD COLUMN `can_manage_diplomacy` TINYINT(1) NOT NULL DEFAULT 0 AFTER `can_manage_structures`;
+
+--
+-- Table structure for table `treaties`
+-- Tracks bilateral pacts between alliances
+--
+CREATE TABLE `treaties` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance1_id` INT UNSIGNED NOT NULL COMMENT 'Proposing alliance',
+    `alliance2_id` INT UNSIGNED NOT NULL COMMENT 'Target alliance',
+    `treaty_type` ENUM('peace', 'non_aggression', 'mutual_defense') NOT NULL,
+    `status` ENUM('proposed', 'active', 'expired', 'broken', 'declined') NOT NULL DEFAULT 'proposed',
+    `terms` TEXT NULL DEFAULT NULL,
+    `expiration_date` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_alliance1_treaties` (`alliance1_id`, `status`),
+    KEY `idx_alliance2_treaties` (`alliance2_id`, `status`),
+    
+    CONSTRAINT `fk_treaty_alliance1`
+        FOREIGN KEY (`alliance1_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_treaty_alliance2`
+        FOREIGN KEY (`alliance2_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `rivalries`
+-- Tracks friction between two alliances
+--
+CREATE TABLE `rivalries` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `alliance_a_id` INT UNSIGNED NOT NULL COMMENT 'The alliance with the lower ID',
+    `alliance_b_id` INT UNSIGNED NOT NULL COMMENT 'The alliance with the higher ID',
+    `heat_level` INT NOT NULL DEFAULT 1,
+    `last_attack_date` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_alliance_pair` (`alliance_a_id`, `alliance_b_id`),
+    
+    CONSTRAINT `fk_rivalry_alliance_a`
+        FOREIGN KEY (`alliance_a_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_rivalry_alliance_b`
+        FOREIGN KEY (`alliance_b_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+
+    CONSTRAINT `chk_alliance_order` CHECK (`alliance_a_id` < `alliance_b_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- --------------------------------------------------------
+--
+-- PHASE 16b: WARS
+--
+-- Add new permission column to 'alliance_roles' for declaring war
+ALTER TABLE `alliance_roles`
+    ADD COLUMN `can_declare_war` TINYINT(1) NOT NULL DEFAULT 0 AFTER `can_manage_diplomacy`;
+
+--
+-- Table structure for table `wars`
+-- Tracks all active, pending, and concluded wars
+--
+CREATE TABLE `wars` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
+    `war_type` ENUM('skirmish', 'war') NOT NULL DEFAULT 'war',
+    `declarer_alliance_id` INT UNSIGNED NOT NULL,
+    `declared_against_alliance_id` INT UNSIGNED NOT NULL,
+    `casus_belli` TEXT NULL DEFAULT NULL,
+    `status` ENUM('active', 'concluded') NOT NULL DEFAULT 'active',
+    `goal_key` VARCHAR(100) NOT NULL COMMENT 'e.g., ''credits_plundered'', ''units_killed''',
+    `goal_threshold` BIGINT UNSIGNED NOT NULL,
+    `declarer_score` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    `defender_score` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    `winner_alliance_id` INT UNSIGNED NULL DEFAULT NULL,
+    `start_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `end_time` TIMESTAMP NULL DEFAULT NULL,
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_active_wars` (`status`, `start_time`),
+    KEY `idx_declarer_wars` (`declarer_alliance_id`, `status`),
+    KEY `idx_defender_wars` (`declared_against_alliance_id`, `status`),
+    
+    CONSTRAINT `fk_war_declarer`
+        FOREIGN KEY (`declarer_alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_war_defender`
+        FOREIGN KEY (`declared_against_alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_war_winner`
+        FOREIGN KEY (`winner_alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `war_battle_logs`
+-- Links individual battle reports to a specific war
+--
+CREATE TABLE `war_battle_logs` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `war_id` INT UNSIGNED NOT NULL,
+    `battle_report_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NOT NULL,
+    `alliance_id` INT UNSIGNED NOT NULL,
+    `prestige_gained` INT NOT NULL DEFAULT 0,
+    `units_killed` INT NOT NULL DEFAULT 0,
+    `credits_plundered` BIGINT NOT NULL DEFAULT 0,
+    `structure_damage` INT NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_battle_report` (`battle_report_id`),
+    KEY `idx_war_logs` (`war_id`, `alliance_id`),
+    
+    CONSTRAINT `fk_wbl_war`
+        FOREIGN KEY (`war_id`) 
+        REFERENCES `wars`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_wbl_battle_report`
+        FOREIGN KEY (`battle_report_id`) 
+        REFERENCES `battle_reports`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_wbl_user`
+        FOREIGN KEY (`user_id`) 
+        REFERENCES `users`(`id`)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT `fk_wbl_alliance`
+        FOREIGN KEY (`alliance_id`) 
+        REFERENCES `alliances`(`id`)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `war_history`
+-- A snapshot of concluded wars for archival
+--
+CREATE TABLE `war_history` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `war_id` INT UNSIGNED NOT NULL,
+    `declarer_name` VARCHAR(100) NOT NULL,
+    `defender_name` VARCHAR(100) NOT NULL,
+    `casus_belli_text` TEXT NULL DEFAULT NULL,
+    `goal_text` VARCHAR(255) NOT NULL,
+    `outcome` VARCHAR(255) NOT NULL,
+    `mvp_metadata_json` JSON NULL DEFAULT NULL,
+    `final_stats_json` JSON NULL DEFAULT NULL,
+    `start_time` TIMESTAMP NOT NULL,
+    `end_time` TIMESTAMP NOT NULL,
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_war_id` (`war_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

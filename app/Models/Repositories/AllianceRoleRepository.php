@@ -30,9 +30,10 @@ class AllianceRoleRepository
             INSERT INTO alliance_roles 
                 (alliance_id, name, sort_order, can_edit_profile, can_manage_applications, 
                  can_invite_members, can_kick_members, can_manage_roles, can_see_private_board, 
-                 can_manage_forum, can_manage_bank, can_manage_structures) 
+                 can_manage_forum, can_manage_bank, can_manage_structures, can_manage_diplomacy, 
+                 can_declare_war) 
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ";
         
         $stmt = $this->db->prepare($sql);
@@ -48,7 +49,9 @@ class AllianceRoleRepository
             (int)($permissions['can_see_private_board'] ?? 0),
             (int)($permissions['can_manage_forum'] ?? 0),
             (int)($permissions['can_manage_bank'] ?? 0),
-            (int)($permissions['can_manage_structures'] ?? 0)
+            (int)($permissions['can_manage_structures'] ?? 0),
+            (int)($permissions['can_manage_diplomacy'] ?? 0),
+            (int)($permissions['can_declare_war'] ?? 0) // --- NEW ---
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -56,7 +59,6 @@ class AllianceRoleRepository
 
     /**
      * Finds a role by its ID.
-     * --- THIS IS THE FIX ---
      *
      * @param int|null $roleId
      * @return AllianceRole|null
@@ -129,7 +131,9 @@ class AllianceRoleRepository
                 can_see_private_board = ?,
                 can_manage_forum = ?,
                 can_manage_bank = ?,
-                can_manage_structures = ?
+                can_manage_structures = ?,
+                can_manage_diplomacy = ?,
+                can_declare_war = ?
             WHERE id = ?
         ";
         
@@ -145,6 +149,8 @@ class AllianceRoleRepository
             (int)($permissions['can_manage_forum'] ?? 0),
             (int)($permissions['can_manage_bank'] ?? 0),
             (int)($permissions['can_manage_structures'] ?? 0),
+            (int)($permissions['can_manage_diplomacy'] ?? 0),
+            (int)($permissions['can_declare_war'] ?? 0), // --- NEW ---
             $roleId
         ]);
     }
@@ -194,7 +200,9 @@ class AllianceRoleRepository
             can_see_private_board: (bool)$data['can_see_private_board'],
             can_manage_forum: (bool)$data['can_manage_forum'],
             can_manage_bank: (bool)$data['can_manage_bank'],
-            can_manage_structures: (bool)$data['can_manage_structures']
+            can_manage_structures: (bool)$data['can_manage_structures'],
+            can_manage_diplomacy: (bool)$data['can_manage_diplomacy'],
+            can_declare_war: (bool)$data['can_declare_war'] // --- NEW ---
         );
     }
 }

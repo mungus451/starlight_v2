@@ -21,6 +21,8 @@ class AllianceRole
      * @param bool $can_manage_forum
      * @param bool $can_manage_bank
      * @param bool $can_manage_structures
+     * @param bool $can_manage_diplomacy
+     * @param bool $can_declare_war (NEW)
      */
     public function __construct(
         public readonly int $id,
@@ -35,7 +37,9 @@ class AllianceRole
         public readonly bool $can_see_private_board,
         public readonly bool $can_manage_forum,
         public readonly bool $can_manage_bank,
-        public readonly bool $can_manage_structures
+        public readonly bool $can_manage_structures,
+        public readonly bool $can_manage_diplomacy,
+        public readonly bool $can_declare_war // --- NEW ---
     ) {
     }
 }

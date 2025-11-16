@@ -43,11 +43,13 @@ try {
         // 3. Create the 3 default roles for this alliance
         
         // a. Create 'Leader' role (all permissions)
+        // --- UPDATED SQL ---
         $sqlLeader = "
             INSERT INTO alliance_roles (alliance_id, name, sort_order, can_edit_profile, 
             can_manage_applications, can_invite_members, can_kick_members, can_manage_roles, 
-            can_see_private_board, can_manage_forum, can_manage_bank, can_manage_structures) 
-            VALUES (?, 'Leader', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            can_see_private_board, can_manage_forum, can_manage_bank, can_manage_structures, 
+            can_manage_diplomacy, can_declare_war) 
+            VALUES (?, 'Leader', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
         ";
         $db->prepare($sqlLeader)->execute([$allianceId]);
         $leaderRoleId = $db->lastInsertId();
@@ -81,7 +83,7 @@ try {
     echo "Migrated {$migratedCount} alliances in {$duration} seconds. \n";
 
 } catch (\Throwable $e) {
-    if ($db->inTransaction()) {
+    if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
     echo "CRITICAL MIGRATION ERROR: " . $e->getMessage() . "\n";

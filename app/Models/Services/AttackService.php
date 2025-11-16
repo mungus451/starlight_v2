@@ -11,7 +11,12 @@ use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\BattleRepository;
 use App\Models\Services\ArmoryService;
-use App\Models\Services\PowerCalculatorService; // Import new service
+use App\Models\Services\PowerCalculatorService;
+use App\Models\Repositories\AllianceRepository;
+use App\Models\Repositories\AllianceBankLogRepository;
+// --- NEW IMPORTS ---
+use App\Models\Services\WarService;
+use App\Models\Repositories\WarRepository;
 use PDO;
 use Throwable;
 
@@ -29,7 +34,13 @@ class AttackService
     private StatsRepository $statsRepo;
     private BattleRepository $battleRepo;
     private ArmoryService $armoryService;
-    private PowerCalculatorService $powerCalculatorService; // Add new service property
+    private PowerCalculatorService $powerCalculatorService;
+    private AllianceRepository $allianceRepo;
+    private AllianceBankLogRepository $bankLogRepo;
+
+    // --- NEW PROPERTIES ---
+    private WarService $warService;
+    private WarRepository $warRepo;
 
     public function __construct()
     {
@@ -45,7 +56,14 @@ class AttackService
         
         // Instantiate services
         $this->armoryService = new ArmoryService();
-        $this->powerCalculatorService = new PowerCalculatorService(); // Instantiate new service
+        $this->powerCalculatorService = new PowerCalculatorService();
+        
+        $this->allianceRepo = new AllianceRepository($this->db);
+        $this->bankLogRepo = new AllianceBankLogRepository($this->db);
+        
+        // --- NEW ---
+        $this->warService = new WarService();
+        $this->warRepo = new WarRepository($this->db); // For checking active wars
     }
 
     /**
@@ -142,6 +160,7 @@ class AttackService
         }
 
         // --- 2. Get All 6 Data Objects + Config ---
+        $attacker = $this->userRepo->findById($attackerId); // Get attacker User entity
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
         $attackerStructures = $this->structureRepo->findByUserId($attackerId);
@@ -149,6 +168,7 @@ class AttackService
         $defenderStats = $this->statsRepo->findByUserId($defender->id);
         $defenderStructures = $this->structureRepo->findByUserId($defender->id);
         $config = $this->config->get('game_balance.attack');
+        $treasuryConfig = $this->config->get('game_balance.alliance_treasury');
 
         // --- 3. Check Costs & Availability (ALL-IN LOGIC) ---
         $soldiersSent = $attackerResources->soldiers; // ALL-IN
@@ -164,22 +184,13 @@ class AttackService
         }
 
         // --- 4. Calculate Battle Power (REFACTORED) ---
-
-        // 4a. Attacker Offense Power
         $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
-            $attackerId,
-            $attackerResources,
-            $attackerStats,
-            $attackerStructures
+            $attackerId, $attackerResources, $attackerStats, $attackerStructures
         );
         $offensePower = $offensePowerBreakdown['total'];
         
-        // 4b. Defender Defense Power
         $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
-            $defender->id,
-            $defenderResources,
-            $defenderStats,
-            $defenderStructures
+            $defender->id, $defenderResources, $defenderStats, $defenderStructures
         );
         $defensePower = $defensePowerBreakdown['total'];
 
@@ -191,7 +202,7 @@ class AttackService
             $attackResult = 'stalemate';
         }
 
-        // --- 6. Calculate Losses (FIX: Cast floats to int for mt_rand) ---
+        // --- 6. Calculate Losses ---
         $attackerSoldiersLost = 0;
         $defenderGuardsLost = 0;
         if ($attackResult === 'victory') {
@@ -212,19 +223,30 @@ class AttackService
         $netWorthStolen = 0;
         $experienceGained = 0;
         $warPrestigeGained = 0;
+        $battleTaxAmount = 0;
+        $tributeTaxAmount = 0;
+        $totalTaxAmount = 0;
 
         if ($attackResult === 'victory') {
             $creditsPlundered = (int)($defenderResources->credits * $config['plunder_percent']);
             $netWorthStolen = (int)($defenderStats->net_worth * $config['net_worth_steal_percent']);
             $experienceGained = $config['experience_gain_base'];
             $warPrestigeGained = $config['war_prestige_gain_base'];
+            
+            if ($attacker->alliance_id !== null && $creditsPlundered > 0) {
+                $battleTaxAmount = (int)floor($creditsPlundered * $treasuryConfig['battle_tax_rate']);
+                $tributeTaxAmount = (int)floor($creditsPlundered * $treasuryConfig['tribute_tax_rate']);
+                $totalTaxAmount = $battleTaxAmount + $tributeTaxAmount;
+            }
         }
+        
+        $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
         // --- 8. Execute 4-Table Transaction ---
         $this->db->beginTransaction();
         try {
             // 8a. Update Attacker Resources
-            $attackerNewCredits = $attackerResources->credits + $creditsPlundered;
+            $attackerNewCredits = $attackerResources->credits + $attackerCreditGain;
             $attackerNewSoldiers = $attackerResources->soldiers - $attackerSoldiersLost;
             $this->resourceRepo->updateBattleAttacker($attackerId, $attackerNewCredits, $attackerNewSoldiers);
 
@@ -238,7 +260,6 @@ class AttackService
             // 8c. Update Defender Resources
             $defenderNewCredits = max(0, $defenderResources->credits - $creditsPlundered);
             $defenderNewGuards = max(0, $defenderResources->guards - $defenderGuardsLost);
-            // --- FIX ---
             $this->resourceRepo->updateBattleDefender($defender->id, $defenderNewCredits, $defenderNewGuards);
 
             // 8d. Update Defender Stats
@@ -246,19 +267,43 @@ class AttackService
             $this->statsRepo->updateBattleDefenderStats($defender->id, $defenderNewNetWorth);
 
             // 8e. Create Battle Report
-            $this->battleRepo->createReport(
+            $battleReportId = $this->battleRepo->createReport(
                 $attackerId, $defender->id, $attackType, $attackResult, $soldiersSent,
                 $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
                 $experienceGained, $warPrestigeGained, $netWorthStolen,
                 (int)$offensePower, (int)$defensePower
             );
-
-            // 8f. Commit
+            
+            // 8f. Update Alliance Bank & Logs (if tax was applied)
+            if ($totalTaxAmount > 0 && $attacker->alliance_id !== null) {
+                $this->allianceRepo->updateBankCreditsRelative($attacker->alliance_id, $totalTaxAmount);
+                if ($battleTaxAmount > 0) {
+                    $taxMsg = "Battle tax (" . ($treasuryConfig['battle_tax_rate'] * 100) . "%) from victory against " . $defender->characterName;
+                    $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'battle_tax', $battleTaxAmount, $taxMsg);
+                }
+                if ($tributeTaxAmount > 0) {
+                    $tribMsg = "Tribute (" . ($treasuryConfig['tribute_tax_rate'] * 100) . "%) from victory against " . $defender->characterName;
+                    $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'tribute_tax', $tributeTaxAmount, $tribMsg);
+                }
+            }
+            
+            // --- 8g. NEW: Log War Battle ---
+            // This service method will internally check if a war is active
+            $this->warService->logBattle(
+                $battleReportId,
+                $attacker,
+                $defender,
+                $attackResult,
+                $warPrestigeGained,
+                $defenderGuardsLost,
+                $creditsPlundered
+            );
+            
+            // 8h. Commit
             $this->db->commit();
             
         } catch (Throwable $e) {
-            // 8g. Rollback on failure
-            // --- THIS IS THE FIX ---
+            // 8i. Rollback on failure
             $this->db->rollBack();
             error_log('Attack Operation Error: '. $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. The attack was cancelled.');
@@ -269,6 +314,9 @@ class AttackService
         $message = "Attack Complete: {$attackResult}!";
         if ($attackResult === 'victory') {
             $message .= " You plundered " . number_format($creditsPlundered) . " credits and lost " . number_format($attackerSoldiersLost) . " soldiers.";
+            if ($totalTaxAmount > 0) {
+                $message .= " (You contributed " . number_format($totalTaxAmount) . " credits to your alliance).";
+            }
         } else {
             $message .= " You lost " . number_format($attackerSoldiersLost) . " soldiers.";
         }

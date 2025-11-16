@@ -13,6 +13,10 @@ use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
 use App\Controllers\AllianceManagementController;
 use App\Controllers\AllianceRoleController;
+use App\Controllers\AllianceStructureController;
+use App\Controllers\AllianceForumController;
+use App\Controllers\DiplomacyController;
+use App\Controllers\WarController;
 use App\Controllers\ArmoryController;
 use App\Controllers\PagesController;
 use App\Controllers\ProfileController;
@@ -66,9 +70,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Public Profile Route ---
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
 
-    // --- Secure File Serving Routes ---
+    // --- Secure File Serving Route ---
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
-    $r->addRoute('GET', '/serve/alliance-avatar/{filename}', [FileController::class, 'showAllianceAvatar']); // --- NEW ---
 
     // --- Phase 3: Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
@@ -127,9 +130,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
     $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
     $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
-    
-    // --- Alliance Invite Route (Phase 3) ---
     $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceManagementController::class, 'handleInvite']);
+    $r->addRoute('POST', '/alliance/donate', [AllianceManagementController::class, 'handleDonation']);
     
     // --- Phase 13: Alliance Admin Routes ---
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
@@ -138,7 +140,40 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/roles', [AllianceRoleController::class, 'showAll']);
     $r->addRoute('POST', '/alliance/roles/create', [AllianceRoleController::class, 'handleCreate']);
     $r->addRoute('POST', '/alliance/roles/update/{id:\d+}', [AllianceRoleController::class, 'handleUpdate']);
-    $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceRoleController::class, 'handleDelete']);
+    $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceManagementController::class, 'handleDelete']);
+    
+    // --- Alliance Structure Routes ---
+    $r->addRoute('GET', '/alliance/structures', [AllianceStructureController::class, 'show']);
+    $r->addRoute('POST', '/alliance/structures/upgrade', [AllianceStructureController::class, 'handleUpgrade']);
+    
+    // --- Alliance Forum Routes ---
+    $r->addRoute('GET', '/alliance/forum', [AllianceForumController::class, 'showForum']);
+    $r->addRoute('GET', '/alliance/forum/page/{page:\d+}', [AllianceForumController::class, 'showForum']);
+    $r->addRoute('GET', '/alliance/forum/topic/create', [AllianceForumController::class, 'showCreateTopic']);
+    $r->addRoute('POST', '/alliance/forum/topic/create', [AllianceForumController::class, 'handleCreateTopic']);
+    $r->addRoute('GET', '/alliance/forum/topic/{id:\d+}', [AllianceForumController::class, 'showTopic']);
+    $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/reply', [AllianceForumController::class, 'handleCreatePost']);
+    $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/pin', [AllianceForumController::class, 'handlePinTopic']);
+    $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/lock', [AllianceForumController::class, 'handleLockTopic']);
+    
+    // --- Alliance Loan Routes ---
+    $r->addRoute('POST', '/alliance/loan/request', [AllianceManagementController::class, 'handleLoanRequest']);
+    $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceManagementController::class, 'handleLoanApprove']);
+    $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceManagementController::class, 'handleLoanDeny']);
+    $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceManagementController::class, 'handleLoanRepay']);
+
+    // --- Alliance Diplomacy Routes ---
+    $r->addRoute('GET', '/alliance/diplomacy', [DiplomacyController::class, 'show']);
+    $r->addRoute('POST', '/alliance/diplomacy/treaty/propose', [DiplomacyController::class, 'handleProposeTreaty']);
+    $r->addRoute('POST', '/alliance/diplomacy/treaty/accept/{id:\d+}', [DiplomacyController::class, 'handleAcceptTreaty']);
+    $r->addRoute('POST', '/alliance/diplomacy/treaty/decline/{id:\d+}', [DiplomacyController::class, 'handleDeclineTreaty']);
+    $r->addRoute('POST', '/alliance/diplomacy/treaty/break/{id:\d+}', [DiplomacyController::class, 'handleBreakTreaty']);
+    $r->addRoute('POST', '/alliance/diplomacy/rivalry/declare', [DiplomacyController::class, 'handleDeclareRivalry']);
+    
+    // --- Alliance War Routes ---
+    $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
+    $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
+
 });
 
 // 5. Global Error Handler
@@ -185,7 +220,18 @@ try {
                 '/alliance/profile/edit',
                 '/alliance/role/assign',
                 '/alliance/roles',
-                '/alliance/roles/create'
+                '/alliance/roles/create',
+                '/alliance/donate',
+                '/alliance/structures',
+                '/alliance/structures/upgrade',
+                '/alliance/forum',
+                '/alliance/forum/topic/create',
+                '/alliance/loan/request', // --- THIS IS THE ROUTE THAT CAUSED THE ERROR ---
+                '/alliance/diplomacy',
+                '/alliance/diplomacy/treaty/propose',
+                '/alliance/diplomacy/rivalry/declare',
+                '/alliance/war',
+                '/alliance/war/declare'
             ];
 
             // Check exact routes
@@ -225,15 +271,27 @@ try {
                     $isProtected = true;
                 } elseif (str_starts_with($uri, '/serve/avatar/')) {
                     $isProtected = true;
-                } elseif (str_starts_with($uri, '/serve/alliance-avatar/')) { // --- NEW ---
+                } elseif (str_starts_with($uri, '/alliance/forum/page/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/forum/topic/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/loan/approve/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/loan/deny/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/loan/repay/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/diplomacy/')) {
+                    $isProtected = true;
+                } elseif (str_starts_with($uri, '/alliance/war/')) {
                     $isProtected = true;
                 }
             }
+            // --- End Middleware Check ---
 
             if ($isProtected) {
                 (new AuthMiddleware())->handle();
             }
-            // --- End Middleware Check ---
 
             [$class, $method] = $handler;
             $controller = new $class();
