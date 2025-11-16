@@ -132,7 +132,7 @@ return [
 
     // --- Phase 11 ---
     'alliance' => [
-        'creation_cost' => 500000 // 500,000 Credits, not 50 Million
+        'creation_cost' => 50000000 // 500,000 Credits, not 50 Million
     ],
     
     // --- NEW: Phase 2 (Alliance Treasury) ---
