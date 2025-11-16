@@ -11,11 +11,11 @@ return [
     // --- Phase 4 ---
     'training' => [
         // Unit costs are [ 'credits' => X, 'citizens' => Y ]
-        'workers'  => ['credits' => 100, 'citizens' => 1],
-        'soldiers' => ['credits' => 1000, 'citizens' => 1],
-        'guards'   => ['credits' => 2500, 'citizens' => 1],
-        'spies'    => ['credits' => 10000, 'citizens' => 1],
-        'sentries' => ['credits' => 5000, 'citizens' => 1],
+        'workers'  => ['credits' => 10000, 'citizens' => 1],
+        'soldiers' => ['credits' => 15000, 'citizens' => 1],
+        'guards'   => ['credits' => 25000, 'citizens' => 1],
+        'spies'    => ['credits' => 100000, 'citizens' => 1],
+        'sentries' => ['credits' => 50000, 'citizens' => 1],
     ],
     // --- Phase 5 ---
     'structures' => [
@@ -127,7 +127,7 @@ return [
         'credit_bonus_per_wealth_point' => 0.005, // 0.5% bonus to econ/worker income
         
         // 10 new citizens per turn, per level of Population
-        'citizen_growth_per_pop_level' => 10
+        'citizen_growth_per_pop_level' => 1
     ],
 
     // --- Phase 11 ---
