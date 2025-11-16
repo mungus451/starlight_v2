@@ -11,7 +11,6 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
-// --- NEW REPOSITORY TO INJECT ---
 use App\Models\Repositories\AllianceLoanRepository;
 use PDO;
 use Throwable;
@@ -30,8 +29,6 @@ class AllianceService
     private ApplicationRepository $appRepo;
     private AllianceRoleRepository $roleRepo;
     private AllianceBankLogRepository $bankLogRepo;
-    
-    // --- NEW PROPERTY ---
     private AllianceLoanRepository $loanRepo;
 
     public function __construct()
@@ -46,8 +43,6 @@ class AllianceService
         $this->appRepo = new ApplicationRepository($this->db);
         $this->roleRepo = new AllianceRoleRepository($this->db);
         $this->bankLogRepo = new AllianceBankLogRepository($this->db);
-        
-        // --- NEW REPOSITORY ---
         $this->loanRepo = new AllianceLoanRepository($this->db);
     }
 
@@ -123,9 +118,8 @@ class AllianceService
         // Get Bank Logs
         $bankLogs = $this->bankLogRepo->findLogsByAllianceId($allianceId);
         
-        // --- NEW: Get Alliance Loans ---
+        // Get Alliance Loans
         $loans = $this->loanRepo->findByAllianceId($allianceId);
-        // --- END NEW ---
 
         return [
             'alliance' => $alliance,
@@ -136,7 +130,7 @@ class AllianceService
             'userApplication' => $userApplication,
             'roles' => $roles,
             'bankLogs' => $bankLogs,
-            'loans' => $loans // --- NEW ---
+            'loans' => $loans
         ];
     }
 
@@ -192,7 +186,8 @@ class AllianceService
             $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
                 'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
                 'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
-                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1
+                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1,
+                'can_manage_diplomacy' => 1, 'can_declare_war' => 1
             ]);
             
             $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
@@ -217,6 +212,11 @@ class AllianceService
 
         // 3. Success
         $this->session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
+        
+        // --- NEW: Update the creator's session ---
+        $this->session->set('alliance_id', $newAllianceId);
+        // --- END NEW ---
+        
         return $newAllianceId;
     }
 }

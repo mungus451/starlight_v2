@@ -41,8 +41,8 @@
             color: #e0e0e0;
             text-decoration: none;
             font-weight: bold;
-            padding: 0 1rem;
-            font-size: 1.1rem;
+            padding: 0 0.75rem; /* Reduced padding to fit more links */
+            font-size: 1.0rem; /* Reduced font size */
         }
         nav a:hover {
             color: #f9c74f;
@@ -80,7 +80,20 @@
                 padding: 1rem;
                 margin: 1rem auto;
             }
+            /* --- NEW: Make nav links smaller on mobile --- */
+            nav a {
+                padding: 0 0.5rem;
+                font-size: 0.9rem;
+            }
         }
+        /* --- NEW: Further reduce nav links on very small screens --- */
+        @media (max-width: 480px) {
+            nav a {
+                padding: 0 0.25rem;
+                font-size: 0.8rem;
+            }
+        }
+
 
         h1 {
             color: #f9c74f; /* Gold */
@@ -174,6 +187,8 @@
 
     <nav>
         <?php if ($session->has('user_id')): ?>
+            <?php $userAllianceId = $session->get('alliance_id'); // --- NEW --- ?>
+        
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
             <a href="/training">Training</a>
@@ -182,7 +197,19 @@
             <a href="/spy">Spy</a>
             <a href="/battle">Battle</a>
             <a href="/level-up">Level Up</a>
-            <a href="/alliance/list">Alliance</a>
+            
+            <?php // --- NEW DYNAMIC LINKS --- ?>
+            <?php if ($userAllianceId !== null): ?>
+                <a href="/alliance/profile/<?= $userAllianceId ?>">My Alliance</a>
+                <a href="/alliance/forum">Forum</a>
+                <a href="/alliance/structures">A. Structures</a>
+                <a href="/alliance/diplomacy">Diplomacy</a>
+                <a href="/alliance/war">War Room</a>
+            <?php else: ?>
+                <a href="/alliance/list">Alliances</a>
+            <?php endif; ?>
+            <?php // --- END DYNAMIC LINKS --- ?>
+            
             <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
         <?php else: ?>

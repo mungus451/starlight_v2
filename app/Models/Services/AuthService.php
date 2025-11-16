@@ -101,6 +101,10 @@ class AuthService
 
         // 7. Log the new user in
         $this->session->set('user_id', $newUserId);
+        // --- NEW ---
+        // A new user has no alliance, so we explicitly set it to null
+        $this->session->set('alliance_id', null);
+        
         session_regenerate_id(true); // Protect against session fixation
 
         return true;
@@ -108,7 +112,6 @@ class AuthService
 
     /**
      * Attempts to log a user in.
-     * (No changes needed, it already uses the injected repository)
      *
      * @param string $email
      * @param string $password
@@ -125,6 +128,10 @@ class AuthService
 
         session_regenerate_id(true);
         $this->session->set('user_id', $user->id);
+        
+        // --- NEW: Store alliance_id in session for the nav bar ---
+        $this->session->set('alliance_id', $user->alliance_id);
+        // --- END NEW ---
 
         return true;
     }

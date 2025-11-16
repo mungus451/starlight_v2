@@ -102,17 +102,18 @@ class AllianceRepository
      * @param int $allianceId
      * @param string $description
      * @param string $pfpUrl
+     * @param bool $isJoinable // --- NEW ---
      * @return bool
      */
-    public function updateProfile(int $allianceId, string $description, string $pfpUrl): bool
+    public function updateProfile(int $allianceId, string $description, string $pfpUrl, bool $isJoinable): bool
     {
         $description = empty($description) ? null : $description;
         $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
 
         $stmt = $this->db->prepare(
-            "UPDATE alliances SET description = ?, profile_picture_url = ? WHERE id = ?"
+            "UPDATE alliances SET description = ?, profile_picture_url = ?, is_joinable = ? WHERE id = ?"
         );
-        return $stmt->execute([$description, $pfpUrl, $allianceId]);
+        return $stmt->execute([$description, $pfpUrl, (int)$isJoinable, $allianceId]);
     }
     
     /**
@@ -134,8 +135,6 @@ class AllianceRepository
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$amountChange, $allianceId]);
     }
-
-    // --- NEW METHODS FOR PHASE 2 (TREASURY AUTOMATION) ---
 
     /**
      * Gets all alliances from the database.
@@ -168,8 +167,6 @@ class AllianceRepository
         );
         return $stmt->execute([$allianceId]);
     }
-
-    // --- END NEW METHODS ---
 
     /**
      * Helper method to convert a database row into an Alliance entity.

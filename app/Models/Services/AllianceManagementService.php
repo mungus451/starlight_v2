@@ -11,7 +11,6 @@ use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
-// --- NEW REPOSITORY TO INJECT ---
 use App\Models\Repositories\AllianceLoanRepository;
 use PDO;
 use Throwable;
@@ -30,8 +29,6 @@ class AllianceManagementService
     private AlliancePolicyService $policyService;
     private ResourceRepository $resourceRepo;
     private AllianceBankLogRepository $bankLogRepo;
-
-    // --- NEW PROPERTY ---
     private AllianceLoanRepository $loanRepo;
 
     public function __construct()
@@ -46,8 +43,6 @@ class AllianceManagementService
         $this->policyService = new AlliancePolicyService();
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->bankLogRepo = new AllianceBankLogRepository($this->db);
-        
-        // --- NEW REPOSITORY ---
         $this->loanRepo = new AllianceLoanRepository($this->db);
     }
 
@@ -67,9 +62,13 @@ class AllianceManagementService
             return false;
         }
         
+        // --- UPDATED: Handle 'is_joinable' ---
         $alliance = $this->allianceRepo->findById($allianceId);
         if ($alliance && $alliance->is_joinable) {
-            // Future logic for 'is_joinable'
+            // If it's open, skip application and just join
+            $this->session->setFlash('success', 'This alliance has open recruitment! You have joined.');
+            // We pass $userId as the $adminId, as the user is performing the action on themself.
+            return $this->acceptApplication($userId, null, $userId, $allianceId);
         }
 
         if ($this->appRepo->create($userId, $allianceId)) {
@@ -118,34 +117,59 @@ class AllianceManagementService
         }
 
         $this->userRepo->leaveAlliance($userId);
+        
+        // --- NEW: Update the user's session ---
+        $this->session->set('alliance_id', null);
+        // --- END NEW ---
+        
         $this->session->setFlash('success', 'You have left the alliance.');
         return true;
     }
 
     /**
      * An alliance admin accepts a pending application.
+     * @param int $adminId The user performing the action
+     * @param int|null $appId The application ID (null if joining via 'is_joinable')
+     * @param int|null $targetUserId The user to accept (used for 'is_joinable')
+     * @param int|null $targetAllianceId The alliance to join (used for 'is_joinable')
+     * @return bool
      */
-    public function acceptApplication(int $adminId, int $appId): bool
+    public function acceptApplication(int $adminId, ?int $appId, ?int $targetUserId = null, ?int $targetAllianceId = null): bool
     {
-        $app = $this->appRepo->findById($appId);
-        if (!$app) {
-            $this->session->setFlash('error', 'Application not found.');
-            return false;
+        $targetAllianceId = $targetAllianceId ?? 0;
+        $targetUserId = $targetUserId ?? 0;
+
+        if ($appId !== null) {
+            // --- Standard flow: Accepting an application ---
+            $app = $this->appRepo->findById($appId);
+            if (!$app) {
+                $this->session->setFlash('error', 'Application not found.');
+                return false;
+            }
+            $targetAllianceId = $app->alliance_id;
+            $targetUserId = $app->user_id;
+
+            // Check if admin has permission for this alliance
+            if (!$this->checkPermission($adminId, $targetAllianceId, 'can_manage_applications')) {
+                $this->session->setFlash('error', 'You do not have permission to do this.');
+                return false;
+            }
+        } else {
+            // --- 'is_joinable' flow: User is accepting themself ---
+            if ($adminId !== $targetUserId) {
+                $this->session->setFlash('error', 'Invalid join operation.');
+                return false;
+            }
         }
 
-        if (!$this->checkPermission($adminId, $app->alliance_id, 'can_manage_applications')) {
-            $this->session->setFlash('error', 'You do not have permission to do this.');
-            return false;
-        }
-
-        $targetUser = $this->userRepo->findById($app->user_id);
+        $targetUser = $this->userRepo->findById($targetUserId);
         if ($targetUser->alliance_id !== null) {
             $this->session->setFlash('error', 'This user has already joined another alliance.');
-            $this->appRepo->delete($appId); // Clean up the app
+            if ($appId) $this->appRepo->delete($appId); // Clean up the app
             return false;
         }
         
-        $recruitRole = $this->roleRepo->findDefaultRole($app->alliance_id, 'Recruit');
+        $recruitRole = $this->roleRepo->findDefaultRole($targetAllianceId, 'Recruit');
         if (!$recruitRole) {
             $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found for this alliance.');
             return false;
@@ -153,7 +177,7 @@ class AllianceManagementService
 
         $this->db->beginTransaction();
         try {
-            $this->userRepo->setAlliance($targetUser->id, $app->alliance_id, $recruitRole->id);
+            $this->userRepo->setAlliance($targetUser->id, $targetAllianceId, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
             $this->db->commit();
         } catch (Throwable $e) {
@@ -162,6 +186,12 @@ class AllianceManagementService
             $this->session->setFlash('error', 'A database error occurred.');
             return false;
         }
+        
+        // --- NEW: Update session *if* user accepted themself ---
+        if ($adminId === $targetUserId) {
+            $this->session->set('alliance_id', $targetAllianceId);
+        }
+        // --- END NEW ---
         
         $this->session->setFlash('success', 'Member accepted!');
         return true;
@@ -232,6 +262,12 @@ class AllianceManagementService
             return false;
         }
         
+        // --- NEW: Update session *if* user invited themself (edge case) ---
+        if ($inviterId === $targetUserId) {
+            $this->session->set('alliance_id', $inviterUser->alliance_id);
+        }
+        // --- END NEW ---
+        
         $this->session->setFlash('success', $targetUser->characterName . ' has accepted your invite and joined the alliance!');
         return true;
     }
@@ -240,9 +276,10 @@ class AllianceManagementService
     // --- METHODS FOR PHASE 13 ---
 
     /**
-     * Updates an alliance's public profile.
+     * Handles updating the alliance's public profile (desc, image, join status).
+     * --- SIGNATURE UPDATED ---
      */
-    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl): bool
+    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl, bool $isJoinable): bool
     {
         if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
             $this->session->setFlash('error', 'You do not have permission to edit the profile.');
@@ -254,7 +291,8 @@ class AllianceManagementService
             return false;
         }
 
-        $this->allianceRepo->updateProfile($allianceId, $description, $pfpUrl);
+        // --- UPDATED ---
+        $this->allianceRepo->updateProfile($allianceId, $description, $pfpUrl, $isJoinable);
         $this->session->setFlash('success', 'Alliance profile updated.');
         return true;
     }
@@ -287,6 +325,13 @@ class AllianceManagementService
         }
 
         $this->userRepo->leaveAlliance($targetUserId);
+        
+        // --- NEW: Update session *if* user kicked themself (edge case) ---
+        if ($adminId === $targetUserId) {
+            $this->session->set('alliance_id', null);
+        }
+        // --- END NEW ---
+        
         $this->session->setFlash('success', $targetUser->characterName . ' has been kicked from the alliance.');
         return true;
     }
@@ -365,7 +410,7 @@ class AllianceManagementService
         }
 
         $this->roleRepo->update($roleId, $name, $permissions);
-        $this->session->setFlash('success', "Role '{$name}' updated.");
+        $this.session->setFlash('success', "Role '{$name}' updated.");
         return true;
     }
 
@@ -386,29 +431,29 @@ class AllianceManagementService
         }
 
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this->session->setFlash('error', 'You cannot delete default roles.');
+            $this.session->setFlash('error', 'You cannot delete default roles.');
             return false;
         }
         
         $recruitRole = $this->roleRepo->findDefaultRole($role->alliance_id, 'Recruit');
         if (!$recruitRole) {
-            $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found.');
+            $this.session->setFlash('error', 'Critical error: Default "Recruit" role not found.');
             return false;
         }
 
-        $this->db->beginTransaction();
+        $this.db->beginTransaction();
         try {
-            $this->roleRepo->reassignRoleMembers($roleId, $recruitRole->id);
-            $this->roleRepo->delete($roleId);
-            $this->db->commit();
+            $this.roleRepo->reassignRoleMembers($roleId, $recruitRole->id);
+            $this.roleRepo->delete($roleId);
+            $this.db->commit();
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            $this.db->rollBack();
             error_log('Delete Role Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred.');
+            $this.session->setFlash('error', 'A database error occurred.');
             return false;
         }
 
-        $this->session->setFlash('success', "Role '{$role->name}' deleted. Members were reassigned to Recruit.");
+        $this.session->setFlash('success', "Role '{$role->name}' deleted. Members were reassigned to Recruit.");
         return true;
     }
 
@@ -417,258 +462,205 @@ class AllianceManagementService
      */
     public function donateToAlliance(int $donatorUserId, int $amount): bool
     {
-        // 1. Validation
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Donation amount must be a positive number.');
+            $this.session->setFlash('error', 'Donation amount must be a positive number.');
             return false;
         }
 
-        $user = $this->userRepo->findById($donatorUserId);
+        $user = $this.userRepo->findById($donatorUserId);
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to donate.');
+            $this.session->setFlash('error', 'You must be in an alliance to donate.');
             return false;
         }
         $allianceId = $user->alliance_id;
 
-        $resources = $this->resourceRepo->findByUserId($donatorUserId);
+        $resources = $this.resourceRepo->findByUserId($donatorUserId);
         if ($resources->credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough credits on hand to donate.');
+            $this.session->setFlash('error', 'You do not have enough credits on hand to donate.');
             return false;
         }
 
-        // 2. Execute Transaction
-        $this->db->beginTransaction();
+        $this.db->beginTransaction();
         try {
-            // 2a. Remove credits from user
-            $this->resourceRepo->updateCredits($donatorUserId, $resources->credits - $amount);
-            
-            // 2b. Add credits to alliance (atomically)
-            $this->allianceRepo->updateBankCreditsRelative($allianceId, $amount);
-
-            // 2c. Log the transaction
+            $this.resourceRepo->updateCredits($donatorUserId, $resources->credits - $amount);
+            $this.allianceRepo->updateBankCreditsRelative($allianceId, $amount);
             $message = "Donation from " . $user->characterName;
-            $this->bankLogRepo->createLog($allianceId, $donatorUserId, 'donation', $amount, $message);
-            
-            $this->db->commit();
-            
+            $this.bankLogRepo->createLog($allianceId, $donatorUserId, 'donation', $amount, $message);
+            $this.db->commit();
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            $this.db->rollBack();
             error_log('Alliance Donation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during the donation.');
+            $this.session->setFlash('error', 'A database error occurred during the donation.');
             return false;
         }
 
-        // 3. Success
-        $this->session->setFlash('success', 'You have successfully donated ' . number_format($amount) . ' credits to the alliance.');
+        $this.session->setFlash('success', 'You have successfully donated ' . number_format($amount) . ' credits to the alliance.');
         return true;
     }
 
-    // --- NEW METHODS FOR PHASE 5 (LOANS) ---
+    // --- METHODS FOR PHASE 5 (LOANS) ---
 
     /**
      * A user requests a loan from the alliance bank.
-     *
-     * @param int $userId
-     * @param int $amount
-     * @return bool
      */
     public function requestLoan(int $userId, int $amount): bool
     {
-        // 1. Validation
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Loan amount must be a positive number.');
+            $this.session->setFlash('error', 'Loan amount must be a positive number.');
             return false;
         }
 
-        $user = $this->userRepo->findById($userId);
+        $user = $this.userRepo->findById($userId);
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to request a loan.');
+            $this.session->setFlash('error', 'You must be in an alliance to request a loan.');
             return false;
         }
         
-        // TODO: Check if user already has a pending or active loan?
-        // For now, we allow multiple.
-
-        // 2. Create Loan Request
-        $this->loanRepo->createLoanRequest($user->alliance_id, $userId, $amount);
-        $this->session->setFlash('success', 'Loan request for ' . number_format($amount) . ' credits has been submitted.');
+        $this.loanRepo->createLoanRequest($user->alliance_id, $userId, $amount);
+        $this.session->setFlash('success', 'Loan request for ' . number_format($amount) . ' credits has been submitted.');
         return true;
     }
 
     /**
      * An admin approves a loan, transferring funds.
-     *
-     * @param int $adminUserId
-     * @param int $loanId
-     * @return bool
      */
     public function approveLoan(int $adminUserId, int $loanId): bool
     {
-        $loan = $this->loanRepo->findById($loanId);
+        $loan = $this.loanRepo->findById($loanId);
         if (!$loan) {
-            $this->session->setFlash('error', 'Loan not found.');
+            $this.session->setFlash('error', 'Loan not found.');
             return false;
         }
 
-        // 1. Permission Check
-        if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
-            $this->session->setFlash('error', 'You do not have permission to manage the bank.');
+        if (!$this.checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
+            $this.session->setFlash('error', 'You do not have permission to manage the bank.');
             return false;
         }
         
-        // 2. Validation
         if ($loan->status !== 'pending') {
-            $this->session->setFlash('error', 'This loan is not pending approval.');
+            $this.session->setFlash('error', 'This loan is not pending approval.');
             return false;
         }
         
-        $alliance = $this->allianceRepo->findById($loan->alliance_id);
+        $alliance = $this.allianceRepo->findById($loan->alliance_id);
         if ($alliance->bank_credits < $loan->amount_requested) {
-            $this->session->setFlash('error', 'The alliance bank does not have enough credits to approve this loan.');
+            $this.session->setFlash('error', 'The alliance bank does not have enough credits to approve this loan.');
             return false;
         }
         
-        $borrower = $this->userRepo->findById($loan->user_id);
-        $borrowerResources = $this->resourceRepo->findByUserId($loan->user_id);
+        $borrower = $this.userRepo->findById($loan->user_id);
+        $borrowerResources = $this.resourceRepo->findByUserId($loan->user_id);
         if (!$borrower || !$borrowerResources) {
-            $this->session->setFlash('error', 'Borrower not found.');
+            $this.session->setFlash('error', 'Borrower not found.');
             return false;
         }
 
-        // 3. Transaction
-        $this->db->beginTransaction();
+        $this.db->beginTransaction();
         try {
-            // 3a. Remove credits from alliance bank
-            $this->allianceRepo->updateBankCreditsRelative($loan->alliance_id, -$loan->amount_requested);
+            $this.allianceRepo->updateBankCreditsRelative($loan->alliance_id, -$loan->amount_requested);
+            $this.resourceRepo->updateCredits($loan->user_id, $borrowerResources->credits + $loan->amount_requested);
             
-            // 3b. Add credits to user
-            $this->resourceRepo->updateCredits($loan->user_id, $borrowerResources->credits + $loan->amount_requested);
-            
-            // 3c. Log the transaction
             $message = "Loan for {$borrower->characterName} approved by admin.";
-            $this->bankLogRepo->createLog($loan->alliance_id, $adminUserId, 'loan_approved', -$loan->amount_requested, $message);
+            $this.bankLogRepo->createLog($loan->alliance_id, $adminUserId, 'loan_approved', -$loan->amount_requested, $message);
             
-            // 3d. Update loan status
-            $this->loanRepo->updateLoan($loanId, 'active', $loan->amount_to_repay);
+            $this.loanRepo->updateLoan($loanId, 'active', $loan->amount_to_repay);
             
-            $this->db->commit();
+            $this.db->commit();
             
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            $this.db->rollBack();
             error_log('Alliance Loan Approve Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while approving the loan.');
+            $this.session->setFlash('error', 'A database error occurred while approving the loan.');
             return false;
         }
         
-        $this->session->setFlash('success', 'Loan approved. ' . number_format($loan->amount_requested) . ' credits sent to ' . $borrower->characterName . '.');
+        $this.session->setFlash('success', 'Loan approved. ' . number_format($loan->amount_requested) . ' credits sent to ' . $borrower->characterName . '.');
         return true;
     }
 
     /**
      * An admin denies a loan request.
-     *
-     * @param int $adminUserId
-     * @param int $loanId
-     * @return bool
      */
     public function denyLoan(int $adminUserId, int $loanId): bool
     {
-        $loan = $this->loanRepo->findById($loanId);
+        $loan = $this.loanRepo->findById($loanId);
         if (!$loan) {
-            $this->session->setFlash('error', 'Loan not found.');
+            $this.session->setFlash('error', 'Loan not found.');
             return false;
         }
 
-        // 1. Permission Check
-        if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
-            $this->session->setFlash('error', 'You do not have permission to manage the bank.');
+        if (!$this.checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
+            $this.session->setFlash('error', 'You do not have permission to manage the bank.');
             return false;
         }
         
-        // 2. Validation
         if ($loan->status !== 'pending') {
-            $this->session->setFlash('error', 'This loan is not pending approval.');
+            $this.session->setFlash('error', 'This loan is not pending approval.');
             return false;
         }
         
-        // 3. Update Status
-        $this->loanRepo->updateLoan($loanId, 'denied', 0);
-        $this->session->setFlash('success', 'Loan request has been denied.');
+        $this.loanRepo->updateLoan($loanId, 'denied', 0);
+        $this.session->setFlash('success', 'Loan request has been denied.');
         return true;
     }
 
     /**
      * A user repays part or all of a loan.
-     *
-     * @param int $userId
-     * @param int $loanId
-     * @param int $amount
-     * @return bool
      */
     public function repayLoan(int $userId, int $loanId, int $amount): bool
     {
-        $loan = $this->loanRepo->findById($loanId);
+        $loan = $this.loanRepo->findById($loanId);
         
-        // 1. Validation
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Repayment amount must be positive.');
+            $this.session->setFlash('error', 'Repayment amount must be positive.');
             return false;
         }
         if (!$loan || $loan->user_id !== $userId) {
-            $this->session->setFlash('error', 'This is not your loan.');
+            $this.session->setFlash('error', 'This is not your loan.');
             return false;
         }
         if ($loan->status !== 'active') {
-            $this->session->setFlash('error', 'This loan is not active.');
+            $this.session->setFlash('error', 'This loan is not active.');
             return false;
         }
         
-        $user = $this->userRepo->findById($userId);
-        $resources = $this->resourceRepo->findByUserId($userId);
+        $user = $this.userRepo->findById($userId);
+        $resources = $this.resourceRepo->findByUserId($userId);
         
         if ($resources->credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough credits on hand for this repayment.');
+            $this.session->setFlash('error', 'You do not have enough credits on hand for this repayment.');
             return false;
         }
         
-        // 2. Calculate new totals
-        $repayment = min($amount, $loan->amount_to_repay); // Can't overpay
+        $repayment = min($amount, $loan->amount_to_repay);
         $newAmountOwed = $loan->amount_to_repay - $repayment;
         $newStatus = ($newAmountOwed == 0) ? 'paid' : 'active';
         
-        // 3. Transaction
-        $this->db->beginTransaction();
+        $this.db->beginTransaction();
         try {
-            // 3a. Remove credits from user
-            $this->resourceRepo->updateCredits($userId, $resources->credits - $repayment);
+            $this.resourceRepo->updateCredits($userId, $resources->credits - $repayment);
+            $this.allianceRepo->updateBankCreditsRelative($loan->alliance_id, $repayment);
             
-            // 3b. Add credits to alliance bank
-            $this->allianceRepo->updateBankCreditsRelative($loan->alliance_id, $repayment);
-            
-            // 3c. Log the transaction
             $message = "Loan repayment from " . $user->characterName;
-            $this->bankLogRepo->createLog($loan->alliance_id, $userId, 'loan_repayment', $repayment, $message);
+            $this.bankLogRepo->createLog($loan->alliance_id, $userId, 'loan_repayment', $repayment, $message);
             
-            // 3d. Update loan status
-            $this->loanRepo->updateLoan($loanId, $newStatus, $newAmountOwed);
+            $this.loanRepo->updateLoan($loanId, $newStatus, $newAmountOwed);
             
-            $this->db->commit();
+            $this.db->commit();
             
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            $this.db->rollBack();
             error_log('Alliance Loan Repay Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during repayment.');
+            $this.session->setFlash('error', 'A database error occurred during repayment.');
             return false;
         }
         
-        $this->session->setFlash('success', 'Thank you for your payment of ' . number_format($repayment) . ' credits.');
+        $this.session->setFlash('success', 'Thank you for your payment of ' . number_format($repayment) . ' credits.');
         if ($newStatus === 'paid') {
-            $this->session->setFlash('success', 'Your loan has been fully repaid!');
+            $this.session->setFlash('success', 'Your loan has been fully repaid!');
         }
         return true;
     }
-    
-    // --- END NEW METHODS ---
 
 
     /**
@@ -676,15 +668,14 @@ class AllianceManagementService
      */
     private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
     {
-        $user = $this->userRepo->findById($userId);
+        $user = $this.userRepo->findById($userId);
         
         if (!$user || $user->alliance_id !== $allianceId) {
             return false;
         }
         
-        $role = $this->roleRepo->findById($user->alliance_role_id);
+        $role = $this.roleRepo->findById($user->alliance_role_id);
 
-        // Check if the role exists and the permission property is true
         return $role && property_exists($role, $permissionName) && $role->{$permissionName} === true;
     }
 }

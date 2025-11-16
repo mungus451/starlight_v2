@@ -8,7 +8,7 @@
 /* @var \App\Models\Entities\AllianceApplication|null $userApplication */
 /* @var \App\Models\Entities\AllianceRole[] $roles */
 /* @var \App\Models\Entities\AllianceBankLog[] $bankLogs */
-/* @var \App\Models\Entities\AllianceLoan[] $loans */ // --- NEW ---
+/* @var \App\Models\Entities\AllianceLoan[] $loans */
 
 // --- NEW ---
 $isMember = ($viewer->alliance_id === $alliance->id);
@@ -129,6 +129,7 @@ if ($isMember && isset($loans)) {
     .item-card .btn-submit {
         width: 100%;
         margin-top: 0;
+        text-decoration: none; /* For <a> tags */
     }
     .btn-accept { background: var(--accent-green); }
     .btn-reject { background: var(--accent-red); }
@@ -236,7 +237,7 @@ if ($isMember && isset($loans)) {
     }
     .log-message {
         color: var(--muted);
-        word-break: break-word; /* --- NEW --- */
+        word-break: break-word;
     }
     .log-amount {
         font-weight: 700;
@@ -250,7 +251,7 @@ if ($isMember && isset($loans)) {
         color: var(--accent-red);
     }
     
-    /* --- NEW: Loan Styles --- */
+    /* --- Loan Styles --- */
     .loan-card-grid {
         display: grid;
         grid-template-columns: 1fr 2fr;
@@ -307,6 +308,28 @@ if ($isMember && isset($loans)) {
     .loan-status-denied { color: var(--accent-red); }
     .loan-status-active { color: var(--accent-blue); }
     
+    /* --- NEW: Checkbox style --- */
+    .form-group-check {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .form-group-check input {
+        width: 1.1rem;
+        height: 1.1rem;
+    }
+    .form-group-check label {
+        margin-bottom: 0;
+        font-weight: normal;
+        color: var(--muted);
+        cursor: pointer;
+    }
+    .form-group-check label:hover {
+        color: var(--text);
+    }
+    
     @media (max-width: 980px) {
         .loan-card-grid {
             grid-template-columns: 1fr;
@@ -341,7 +364,9 @@ if ($isMember && isset($loans)) {
                 if ($userApplication === null): ?>
                     <form action="/alliance/apply/<?= $alliance->id ?>" method="POST">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                        <button type="submit" class="btn-submit">Apply to Join</button>
+                        <button type="submit" class="btn-submit" style="<?= $alliance->is_joinable ? 'background: var(--accent-green);' : '' ?>">
+                            <?= $alliance->is_joinable ? 'Join Alliance (Open)' : 'Apply to Join' ?>
+                        </button>
                     </form>
                     
                 <?php // Case 1b: Viewer HAS applied
@@ -356,11 +381,14 @@ if ($isMember && isset($loans)) {
             <?php // Case 2: Viewer IS a member of THIS alliance
             elseif ($isMember): ?>
             
-                <?php // Case 2a: Viewer is the Leader
+                <?php // Case 2a: Viewer is the Leader (has all perms)
                 if ($viewerRole && $viewerRole->name === 'Leader'): ?>
                     <p class="action-message">You are the leader of this alliance.</p>
-                    <a href="/alliance/roles" class="btn-submit btn-manage">Manage Alliance Roles</a>
+                    <a href="/alliance/forum" class="btn-submit" style="margin-top: 0.75rem; background: var(--accent-blue);">Alliance Forum</a>
+                    <a href="/alliance/roles" class="btn-submit btn-manage" style="margin-top: 0.75rem;">Manage Alliance Roles</a>
                     <a href="/alliance/structures" class="btn-submit" style="margin-top: 0.75rem;">Manage Structures</a>
+                    <a href="/alliance/diplomacy" class="btn-submit" style="margin-top: 0.75rem;">Manage Diplomacy</a>
+                    <a href="/alliance/war" class="btn-submit" style="margin-top: 0.75rem;">War Room</a>
                     
                 <?php // Case 2b: Viewer is a regular member
                 else: ?>
@@ -369,11 +397,17 @@ if ($isMember && isset($loans)) {
                         <button type="submit" class="btn-submit btn-reject">Leave Alliance</button>
                     </form>
                     
-                    <?php if ($canManageBank || ($viewerRole && $viewerRole->can_manage_structures)): ?>
-                        <p class="action-message" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">Admin Actions:</p>
-                        <?php if ($viewerRole && $viewerRole->can_manage_structures): ?>
-                             <a href="/alliance/structures" class="btn-submit">Manage Structures</a>
-                        <?php endif; ?>
+                    <p class="action-message" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">Alliance Actions:</p>
+                    <a href="/alliance/forum" class="btn-submit" style="background: var(--accent-blue);">Alliance Forum</a>
+                    
+                    <?php if ($viewerRole && $viewerRole->can_manage_structures): ?>
+                         <a href="/alliance/structures" class="btn-submit" style="margin-top: 0.75rem;">Manage Structures</a>
+                    <?php endif; ?>
+                    <?php if ($viewerRole && $viewerRole->can_manage_diplomacy): ?>
+                         <a href="/alliance/diplomacy" class="btn-submit" style="margin-top: 0.75rem;">Manage Diplomacy</a>
+                    <?php endif; ?>
+                    <?php if ($viewerRole && $viewerRole->can_declare_war): ?>
+                         <a href="/alliance/war" class="btn-submit" style="margin-top: 0.75rem;">War Room</a>
                     <?php endif; ?>
                 <?php endif; ?>
 
@@ -388,6 +422,12 @@ if ($isMember && isset($loans)) {
             <div class="alliance-description">
                 <?= !empty($alliance->description) ? htmlspecialchars($alliance->description) : 'This alliance has not set a description.' ?>
             </div>
+            <p class="action-message" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                Recruitment: 
+                <strong style="color: <?= $alliance->is_joinable ? 'var(--accent-green)' : 'var(--accent-blue)' ?>">
+                    <?= $alliance->is_joinable ? 'Open' : 'Application Only' ?>
+                </strong>
+            </p>
         </div>
 
         <?php if ($viewerRole && $viewerRole->can_edit_profile): ?>
@@ -404,6 +444,11 @@ if ($isMember && isset($loans)) {
                     <div class="form-group">
                         <label for="profile_picture_url">Profile Picture URL</label>
                         <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($alliance->profile_picture_url ?? '') ?>" placeholder="https://your.image.host/img.png">
+                    </div>
+                    
+                    <div class="form-group-check">
+                        <input type="hidden" name="is_joinable" value="0"> <input type="checkbox" name="is_joinable" id="is_joinable" value="1" <?= $alliance->is_joinable ? 'checked' : '' ?>>
+                        <label for="is_joinable">Open Recruitment (Allow anyone to join instantly without an application)</label>
                     </div>
                     
                     <button type="submit" class="btn-submit">Save Changes</button>
@@ -458,7 +503,6 @@ if ($isMember && isset($loans)) {
             </div>
         <?php endif; // --- END $isMember check --- ?>
         
-        <?php // --- NEW: ALLIANCE LOANS CARD --- ?>
         <?php if ($isMember): ?>
             <div class="item-card grid-col-span-2">
                 <h4>Alliance Loans</h4>
@@ -649,7 +693,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // --- Setup for Donation Form ---
-    setupInputMask(document.getElementById('donate-amount-display'), document.getElementById('donate-amount-hidden'));
+    const donateDisplay = document.getElementById('donate-amount-display');
+    const donateHidden = document.getElementById('donate-amount-hidden');
+    setupInputMask(donateDisplay, donateHidden);
     
     const maxDonateBtn = document.getElementById('btn-max-donate');
     if (maxDonateBtn) {
@@ -657,21 +703,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const creditsEl = document.getElementById('global-user-credits');
             const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
             
-            const displayInput = document.getElementById('donate-amount-display');
-            const hiddenInput = document.getElementById('donate-amount-hidden');
-            
-            displayInput.value = (USER_CREDITS > 0) ? formatNumber(USER_CREDITS.toString()) : '';
-            hiddenInput.value = USER_CREDITS;
+            if (donateDisplay && donateHidden) {
+                donateDisplay.value = (USER_CREDITS > 0) ? formatNumber(USER_CREDITS.toString()) : '';
+                donateHidden.value = USER_CREDITS;
+            }
         });
     }
 
-    // --- NEW: Setup for Loan Request Form ---
-    setupInputMask(document.getElementById('loan-request-display'), document.getElementById('loan-request-hidden'));
+    // --- Setup for Loan Request Form ---
+    const loanRequestDisplay = document.getElementById('loan-request-display');
+    const loanRequestHidden = document.getElementById('loan-request-hidden');
+    setupInputMask(loanRequestDisplay, loanRequestHidden);
     
-    // --- NEW: Setup for all Repay Forms ---
+    // --- Setup for all Repay Forms ---
     document.querySelectorAll('.repay-amount-display').forEach(displayInput => {
-        const hiddenInput = displayInput.parentElement.querySelector('.repay-amount-hidden');
-        setupInputMask(displayInput, hiddenInput);
+        const hiddenInput = displayInput.closest('.amount-input-group').querySelector('.repay-amount-hidden');
+        if(displayInput && hiddenInput) {
+            setupInputMask(displayInput, hiddenInput);
+        }
     });
 
     document.querySelectorAll('.btn-max-repay').forEach(button => {

@@ -201,8 +201,15 @@ class AllianceManagementController extends BaseController
 
         $description = (string)($_POST['description'] ?? '');
         $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
+        
+        // --- NEW ---
+        // A checkbox sends '1' if ticked, and nothing if unticked.
+        // The hidden input sends '0' first, so we get '0' or '1'.
+        $isJoinable = (bool)($_POST['is_joinable'] ?? false);
+        // --- END NEW ---
 
-        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl);
+        // --- UPDATED METHOD CALL ---
+        $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl, $isJoinable);
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -253,7 +260,7 @@ class AllianceManagementController extends BaseController
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
-    // --- NEW METHODS FOR PHASE 5 (LOANS) ---
+    // --- METHODS FOR PHASE 5 (LOANS) ---
 
     /**
      * Handles a user's request for a loan.
@@ -309,7 +316,7 @@ class AllianceManagementController extends BaseController
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/profile/' . $allianceId);
+            $this.redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
@@ -330,13 +337,13 @@ class AllianceManagementController extends BaseController
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/profile/' . $allianceId);
+            $this.redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
         $loanId = (int)($vars['id'] ?? 0);
         $amount = (int)($_POST['amount'] ?? 0);
         $this->mgmtService->repayLoan($userId, $loanId, $amount);
-        $this->redirect('/alliance/profile/' . $allianceId);
+        $this.redirect('/alliance/profile/' . $allianceId);
     }
 }
