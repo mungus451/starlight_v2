@@ -215,6 +215,7 @@
         <?php else: ?>
             <a href="/">Home</a>
             <a href="/contact">Contact</a>
+            <a href="https://discord.gg/sCKvuxHAqt" target="_blank">Discord</a>
             <a href="/login">Login</a>
             <a href="/register">Register</a>
         <?php endif; ?>

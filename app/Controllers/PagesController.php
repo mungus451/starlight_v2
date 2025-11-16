@@ -36,6 +36,9 @@ class PagesController extends BaseController
         }
 
         // User is a guest, show the public contact page
-        $this->render('pages/contact.php', ['title' => 'Contact Us']);
+        $this->render('pages/contact.php', [
+            'title' => 'Contact Us',
+            'layoutMode' => 'full' // Use the full-width layout
+        ]);
     }
 }
