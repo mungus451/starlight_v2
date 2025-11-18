@@ -1,4 +1,4 @@
-StarlightDominion V2: Modular Space Strategy Engine
+#StarlightDominion V2: Modular Space Strategy Engine
 
 StarlightDominion V2 is a complete rewrite of a classic browser-based space strategy game, built on a robust, scalable Model-View-Controller-Service (MVC-S) architecture using modern PHP 8.3 standards.
 
@@ -58,6 +58,7 @@ The core principle of this project is strict Separation of Concerns. Business lo
 
 Project Structure Overview
 
+```
 starlight_v2/
 ├── app/
 │   ├── Controllers/    # C: Handles HTTP I/O.
@@ -70,6 +71,7 @@ starlight_v2/
 ├── cron/               # Game loop scripts.
 ├── public/             # Web entry point (index.php).
 └── views/              # V: HTML templates.
+```
 
 
 Application Flow: From Request to Transaction
