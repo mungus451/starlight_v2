@@ -104,35 +104,6 @@ CREATE TABLE `user_security` (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Creates a new table for storing the results of all battles
-CREATE TABLE `battle_reports` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `attacker_id` INT UNSIGNED NOT NULL,
-    `defender_id` INT UNSIGNED NOT NULL,
-    `attacker_outcome` ENUM('win', 'loss') NOT NULL,
-    `battle_data` JSON NOT NULL,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (`id`),
-    
-    -- Foreign key to the user who launched the attack
-    CONSTRAINT `fk_battle_attacker`
-        FOREIGN KEY (`attacker_id`)
-        REFERENCES `users`(`id`)
-        ON DELETE CASCADE,
-        
-    -- Foreign key to the user who was targeted
-    CONSTRAINT `fk_battle_defender`
-        FOREIGN KEY (`defender_id`)
-        REFERENCES `users`(`id`)
-        ON DELETE CASCADE,
-        
-    -- Index to help players load their battle history
-    INDEX `idx_attacker_reports` (`attacker_id`, `created_at` DESC),
-    INDEX `idx_defender_reports` (`defender_id`, `created_at` DESC)
-    
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Creates a new table to log all espionage operations
 CREATE TABLE `spy_reports` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -209,11 +180,6 @@ CREATE TABLE `battle_reports` (
         REFERENCES `users`(`id`)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- This converts the battle_reports table to InnoDB.
--- InnoDB supports transactions, which will prevent "phantom" reports
--- from being created when an attack fails mid-transaction.
-ALTER TABLE `battle_reports` ENGINE=InnoDB;
 
 -- Creates the new 'alliances' table
 CREATE TABLE `alliances` (

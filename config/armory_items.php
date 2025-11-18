@@ -25,7 +25,7 @@ return [
             ],
             'sidearm' => [
                 'title' => 'Sidearms',
-                'slots' => 1, // You specified 1 sidearm, 1 headgear, 1 main, 2 throwables.
+                'slots' => 1,
                 'items' => [
                     'laser_pistol' => ['name' => 'Laser Pistol', 'attack' => 25, 'cost' => 30000, 'notes' => 'Basic energy sidearm.'],
                     'stun_blaster' => ['name' => 'Stun Blaster', 'attack' => 30, 'cost' => 40000, 'notes' => 'Weak but disables shields briefly.', 'requires' => 'laser_pistol', 'armory_level_req' => 1],
@@ -36,7 +36,7 @@ return [
             ],
             'melee' => [
                 'title' => 'Melee Weapons',
-                'slots' => 1, // Part of the 2 "throwable" slots
+                'slots' => 1,
                 'items' => [
                     'combat_dagger' => ['name' => 'Combat Dagger', 'attack' => 10, 'cost' => 10000, 'notes' => 'Quick, cheap.'],
                     'shock_baton' => ['name' => 'Shock Baton', 'attack' => 20, 'cost' => 25000, 'notes' => 'Stuns briefly, low raw damage.', 'requires' => 'combat_dagger', 'armory_level_req' => 1],
@@ -58,7 +58,7 @@ return [
             ],
             'explosives' => [
                 'title' => 'Explosives',
-                'slots' => 1, // Part of the 2 "throwable" slots
+                'slots' => 1,
                 'items' => [
                     'frag_grenade' => ['name' => 'Frag Grenade', 'attack' => 30, 'cost' => 20000, 'notes' => 'Basic explosive.'],
                     'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 45, 'cost' => 40000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 1],
@@ -260,23 +260,22 @@ return [
                 'title' => 'Utility Main Equipment (Mining Lasers & Drills)',
                 'slots' => 1,
                 'items' => [
-                    'mining_laser' => ['name' => 'Mining Laser', 'attack' => 10, 'cost' => 30000, 'notes' => 'Can be used as a makeshift weapon.'], // Reduced attack
-                    'heavy_drill' => ['name' => 'Heavy Drill', 'attack' => 15, 'cost' => 50000, 'notes' => 'Can break through tough materials.', 'requires' => 'mining_laser', 'armory_level_req' => 1],
-                    'plasma_cutter' => ['name' => 'Plasma Cutter', 'attack' => 20, 'cost' => 70000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 2],
-                    'seismic_charge' => ['name' => 'Seismic Charge', 'attack' => 25, 'cost' => 90000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 3],
-                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'attack' => 30, 'cost' => 110000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 4],
+                    'mining_laser' => ['name' => 'Mining Laser', 'credit_bonus' => 10, 'cost' => 30000, 'notes' => 'Can be used as a makeshift weapon.'],
+                    'heavy_drill' => ['name' => 'Heavy Drill', 'credit_bonus' => 15, 'cost' => 50000, 'notes' => 'Can break through tough materials.', 'requires' => 'mining_laser', 'armory_level_req' => 1],
+                    'plasma_cutter' => ['name' => 'Plasma Cutter', 'credit_bonus' => 20, 'cost' => 70000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 2],
+                    'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 25, 'cost' => 90000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 3],
+                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 30, 'cost' => 110000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 4],
                 ]
             ],
             'resource_enhancement' => [
                 'title' => 'Resource Enhancement Tools',
                 'slots' => 1,
                 'items' => [
-                    // --- NEW: Added 'credit_bonus' as a percent (0.01 = 1%) ---
-                    'resource_scanner' => ['name' => 'Resource Scanner', 'attack' => 0, 'credit_bonus' => 0.01, 'cost' => 5000, 'notes' => 'Finds hidden resource deposits.'],
-                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'attack' => 0, 'credit_bonus' => 0.02, 'cost' => 7500, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 1],
-                    'harvester_drone' => ['name' => 'Harvester Drone', 'attack' => 0, 'credit_bonus' => 0.03, 'cost' => 10000, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 2],
-                    'matter_converter' => ['name' => 'Matter Converter', 'attack' => 0, 'credit_bonus' => 0.04, 'cost' => 12500, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 3],
-                    'genesis_device' => ['name' => 'Genesis Device', 'attack' => 0, 'credit_bonus' => 0.05, 'cost' => 15000, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 4],
+                    'resource_scanner' => ['name' => 'Resource Scanner', 'attack' => 0, 'credit_bonus' => 1, 'cost' => 5000, 'notes' => 'Finds hidden resource deposits.'],
+                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'attack' => 0, 'credit_bonus' => 2, 'cost' => 7500, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 1],
+                    'harvester_drone' => ['name' => 'Harvester Drone', 'attack' => 0, 'credit_bonus' => 3, 'cost' => 10000, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 2],
+                    'matter_converter' => ['name' => 'Matter Converter', 'attack' => 0, 'credit_bonus' => 4, 'cost' => 12500, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 3],
+                    'genesis_device' => ['name' => 'Genesis Device', 'attack' => 0, 'credit_bonus' => 5, 'cost' => 15000, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 4],
                 ]
             ],
             'exo_rig_plating' => [
