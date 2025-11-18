@@ -20,6 +20,7 @@ Alliance System: Full lifecycle management (create, join, leave, roles, diplomac
 
 Game Loop (Cron): A standalone script for processing turn-based income, citizen growth, and alliance interest [cite: mungus451/starlight_v2/starlight_v2-master/cron/process_turn.php].
 
+```
 🚀 Tech Stack
 
 Component
@@ -51,6 +52,8 @@ Configuration
 vlucas/phpdotenv
 
 Environment variable management.
+```
+
 
 🏛️ Architecture: The MVC-S Pattern
 
@@ -73,8 +76,8 @@ starlight_v2/
 └── views/              # V: HTML templates.
 ```
 
-
-Application Flow: From Request to Transaction
+```
+#Application Flow: From Request to Transaction
 
 A typical feature flow follows this sequence:
 
@@ -91,6 +94,7 @@ public/index.php
 Maps URI to Controller::method. Enforces AuthMiddleware.
 
 Controller
+```
 
 App\Controllers\...
 
