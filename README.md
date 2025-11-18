@@ -1,181 +1,204 @@
-# StarlightDominion V2
-StarlightDominion V2 is a complete rewrite of a classic browser-based space strategy game. This project re-architects the original application into a modern, scalable, and maintainable Model-View-Controller (MVC) pattern built on PHP 8.3 and MariaDB.
+StarlightDominion V2: Modular Space Strategy Engine
 
-✨ Features
-The application is built as a series of "vertical slices," with the following features fully implemented:
+StarlightDominion V2 is a complete rewrite of a classic browser-based space strategy game, built on a robust, scalable Model-View-Controller-Service (MVC-S) architecture using modern PHP 8.3 standards.
 
-<h6>Authentication:</h6> Secure user registration and login.
+The primary goal of this architecture is strict separation of concerns and transactional integrity.
 
-<h6>Dynamic Dashboard:</h6> A central hub showing a player's real-time resources, stats, and structures.
+✨ Core Features
 
-<h6>Bank:</h6> Securely deposit, withdraw, and transfer credits to other players.
+The application is built as a series of atomic, vertically-sliced features:
 
-<h6>Training:</h6> Train untrained citizens into specialized units (workers, soldiers, spies, etc.) using game-balanced costs.
+Authentication & Security: Secure user registration, login, CSRF protection, and gated settings for password/email updates [cite: mungus451/starlight_v2/starlight_v2-master/app/Middleware/AuthMiddleware.php, mungus451/starlight_v2/starlight_v2-master/app/Core/CSRFService.php].
 
-<h6>Structures:</h6> Upgrade your dominion's structures (Fortification, Economy, etc.) using dynamically calculated costs.
+Dynamic Economy: Dashboard, Bank (deposit/withdraw/transfer), Training, and Structures, all managed with complex, configurable game balance formulas [cite: mungus451/starlight_v2/starlight_v2-master/config/game_balance.php].
 
-<h6>Espionage:</h6> Launch "all-in" spy operations against other players, costing attack turns and resources.
+Armory & Loadouts: Manufacture equipment and assign loadouts to units (Soldiers, Guards, Workers, Spies) that dynamically affect power and income calculations [cite: mungus451/starlight_v2/starlight_v2-master/app/Models/Services/ArmoryService.php].
 
-<h6>Spy Reports:</h6> A detailed inbox for viewing the results and intel gathered from spy operations.
+PvP Combat: All-in attack and espionage operations with detailed reporting, integrated alliance tax, and war logging functionality [cite: mungus451/starlight_v2/starlight_v2-master/app/Models/Services/AttackService.php, mungus451/starlight_v2/starlight_v2-master/app/Models/Services/SpyService.php].
 
-<h6>Battle (PvP):</h6> A full-featured "all-in" attack system.
+Alliance System: Full lifecycle management (create, join, leave, roles, diplomacy, war), enforced by a granular Role-Based Access Control (RBAC) layer [cite: mungus451/starlight_v2/starlight_v2-master/app/Models/Entities/AllianceRole.php, mungus451/starlight_v2/starlight_v2-master/app/Models/Services/AlliancePolicyService.php].
 
-<h6>Leaderboard:</h6> A paginated leaderboard of all players, ranked by net worth, is built into the battle page for target selection.
-
-<h6>Dynamic Combat:</h6> Battle outcomes are calculated based on unit counts, stats (strength, constitution), and structure levels (offense, defense).
-
-<h6>Spoils of War:</h6> Victors plunder credits and steal net worth.
-
-<h6>Battle Reports:</h6> A detailed inbox for viewing all battle outcomes.
-
-<h6>Level Up:</h6> Spend level-up points to increase your character's five core stats.
-
-<h6>Settings: </h6> A multi-part page to update your profile, change your email, update your password, and set security questions (all sensitive actions are gated by a password check).
-
-Alliances (Full System):
-
-View a public, paginated list of all alliances.
-
-Create a new alliance (costs credits).
-
-View a public alliance profile and member roster.
-
-Apply to, cancel applications, and leave an alliance.
-
-Dynamic Role-Based Permissions: A complete alliance administration system where Leaders can:
-
-Edit the alliance profile.
-
-Accept or reject applications.
-
-Kick members.
-
-Promote/demote members.
-
-Create, edit, and delete custom roles with granular permissions (e.g., can_kick_members, can_manage_bank).
-
-Game Loop (Cron): A standalone "heartbeat" script that processes turn-based income (credits, interest, citizens) for all players.
+Game Loop (Cron): A standalone script for processing turn-based income, citizen growth, and alliance interest [cite: mungus451/starlight_v2/starlight_v2-master/cron/process_turn.php].
 
 🚀 Tech Stack
-# PHP 8.3
 
-# MariaDB (or MySQL)
+Component
 
-# Composer for package management
+Technology
 
-# vlucas/phpdotenv: For managing environment variables.
+Role
 
-# nikic/fast-route: For clean, high-performance routing.
+Backend
 
-📁 Project Structure
-### This application follows a strict Model-View-Controller (MVC) pattern.
+PHP 8.3 (or newer)
 
-`/usr/local/var/www/starlight_v2/` <br>
-`├── app/` <br>
-`│   ├── Controllers/    # (The "C") Handles HTTP requests.` <br>
-`│   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).` <br>
-`│   ├── Middleware/     # Protects routes (e.g., AuthMiddleware).` <br>
-`│   └── Models/` <br>
-`│       ├── Entities/       # "Dumb" data objects (User, Alliance, etc.)` <br>
-`│       ├── Repositories/   # (The "M") All SQL queries live here.` <br>
-`│       └── Services/       # (The "M") All business logic lives here.` <br>
-`├── config/             # Game balance and app settings.` <br>
-`├── cron/               # Standalone scripts for the game loop.` <br>
-`├── logs/               # Error and cron logs.` <br>
-`├── public/             # The *only* web-accessible directory.` <br>
-`│   └── index.php       # (The "Front Controller") All requests come here.` <br>
-`├── sql/                # All database migration scripts (in order).` <br>
-`├── vendor/             # Composer packages.` <br>
-`└── views/              # (The "V") All "dumb" HTML/PHP templates.` <br>
-`    ├── alliance/` <br>
-`    ├── auth/` <br>
-`    ├── bank/` <br>
-`    ├── battle/` <br>
-`    ├── dashboard/` <br>
-`    ├── layouts/        # Main layout (header/footer).` <br>
-`    ├── level_up/` <br>
-`    ├── settings/` <br>
-`    ├── spy/` <br>
-`    ├── structures/` <br>
-`    └── training/` <br>
+Server-side logic and processing.
 
-⚙️ Installation & Setup (macOS / Homebrew)
+Database
 
-1. Prerequisites
-Make sure you have Homebrew installed.
+MariaDB (or MySQL)
 
-# Install PHP 8.3
-`brew install php@8.3`
+Highly normalized and transactional data persistence.
 
-# Install MariaDB (or MySQL)
-`brew install mariadb`
-# Install Composer
-`brew install composer`
+Routing
 
-# Start the MariaDB service
-`brew services start mariadb`
-## 2. Database Setup
-Log in to MariaDB/MySQL:
+nikic/fast-route
 
-`mysql -u root`
-<h3> Create the new database and user (use the credentials you provided): </h6>
+High-performance URI dispatching.
 
-`CREATE DATABASE starlightDB;`<br>
-`CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`<br>
-`GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';`<br>
-`FLUSH PRIVILEGES;`<br>
-`EXIT;`<br>
+Configuration
 
-<h4>Use the database.sql file provided to match the schema.</h4>
+vlucas/phpdotenv
+
+Environment variable management.
+
+🏛️ Architecture: The MVC-S Pattern
+
+The core principle of this project is strict Separation of Concerns. Business logic is never mixed with presentation or database queries.
+
+Project Structure Overview
+
+starlight_v2/
+├── app/
+│   ├── Controllers/    # C: Handles HTTP I/O.
+│   ├── Core/           # Database, Session, Config.
+│   └── Models/
+│       ├── Entities/       # D: Dumb Data Objects (DTOs).
+│       ├── Repositories/   # R: Data Access Layer (RAW SQL).
+│       └── Services/       # S: Business Logic Layer (The "M" orchestrator).
+├── config/             # Game balance and environment variables.
+├── cron/               # Game loop scripts.
+├── public/             # Web entry point (index.php).
+└── views/              # V: HTML templates.
+
+
+Application Flow: From Request to Transaction
+
+A typical feature flow follows this sequence:
+
+Layer
+
+File/Component
+
+Responsibility
+
+Router
+
+public/index.php
+
+Maps URI to Controller::method. Enforces AuthMiddleware.
+
+Controller
+
+App\Controllers\...
+
+1. Receives Request, 2. Calls Service, 3. Renders View. Never contains business logic or SQL [cite: mungus451/starlight_v2/starlight_v2-master/app/Controllers/BaseController.php].
+
+Service
+
+App\Models\Services\...
+
+1. Orchestrates Logic. Validates input, begins a transaction, orchestrates multiple Repository calls, and applies game balance rules (from config/).
+
+Repository
+
+App\Models\Repositories\...
+
+1. Executes SQL. Contains raw parameterized queries. Fetches data and returns Entities to the Service. Never contains game logic or knows about HTTP/sessions [cite: mungus451/starlight_v2/starlight_v2-master/app/Models/Repositories/UserRepository.php].
+
+Database
+
+App\Core\Database.php
+
+Provides a single, transactional PDO connection instance.
+
+View
+
+views/...
+
+1. Presents Data. Consumes data passed by the Controller and renders HTML (including CSRF tokens from BaseController) [cite: mungus451/starlight_v2/starlight_v2-master/views/layouts/main.php].
+
+⚙️ Development Guide: Adding a New Feature
+
+When implementing a new "vertical slice" feature (e.g., "Item Repair"), follow this explicit structure:
+
+Define the Data (Entity): Create app/Models/Entities/ItemRepair.php to represent the database row structure.
+
+Define the Database Access (Repository): Create app/Models/Repositories/ItemRepairRepository.php to handle all SELECT, INSERT, and UPDATE queries for this data, returning ItemRepair entities.
+
+Define the Business Logic (Service): Create app/Models/Services/ItemRepairService.php. This class handles validation (Do they have resources?), calls PowerCalculatorService (Is the repair effective?), starts a transaction, and calls the necessary repositories (ItemRepairRepository, ResourceRepository).
+
+Define the HTTP Interface (Controller): Create app/Controllers/ItemRepairController.php. This handles GET to display the view, POST to process the form, validates the CSRF token, calls ItemRepairService, and handles the final redirect/flash message.
+
+Define the Frontend (View): Create views/item_repair/show.php for the UI.
+
+Define the Route (Router): Update public/index.php to map the new URI (/repair) to ItemRepairController::show.
+
+🛠️ Installation & Setup (Ubuntu/MariaDB)
+
+This guide assumes a Ubuntu server environment running Apache2 and PHP 8.3.
+
+1. Prerequisites (Ubuntu)
+
+Ensure the necessary components are installed and running:
+
+# Install PHP and extensions required by Composer (e.g., mbstring)
+sudo apt update
+sudo apt install php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-zip php8.3-curl composer
+
+# Install MariaDB
+sudo apt install mariadb-server
+
+# Start the services (usually automatic after install)
+sudo systemctl start mariadb
+sudo systemctl start apache2
+
+
+2. Database Setup
+
+Log in to your MariaDB instance and create the production database and user:
+
+sudo mysql
+
+# Replace 'sd_admin' and 'starlight' with your credentials
+CREATE DATABASE starlightDB;
+CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';
+GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+
+
+Next, import the schema and seed data using your local SQL files.
 
 3. Application Setup
-`Place the project files in /usr/local/var/www/starlight_v2.`
 
-Install Composer dependencies:
+Place Files: Place the project files in the web root, e.g., /usr/local/var/www/starlight_v2.
 
-`cd /usr/local/var/www/starlight_v2
+Install Dependencies:
+
+cd /usr/local/var/www/starlight_v2
 composer install
-Create your .env file: Copy the example file and edit it if necessary (the defaults are already set to your credentials).`
 
 
+Configure .env: Copy the .env.example file to .env and set your database credentials.
 
-🏃 Running the Application
-## 1. Local Web Server
-Use the PHP built-in server. From the project root (/usr/local/var/www/starlight_v2), run:
+Set Directory Permissions: Crucially, grant the Apache user (www-data) write access to the uploaded files directory:
 
-`php -S localhost:8000 -t public
-localhost:8000: The host and port.`
+# Grant ownership of the storage folders to the web server user (www-data)
+sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/storage
+sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/public/uploads
+# Set correct directory permissions (rwxr-xr-x)
+sudo chmod -R 755 /usr/local/var/www/starlight_v2/storage
+sudo chmod -R 755 /usr/local/var/www/starlight_v2/public/uploads
 
--t public: Crucial. This sets the web root to the /public directory, securing the rest of the application.
 
-You can now access the game at: http://localhost:8000
+4. Running the Game Loop (Cron)
 
-## 2. Game Loop (Cron Job)
-The game's economy (income, interest) is run by a cron job.
+Set up a cron job to run the turn processor, which handles all passive income and interest:
 
-To run it manually:
+crontab -e
 
-`php cron/process_turn.php`
-To set it up to run every 5 minutes (on macOS):
 
-Grant Permissions: cron needs Full Disk Access to run.
+Add this line to run every 5 minutes:
 
-`Go to System Settings > Privacy & Security > Full Disk Access.`
-
-`Click + and use Cmd+Shift+G to go to /usr/local/bin. Add php.`
-
-`Click + and use Cmd+Shift+G to go to /bin. Add zsh (or sh).`
-
-`Click + and use Cmd+Shift+G to go to /usr/sbin. Add cron.`
-
-`Make sure all three (php, zsh/sh, cron) are toggled ON.`
-
-Edit your crontab:
-
-`crontab -e`
-Add this line: (Use the path from which php)
-
-`*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1`
-Check the log: You can watch the cron job run:
-
-`tail -f logs/cron.log`
+*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.3 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
