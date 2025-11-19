@@ -1,27 +1,34 @@
-# Migrations
+# Migrations & Utilities
 
-This directory contains one-time scripts used to update our database schema or data.
+This directory contains scripts for database schema updates and administrative utilities.
 
 **Do not run these unless instructed to by the plan.**
 
-## How to Run a Migration
+## How to Run Scripts
 
 Run scripts from the project root directory:
 
-`php migrations/13.1_migrate_roles.php`
+`php migrations/SCRIPT_NAME.php`
 
-***
+---
 
-**Next Steps:**
+## Available Scripts
 
-Before we can continue with the plan, you **must** run this migration script.
+### 1. Schema Migrations
 
-1.  Open your terminal.
-2.  Navigate to your project root: `cd /usr/local/var/www/starlight_v2`
-3.  Run the script: `php migrations/13.1_migrate_roles.php`
+* **`13.1_migrate_roles.php`**
+    * **Purpose:** Migrates old static roles to the new RBAC system.
+    * **Usage:** `php migrations/13.1_migrate_roles.php`
+    * **Status:** Run once after deploying Phase 13 code.
 
-You should see output like:
-`Starting alliance role migration...
- Migrating Alliance ID: 1... 
- Migration complete.
-  Migrated 1 alliances in 0.01 seconds.`
+* **`14.1_populate_alliance_structures.php`**
+    * **Purpose:** Populates the `alliance_structures_definitions` table with base data.
+    * **Usage:** `php migrations/14.1_populate_alliance_structures.php`
+    * **Status:** Run once after deploying Phase 14 code.
+
+### 2. Admin Utilities
+
+* **`reset_all_stats.php`**
+    * **Purpose:** **GLOBAL RESPEC.** Loops through every user, resets all spent attribute points (Strength, Wealth, etc.) to 0, and sets their available Skill Points exactly equal to their Level.
+    * **Usage:** `php migrations/reset_all_stats.php`
+    * **Note:** This is destructive. It wipes all player builds.
