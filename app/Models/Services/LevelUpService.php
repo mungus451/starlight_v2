@@ -6,7 +6,7 @@ use App\Core\Config;
 use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\StatsRepository;
-use App\Models\Services\LevelCalculatorService; // Include our math engine
+use App\Models\Services\LevelCalculatorService;
 use PDO;
 use Throwable;
 
@@ -81,8 +81,8 @@ class LevelUpService
         $newLevelUpPoints = $stats->level_up_points;
 
         if ($levelsGained > 0) {
-            // Define points per level (standard 5)
-            $pointsPerLevel = 5; 
+            // Define points per level (standard 1 point per level gained)
+            $pointsPerLevel = 1; 
             $pointsGained = $levelsGained * $pointsPerLevel;
             $newLevelUpPoints += $pointsGained;
 

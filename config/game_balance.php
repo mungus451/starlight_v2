@@ -112,6 +112,12 @@ return [
         'cost_per_point' => 1
     ],
 
+    // --- Armory Mechanics ---
+    'armory' => [
+        'discount_per_charisma' => 0.01, // 1% discount per charisma point
+        'max_discount' => 0.75           // Capped at 75%
+    ],
+
     // --- Phase 10 ---
     'turn_processor' => [
         // 0.5% interest per turn
@@ -120,10 +126,10 @@ return [
         // 1,000 credits per turn, per level of Economy Upgrade
         'credit_income_per_econ_level' => 1000,
         
-        // --- NEW: Income from workers ---
+        // Income from workers
         'credit_income_per_worker' => 100,
 
-        // --- NEW: Bonus from stats ---
+        // Bonus from stats
         'credit_bonus_per_wealth_point' => 0.005, // 0.5% bonus to econ/worker income
         
         // 10 new citizens per turn, per level of Population

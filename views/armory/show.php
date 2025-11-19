@@ -2,10 +2,19 @@
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\UserResource $userResources */
 /* @var \App\Models\Entities\UserStructure $userStructures */
+/* @var \App\Models\Entities\UserStats $userStats */
 /* @var array $armoryConfig */
-/* @var array $inventory (e.g., ['pulse_rifle' => 100]) */
-/* @var array $loadouts (e.g., ['soldier' => ['main_weapon' => 'pulse_rifle']]) */
-/* @var array $itemLookup (e.g., ['pulse_rifle' => 'Pulse Rifle']) */
+/* @var array $inventory */
+/* @var array $loadouts */
+/* @var array $itemLookup */
+/* @var array $discountConfig */
+
+// --- Calculate Discount Percentage for View ---
+$charisma = $userStats->charisma_points ?? 0;
+$rate = $discountConfig['discount_per_charisma'] ?? 0.01;
+$cap = $discountConfig['max_discount'] ?? 0.75;
+$discountPercent = min($charisma * $rate, $cap); // e.g., 0.15 for 15%
+$hasDiscount = $discountPercent > 0;
 ?>
 
 <style>
@@ -14,37 +23,33 @@
         --bg-panel: rgba(12, 14, 25, 0.65);
         --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.07), rgba(13, 15, 27, 0.6));
         --border: rgba(255, 255, 255, 0.03);
-        --accent: #2dd1d1; /* Main Accent (Teal) */
+        --accent: #2dd1d1;
         --accent-soft: rgba(45, 209, 209, 0.12);
-        --accent-2: #f9c74f; /* Secondary Accent (Gold) */
+        --accent-2: #f9c74f;
         --accent-red: #e53e3e;
+        --accent-green: #4CAF50;
         --text: #eff1ff;
         --muted: #a8afd4;
         --radius: 18px;
         --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
     }
 
-    /* --- CSS FIX: Box sizing reset --- */
     *, *::before, *::after {
         box-sizing: border-box;
     }
 
-    /* --- CSS FIX: Removed redundant body background --- */
-
-        .armory-container {
+    .armory-container {
         width: 100%;
         max-width: 1400px;
         margin-inline: auto;
-        /* --- CSS FIX: Removed horizontal padding --- */
-        padding: 1.5rem 0 3.5rem; /* Was 1.5rem 1.5rem 3.5rem */
+        padding: 1.5rem 0 3.5rem;
         position: relative;
     }
     
-    /* --- CSS FIX: Removed horizontal negative inset --- */
     .armory-container::before {
         content: "";
         position: absolute;
-        inset: -80px 0 0 0; /* Was -80px -120px 0 */
+        inset: -80px 0 0 0;
         background-image:
             linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 0),
             linear-gradient(0deg, rgba(255,255,255,0.015) 1px, transparent 0);
@@ -89,12 +94,9 @@
         font-size: 1.5rem;
         color: #fff;
     }
-    .header-stat strong.accent {
-        color: var(--accent-2); /* Gold for credits */
-    }
-    .header-stat strong.accent-teal {
-        color: var(--accent);
-    }
+    .header-stat strong.accent { color: var(--accent-2); }
+    .header-stat strong.accent-teal { color: var(--accent); }
+    .header-stat strong.accent-green { color: var(--accent-green); }
 
     /* --- Tab Navigation --- */
     .armory-tabs {
@@ -116,62 +118,43 @@
         cursor: pointer;
         transition: all 0.2s ease;
         position: relative;
-        top: 1px; /* Sits on top of the border */
+        top: 1px;
     }
     .tab-link:hover {
         background: rgba(255,255,255, 0.03);
         color: #fff;
     }
     .tab-link.active {
-        background: var(--bg); /* Match main bg */
+        background: var(--bg);
         border-color: rgba(255, 255, 255, 0.05);
         border-bottom: 1px solid var(--bg);
         color: var(--accent);
     }
 
-    /* --- Tab Content --- */
-    .tab-content {
-        display: none;
-    }
-    .tab-content.active {
-        display: block;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
     
-    /* This is the OUTER grid (Equip Card | Item Grid) */
     .unit-grid {
         display: grid;
-        grid-template-columns: 1fr 2fr; /* 1:2 ratio on desktop */
+        grid-template-columns: 1fr 2fr;
         gap: 1.5rem;
     }
-
-    /* This is the INNER grid (for the Item Cards) */
     .item-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3 item cards per row */
+        grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
     }
     
-    /* --- Responsive Fixes --- */
     @media (max-width: 1200px) {
-        .item-grid {
-            grid-template-columns: repeat(2, 1fr); /* 2 item cards on tablet */
-        }
+        .item-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    
-    @media (max-width: 980px) { /* Stacks the Equip card on top of items */
-        .unit-grid {
-            grid-template-columns: 1fr; /* Stack outer grid */
-        }
+    @media (max-width: 980px) {
+        .unit-grid { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 768px) {
-        .item-grid {
-            grid-template-columns: 1fr; /* 1 item card on mobile */
-        }
+        .item-grid { grid-template-columns: 1fr; }
     }
 
-
-    /* --- Section Headers (from structures.php) --- */
     .section-header {
         grid-column: 1 / -1; 
         color: #ffffff;
@@ -193,7 +176,6 @@
         box-shadow: 0 0 20px rgba(45, 209, 209, 0.35);
     }
     
-    /* --- Equip Card --- */
     .equip-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -213,7 +195,6 @@
     .equip-card .form-group { margin-bottom: 1rem; }
     .equip-card .form-group:last-child { margin-bottom: 0; }
     
-    /* --- Item (Manufacture) Card (from structures.php) --- */
     .item-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -279,6 +260,17 @@
     .item-info li .status-ok { color: var(--accent); }
     .item-info li .status-bad { color: var(--accent-red); }
     
+    /* --- NEW Discount Styles --- */
+    .cost-original {
+        text-decoration: line-through;
+        color: var(--muted);
+        font-size: 0.8em;
+        margin-right: 5px;
+    }
+    .cost-discounted {
+        color: var(--accent-2); /* Gold */
+    }
+    
     .amount-input-group {
         display: flex;
         gap: 0.5rem;
@@ -289,7 +281,7 @@
     }
     .amount-input-group button {
         margin-top: 0;
-        flex-shrink: 0; /* Button will not shrink */
+        flex-shrink: 0;
     }
     
     .item-card .btn-submit {
@@ -303,7 +295,6 @@
         cursor: pointer;
         transition: filter 0.1s ease-out, transform 0.1s ease-out;
     }
-    
     .item-card .btn-submit:not([disabled]):hover {
         filter: brightness(1.02);
         transform: translateY(-1px);
@@ -314,7 +305,6 @@
         color: rgba(255, 255, 255, 0.35);
         cursor: not-allowed;
     }
-
     .item-card .btn-manufacture-submit {
         width: 100%;
         margin-top: 0.75rem;
@@ -337,6 +327,13 @@
                 Level <?= $userStructures->armory_level ?>
             </strong>
         </div>
+        
+        <div class="header-stat">
+            <span>Charisma Bonus</span>
+            <strong class="accent-green">
+                <?= number_format($discountPercent * 100, 1) ?>% Discount
+            </strong>
+        </div>
     </div>
 
     <div class="armory-tabs">
@@ -352,7 +349,7 @@
     <?php $i = 0; ?>
     <?php foreach ($armoryConfig as $unitKey => $unitData): ?>
         <?php 
-            $unitResourceKey = $unitData['unit']; // e.g., 'soldiers'
+            $unitResourceKey = $unitData['unit']; 
             $unitCount = $userResources->{$unitResourceKey} ?? 0;
         ?>
         <div id="tab-<?= $unitKey ?>" class="tab-content <?= $i === 0 ? 'active' : '' ?>" data-unit-key="<?= $unitKey ?>" data-unit-count="<?= $unitCount ?>">
@@ -404,7 +401,11 @@
                                 $prereqOwned = (int)($inventory[$prereqKey] ?? 0);
                                 $currentOwned = (int)($inventory[$itemKey] ?? 0);
                                 $armoryLvlReq = $item['armory_level_req'] ?? 0;
-                                $cost = $item['cost'];
+                                $baseCost = $item['cost'];
+                                
+                                // --- NEW: Effective Cost Calculation for View ---
+                                $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
+                                
                                 $hasLvl = $userStructures->armory_level >= $armoryLvlReq;
                                 $canManufacture = $hasLvl && ($isTier1 || $prereqOwned > 0);
                                 ?>
@@ -419,10 +420,23 @@
                                         <?php if (isset($item['defense'])): ?>
                                             <span class="stat-pill defense">+<?= $item['defense'] ?> Defense</span>
                                         <?php endif; ?>
+                                        <?php if (isset($item['credit_bonus'])): ?>
+                                            <span class="stat-pill defense">+<?= $item['credit_bonus'] ?> Credits</span>
+                                        <?php endif; ?>
                                     </div>
 
                                     <ul class="item-info">
-                                        <li><span>Cost (Credits):</span> <strong><?= number_format($cost) ?></strong></li>
+                                        <li>
+                                            <span>Cost:</span> 
+                                            <div>
+                                                <?php if ($hasDiscount): ?>
+                                                    <span class="cost-original"><?= number_format($baseCost) ?></span>
+                                                    <strong class="cost-discounted"><?= number_format($effectiveCost) ?></strong>
+                                                <?php else: ?>
+                                                    <strong><?= number_format($baseCost) ?></strong>
+                                                <?php endif; ?>
+                                            </div>
+                                        </li>
                                         <li>
                                             <span>Armory Level Req:</span>
                                             <strong class="<?= $hasLvl ? 'status-ok' : 'status-bad' ?>">
@@ -448,7 +462,7 @@
                                             <div class="amount-input-group">
                                                 <input type="number" name="quantity" class="manufacture-amount" min="1" placeholder="Amount" required 
                                                     data-item-key="<?= $itemKey ?>"
-                                                    data-item-cost="<?= $cost ?>"
+                                                    data-item-cost="<?= $effectiveCost ?>" 
                                                     data-prereq-key="<?= $prereqKey ?>"
                                                     data-current-owned="<?= $currentOwned ?>"
                                                 >
@@ -491,35 +505,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- 2. "Equip" Form Logic (Auto-submit on change) ---
+    // --- 2. "Equip" Form Logic ---
     document.querySelectorAll('.equip-select').forEach(select => {
         select.addEventListener('change', function() {
             const form = this.closest('form');
             const categoryKey = this.getAttribute('data-category-key');
-            const itemKey = this.value; // Get the item key from the selected option
+            const itemKey = this.value; 
             
-            // Find the hidden inputs
-            const categoryInput = form.querySelector('.dynamic-category-key');
-            const itemInput = form.querySelector('.dynamic-item-key');
-
-            // Set the values of the hidden inputs
-            categoryInput.value = categoryKey;
-            itemInput.value = itemKey;
+            form.querySelector('.dynamic-category-key').value = categoryKey;
+            form.querySelector('.dynamic-item-key').value = itemKey;
             
-            // Now submit the form
             form.submit();
         });
     });
 
-    // --- 3. "Max Manufacture/Upgrade" Button Logic ---
+    // --- 3. "Max Manufacture" Logic ---
     const USER_CREDITS = parseInt(document.getElementById('global-user-credits').getAttribute('data-credits'), 10);
     const inventory = {};
     
-    // Create a live map of all inventory counts
     document.querySelectorAll('[data-inventory-key]').forEach(el => {
         const key = el.getAttribute('data-inventory-key');
         if (key && key !== 'null') {
-            // Use a regex to remove commas before parsing
             const count = parseInt(el.textContent.replace(/,/g, ''), 10);
             inventory[key] = isNaN(count) ? 0 : count;
         }
@@ -530,6 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const form = this.closest('.manufacture-form');
             const amountInput = form.querySelector('.manufacture-amount');
             
+            // This will now read the discounted cost if applied
             const itemCost = parseInt(amountInput.getAttribute('data-item-cost'), 10);
             const currentOwned = parseInt(amountInput.getAttribute('data-current-owned'), 10);
             const prereqKey = amountInput.getAttribute('data-prereq-key');
@@ -541,26 +548,21 @@ document.addEventListener('DOMContentLoaded', function() {
             let maxFromPrereq = Infinity;
             let maxNeededForArmy = Infinity;
 
-            // Constraint 1: User's credits
             if (itemCost > 0) {
                 maxFromCredits = Math.floor(USER_CREDITS / itemCost);
             }
 
-            // Constraint 2: Prerequisite item (if it's an upgrade)
             if (prereqKey && prereqKey !== 'null') {
                 maxFromPrereq = inventory[prereqKey] || 0;
             }
 
-            // Constraint 3: How many are needed for the full army
             if (unitCount > currentOwned) {
                 maxNeededForArmy = unitCount - currentOwned;
             } else {
-                maxNeededForArmy = 0; // Already have enough for the army
+                maxNeededForArmy = 0; 
             }
             
-            // Find the *smallest* constraint
             const finalMax = Math.min(maxFromCredits, maxFromPrereq, maxNeededForArmy);
-            
             amountInput.value = finalMax > 0 ? finalMax : 0;
         });
     });

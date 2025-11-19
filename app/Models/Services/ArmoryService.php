@@ -8,6 +8,7 @@ use App\Core\Session;
 use App\Models\Repositories\ArmoryRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\StatsRepository; 
 use PDO;
 use Throwable;
 
@@ -22,6 +23,7 @@ class ArmoryService
     private ArmoryRepository $armoryRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
+    private StatsRepository $statsRepo; 
     private array $armoryConfig;
 
     public function __construct()
@@ -30,10 +32,11 @@ class ArmoryService
         $this->session = new Session();
         $this->config = new Config();
         
-        // This service needs 3 repositories
+        // This service now needs 4 repositories
         $this->armoryRepo = new ArmoryRepository($this->db);
         $this->resourceRepo = new ResourceRepository($this->db);
         $this->structureRepo = new StructureRepository($this->db);
+        $this->statsRepo = new StatsRepository($this->db); // --- NEW ---
         
         // Load the armory config once
         $this->armoryConfig = $this->config->get('armory_items', []);
@@ -50,10 +53,11 @@ class ArmoryService
         // Get all data in parallel
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
+        $userStats = $this->statsRepo->findByUserId($userId); // --- NEW ---
         $inventory = $this->armoryRepo->getInventory($userId);
         $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
 
-        // --- Create the item lookup map to fix the view error ---
+        // Create the item lookup map
         $itemLookup = [];
         foreach ($this->armoryConfig as $unitData) {
             foreach ($unitData['categories'] as $categoryData) {
@@ -62,20 +66,25 @@ class ArmoryService
                 }
             }
         }
+        
+        // Get discount config
+        $discountConfig = $this->config->get('game_balance.armory', []);
 
         return [
             'armoryConfig' => $this->armoryConfig,
             'userResources' => $userResources,
             'userStructures' => $userStructures,
+            'userStats' => $userStats, // --- NEW ---
             'inventory' => $inventory,
             'loadouts' => $loadouts,
-            'itemLookup' => $itemLookup, // Pass the new map to the view
+            'itemLookup' => $itemLookup,
+            'discountConfig' => $discountConfig, // --- NEW ---
         ];
     }
 
     /**
      * Attempts to manufacture (or upgrade) a specific quantity of an item.
-     * This implements the "consumptive upgrade" logic.
+     * This implements the "consumptive upgrade" logic and Charisma discounts.
      *
      * @param int $userId
      * @param string $itemKey
@@ -99,6 +108,7 @@ class ArmoryService
         // 2. Get User Data
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
+        $userStats = $this->statsRepo->findByUserId($userId); // --- NEW ---
         $inventory = $this->armoryRepo->getInventory($userId);
 
         // 3. Check Prerequisites
@@ -109,8 +119,19 @@ class ArmoryService
             return false;
         }
 
-        // Check 3b: Total Cost
-        $totalCost = $item['cost'] * $quantity;
+        // --- NEW: Calculate Discounted Cost ---
+        $baseCost = $item['cost'];
+        $discountSettings = $this->config->get('game_balance.armory', []);
+        $rate = $discountSettings['discount_per_charisma'] ?? 0.01;
+        $cap = $discountSettings['max_discount'] ?? 0.75;
+        
+        // Discount formula: Charisma * Rate, capped at Max
+        $discountPercent = min($userStats->charisma_points * $rate, $cap);
+        $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
+        
+        // Check 3b: Total Cost (using effective cost)
+        $totalCost = $effectiveUnitCost * $quantity;
+        
         if ($userResources->credits < $totalCost) {
             $this->session->setFlash('error', 'You do not have enough credits.');
             return false;
@@ -149,7 +170,13 @@ class ArmoryService
             return false;
         }
 
-        $this->session->setFlash('success', "Successfully manufactured {$quantity}x " . $item['name'] . ".");
+        $msg = "Successfully manufactured {$quantity}x " . $item['name'] . ".";
+        if ($discountPercent > 0) {
+            $saved = ($baseCost * $quantity) - $totalCost;
+            $msg .= " (Charisma saved you " . number_format($saved) . " credits)";
+        }
+
+        $this->session->setFlash('success', $msg);
         return true;
     }
 
@@ -173,8 +200,6 @@ class ArmoryService
         // 2. Check that this is a valid assignment
         // Handle "None Equipped"
         if (empty($itemKey)) {
-            // --- THIS IS THE FIX ---
-            // This call will now succeed because the method exists
             $this->armoryRepo->clearLoadoutSlot($userId, $unitKey, $categoryKey); 
             $this->session->setFlash('success', "Loadout slot cleared for " . $this->armoryConfig[$unitKey]['title'] . ".");
             return true;
@@ -187,9 +212,6 @@ class ArmoryService
             $this->session->setFlash('error', 'That item cannot be equipped to that slot.');
             return false;
         }
-        
-        // (We do NOT check for quantity here. A user can equip an item they
-        // have 0 of. The battle logic will handle the bonus calculation.)
 
         // 3. Execute Update
         $this->armoryRepo->setLoadout($userId, $unitKey, $categoryKey, $itemKey);
