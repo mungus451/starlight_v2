@@ -199,33 +199,33 @@ return [
                 'title' => 'Defensive Main Equipment (Shields)',
                 'slots' => 1,
                 'items' => [
-                    'ballistic_shield' => ['name' => 'Ballistic Shield', 'defense' => 50, 'cost' => 90000, 'notes' => 'Standard issue shield.'],
-                    'tower_shield' => ['name' => 'Tower Shield', 'defense' => 70, 'cost' => 130000, 'notes' => 'Heavy, but provides excellent cover.', 'requires' => 'ballistic_shield', 'armory_level_req' => 1],
-                    'riot_shield' => ['name' => 'Riot Shield', 'defense' => 85, 'cost' => 180000, 'notes' => 'Wider, better for holding a line.', 'requires' => 'tower_shield', 'armory_level_req' => 6],
-                    'garrison_shield' => ['name' => 'Garrison Shield', 'defense' => 100, 'cost' => 230000, 'notes' => 'Can be deployed as temporary cover.', 'requires' => 'riot_shield', 'armory_level_req' => 36],
-                    'bulwark_shield' => ['name' => 'Bulwark Shield', 'defense' => 130, 'cost' => 310000, 'notes' => 'Nearly impenetrable frontal defense.', 'requires' => 'garrison_shield', 'armory_level_req' => 46],
+                    'ballistic_shield' => ['name' => 'Ballistic Shield', 'defense' => 50, 'cost' => 100000, 'notes' => 'Standard issue shield.'],
+                    'tower_shield' => ['name' => 'Tower Shield', 'defense' => 100, 'cost' => 200000, 'notes' => 'Heavy, but provides excellent cover.', 'requires' => 'ballistic_shield', 'armory_level_req' => 1],
+                    'riot_shield' => ['name' => 'Riot Shield', 'defense' => 150, 'cost' => 300000, 'notes' => 'Wider, better for holding a line.', 'requires' => 'tower_shield', 'armory_level_req' => 6],
+                    'garrison_shield' => ['name' => 'Garrison Shield', 'defense' => 200, 'cost' => 400000, 'notes' => 'Can be deployed as temporary cover.', 'requires' => 'riot_shield', 'armory_level_req' => 36],
+                    'bulwark_shield' => ['name' => 'Bulwark Shield', 'defense' => 250, 'cost' => 500000, 'notes' => 'Nearly impenetrable frontal defense.', 'requires' => 'garrison_shield', 'armory_level_req' => 46],
                 ]
             ],
             'secondary_defensive_systems' => [
                 'title' => 'Secondary Defensive Systems',
                 'slots' => 1,
                 'items' => [
-                    'point_defense_system' => ['name' => 'Point Defense System', 'defense' => 20, 'cost' => 35000, 'notes' => 'Intercepts incoming projectiles.'],
-                    'aegis_aura' => ['name' => 'Aegis Aura', 'defense' => 25, 'cost' => 45000, 'notes' => 'Provides a small damage shield to nearby allies.', 'requires' => 'point_defense_system', 'armory_level_req' => 1],
-                    'guardian_protocol' => ['name' => 'Guardian Protocol', 'defense' => 30, 'cost' => 55000, 'notes' => 'Automatically diverts power to shields when hit.', 'requires' => 'aegis_aura', 'armory_level_req' => 7],
-                    'bastion_mode' => ['name' => 'Bastion Mode', 'defense' => 40, 'cost' => 75000, 'notes' => 'Greatly increases defense when stationary.', 'requires' => 'guardian_protocol', 'armory_level_req' => 37],
-                    'fortress_protocol' => ['name' => 'Fortress Protocol', 'defense' => 50, 'cost' => 95000, 'notes' => 'Links with other sentries to create a powerful shield wall.', 'requires' => 'bastion_mode', 'armory_level_req' => 47],
+                    'point_defense_system' => ['name' => 'Point Defense System', 'defense' => 20, 'cost' => 40000, 'notes' => 'Intercepts incoming projectiles.'],
+                    'aegis_aura' => ['name' => 'Aegis Aura', 'defense' => 40, 'cost' => 80000, 'notes' => 'Provides a small damage shield to nearby allies.', 'requires' => 'point_defense_system', 'armory_level_req' => 1],
+                    'guardian_protocol' => ['name' => 'Guardian Protocol', 'defense' => 60, 'cost' => 120000, 'notes' => 'Automatically diverts power to shields when hit.', 'requires' => 'aegis_aura', 'armory_level_req' => 7],
+                    'bastion_mode' => ['name' => 'Bastion Mode', 'defense' => 80, 'cost' => 160000, 'notes' => 'Greatly increases defense when stationary.', 'requires' => 'guardian_protocol', 'armory_level_req' => 37],
+                    'fortress_protocol' => ['name' => 'Fortress Protocol', 'defense' => 100, 'cost' => 200000, 'notes' => 'Links with other sentries to create a powerful shield wall.', 'requires' => 'bastion_mode', 'armory_level_req' => 47],
                 ]
             ],
             'shield_bash' => [
                 'title' => 'Melee Countermeasures (Shield Bash)',
                 'slots' => 1,
                 'items' => [
-                    'concussive_blast' => ['name' => 'Concussive Blast', 'defense' => 15, 'cost' => 15000, 'notes' => 'Knocks back melee attackers.'],
-                    'kinetic_ram' => ['name' => 'Kinetic Ram', 'defense' => 25, 'cost' => 30000, 'notes' => 'A powerful forward shield bash.', 'requires' => 'concussive_blast', 'armory_level_req' => 1],
-                    'repulsor_field' => ['name' => 'Repulsor Field', 'defense' => 35, 'cost' => 45000, 'notes' => 'Pushes away all nearby enemies.', 'requires' => 'kinetic_ram', 'armory_level_req' => 28],
-                    'overcharge' => ['name' => 'Overcharge', 'defense' => 45, 'cost' => 65000, 'notes' => 'Releases a powerful EMP blast on shield break.', 'requires' => 'repulsor_field', 'armory_level_req' => 38],
-                    'sentinels_wrath' => ['name' => 'Sentinel\'s Wrath', 'defense' => 55, 'cost' => 85000, 'notes' => 'A devastating shield slam that stuns enemies.', 'requires' => 'overcharge', 'armory_level_req' => 48],
+                    'concussive_blast' => ['name' => 'Concussive Blast', 'defense' => 15, 'cost' => 30000, 'notes' => 'Knocks back melee attackers.'],
+                    'kinetic_ram' => ['name' => 'Kinetic Ram', 'defense' => 30, 'cost' => 60000, 'notes' => 'A powerful forward shield bash.', 'requires' => 'concussive_blast', 'armory_level_req' => 1],
+                    'repulsor_field' => ['name' => 'Repulsor Field', 'defense' => 45, 'cost' => 90000, 'notes' => 'Pushes away all nearby enemies.', 'requires' => 'kinetic_ram', 'armory_level_req' => 28],
+                    'overcharge' => ['name' => 'Overcharge', 'defense' => 60, 'cost' => 120000, 'notes' => 'Releases a powerful EMP blast on shield break.', 'requires' => 'repulsor_field', 'armory_level_req' => 38],
+                    'sentinels_wrath' => ['name' => 'Sentinel\'s Wrath', 'defense' => 75, 'cost' => 150000, 'notes' => 'A devastating shield slam that stuns enemies.', 'requires' => 'overcharge', 'armory_level_req' => 48],
                 ]
             ],
             'helmets' => [
@@ -233,21 +233,21 @@ return [
                 'slots' => 1,
                 'items' => [
                     'sentry_helmet' => ['name' => 'Sentry Helmet', 'defense' => 10, 'cost' => 20000, 'notes' => 'Standard issue helmet.'],
-                    'reinforced_visor' => ['name' => 'Reinforced Visor', 'defense' => 15, 'cost' => 35000, 'notes' => 'Provides extra protection against headshots.', 'requires' => 'sentry_helmet', 'armory_level_req' => 1],
-                    'commanders_helm' => ['name' => 'Commander\'s Helm', 'defense' => 20, 'cost' => 55000, 'notes' => 'Increases the effectiveness of nearby units.', 'requires' => 'reinforced_visor', 'armory_level_req' => 9],
-                    'juggernaut_helm' => ['name' => 'Juggernaut Helm', 'defense' => 25, 'cost' => 75000, 'notes' => 'Heavy, but provides unmatched protection.', 'requires' => 'commanders_helm', 'armory_level_req' => 39],
-                    'praetorian_helm' => ['name' => 'Praetorian Helm', 'defense' => 30, 'cost' => 105000, 'notes' => 'The ultimate in defensive headgear.', 'requires' => 'juggernaut_helm', 'armory_level_req' => 49],
+                    'reinforced_visor' => ['name' => 'Reinforced Visor', 'defense' => 20, 'cost' => 40000, 'notes' => 'Provides extra protection against headshots.', 'requires' => 'sentry_helmet', 'armory_level_req' => 1],
+                    'commanders_helm' => ['name' => 'Commander\'s Helm', 'defense' => 30, 'cost' => 60000, 'notes' => 'Increases the effectiveness of nearby units.', 'requires' => 'reinforced_visor', 'armory_level_req' => 9],
+                    'juggernaut_helm' => ['name' => 'Juggernaut Helm', 'defense' => 40, 'cost' => 80000, 'notes' => 'Heavy, but provides unmatched protection.', 'requires' => 'commanders_helm', 'armory_level_req' => 39],
+                    'praetorian_helm' => ['name' => 'Praetorian Helm', 'defense' => 50, 'cost' => 100000, 'notes' => 'The ultimate in defensive headgear.', 'requires' => 'juggernaut_helm', 'armory_level_req' => 49],
                 ]
             ],
             'fortifications' => [
                 'title' => 'Defensive Deployables (Fortifications)',
                 'slots' => 1,
                 'items' => [
-                    'deployable_cover' => ['name' => 'Deployable Cover', 'defense' => 35, 'cost' => 25000, 'notes' => 'Creates a small piece of cover.'],
-                    'barricade' => ['name' => 'Barricade', 'defense' => 50, 'cost' => 45000, 'notes' => 'A larger, more durable piece of cover.', 'requires' => 'deployable_cover', 'armory_level_req' => 1],
-                    'watchtower' => ['name' => 'Watchtower', 'defense' => 55, 'cost' => 65000, 'notes' => 'Provides a better vantage point and increased range.', 'requires' => 'barricade', 'armory_level_req' => 20],
-                    'bunker' => ['name' => 'Bunker', 'defense' => 75, 'cost' => 95000, 'notes' => 'A heavily fortified structure.', 'requires' => 'watchtower', 'armory_level_req' => 30],
-                    'fortress' => ['name' => 'Fortress', 'defense' => 105, 'cost' => 145000, 'notes' => 'A massive, nearly indestructible fortification.', 'requires' => 'bunker', 'armory_level_req' => 40],
+                    'deployable_cover' => ['name' => 'Deployable Cover', 'defense' => 35, 'cost' => 70000, 'notes' => 'Creates a small piece of cover.'],
+                    'barricade' => ['name' => 'Barricade', 'defense' => 70, 'cost' => 140000, 'notes' => 'A larger, more durable piece of cover.', 'requires' => 'deployable_cover', 'armory_level_req' => 1],
+                    'watchtower' => ['name' => 'Watchtower', 'defense' => 105, 'cost' => 210000, 'notes' => 'Provides a better vantage point and increased range.', 'requires' => 'barricade', 'armory_level_req' => 20],
+                    'bunker' => ['name' => 'Bunker', 'defense' => 140, 'cost' => 280000, 'notes' => 'A heavily fortified structure.', 'requires' => 'watchtower', 'armory_level_req' => 30],
+                    'fortress' => ['name' => 'Fortress', 'defense' => 175, 'cost' => 350000, 'notes' => 'A massive, nearly indestructible fortification.', 'requires' => 'bunker', 'armory_level_req' => 40],
                 ]
             ]
         ]
