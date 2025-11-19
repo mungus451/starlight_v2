@@ -11,7 +11,8 @@ use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
 use App\Models\Services\ArmoryService; 
-use App\Models\Services\PowerCalculatorService; // Import new service
+use App\Models\Services\PowerCalculatorService;
+use App\Models\Services\LevelUpService; // --- NEW IMPORT ---
 use PDO;
 use Throwable;
 
@@ -29,7 +30,8 @@ class SpyService
     private StatsRepository $statsRepo;
     private SpyRepository $spyRepo;
     private ArmoryService $armoryService;
-    private PowerCalculatorService $powerCalculatorService; // Add new service property
+    private PowerCalculatorService $powerCalculatorService;
+    private LevelUpService $levelUpService; // --- NEW PROPERTY ---
 
     public function __construct()
     {
@@ -43,17 +45,15 @@ class SpyService
         $this->statsRepo = new StatsRepository($this->db);
         $this->spyRepo = new SpyRepository($this->db);
         
-        // Instantiate services
         $this->armoryService = new ArmoryService();
-        $this->powerCalculatorService = new PowerCalculatorService(); // Instantiate new service
+        $this->powerCalculatorService = new PowerCalculatorService();
+        
+        // --- NEW: Instantiate LevelUpService ---
+        $this->levelUpService = new LevelUpService();
     }
 
     /**
      * Gets all data needed to render the main spy page.
-     *
-     * @param int $userId
-     * @param int $page The current page number
-     * @return array
      */
     public function getSpyData(int $userId, int $page): array
     {
@@ -87,22 +87,15 @@ class SpyService
 
     /**
      * Gets the list of spy reports for the user (offensive and defensive).
-     *
-     * @param int $userId
-     * @return array
      */
     public function getSpyReports(int $userId): array
     {
-        // 1. Get both sets of reports
         $offensiveReports = $this->spyRepo->findReportsByAttackerId($userId);
         $defensiveReports = $this->spyRepo->findReportsByDefenderId($userId);
 
-        // 2. Merge them into a single array
         $allReports = array_merge($offensiveReports, $defensiveReports);
 
-        // 3. Sort the combined array by date, descending
         usort($allReports, function($a, $b) {
-            // We use <=> for safe comparison. $b vs $a for descending order.
             return $b->created_at <=> $a->created_at;
         });
 
@@ -111,10 +104,6 @@ class SpyService
 
     /**
      * Gets a single, specific spy report, ensuring the user owns it.
-     *
-     * @param int $reportId
-     * @param int $viewerId
-     * @return \App\Models\Entities\SpyReport|null
      */
     public function getSpyReport(int $reportId, int $viewerId): ?\App\Models\Entities\SpyReport
     {
@@ -123,10 +112,6 @@ class SpyService
 
     /**
      * Conducts an "all-in" espionage operation.
-     *
-     * @param int $attackerId
-     * @param string $targetName
-     * @return bool True on success
      */
     public function conductOperation(int $attackerId, string $targetName): bool
     {
@@ -154,7 +139,9 @@ class SpyService
         $attackerStructures = $this->structureRepo->findByUserId($attackerId);
         $defenderResources = $this->resourceRepo->findByUserId($defender->id);
         $defenderStructures = $this->structureRepo->findByUserId($defender->id);
+        
         $config = $this->config->get('game_balance.spy');
+        $xpConfig = $this->config->get('game_balance.xp.rewards'); // --- NEW ---
 
         // --- 3. Check Costs & Availability ---
         $spiesSent = $attackerResources->spies;
@@ -174,9 +161,7 @@ class SpyService
             return false;
         }
 
-        // --- 4. Calculate Spy Roll (REFACTORED) ---
-        
-        // 4a. Spy Offense
+        // --- 4. Calculate Spy Roll ---
         $offenseBreakdown = $this->powerCalculatorService->calculateSpyPower(
             $attackerId,
             $attackerResources,
@@ -184,7 +169,6 @@ class SpyService
         );
         $offense = $offenseBreakdown['total'];
 
-        // 4b. Sentry Defense
         $defenseBreakdown = $this->powerCalculatorService->calculateSentryPower(
             $defender->id,
             $defenderResources,
@@ -203,9 +187,24 @@ class SpyService
         $counterChance = min($counterChance, $config['base_counter_spy_chance_cap']);
         $isCaught = (mt_rand(1, 1000) / 1000) <= $counterChance;
 
-        // --- 6. Calculate Losses ---
+        // --- 6. Calculate Losses & XP ---
         $spiesLost = $isCaught ? (int)mt_rand($spiesSent * $config['spies_lost_percent_min'], $spiesSent * $config['spies_lost_percent_max']) : 0;
         $sentriesLost = $isCaught ? (int)mt_rand($defenderResources->sentries * $config['sentries_lost_percent_min'], $defenderResources->sentries * $config['sentries_lost_percent_max']) : 0;
+
+        // XP Calculation
+        $attackerXp = 0;
+        $defenderXp = 0;
+        
+        if ($isSuccess) {
+            $attackerXp = $xpConfig['spy_success'] ?? 100;
+        } else {
+            // Failed but not caught = 25, Caught = 10
+            $attackerXp = $isCaught ? ($xpConfig['spy_caught'] ?? 10) : ($xpConfig['spy_fail_survived'] ?? 25);
+        }
+        
+        if ($isCaught) {
+            $defenderXp = $xpConfig['defense_caught_spy'] ?? 75;
+        }
 
         // --- 7. Gather Intel & Determine Result ---
         $operation_result = $isSuccess ? 'success' : 'failure';
@@ -226,7 +225,7 @@ class SpyService
         $intel_popLevel = $isSuccess ? $defenderStructures->population_level : null;
         $intel_armoryLevel = $isSuccess ? $defenderStructures->armory_level : null;
 
-        // --- 8. Execute 3-Table Transaction ---
+        // --- 8. Execute Transaction ---
         $this->db->beginTransaction();
         try {
             // 8a. Update Attacker Resources
@@ -234,14 +233,20 @@ class SpyService
             $newSpies = $attackerResources->spies - $spiesLost;
             $this->resourceRepo->updateSpyAttacker($attackerId, $newCredits, $newSpies);
             
-            // 8b. Update Attacker Stats
+            // 8b. Update Attacker Stats (Turns) & Grant XP
             $newAttackTurns = $attackerStats->attack_turns - $turnCost;
             $this->statsRepo->updateAttackTurns($attackerId, $newAttackTurns);
+            
+            $this->levelUpService->grantExperience($attackerId, $attackerXp);
 
-            // 8c. Update Defender Resources (if caught)
-            if ($isCaught && $sentriesLost > 0) {
-                $newSentries = max(0, $defenderResources->sentries - $sentriesLost);
-                $this->resourceRepo->updateSpyDefender($defender->id, $newSentries);
+            // 8c. Update Defender Resources (if caught) & Grant XP
+            if ($isCaught) {
+                if ($sentriesLost > 0) {
+                    $newSentries = max(0, $defenderResources->sentries - $sentriesLost);
+                    $this->resourceRepo->updateSpyDefender($defender->id, $newSentries);
+                }
+                // Grant defender XP for catching spy
+                $this->levelUpService->grantExperience($defender->id, $defenderXp);
             }
 
             // 8d. Create Spy Report
@@ -251,11 +256,9 @@ class SpyService
                 $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
             );
 
-            // 8e. Commit
             $this->db->commit();
             
         } catch (Throwable $e) {
-            // 8f. Rollback on failure
             $this->db->rollBack();
             error_log('Spy Operation Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. The operation was cancelled.');
@@ -263,7 +266,7 @@ class SpyService
         }
 
         // --- 9. Set Flash Message ---
-        $message = "Operation {$operation_result}. You sent {$spiesSent} spies and lost {$spiesLost}.";
+        $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
         if ($isCaught && $sentriesLost > 0) {
             $message .= " You destroyed {$sentriesLost} enemy sentries.";
         }

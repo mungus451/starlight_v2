@@ -90,10 +90,30 @@ class StatsRepository
     }
 
     /**
-     * Gets the total number of registered players.
-     * (This is the old method, we will keep it but create a new one for targets)
+     * --- Updates XP, Level, and Points ---
+     * Used when granting experience and processing level ups.
      *
-     * @return int
+     * @param int $userId
+     * @param int $newExperience
+     * @param int $newLevel
+     * @param int $newLevelUpPoints
+     * @return bool
+     */
+    public function updateLevelProgress(int $userId, int $newExperience, int $newLevel, int $newLevelUpPoints): bool
+    {
+        $sql = "
+            UPDATE user_stats SET 
+                experience = ?, 
+                level = ?, 
+                level_up_points = ?
+            WHERE user_id = ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$newExperience, $newLevel, $newLevelUpPoints, $userId]);
+    }
+
+    /**
+     * Gets the total number of registered players.
      */
     public function getTotalPlayerCount(): int
     {
@@ -102,7 +122,7 @@ class StatsRepository
     }
     
     /**
-     * --- Gets the total number of *targetable* players ---
+     * Gets the total number of *targetable* players.
      *
      * @param int $excludeUserId The ID of the current user, to exclude them
      * @return int
@@ -116,7 +136,6 @@ class StatsRepository
 
     /**
      * Gets a paginated list of players, ranked by net worth.
-     * (This is the old, simple method. We'll use the new one below.)
      *
      * @param int $limit
      * @param int $offset
@@ -141,7 +160,7 @@ class StatsRepository
     }
     
     /**
-     * --- Gets a paginated list of targets with rich data ---
+     * Gets a paginated list of targets with rich data.
      *
      * @param int $limit
      * @param int $offset
@@ -211,7 +230,6 @@ class StatsRepository
     }
 
     /**
-     * 
      * Updates a user's deposit charges and sets the last deposit timestamp.
      *
      * @param int $userId
@@ -230,7 +248,6 @@ class StatsRepository
     }
 
     /**
-     *
      * Regenerates deposit charges for a user.
      *
      * @param int $userId
@@ -248,7 +265,6 @@ class StatsRepository
     }
 
     /**
-     * --- METHOD FOR TURN PROCESSOR ---
      * Atomically applies turn-based attack turns to a user's account.
      *
      * @param int $userId

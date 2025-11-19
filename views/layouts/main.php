@@ -23,13 +23,13 @@
             background-attachment: fixed;              /* subtle parallax feel */
             color: #e0e0e0;
             margin: 0;
-            padding-top: 80px; 
+            padding-top: 90px; /* Increased padding for XP bar space */
         }
         /* --- Navigation Styles --- */
         nav {
             background: #1e1e3f;
             border-bottom: 1px solid #3a3a5a;
-            padding: 1rem;
+            padding: 1rem 1rem 1.5rem 1rem; /* Added bottom padding for bar */
             width: 100%;
             position: absolute;
             top: 0;
@@ -41,13 +41,53 @@
             color: #e0e0e0;
             text-decoration: none;
             font-weight: bold;
-            padding: 0 0.75rem; /* Reduced padding to fit more links */
-            font-size: 1.0rem; /* Reduced font size */
+            padding: 0 0.75rem;
+            font-size: 1.0rem;
         }
         nav a:hover {
             color: #f9c74f;
         }
-        /* --- End Nav Styles --- */
+        
+        /* --- NEW: XP Bar Styles --- */
+        .xp-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.3);
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #00E676);
+            width: 0%; /* Set via inline style */
+            transition: width 0.6s ease-out;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        .xp-level-badge {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e1e3f;
+            border: 1px solid #3a3a5a;
+            border-top: none;
+            padding: 2px 12px;
+            border-radius: 0 0 8px 8px;
+            font-size: 0.75rem;
+            color: #f9c74f;
+            font-weight: bold;
+            font-family: "Orbitron", sans-serif;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        .xp-details {
+            font-weight: normal;
+            color: #a8afd4;
+            margin-left: 5px;
+            font-size: 0.7rem;
+        }
+        /* --- End XP Bar Styles --- */
         
         .container {
             width: 100%;
@@ -74,26 +114,22 @@
             margin: 2rem auto;
         }
 
-        /* --- CSS FIX: Reduce padding on mobile devices --- */
         @media (max-width: 768px) {
             .container, .container-full {
                 padding: 1rem;
                 margin: 1rem auto;
             }
-            /* --- NEW: Make nav links smaller on mobile --- */
             nav a {
                 padding: 0 0.5rem;
                 font-size: 0.9rem;
             }
         }
-        /* --- NEW: Further reduce nav links on very small screens --- */
         @media (max-width: 480px) {
             nav a {
                 padding: 0 0.25rem;
                 font-size: 0.8rem;
             }
         }
-
 
         h1 {
             color: #f9c74f; /* Gold */
@@ -187,7 +223,7 @@
 
     <nav>
         <?php if ($session->has('user_id')): ?>
-            <?php $userAllianceId = $session->get('alliance_id'); // --- NEW --- ?>
+            <?php $userAllianceId = $session->get('alliance_id'); ?>
         
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
@@ -198,7 +234,6 @@
             <a href="/battle">Battle</a>
             <a href="/level-up">Level Up</a>
             
-            <?php // --- NEW DYNAMIC LINKS --- ?>
             <?php if ($userAllianceId !== null): ?>
                 <a href="/alliance/profile/<?= $userAllianceId ?>">My Alliance</a>
                 <a href="/alliance/forum">Forum</a>
@@ -208,10 +243,25 @@
             <?php else: ?>
                 <a href="/alliance/list">Alliances</a>
             <?php endif; ?>
-            <?php // --- END DYNAMIC LINKS --- ?>
             
             <a href="/settings">Settings</a>
             <a href="/logout">Logout</a>
+
+            <?php 
+            // --- NEW: XP Bar Render ---
+            if (isset($global_xp_data) && isset($global_user_level)): 
+            ?>
+                <div class="xp-bar-container">
+                    <div class="xp-bar-fill" style="width: <?= $global_xp_data['percent'] ?>%;"></div>
+                    <div class="xp-level-badge">
+                        Lvl <?= $global_user_level ?>
+                        <span class="xp-details">
+                            <?= number_format($global_xp_data['current_xp']) ?> / <?= number_format($global_xp_data['next_level_xp']) ?> XP
+                        </span>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
         <?php else: ?>
             <a href="/">Home</a>
             <a href="/contact">Contact</a>
@@ -223,7 +273,6 @@
     
     <?php 
     // Check if a layoutMode is set and if it's 'full'.
-    // If not set, it will default to the standard 'constrained' container.
     if (isset($layoutMode) && $layoutMode === 'full'): 
     ?>
         <div class="container-full">

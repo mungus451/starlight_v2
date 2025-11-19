@@ -104,7 +104,7 @@ return [
         'loser_loss_percent_max' => 0.50,
         'plunder_percent' => 0.10,
         'net_worth_steal_percent' => 0.05,
-        'experience_gain_base' => 500,
+        'experience_gain_base' => 500, // Legacy value, kept for reference
         'war_prestige_gain_base' => 5,
     ],
     // --- Phase 9 ---
@@ -132,18 +132,33 @@ return [
 
     // --- Phase 11 ---
     'alliance' => [
-        'creation_cost' => 50000000 // 500,000 Credits, not 50 Million
+        'creation_cost' => 50000000 // 50 Million Credits
     ],
     
-    // --- NEW: Phase 2 (Alliance Treasury) ---
+    // --- Phase 12 (Alliance Treasury) ---
     'alliance_treasury' => [
-        // A standard tax on all battle plunder
         'battle_tax_rate' => 0.03, // 3%
-        
-        // A separate "tribute" tax, as seen in V1 logs
         'tribute_tax_rate' => 0.05, // 5%
-        
-        // Interest rate for the alliance bank, applied per turn
         'bank_interest_rate' => 0.005 // 0.5%
+    ],
+
+    // --- Leveling & XP System ---
+    'xp' => [
+        // Formula: XP Required = base_xp * ((Level - 1) ^ exponent)
+        'base_xp' => 1000,
+        'exponent' => 1.5,
+        
+        // XP Rewards
+        'rewards' => [
+            'battle_win' => 250,
+            'battle_loss' => 50,
+            'battle_stalemate' => 100,
+            'battle_defense_win' => 150, // Defending against an attack
+            'battle_defense_loss' => 25,
+            'spy_success' => 100,
+            'spy_fail_survived' => 25,   // Failed but not caught
+            'spy_caught' => 10,          // Caught
+            'defense_caught_spy' => 75   // Successfully catching an enemy spy
+        ]
     ]
 ];

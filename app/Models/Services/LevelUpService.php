@@ -6,11 +6,15 @@ use App\Core\Config;
 use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\StatsRepository;
+use App\Models\Services\LevelCalculatorService; // Include our math engine
 use PDO;
 use Throwable;
 
 /**
- * Handles all business logic for spending level up points.
+ * Handles all business logic for Leveling Up:
+ * - Spending points
+ * - Granting experience
+ * - Calculating level gains
  */
 class LevelUpService
 {
@@ -18,6 +22,7 @@ class LevelUpService
     private Session $session;
     private Config $config;
     private StatsRepository $statsRepo;
+    private LevelCalculatorService $levelCalculator;
 
     public function __construct()
     {
@@ -25,6 +30,9 @@ class LevelUpService
         $this->session = new Session();
         $this->config = new Config();
         $this->statsRepo = new StatsRepository($this->db);
+        
+        // Instantiate the math service
+        $this->levelCalculator = new LevelCalculatorService();
     }
 
     /**
@@ -42,6 +50,54 @@ class LevelUpService
             'stats' => $stats,
             'costs' => $costs
         ];
+    }
+
+    /**
+     * Grants experience points to a user and handles level-ups.
+     *
+     * @param int $userId
+     * @param int $amount
+     * @return bool True on success
+     */
+    public function grantExperience(int $userId, int $amount): bool
+    {
+        if ($amount <= 0) {
+            return true; // No change needed, technically a success
+        }
+
+        // 1. Get Current Stats
+        $stats = $this->statsRepo->findByUserId($userId);
+        if (!$stats) {
+            error_log("LevelUpService: User {$userId} not found.");
+            return false;
+        }
+
+        // 2. Calculate New Totals
+        $newExperience = $stats->experience + $amount;
+        $newLevel = $this->levelCalculator->calculateLevelFromXp($newExperience);
+        
+        // 3. Check for Level Up
+        $levelsGained = $newLevel - $stats->level;
+        $newLevelUpPoints = $stats->level_up_points;
+
+        if ($levelsGained > 0) {
+            // Define points per level (standard 5)
+            $pointsPerLevel = 5; 
+            $pointsGained = $levelsGained * $pointsPerLevel;
+            $newLevelUpPoints += $pointsGained;
+
+            // Set a flash message for the UI
+            $this->session->setFlash('success', "Level Up! You reached Level {$newLevel} and gained {$pointsGained} Skill Points.");
+        }
+
+        // 4. Persist Changes
+        try {
+            $this->statsRepo->updateLevelProgress($userId, $newExperience, $newLevel, $newLevelUpPoints);
+            return true;
+        } catch (Throwable $e) {
+            error_log('Grant Experience Error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -83,7 +139,6 @@ class LevelUpService
         $stats = $this->statsRepo->findByUserId($userId);
 
         if ($stats->level_up_points < $totalCost) {
-            // --- FIX ---
             $this->session->setFlash('error', 'You do not have enough level up points to make this change.');
             return false;
         }
@@ -110,7 +165,6 @@ class LevelUpService
             );
 
             $this->db->commit();
-            // --- FIX ---
             $this->session->setFlash('success', 'You have successfully allocated ' . $totalPointsToSpend . ' points.');
             return true;
 
