@@ -138,55 +138,55 @@ return [
                 'title' => 'Stealth Main Weapons (Silenced Projectors)',
                 'slots' => 1,
                 'items' => [
-                    'suppressed_pistol' => ['name' => 'Suppressed Pistol', 'attack' => 30, 'cost' => 70000, 'notes' => 'Standard issue spy sidearm.'],
-                    'needle_gun' => ['name' => 'Needle Gun', 'attack' => 50, 'cost' => 110000, 'notes' => 'Fires silent, poisoned darts.', 'requires' => 'suppressed_pistol', 'armory_level_req' => 1],
-                    'shock_rifle' => ['name' => 'Shock Rifle', 'attack' => 65, 'cost' => 160000, 'notes' => 'Can disable enemy electronics.', 'requires' => 'needle_gun', 'armory_level_req' => 2],
-                    'ghost_rifle' => ['name' => 'Ghost Rifle', 'attack' => 80, 'cost' => 210000, 'notes' => 'Fires rounds that phase through cover.', 'requires' => 'shock_rifle', 'armory_level_req' => 3],
-                    'spectre_rifle' => ['name' => 'Spectre Rifle', 'attack' => 110, 'cost' => 290000, 'notes' => 'The ultimate stealth weapon.', 'requires' => 'ghost_rifle', 'armory_level_req' => 4],
+                    'suppressed_pistol' => ['name' => 'Suppressed Pistol', 'attack' => 30, 'cost' => 60000, 'notes' => 'Standard issue spy sidearm.'],
+                    'needle_gun' => ['name' => 'Needle Gun', 'attack' => 60, 'cost' => 120000, 'notes' => 'Fires silent, poisoned darts.', 'requires' => 'suppressed_pistol', 'armory_level_req' => 1],
+                    'shock_rifle' => ['name' => 'Shock Rifle', 'attack' => 90, 'cost' => 180000, 'notes' => 'Can disable enemy electronics.', 'requires' => 'needle_gun', 'armory_level_req' => 21],
+                    'ghost_rifle' => ['name' => 'Ghost Rifle', 'attack' => 120, 'cost' => 240000, 'notes' => 'Fires rounds that phase through cover.', 'requires' => 'shock_rifle', 'armory_level_req' => 31],
+                    'spectre_rifle' => ['name' => 'Spectre Rifle', 'attack' => 160, 'cost' => 320000, 'notes' => 'The ultimate stealth weapon.', 'requires' => 'ghost_rifle', 'armory_level_req' => 41],
                 ]
             ],
             'cloaking_disruption' => [
                 'title' => 'Cloaking & Disruption Devices',
                 'slots' => 1,
                 'items' => [
-                    'stealth_field_generator' => ['name' => 'Stealth Field Generator', 'attack' => 10, 'cost' => 25000, 'notes' => 'Makes the user harder to detect.'],
-                    'chameleon_suit' => ['name' => 'Chameleon Suit', 'attack' => 15, 'cost' => 35000, 'notes' => 'Changes color to match the environment.', 'requires' => 'stealth_field_generator', 'armory_level_req' => 1],
-                    'holographic_projector' => ['name' => 'Holographic Projector', 'attack' => 20, 'cost' => 45000, 'notes' => 'Creates a duplicate of the user to confuse enemies.', 'requires' => 'chameleon_suit', 'armory_level_req' => 2],
-                    'phase_shifter' => ['name' => 'Phase Shifter', 'attack' => 25, 'cost' => 65000, 'notes' => 'Allows the user to temporarily phase through objects.', 'requires' => 'holographic_projector', 'armory_level_req' => 3],
-                    'shadow_cloak' => ['name' => 'Shadow Cloak', 'attack' => 30, 'cost' => 85000, 'notes' => 'Renders the user nearly invisible.', 'requires' => 'phase_shifter', 'armory_level_req' => 4],
+                    'stealth_field_generator' => ['name' => 'Stealth Field Generator', 'attack' => 10, 'cost' => 20000, 'notes' => 'Makes the user harder to detect.'],
+                    'chameleon_suit' => ['name' => 'Chameleon Suit', 'attack' => 20, 'cost' => 40000, 'notes' => 'Changes color to match the environment.', 'requires' => 'stealth_field_generator', 'armory_level_req' => 1],
+                    'holographic_projector' => ['name' => 'Holographic Projector', 'attack' => 30, 'cost' => 60000, 'notes' => 'Creates a duplicate of the user to confuse enemies.', 'requires' => 'chameleon_suit', 'armory_level_req' => 22],
+                    'phase_shifter' => ['name' => 'Phase Shifter', 'attack' => 40, 'cost' => 80000, 'notes' => 'Allows the user to temporarily phase through objects.', 'requires' => 'holographic_projector', 'armory_level_req' => 32],
+                    'shadow_cloak' => ['name' => 'Shadow Cloak', 'attack' => 50, 'cost' => 100000, 'notes' => 'Renders the user nearly invisible.', 'requires' => 'phase_shifter', 'armory_level_req' => 42],
                 ]
             ],
             'concealed_blades' => [
                 'title' => 'Melee Weapons (Concealed Blades)',
                 'slots' => 1,
                 'items' => [
-                    'hidden_blade' => ['name' => 'Hidden Blade', 'attack' => 15, 'cost' => 12000, 'notes' => 'A small, concealed blade.'],
-                    'poisoned_dagger' => ['name' => 'Poisoned Dagger', 'attack' => 25, 'cost' => 27000, 'notes' => 'Deals damage over time.', 'requires' => 'hidden_blade', 'armory_level_req' => 1],
-                    'vibroblade' => ['name' => 'Vibroblade', 'attack' => 35, 'cost' => 42000, 'notes' => 'Can cut through most armor.', 'requires' => 'poisoned_dagger', 'armory_level_req' => 2],
-                    'shadow_blade' => ['name' => 'Shadow Blade', 'attack' => 45, 'cost' => 62000, 'notes' => 'A blade made of pure darkness.', 'requires' => 'vibroblade', 'armory_level_req' => 3],
-                    'void_blade' => ['name' => 'Void Blade', 'attack' => 55, 'cost' => 82000, 'notes' => 'A blade that can cut through reality itself.', 'requires' => 'shadow_blade', 'armory_level_req' => 4],
+                    'hidden_blade' => ['name' => 'Hidden Blade', 'attack' => 15, 'cost' => 30000, 'notes' => 'A small, concealed blade.'],
+                    'poisoned_dagger' => ['name' => 'Poisoned Dagger', 'attack' => 30, 'cost' => 60000, 'notes' => 'Deals damage over time.', 'requires' => 'hidden_blade', 'armory_level_req' => 1],
+                    'vibroblade' => ['name' => 'Vibroblade', 'attack' => 45, 'cost' => 90000, 'notes' => 'Can cut through most armor.', 'requires' => 'poisoned_dagger', 'armory_level_req' => 23],
+                    'shadow_blade' => ['name' => 'Shadow Blade', 'attack' => 60, 'cost' => 120000, 'notes' => 'A blade made of pure darkness.', 'requires' => 'vibroblade', 'armory_level_req' => 33],
+                    'void_blade' => ['name' => 'Void Blade', 'attack' => 75, 'cost' => 150000, 'notes' => 'A blade that can cut through reality itself.', 'requires' => 'shadow_blade', 'armory_level_req' => 43],
                 ]
             ],
             'intel_suite' => [
                 'title' => 'Spy Headgear (Intel Suite)',
                 'slots' => 1,
                 'items' => [
-                    'recon_visor' => ['name' => 'Recon Visor', 'attack' => 5, 'cost' => 17000, 'notes' => 'Provides basic intel on enemy positions.'],
-                    'threat_detector' => ['name' => 'Threat Detector', 'attack' => 10, 'cost' => 32000, 'notes' => 'Highlights nearby threats.', 'requires' => 'recon_visor', 'armory_level_req' => 1],
-                    'neural_interface' => ['name' => 'Neural Interface', 'attack' => 15, 'cost' => 52000, 'notes' => 'Allows the user to hack enemy systems.', 'requires' => 'threat_detector', 'armory_level_req' => 2],
-                    'mind_scanner' => ['name' => 'Mind Scanner', 'attack' => 20, 'cost' => 72000, 'notes' => 'Can read the thoughts of nearby enemies.', 'requires' => 'neural_interface', 'armory_level_req' => 3],
-                    'oracle_interface' => ['name' => 'Oracle Interface', 'attack' => 25, 'cost' => 102000, 'notes' => 'Can predict enemy movements.', 'requires' => 'mind_scanner', 'armory_level_req' => 4],
+                    'recon_visor' => ['name' => 'Recon Visor', 'attack' => 5, 'cost' => 10000, 'notes' => 'Provides basic intel on enemy positions.'],
+                    'threat_detector' => ['name' => 'Threat Detector', 'attack' => 10, 'cost' => 20000, 'notes' => 'Highlights nearby threats.', 'requires' => 'recon_visor', 'armory_level_req' => 1],
+                    'neural_interface' => ['name' => 'Neural Interface', 'attack' => 15, 'cost' => 30000, 'notes' => 'Allows the user to hack enemy systems.', 'requires' => 'threat_detector', 'armory_level_req' => 24],
+                    'mind_scanner' => ['name' => 'Mind Scanner', 'attack' => 20, 'cost' => 40000, 'notes' => 'Can read the thoughts of nearby enemies.', 'requires' => 'neural_interface', 'armory_level_req' => 34],
+                    'oracle_interface' => ['name' => 'Oracle Interface', 'attack' => 25, 'cost' => 50000, 'notes' => 'Can predict enemy movements.', 'requires' => 'mind_scanner', 'armory_level_req' => 44],
                 ]
             ],
             'infiltration_gadgets' => [
                 'title' => 'Infiltration Gadgets',
                 'slots' => 1,
                 'items' => [
-                    'grappling_hook' => ['name' => 'Grappling Hook', 'attack' => 5, 'cost' => 22000, 'notes' => 'Allows the user to reach high places.'],
-                    'smoke_bomb' => ['name' => 'Smoke Bomb', 'attack' => 10, 'cost' => 42000, 'notes' => 'Creates a cloud of smoke to obscure vision.', 'requires' => 'grappling_hook', 'armory_level_req' => 1],
-                    'emp_grenade' => ['name' => 'EMP Grenade', 'attack' => 15, 'cost' => 62000, 'notes' => 'Disables enemy electronics.', 'requires' => 'smoke_bomb', 'armory_level_req' => 2],
-                    'decoy' => ['name' => 'Decoy', 'attack' => 20, 'cost' => 92000, 'notes' => 'Creates a holographic decoy to distract enemies.', 'requires' => 'emp_grenade', 'armory_level_req' => 3],
-                    'teleporter' => ['name' => 'Teleporter', 'attack' => 25, 'cost' => 142000, 'notes' => 'Allows the user to teleport short distances.', 'requires' => 'decoy', 'armory_level_req' => 4],
+                    'grappling_hook' => ['name' => 'Grappling Hook', 'attack' => 10, 'cost' => 20000, 'notes' => 'Allows the user to reach high places.'],
+                    'smoke_bomb' => ['name' => 'Smoke Bomb', 'attack' => 20, 'cost' => 40000, 'notes' => 'Creates a cloud of smoke to obscure vision.', 'requires' => 'grappling_hook', 'armory_level_req' => 1],
+                    'emp_grenade' => ['name' => 'EMP Grenade', 'attack' => 30, 'cost' => 60000, 'notes' => 'Disables enemy electronics.', 'requires' => 'smoke_bomb', 'armory_level_req' => 25],
+                    'decoy' => ['name' => 'Decoy', 'attack' => 40, 'cost' => 80000, 'notes' => 'Creates a holographic decoy to distract enemies.', 'requires' => 'emp_grenade', 'armory_level_req' => 5],
+                    'teleporter' => ['name' => 'Teleporter', 'attack' => 50, 'cost' => 100000, 'notes' => 'Allows the user to teleport short distances.', 'requires' => 'decoy', 'armory_level_req' => 45],
                 ]
             ]
         ]
@@ -201,9 +201,9 @@ return [
                 'items' => [
                     'ballistic_shield' => ['name' => 'Ballistic Shield', 'defense' => 50, 'cost' => 90000, 'notes' => 'Standard issue shield.'],
                     'tower_shield' => ['name' => 'Tower Shield', 'defense' => 70, 'cost' => 130000, 'notes' => 'Heavy, but provides excellent cover.', 'requires' => 'ballistic_shield', 'armory_level_req' => 1],
-                    'riot_shield' => ['name' => 'Riot Shield', 'defense' => 85, 'cost' => 180000, 'notes' => 'Wider, better for holding a line.', 'requires' => 'tower_shield', 'armory_level_req' => 2],
-                    'garrison_shield' => ['name' => 'Garrison Shield', 'defense' => 100, 'cost' => 230000, 'notes' => 'Can be deployed as temporary cover.', 'requires' => 'riot_shield', 'armory_level_req' => 3],
-                    'bulwark_shield' => ['name' => 'Bulwark Shield', 'defense' => 130, 'cost' => 310000, 'notes' => 'Nearly impenetrable frontal defense.', 'requires' => 'garrison_shield', 'armory_level_req' => 4],
+                    'riot_shield' => ['name' => 'Riot Shield', 'defense' => 85, 'cost' => 180000, 'notes' => 'Wider, better for holding a line.', 'requires' => 'tower_shield', 'armory_level_req' => 6],
+                    'garrison_shield' => ['name' => 'Garrison Shield', 'defense' => 100, 'cost' => 230000, 'notes' => 'Can be deployed as temporary cover.', 'requires' => 'riot_shield', 'armory_level_req' => 36],
+                    'bulwark_shield' => ['name' => 'Bulwark Shield', 'defense' => 130, 'cost' => 310000, 'notes' => 'Nearly impenetrable frontal defense.', 'requires' => 'garrison_shield', 'armory_level_req' => 46],
                 ]
             ],
             'secondary_defensive_systems' => [
@@ -212,9 +212,9 @@ return [
                 'items' => [
                     'point_defense_system' => ['name' => 'Point Defense System', 'defense' => 20, 'cost' => 35000, 'notes' => 'Intercepts incoming projectiles.'],
                     'aegis_aura' => ['name' => 'Aegis Aura', 'defense' => 25, 'cost' => 45000, 'notes' => 'Provides a small damage shield to nearby allies.', 'requires' => 'point_defense_system', 'armory_level_req' => 1],
-                    'guardian_protocol' => ['name' => 'Guardian Protocol', 'defense' => 30, 'cost' => 55000, 'notes' => 'Automatically diverts power to shields when hit.', 'requires' => 'aegis_aura', 'armory_level_req' => 2],
-                    'bastion_mode' => ['name' => 'Bastion Mode', 'defense' => 40, 'cost' => 75000, 'notes' => 'Greatly increases defense when stationary.', 'requires' => 'guardian_protocol', 'armory_level_req' => 3],
-                    'fortress_protocol' => ['name' => 'Fortress Protocol', 'defense' => 50, 'cost' => 95000, 'notes' => 'Links with other sentries to create a powerful shield wall.', 'requires' => 'bastion_mode', 'armory_level_req' => 4],
+                    'guardian_protocol' => ['name' => 'Guardian Protocol', 'defense' => 30, 'cost' => 55000, 'notes' => 'Automatically diverts power to shields when hit.', 'requires' => 'aegis_aura', 'armory_level_req' => 7],
+                    'bastion_mode' => ['name' => 'Bastion Mode', 'defense' => 40, 'cost' => 75000, 'notes' => 'Greatly increases defense when stationary.', 'requires' => 'guardian_protocol', 'armory_level_req' => 37],
+                    'fortress_protocol' => ['name' => 'Fortress Protocol', 'defense' => 50, 'cost' => 95000, 'notes' => 'Links with other sentries to create a powerful shield wall.', 'requires' => 'bastion_mode', 'armory_level_req' => 47],
                 ]
             ],
             'shield_bash' => [
@@ -223,9 +223,9 @@ return [
                 'items' => [
                     'concussive_blast' => ['name' => 'Concussive Blast', 'defense' => 15, 'cost' => 15000, 'notes' => 'Knocks back melee attackers.'],
                     'kinetic_ram' => ['name' => 'Kinetic Ram', 'defense' => 25, 'cost' => 30000, 'notes' => 'A powerful forward shield bash.', 'requires' => 'concussive_blast', 'armory_level_req' => 1],
-                    'repulsor_field' => ['name' => 'Repulsor Field', 'defense' => 35, 'cost' => 45000, 'notes' => 'Pushes away all nearby enemies.', 'requires' => 'kinetic_ram', 'armory_level_req' => 2],
-                    'overcharge' => ['name' => 'Overcharge', 'defense' => 45, 'cost' => 65000, 'notes' => 'Releases a powerful EMP blast on shield break.', 'requires' => 'repulsor_field', 'armory_level_req' => 3],
-                    'sentinels_wrath' => ['name' => 'Sentinel\'s Wrath', 'defense' => 55, 'cost' => 85000, 'notes' => 'A devastating shield slam that stuns enemies.', 'requires' => 'overcharge', 'armory_level_req' => 4],
+                    'repulsor_field' => ['name' => 'Repulsor Field', 'defense' => 35, 'cost' => 45000, 'notes' => 'Pushes away all nearby enemies.', 'requires' => 'kinetic_ram', 'armory_level_req' => 28],
+                    'overcharge' => ['name' => 'Overcharge', 'defense' => 45, 'cost' => 65000, 'notes' => 'Releases a powerful EMP blast on shield break.', 'requires' => 'repulsor_field', 'armory_level_req' => 38],
+                    'sentinels_wrath' => ['name' => 'Sentinel\'s Wrath', 'defense' => 55, 'cost' => 85000, 'notes' => 'A devastating shield slam that stuns enemies.', 'requires' => 'overcharge', 'armory_level_req' => 48],
                 ]
             ],
             'helmets' => [
@@ -234,9 +234,9 @@ return [
                 'items' => [
                     'sentry_helmet' => ['name' => 'Sentry Helmet', 'defense' => 10, 'cost' => 20000, 'notes' => 'Standard issue helmet.'],
                     'reinforced_visor' => ['name' => 'Reinforced Visor', 'defense' => 15, 'cost' => 35000, 'notes' => 'Provides extra protection against headshots.', 'requires' => 'sentry_helmet', 'armory_level_req' => 1],
-                    'commanders_helm' => ['name' => 'Commander\'s Helm', 'defense' => 20, 'cost' => 55000, 'notes' => 'Increases the effectiveness of nearby units.', 'requires' => 'reinforced_visor', 'armory_level_req' => 2],
-                    'juggernaut_helm' => ['name' => 'Juggernaut Helm', 'defense' => 25, 'cost' => 75000, 'notes' => 'Heavy, but provides unmatched protection.', 'requires' => 'commanders_helm', 'armory_level_req' => 3],
-                    'praetorian_helm' => ['name' => 'Praetorian Helm', 'defense' => 30, 'cost' => 105000, 'notes' => 'The ultimate in defensive headgear.', 'requires' => 'juggernaut_helm', 'armory_level_req' => 4],
+                    'commanders_helm' => ['name' => 'Commander\'s Helm', 'defense' => 20, 'cost' => 55000, 'notes' => 'Increases the effectiveness of nearby units.', 'requires' => 'reinforced_visor', 'armory_level_req' => 9],
+                    'juggernaut_helm' => ['name' => 'Juggernaut Helm', 'defense' => 25, 'cost' => 75000, 'notes' => 'Heavy, but provides unmatched protection.', 'requires' => 'commanders_helm', 'armory_level_req' => 39],
+                    'praetorian_helm' => ['name' => 'Praetorian Helm', 'defense' => 30, 'cost' => 105000, 'notes' => 'The ultimate in defensive headgear.', 'requires' => 'juggernaut_helm', 'armory_level_req' => 49],
                 ]
             ],
             'fortifications' => [
@@ -245,9 +245,9 @@ return [
                 'items' => [
                     'deployable_cover' => ['name' => 'Deployable Cover', 'defense' => 35, 'cost' => 25000, 'notes' => 'Creates a small piece of cover.'],
                     'barricade' => ['name' => 'Barricade', 'defense' => 50, 'cost' => 45000, 'notes' => 'A larger, more durable piece of cover.', 'requires' => 'deployable_cover', 'armory_level_req' => 1],
-                    'watchtower' => ['name' => 'Watchtower', 'defense' => 55, 'cost' => 65000, 'notes' => 'Provides a better vantage point and increased range.', 'requires' => 'barricade', 'armory_level_req' => 2],
-                    'bunker' => ['name' => 'Bunker', 'defense' => 75, 'cost' => 95000, 'notes' => 'A heavily fortified structure.', 'requires' => 'watchtower', 'armory_level_req' => 3],
-                    'fortress' => ['name' => 'Fortress', 'defense' => 105, 'cost' => 145000, 'notes' => 'A massive, nearly indestructible fortification.', 'requires' => 'bunker', 'armory_level_req' => 4],
+                    'watchtower' => ['name' => 'Watchtower', 'defense' => 55, 'cost' => 65000, 'notes' => 'Provides a better vantage point and increased range.', 'requires' => 'barricade', 'armory_level_req' => 20],
+                    'bunker' => ['name' => 'Bunker', 'defense' => 75, 'cost' => 95000, 'notes' => 'A heavily fortified structure.', 'requires' => 'watchtower', 'armory_level_req' => 30],
+                    'fortress' => ['name' => 'Fortress', 'defense' => 105, 'cost' => 145000, 'notes' => 'A massive, nearly indestructible fortification.', 'requires' => 'bunker', 'armory_level_req' => 40],
                 ]
             ]
         ]
