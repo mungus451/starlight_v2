@@ -17,10 +17,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'pulse_rifle' => ['name' => 'Pulse Rifle', 'attack' => 40, 'cost' => 80000, 'notes' => 'Basic, reliable.'],
-                    'railgun' => ['name' => 'Railgun', 'attack' => 80, 'cost' => 120000, 'notes' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 1],
-                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'attack' => 160, 'cost' => 170000, 'notes' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
-                    'arc_cannon' => ['name' => 'Arc Cannon', 'attack' => 240, 'cost' => 220000, 'notes' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 35],
-                    'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'attack' => 320, 'cost' => 300000, 'notes' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 50],
+                    'railgun' => ['name' => 'Railgun', 'attack' => 80, 'cost' => 160000, 'notes' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 1],
+                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'attack' => 120, 'cost' => 240000, 'notes' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
+                    'arc_cannon' => ['name' => 'Arc Cannon', 'attack' => 160, 'cost' => 320000, 'notes' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 35],
+                    'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'attack' => 200, 'cost' => 400000, 'notes' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 50],
                 ]
             ],
             'sidearm' => [

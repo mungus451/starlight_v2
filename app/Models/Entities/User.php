@@ -16,9 +16,10 @@ class User
      * @param string|null $profile_picture_url
      * @param string|null $phone_number
      * @param int|null $alliance_id
-     * @param int|null $alliance_role_id (REPLACED)
+     * @param int|null $alliance_role_id
      * @param string $passwordHash
      * @param string $createdAt
+     * @param bool $is_npc
      */
     public function __construct(
         public readonly int $id,
@@ -28,9 +29,10 @@ class User
         public readonly ?string $profile_picture_url,
         public readonly ?string $phone_number,
         public readonly ?int $alliance_id,
-        public readonly ?int $alliance_role_id, // This line was changed
+        public readonly ?int $alliance_role_id,
         public readonly string $passwordHash,
-        public readonly string $createdAt
+        public readonly string $createdAt,
+        public readonly bool $is_npc = false // Default false for backward compatibility
     ) {
     }
 }
