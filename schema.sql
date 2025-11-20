@@ -3,7 +3,7 @@
 --
 -- Host: localhost    Database: starlightDB
 -- ------------------------------------------------------
--- Server version	12.0.2-MariaDB
+-- Server version 12.0.2-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -488,6 +488,7 @@ CREATE TABLE `users` (
   `phone_number` varchar(25) DEFAULT NULL,
   `alliance_id` int(10) unsigned DEFAULT NULL,
   `alliance_role_id` int(10) unsigned DEFAULT NULL,
+  `is_npc` tinyint(1) NOT NULL DEFAULT 0,
   `password_hash` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -495,6 +496,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `uk_character_name` (`character_name`),
   KEY `fk_user_alliance` (`alliance_id`),
   KEY `fk_user_alliance_role` (`alliance_role_id`),
+  KEY `idx_is_npc` (`is_npc`),
   CONSTRAINT `fk_user_alliance` FOREIGN KEY (`alliance_id`) REFERENCES `alliances` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_user_alliance_role` FOREIGN KEY (`alliance_role_id`) REFERENCES `alliance_roles` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -602,7 +604,7 @@ CREATE TABLE `wars` (
 --
 -- Host: localhost    Database: starlightDB
 -- ------------------------------------------------------
--- Server version	12.0.2-MariaDB
+-- Server version 12.0.2-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;

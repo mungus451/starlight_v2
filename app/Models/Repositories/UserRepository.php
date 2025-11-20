@@ -67,15 +67,9 @@ class UserRepository
 
     /**
      * Updates the non-sensitive profile information for a user.
-     * ---
-     * FIX: Changed $bio, $pfpUrl, and $phone to be nullable (?string)
-     * to match the service logic and prevent TypeErrors.
-     * ---
      */
     public function updateProfile(int $userId, ?string $bio, ?string $pfpUrl, ?string $phone): bool
     {
-        // SQL already handles null values correctly, so no changes needed here.
-        // We just needed to update the method signature above.
         $bio = empty($bio) ? null : $bio;
         $pfpUrl = empty($pfpUrl) ? null : $pfpUrl;
         $phone = empty($phone) ? null : $phone;
@@ -113,15 +107,10 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    // --- REFACTORED/NEW METHODS FOR ALLIANCE SERVICE ---
+    // --- ALLIANCE METHODS ---
 
     /**
      * Assigns a user to an alliance with a specific role ID.
-     *
-     * @param int $userId
-     * @param int $allianceId
-     * @param int $roleId
-     * @return bool True on success
      */
     public function setAlliance(int $userId, int $allianceId, int $roleId): bool
     {
@@ -133,10 +122,6 @@ class UserRepository
     
     /**
      * Updates a user's role ID within their alliance.
-     *
-     * @param int $userId
-     * @param int $newRoleId
-     * @return bool
      */
     public function setAllianceRole(int $userId, int $newRoleId): bool
     {
@@ -148,9 +133,6 @@ class UserRepository
 
     /**
      * Removes a user from their alliance (sets fields to NULL).
-     *
-     * @param int $userId
-     * @return bool True on success
      */
     public function leaveAlliance(int $userId): bool
     {
@@ -162,10 +144,6 @@ class UserRepository
 
     /**
      * Finds all users who are members of a specific alliance.
-     * This now JOINS alliance_roles to get the role name.
-     *
-     * @param int $allianceId
-     * @return array (Note: Returns an array of associative arrays, not User Entities)
      */
     public function findAllByAllianceId(int $allianceId): array
     {
@@ -179,18 +157,30 @@ class UserRepository
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$allianceId]);
         
-        // We are returning a custom array, not hydrating a full User object,
-        // because we have the extra 'alliance_role_name' field.
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // --- END ALLIANCE METHODS ---
+    // --- NPC METHODS (NEW) ---
+
+    /**
+     * Finds all users flagged as NPCs.
+     *
+     * @return User[]
+     */
+    public function findNpcs(): array
+    {
+        $stmt = $this->db->query("SELECT * FROM users WHERE is_npc = 1");
+        $npcs = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $npcs[] = $this->hydrate($row);
+        }
+        return $npcs;
+    }
+
+    // --- END NPC METHODS ---
 
     /**
      * Helper method to convert a database row (array) into a User entity.
-     *
-     * @param array $data
-     * @return User
      */
     private function hydrate(array $data): User
     {
@@ -202,9 +192,10 @@ class UserRepository
             profile_picture_url: $data['profile_picture_url'] ?? null,
             phone_number: $data['phone_number'] ?? null,
             alliance_id: isset($data['alliance_id']) ? (int)$data['alliance_id'] : null,
-            alliance_role_id: isset($data['alliance_role_id']) ? (int)$data['alliance_role_id'] : null, // This line was changed
+            alliance_role_id: isset($data['alliance_role_id']) ? (int)$data['alliance_role_id'] : null,
             passwordHash: $data['password_hash'],
-            createdAt: $data['created_at']
+            createdAt: $data['created_at'],
+            is_npc: (bool)($data['is_npc'] ?? false) // --- NEW ---
         );
     }
 }

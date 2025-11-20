@@ -27,3 +27,14 @@ Starting turn processing... [2025-11-11 10:30:01]
 Turn processing complete. 
 Processed 5 users in 0.02 seconds. 
 Automatic Execution (Cron)
+
+Cron Jobs
+
+This directory contains scripts that are intended to be run automatically
+on a schedule (e.g., via `cron`).
+
+## 1. Setup Helper
+
+To get the exact crontab lines for your specific environment, run the helper script:
+
+`php cron/setup_check.php`
