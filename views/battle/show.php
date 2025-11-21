@@ -316,7 +316,6 @@
                             <td>
                                 <div class="player-cell">
                                     
-                                    <?php // --- THIS BLOCK IS CHANGED --- ?>
                                     <?php if ($target['profile_picture_url']): ?>
                                         <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal">
                                     <?php else: ?>
@@ -397,61 +396,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- Modal Elements ---
-    const modalOverlay = document.getElementById('attack-modal-overlay');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalTargetNameInput = document.getElementById('modal-target-name');
-    const modalTargetNameDisplay = document.getElementById('modal-target-name-display');
-    const allAttackButtons = document.querySelectorAll('.btn-attack-modal');
-
-    // --- Function to open the modal ---
-    function openModal(targetName) {
-        modalTargetNameInput.value = targetName;
-        modalTargetNameDisplay.textContent = targetName;
-        modalOverlay.style.display = 'flex';
-        setTimeout(() => {
-            modalOverlay.classList.add('active');
-        }, 10); // Start transition after display
-    }
-
-    // --- Function to close the modal ---
-    function closeModal() {
-        modalOverlay.classList.remove('active');
-        setTimeout(() => {
-            modalOverlay.style.display = 'none';
-        }, 300); // Wait for transition to finish
-    }
-
-    // --- Event Listeners ---
-    
-    // Add listener to all "Attack" buttons and player avatars
-    allAttackButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const playerRow = this.closest('.player-row');
-            const targetName = playerRow.getAttribute('data-target-name');
-            openModal(targetName);
-        });
-    });
-
-    // Close modal via the 'X' button
-    if (modalCloseBtn) {
-        modalCloseBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            closeModal();
-        });
-    }
-
-    // Close modal by clicking the background overlay
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', function(e) {
-            if (e.target === modalOverlay) {
-                closeModal();
-            }
-        });
-    }
-});
-</script>
+<script src="/js/battle.js"></script>
