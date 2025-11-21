@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'StarlightDominion' ?></title>
+    
+    <title><?= htmlspecialchars($meta['title']) ?></title>
+    <meta name="title" content="<?= htmlspecialchars($meta['title']) ?>">
+    <meta name="description" content="<?= htmlspecialchars($meta['description']) ?>">
+    <meta name="keywords" content="<?= htmlspecialchars($meta['keywords']) ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($meta['url']) ?>">
+
+    <meta property="og:type" content="<?= htmlspecialchars($meta['type']) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($meta['url']) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($meta['title']) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($meta['description']) ?>">
+    <meta property="og:image" content="<?= htmlspecialchars($meta['image']) ?>">
+    <meta property="og:site_name" content="<?= htmlspecialchars($meta['site_name']) ?>">
+
+    <meta property="twitter:card" content="<?= htmlspecialchars($meta['twitter']['card']) ?>">
+    <meta property="twitter:url" content="<?= htmlspecialchars($meta['url']) ?>">
+    <meta property="twitter:title" content="<?= htmlspecialchars($meta['title']) ?>">
+    <meta property="twitter:description" content="<?= htmlspecialchars($meta['description']) ?>">
+    <meta property="twitter:image" content="<?= htmlspecialchars($meta['image']) ?>">
+    <meta property="twitter:site" content="<?= htmlspecialchars($meta['twitter']['site']) ?>">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    
     <style>
         /* --- CSS FIX: Global box sizing and responsive padding --- */
         *, *::before, *::after {
@@ -48,7 +69,7 @@
             color: #f9c74f;
         }
         
-        /* --- NEW: XP Bar Styles --- */
+        /* --- XP Bar Styles --- */
         .xp-bar-container {
             position: absolute;
             bottom: 0;
@@ -248,7 +269,7 @@
             <a href="/logout">Logout</a>
 
             <?php 
-            // --- NEW: XP Bar Render ---
+            // XP Bar Render
             if (isset($global_xp_data) && isset($global_user_level)): 
             ?>
                 <div class="xp-bar-container">

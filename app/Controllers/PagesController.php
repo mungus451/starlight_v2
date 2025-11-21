@@ -20,7 +20,15 @@ class PagesController extends BaseController
         }
 
         // User is a guest, show the public homepage
-        $this->render('pages/home.php', ['title' => 'Starlight Dominion']);
+        // We pass a custom description and image, but REMOVE 'keywords'
+        // so it inherits the master list from config/seo.php
+        $this->render('pages/home.php', [
+            'title' => 'Home',
+            'seo' => [
+                'description' => 'Join Starlight Dominion, the ultimate browser-based space strategy MMO. Build fleets, trade resources, and conquer the galaxy.',
+                'image' => '/background.avif'
+            ]
+        ]);
     }
 
     /**
@@ -36,6 +44,7 @@ class PagesController extends BaseController
         }
 
         // User is a guest, show the public contact page
+        // No explicit 'seo' array passed, so BaseController uses all defaults from config/seo.php
         $this->render('pages/contact.php', [
             'title' => 'Contact Us',
             'layoutMode' => 'full' // Use the full-width layout
