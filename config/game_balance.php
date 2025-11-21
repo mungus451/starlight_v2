@@ -132,7 +132,7 @@ return [
         // Bonus from stats
         'credit_bonus_per_wealth_point' => 0.005, // 0.5% bonus to econ/worker income
         
-        // 10 new citizens per turn, per level of Population
+        // New citizens per turn, per level of Population
         'citizen_growth_per_pop_level' => 1
     ],
 

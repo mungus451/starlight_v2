@@ -10,11 +10,11 @@
 /* @var \App\Models\Entities\AllianceBankLog[] $bankLogs */
 /* @var \App\Models\Entities\AllianceLoan[] $loans */
 
-// --- NEW ---
+// --- Checks ---
 $isMember = ($viewer->alliance_id === $alliance->id);
 $canManageBank = ($viewerRole && $viewerRole->can_manage_bank);
 
-// --- NEW: Filter loans for display ---
+// --- Filter loans for display ---
 $pendingLoans = [];
 $activeLoans = [];
 $historicalLoans = []; // Paid or Denied
@@ -135,7 +135,7 @@ if ($isMember && isset($loans)) {
     .btn-reject { background: var(--accent-red); }
     .btn-manage { background: var(--accent-blue); }
 
-    /* --- List Styles (from Battle Reports) --- */
+    /* --- List Styles --- */
     .data-list {
         list-style: none;
         padding: 0;
@@ -244,12 +244,8 @@ if ($isMember && isset($loans)) {
         flex-shrink: 0;
         margin-left: 1rem;
     }
-    .log-amount.positive {
-        color: var(--accent-green);
-    }
-    .log-amount.negative {
-        color: var(--accent-red);
-    }
+    .log-amount.positive { color: var(--accent-green); }
+    .log-amount.negative { color: var(--accent-red); }
     
     /* --- Loan Styles --- */
     .loan-card-grid {
@@ -304,11 +300,9 @@ if ($isMember && isset($loans)) {
     .loan-repay-form .btn-submit {
         width: 100%;
     }
-    .loan-status-paid { color: var(--accent-green); }
-    .loan-status-denied { color: var(--accent-red); }
     .loan-status-active { color: var(--accent-blue); }
     
-    /* --- NEW: Checkbox style --- */
+    /* --- Checkbox style --- */
     .form-group-check {
         display: flex;
         flex-direction: row;
@@ -664,84 +658,4 @@ if ($isMember && isset($loans)) {
     </div>
 </div>
 
-<?php // --- SCRIPT BLOCK UPDATED --- ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- Helper Functions (from bank/show.php) ---
-    function formatNumber(numStr) {
-        if (!numStr) return '';
-        // Handle potential floating point errors if a non-integer string is passed
-        const num = parseInt(numStr, 10);
-        if (isNaN(num)) return '';
-        return num.toLocaleString('en-US');
-    }
-
-    function unformatNumber(str) {
-        return str.replace(/[^0-9]/g, '');
-    }
-
-    function setupInputMask(displayInput, hiddenInput) {
-        if (displayInput && hiddenInput) {
-            displayInput.addEventListener('input', function(e) {
-                const rawValue = unformatNumber(e.target.value);
-                const numValue = rawValue ? parseInt(rawValue, 10) : 0;
-                hiddenInput.value = numValue;
-                e.target.value = (numValue === 0) ? '' : formatNumber(rawValue);
-            });
-        }
-    }
-    
-    // --- Setup for Donation Form ---
-    const donateDisplay = document.getElementById('donate-amount-display');
-    const donateHidden = document.getElementById('donate-amount-hidden');
-    setupInputMask(donateDisplay, donateHidden);
-    
-    const maxDonateBtn = document.getElementById('btn-max-donate');
-    if (maxDonateBtn) {
-        maxDonateBtn.addEventListener('click', function() {
-            const creditsEl = document.getElementById('global-user-credits');
-            const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
-            
-            if (donateDisplay && donateHidden) {
-                donateDisplay.value = (USER_CREDITS > 0) ? formatNumber(USER_CREDITS.toString()) : '';
-                donateHidden.value = USER_CREDITS;
-            }
-        });
-    }
-
-    // --- Setup for Loan Request Form ---
-    const loanRequestDisplay = document.getElementById('loan-request-display');
-    const loanRequestHidden = document.getElementById('loan-request-hidden');
-    setupInputMask(loanRequestDisplay, loanRequestHidden);
-    
-    // --- Setup for all Repay Forms ---
-    document.querySelectorAll('.repay-amount-display').forEach(displayInput => {
-        const hiddenInput = displayInput.closest('.amount-input-group').querySelector('.repay-amount-hidden');
-        if(displayInput && hiddenInput) {
-            setupInputMask(displayInput, hiddenInput);
-        }
-    });
-
-    document.querySelectorAll('.btn-max-repay').forEach(button => {
-        button.addEventListener('click', function() {
-            const loanId = this.getAttribute('data-loan-id');
-            const maxRepay = parseInt(this.getAttribute('data-max-repay'), 10);
-            
-            const creditsEl = document.getElementById('global-user-credits');
-            const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
-            
-            // User can only repay what they have, or what they owe, whichever is less
-            const actualMax = Math.min(USER_CREDITS, maxRepay);
-
-            const displayInput = document.getElementById('repay-amount-display-' + loanId);
-            const hiddenInput = document.getElementById('repay-amount-hidden-' + loanId);
-            
-            if (displayInput && hiddenInput) {
-                displayInput.value = (actualMax > 0) ? formatNumber(actualMax.toString()) : '';
-                hiddenInput.value = actualMax;
-            }
-        });
-    });
-});
-</script>
+<script src="/js/alliance_profile.js"></script>
