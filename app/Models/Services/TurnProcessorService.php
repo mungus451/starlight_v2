@@ -3,13 +3,11 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Services\PowerCalculatorService;
-// --- NEW REPOSITORIES TO INJECT ---
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use PDO;
@@ -18,38 +16,62 @@ use Throwable;
 /**
  * Handles the game's "turn" logic for all users.
  * Intended to be run from a cron job.
+ * * Refactored for Strict Dependency Injection to fix constructor error.
  */
 class TurnProcessorService
 {
     private PDO $db;
     private Config $config;
+    
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private PowerCalculatorService $powerCalculatorService;
     
-    // --- NEW PROPERTIES ---
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
+    
     private array $treasuryConfig;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->config = new Config();
+    /**
+     * DI Constructor.
+     * All dependencies are injected by the Container.
+     * * @param PDO $db
+     * @param Config $config
+     * @param UserRepository $userRepo
+     * @param ResourceRepository $resourceRepo
+     * @param StructureRepository $structureRepo
+     * @param StatsRepository $statsRepo
+     * @param PowerCalculatorService $powerCalculatorService
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceBankLogRepository $bankLogRepo
+     */
+    public function __construct(
+        PDO $db,
+        Config $config,
+        UserRepository $userRepo,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo,
+        StatsRepository $statsRepo,
+        PowerCalculatorService $powerCalculatorService,
+        AllianceRepository $allianceRepo,
+        AllianceBankLogRepository $bankLogRepo
+    ) {
+        $this->db = $db;
+        $this->config = $config;
         
-        $this->userRepo = new UserRepository($this->db);
-        $this->resourceRepo = new ResourceRepository($this->db);
-        $this->structureRepo = new StructureRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db);
+        $this->userRepo = $userRepo;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
+        $this->statsRepo = $statsRepo;
         
-        // Instantiate services
-        $this->powerCalculatorService = new PowerCalculatorService();
+        $this->powerCalculatorService = $powerCalculatorService;
         
-        // --- NEW REPOSITORIES ---
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->bankLogRepo = new AllianceBankLogRepository($this->db);
+        $this->allianceRepo = $allianceRepo;
+        $this->bankLogRepo = $bankLogRepo;
+        
+        // Load config immediately
         $this->treasuryConfig = $this->config->get('game_balance.alliance_treasury', []);
     }
 
@@ -71,7 +93,7 @@ class TurnProcessorService
             }
         }
         
-        // --- NEW: Process all alliances ---
+        // Process all alliances
         $processedAllianceCount = $this->processAllAlliances();
         
         return [
@@ -97,10 +119,11 @@ class TurnProcessorService
 
             if (!$resources || !$structures || !$stats) {
                 // User might be new or data is missing, skip them.
-                throw new \Exception('User resource, structure, or stats data not found.');
+                $this->db->rollBack(); // Ensure rollback if we skipped
+                return false;
             }
 
-            // 2. Calculate all income (REFACTORED)
+            // 2. Calculate all income
             $incomeBreakdown = $this->powerCalculatorService->calculateIncomePerTurn(
                 $userId,
                 $resources,
@@ -125,13 +148,13 @@ class TurnProcessorService
 
         } catch (Throwable $e) {
             // 6. Rollback on failure for this user
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log("Failed to process turn for user {$userId}: " . $e->getMessage());
             return false;
         }
     }
-    
-    // --- NEW METHOD FOR ALLIANCE INTEREST ---
     
     /**
      * Processes turn-based interest for all alliances.
@@ -149,6 +172,11 @@ class TurnProcessorService
         }
 
         foreach ($alliances as $alliance) {
+            // Ensure we have a valid bank balance to calculate on
+            if ($alliance->bank_credits <= 0) {
+                continue;
+            }
+
             $interestGained = (int)floor($alliance->bank_credits * $interestRate);
 
             if ($interestGained > 0) {
@@ -168,7 +196,9 @@ class TurnProcessorService
                     $processedCount++;
                     
                 } catch (Throwable $e) {
-                    $this->db->rollBack();
+                    if ($this->db->inTransaction()) {
+                        $this->db->rollBack();
+                    }
                     error_log("Failed to process turn for alliance {$alliance->id}: " . $e->getMessage());
                 }
             }
