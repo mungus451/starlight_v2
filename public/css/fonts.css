@@ -1,0 +1,12 @@
+/* Local Font Definitions
+    Serves Orbitron natively to avoid external CDN dependencies.
+*/
+
+@font-face {
+    font-family: 'Orbitron';
+    /* Ensure this path matches where you placed the file in public/fonts/ */
+    src: url('/fonts/Orbitron-VariableFont_wght.ttf') format('truetype');
+    font-weight: 400 900; /* Supports the full variable range */
+    font-style: normal;
+    font-display: swap;   /* Improves perceived performance */
+}
