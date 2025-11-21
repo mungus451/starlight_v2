@@ -16,7 +16,7 @@
             });
         });
 
-        // --- NEW: Expand All Button ---
+        // --- Expand All Button ---
         if (expandAllBtn) {
             expandAllBtn.addEventListener('click', function() {
                 allCards.forEach(card => {
@@ -25,7 +25,7 @@
             });
         }
         
-        // --- NEW: Collapse All Button ---
+        // --- Collapse All Button ---
         if (collapseAllBtn) {
             collapseAllBtn.addEventListener('click', function() {
                 allCards.forEach(card => {
