@@ -10,6 +10,9 @@ if (php_sapi_name() !== 'cli') {
 // 1. Bootstrap the application
 require __DIR__ . '/../vendor/autoload.php';
 
+use App\Core\ContainerFactory;
+use App\Models\Services\NpcService;
+
 try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
     $dotenv->load();
@@ -20,7 +23,7 @@ try {
 // Set timezone
 date_default_timezone_set('UTC');
 
-// 2. Start Session (Required for Services)
+// 2. Start Session (Required for Services that might touch Session flash messages, though unused in CLI)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -34,8 +37,14 @@ echo "Detailed logs will be written to: {$logPath}\n\n";
 $startTime = microtime(true);
 
 try {
-    // 3. Instantiate and Run Service
-    $service = new \App\Models\Services\NpcService();
+    // 3. Boot the Container
+    $container = ContainerFactory::createContainer();
+
+    // 4. Resolve the Service
+    // The container injects StructureService, TrainingService, AttackService, etc.
+    $service = $container->get(NpcService::class);
+    
+    // 5. Execute Logic
     $service->runNpcCycle();
     
     $endTime = microtime(true);

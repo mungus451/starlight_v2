@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\SettingsService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Settings page.
+ * * Refactored for Strict Dependency Injection.
  */
 class SettingsController extends BaseController
 {
     private SettingsService $settingsService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->settingsService = new SettingsService();
+    /**
+     * DI Constructor.
+     *
+     * @param SettingsService $settingsService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        SettingsService $settingsService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->settingsService = $settingsService;
     }
 
     /**
@@ -25,8 +44,6 @@ class SettingsController extends BaseController
         $userId = $this->session->get('user_id');
         $data = $this->settingsService->getSettingsData($userId);
 
-        // --- THIS IS THE CHANGE ---
-        // Tell the layout to render in full-width mode
         $data['layoutMode'] = 'full';
 
         $this->render('settings/show.php', $data + ['title' => 'Settings']);
@@ -45,18 +62,11 @@ class SettingsController extends BaseController
         }
 
         $userId = $this->session->get('user_id');
-        
-        // Get data from form
         $bio = (string)($_POST['bio'] ?? '');
         $phone = (string)($_POST['phone_number'] ?? '');
-        
-        // Get file upload data, defaulting to "no file" error
         $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
-        
-        // Check if the "remove" checkbox was sent
         $removePhoto = isset($_POST['remove_picture']) && $_POST['remove_picture'] === '1';
 
-        // Pass all data, including the file array, to the service
         $this->settingsService->updateProfile($userId, $bio, $file, $phone, $removePhoto);
         
         $this->redirect('/settings');

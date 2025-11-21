@@ -3,28 +3,32 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\ResourceRepository;
 use PDO;
 
 /**
  * Handles all business logic for training units.
+ * * Refactored for Strict Dependency Injection.
  */
 class TrainingService
 {
     private Session $session;
-    private ResourceRepository $resourceRepo;
     private Config $config;
+    private ResourceRepository $resourceRepo;
 
-    public function __construct()
+    /**
+     * DI Constructor.
+     *
+     * @param Session $session
+     * @param Config $config
+     * @param ResourceRepository $resourceRepo
+     */
+    public function __construct(Session $session, Config $config, ResourceRepository $resourceRepo)
     {
-        $db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
-        
-        // This service only needs the ResourceRepository
-        $this->resourceRepo = new ResourceRepository($db);
+        $this->session = $session;
+        $this->config = $config;
+        $this->resourceRepo = $resourceRepo;
     }
 
     /**
@@ -56,13 +60,13 @@ class TrainingService
      */
     public function trainUnits(int $userId, string $unitType, int $amount): bool
     {
-        // --- 1. Validation 1: Amount ---
+        // 1. Validation 1: Amount
         if ($amount <= 0) {
             $this->session->setFlash('error', 'Amount to train must be a positive number.');
             return false;
         }
 
-        // --- 2. Validation 2: Unit Type & Costs ---
+        // 2. Validation 2: Unit Type & Costs
         $unitCost = $this->config->get('game_balance.training.' . $unitType);
         
         if (is_null($unitCost)) {
@@ -70,18 +74,18 @@ class TrainingService
             return false;
         }
 
-        // --- 3. Validation 3: Get User's Resources ---
+        // 3. Validation 3: Get User's Resources
         $resources = $this->resourceRepo->findByUserId($userId);
         if (!$resources) {
             $this->session->setFlash('error', 'Could not find your resource data.');
             return false;
         }
 
-        // --- 4. Calculate Costs ---
+        // 4. Calculate Costs
         $totalCreditCost = $unitCost['credits'] * $amount;
         $totalCitizenCost = $unitCost['citizens'] * $amount;
 
-        // --- 5. Validation 4: Check Costs vs. Resources ---
+        // 5. Validation 4: Check Costs vs. Resources
         if ($resources->credits < $totalCreditCost) {
             $this->session->setFlash('error', 'You do not have enough credits to train these units.');
             return false;
@@ -91,7 +95,7 @@ class TrainingService
             return false;
         }
 
-        // --- 6. Calculate New Totals ---
+        // 6. Calculate New Totals
         $newCredits = $resources->credits - $totalCreditCost;
         $newUntrained = $resources->untrained_citizens - $totalCitizenCost;
         
@@ -109,10 +113,12 @@ class TrainingService
             'guards'   => $newGuards += $amount,
             'spies'    => $newSpies += $amount,
             'sentries' => $newSentries += $amount,
-            default    => null, // We already validated this, but good practice
+            default    => null,
         };
 
-        // --- 7. Execute Update ---
+        // 7. Execute Update
+        // Note: This is a direct update. In a stricter system, we might wrap this in a transaction via a Service/Repo method that takes PDO.
+        // However, ResourceRepository::updateTrainedUnits is atomic (single query), so it's safe here.
         $success = $this->resourceRepo->updateTrainedUnits(
             $userId,
             $newCredits,

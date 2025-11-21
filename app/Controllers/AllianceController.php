@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\AllianceService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all "read" GET requests for the Alliance feature.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceController extends BaseController
 {
     private AllianceService $allianceService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->allianceService = new AllianceService();
+    /**
+     * DI Constructor.
+     *
+     * @param AllianceService $allianceService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        AllianceService $allianceService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->allianceService = $allianceService;
     }
 
     /**
@@ -25,7 +44,6 @@ class AllianceController extends BaseController
         $page = (int)($vars['page'] ?? 1);
         $data = $this->allianceService->getAlliancePageData($page);
 
-        // --- Use full-width layout ---
         $data['layoutMode'] = 'full';
 
         $this->render('alliance/list.php', $data + ['title' => 'Alliances']);
@@ -48,7 +66,6 @@ class AllianceController extends BaseController
             return;
         }
 
-        // --- Use full-width layout ---
         $data['layoutMode'] = 'full';
 
         $this->render('alliance/profile.php', $data + ['title' => $data['alliance']->name]);
@@ -69,7 +86,6 @@ class AllianceController extends BaseController
             return;
         }
 
-        // --- Use full-width layout ---
         $data['layoutMode'] = 'full';
 
         $this->render('alliance/create.php', $data + ['title' => 'Create Alliance']);

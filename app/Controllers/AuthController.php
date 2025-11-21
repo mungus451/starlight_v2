@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\AuthService;
-use App\Core\Validator; // --- NEW IMPORT ---
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
+/**
+ * Handles Authentication (Login, Register, Logout).
+ * * Refactored for Strict Dependency Injection.
+ */
 class AuthController extends BaseController
 {
     private AuthService $authService;
-    private Validator $validator; // --- NEW PROPERTY ---
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->authService = new AuthService();
-        $this->validator = new Validator(); // --- NEW INSTANTIATION ---
+    /**
+     * Strict DI Constructor.
+     *
+     * @param AuthService $authService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        AuthService $authService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->authService = $authService;
     }
 
     /**
@@ -35,7 +54,6 @@ class AuthController extends BaseController
      */
     public function handleLogin(): void
     {
-        // 1. CSRF Check
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token. Please try again.');
@@ -43,22 +61,6 @@ class AuthController extends BaseController
             return;
         }
         
-        // 2. Input Validation
-        $rules = [
-            'email' => 'required|email',
-            'password' => 'required'
-        ];
-        
-        $errors = $this->validator->validate($_POST, $rules);
-        
-        if (!empty($errors)) {
-            // Flashing the first error is usually sufficient for UX, or flash all
-            $this->session->setFlash('error', array_values($errors)[0]);
-            $this->redirect('/login');
-            return;
-        }
-        
-        // 3. Business Logic
         $email = $_POST['email'] ?? '';
         $password = $_POST['password'] ?? '';
 
@@ -87,7 +89,6 @@ class AuthController extends BaseController
      */
     public function handleRegister(): void
     {
-        // 1. CSRF Check
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token. Please try again.');
@@ -95,29 +96,12 @@ class AuthController extends BaseController
             return;
         }
         
-        // 2. Input Validation
-        $rules = [
-            'email' => 'required|email',
-            'character_name' => 'required|min:3|max:50|alphanumeric', // Added alphanumeric for safety
-            'password' => 'required|min:3',
-            'confirm_password' => 'required|match:password'
-        ];
-        
-        $errors = $this->validator->validate($_POST, $rules);
-        
-        if (!empty($errors)) {
-            $this->session->setFlash('error', array_values($errors)[0]);
-            $this->redirect('/register');
-            return;
-        }
-        
-        // 3. Business Logic
         $email = $_POST['email'] ?? '';
         $characterName = $_POST['character_name'] ?? '';
         $password = $_POST['password'] ?? '';
-        // confirm_password is no longer passed to the service
+        $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        if ($this->authService->register($email, $characterName, $password)) {
+        if ($this->authService->register($email, $characterName, $password, $confirmPassword)) {
             $this->redirect('/dashboard');
         } else {
             $this->redirect('/register');

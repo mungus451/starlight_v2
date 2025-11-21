@@ -3,7 +3,6 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Services\LevelCalculatorService;
@@ -15,24 +14,38 @@ use Throwable;
  * - Spending points
  * - Granting experience
  * - Calculating level gains
+ * * Refactored for Strict Dependency Injection.
  */
 class LevelUpService
 {
     private PDO $db;
     private Session $session;
     private Config $config;
+    
     private StatsRepository $statsRepo;
     private LevelCalculatorService $levelCalculator;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
-        $this->statsRepo = new StatsRepository($this->db);
-        
-        // Instantiate the math service
-        $this->levelCalculator = new LevelCalculatorService();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param Config $config
+     * @param StatsRepository $statsRepo
+     * @param LevelCalculatorService $levelCalculator
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        Config $config,
+        StatsRepository $statsRepo,
+        LevelCalculatorService $levelCalculator
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->config = $config;
+        $this->statsRepo = $statsRepo;
+        $this->levelCalculator = $levelCalculator;
     }
 
     /**

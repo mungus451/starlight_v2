@@ -3,39 +3,57 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceForumTopicRepository;
 use App\Models\Repositories\AllianceForumPostRepository;
-use App\Models\Services\AlliancePolicyService;
 use PDO;
 use Throwable;
 
 /**
  * Handles all business logic for the Alliance Forum.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceForumService
 {
     private PDO $db;
     private Session $session;
     private Config $config;
+    
     private UserRepository $userRepo;
     private AllianceRoleRepository $roleRepo;
     private AllianceForumTopicRepository $topicRepo;
     private AllianceForumPostRepository $postRepo;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param Config $config
+     * @param UserRepository $userRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param AllianceForumTopicRepository $topicRepo
+     * @param AllianceForumPostRepository $postRepo
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        Config $config,
+        UserRepository $userRepo,
+        AllianceRoleRepository $roleRepo,
+        AllianceForumTopicRepository $topicRepo,
+        AllianceForumPostRepository $postRepo
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->config = $config;
         
-        $this->userRepo = new UserRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
-        $this->topicRepo = new AllianceForumTopicRepository($this->db);
-        $this->postRepo = new AllianceForumPostRepository($this->db);
+        $this->userRepo = $userRepo;
+        $this->roleRepo = $roleRepo;
+        $this->topicRepo = $topicRepo;
+        $this->postRepo = $postRepo;
     }
 
     /**
@@ -195,7 +213,7 @@ class AllianceForumService
     {
         $topic = $this->topicRepo->findById($topicId);
         if (!$this->checkModerationPermission($adminUserId, $topic)) {
-            return false; // Permission check sets flash
+            return false;
         }
 
         $newStatus = !$topic->is_pinned;
@@ -215,7 +233,7 @@ class AllianceForumService
     {
         $topic = $this->topicRepo->findById($topicId);
         if (!$this->checkModerationPermission($adminUserId, $topic)) {
-            return false; // Permission check sets flash
+            return false;
         }
 
         $newStatus = !$topic->is_locked;
@@ -233,10 +251,6 @@ class AllianceForumService
      */
     public function deletePost(int $adminUserId, int $postId): bool
     {
-        // Note: This is a simple implementation.
-        // A full implementation would need to check if it's the *first* post,
-        // and if so, delete the entire topic. For now, we just delete the post.
-        
         $post = $this->postRepo->findById($postId);
         if (!$post) {
             $this->session->setFlash('error', 'Post not found.');
@@ -254,12 +268,7 @@ class AllianceForumService
     }
 
     /**
-     * Helper function to check if a user has 'can_manage_forum' permission
-     * for a specific topic's alliance.
-     *
-     * @param int $userId
-     * @param \App\Models\Entities\AllianceForumTopic|null $topic
-     * @return bool
+     * Helper function to check permissions.
      */
     private function checkModerationPermission(int $userId, ?\App\Models\Entities\AllianceForumTopic $topic): bool
     {

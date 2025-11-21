@@ -2,42 +2,48 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
-use App\Models\Services\PowerCalculatorService; // Import the new service
-use PDO;
+use App\Models\Services\PowerCalculatorService;
 
 /**
  * Orchestrates fetching all data needed for the dashboard.
+ * * Refactored for Strict Dependency Injection.
  */
 class DashboardService
 {
-    private PDO $db;
     private UserRepository $userRepository;
     private ResourceRepository $resourceRepository;
     private StatsRepository $statsRepository;
     private StructureRepository $structureRepository;
-    private PowerCalculatorService $powerCalculator; // Add new service property
+    private PowerCalculatorService $powerCalculator;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        
-        // Initialize all repositories, passing them the same PDO connection
-        $this->userRepository = new UserRepository($this->db);
-        $this->resourceRepository = new ResourceRepository($this->db);
-        $this->statsRepository = new StatsRepository($this->db);
-        $this->structureRepository = new StructureRepository($this->db);
-
-        // Initialize the calculator service
-        $this->powerCalculator = new PowerCalculatorService();
+    /**
+     * DI Constructor.
+     *
+     * @param UserRepository $userRepository
+     * @param ResourceRepository $resourceRepository
+     * @param StatsRepository $statsRepository
+     * @param StructureRepository $structureRepository
+     * @param PowerCalculatorService $powerCalculator
+     */
+    public function __construct(
+        UserRepository $userRepository,
+        ResourceRepository $resourceRepository,
+        StatsRepository $statsRepository,
+        StructureRepository $structureRepository,
+        PowerCalculatorService $powerCalculator
+    ) {
+        $this->userRepository = $userRepository;
+        $this->resourceRepository = $resourceRepository;
+        $this->statsRepository = $statsRepository;
+        $this->structureRepository = $structureRepository;
+        $this->powerCalculator = $powerCalculator;
     }
 
     /**
-     * --- MODIFIED METHOD ---
      * Fetches all data required for the user's dashboard,
      * including detailed calculation breakdowns.
      *
@@ -52,17 +58,13 @@ class DashboardService
         $stats = $this->statsRepository->findByUserId($userId);
         $structures = $this->structureRepository->findByUserId($userId);
 
-        // 2. Get all calculation breakdowns from the new service
-        
-        // --- THIS IS THE FIX ---
-        // Passed all four required arguments instead of just two
+        // 2. Get all calculation breakdowns from the injected service
         $incomeBreakdown = $this->powerCalculator->calculateIncomePerTurn(
             $userId,
             $resources,
             $stats,
             $structures
         );
-        // --- END FIX ---
         
         $offenseBreakdown = $this->powerCalculator->calculateOffensePower(
             $userId,

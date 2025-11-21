@@ -3,7 +3,6 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
@@ -17,12 +16,14 @@ use Throwable;
 
 /**
  * Handles all "read" logic for Alliances.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceService
 {
     private PDO $db;
     private Session $session;
     private Config $config;
+    
     private AllianceRepository $allianceRepo;
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
@@ -31,19 +32,43 @@ class AllianceService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param Config $config
+     * @param AllianceRepository $allianceRepo
+     * @param UserRepository $userRepo
+     * @param ResourceRepository $resourceRepo
+     * @param ApplicationRepository $appRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param AllianceBankLogRepository $bankLogRepo
+     * @param AllianceLoanRepository $loanRepo
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        Config $config,
+        AllianceRepository $allianceRepo,
+        UserRepository $userRepo,
+        ResourceRepository $resourceRepo,
+        ApplicationRepository $appRepo,
+        AllianceRoleRepository $roleRepo,
+        AllianceBankLogRepository $bankLogRepo,
+        AllianceLoanRepository $loanRepo
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->config = $config;
         
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->userRepo = new UserRepository($this->db);
-        $this->resourceRepo = new ResourceRepository($this->db);
-        $this->appRepo = new ApplicationRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
-        $this->bankLogRepo = new AllianceBankLogRepository($this->db);
-        $this->loanRepo = new AllianceLoanRepository($this->db);
+        $this->allianceRepo = $allianceRepo;
+        $this->userRepo = $userRepo;
+        $this->resourceRepo = $resourceRepo;
+        $this->appRepo = $appRepo;
+        $this->roleRepo = $roleRepo;
+        $this->bankLogRepo = $bankLogRepo;
+        $this->loanRepo = $loanRepo;
     }
 
     /**
@@ -125,7 +150,7 @@ class AllianceService
             'alliance' => $alliance,
             'members' => $members,
             'viewer' => $viewer,
-            'viewerRole' => $viewerRole, // The viewer's role object (or null)
+            'viewerRole' => $viewerRole,
             'applications' => $applications,
             'userApplication' => $userApplication,
             'roles' => $roles,
@@ -204,7 +229,9 @@ class AllianceService
             $this->db->commit();
 
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Alliance Creation Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred while creating the alliance.');
             return null;
@@ -213,9 +240,8 @@ class AllianceService
         // 3. Success
         $this->session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
         
-        // --- NEW: Update the creator's session ---
+        // Update the creator's session
         $this->session->set('alliance_id', $newAllianceId);
-        // --- END NEW ---
         
         return $newAllianceId;
     }

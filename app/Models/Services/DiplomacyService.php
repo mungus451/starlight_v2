@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
@@ -14,27 +13,47 @@ use Throwable;
 
 /**
  * Handles all business logic for Alliance Diplomacy (Treaties & Rivalries).
+ * * Refactored for Strict Dependency Injection.
  */
 class DiplomacyService
 {
     private PDO $db;
     private Session $session;
+    
     private UserRepository $userRepo;
     private AllianceRepository $allianceRepo;
     private AllianceRoleRepository $roleRepo;
     private TreatyRepository $treatyRepo;
     private RivalryRepository $rivalryRepo;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param UserRepository $userRepo
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param TreatyRepository $treatyRepo
+     * @param RivalryRepository $rivalryRepo
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        UserRepository $userRepo,
+        AllianceRepository $allianceRepo,
+        AllianceRoleRepository $roleRepo,
+        TreatyRepository $treatyRepo,
+        RivalryRepository $rivalryRepo
+    ) {
+        $this->db = $db;
+        $this->session = $session;
         
-        $this->userRepo = new UserRepository($this->db);
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
-        $this->treatyRepo = new TreatyRepository($this->db);
-        $this->rivalryRepo = new RivalryRepository($this->db);
+        $this->userRepo = $userRepo;
+        $this->allianceRepo = $allianceRepo;
+        $this->roleRepo = $roleRepo;
+        $this->treatyRepo = $treatyRepo;
+        $this->rivalryRepo = $rivalryRepo;
     }
 
     /**
@@ -47,7 +66,7 @@ class DiplomacyService
     {
         $treaties = $this->treatyRepo->findByAllianceId($allianceId);
         $rivalries = $this->rivalryRepo->findByAllianceId($allianceId);
-        $allAlliances = $this->allianceRepo->getAllAlliances(); // For dropdowns
+        $allAlliances = $this->allianceRepo->getAllAlliances();
 
         // Filter out own alliance from target list
         $otherAlliances = array_filter($allAlliances, function($alliance) use ($allianceId) {
@@ -63,12 +82,6 @@ class DiplomacyService
 
     /**
      * Proposes a new treaty with another alliance.
-     *
-     * @param int $proposerUserId
-     * @param int $targetAllianceId
-     * @param string $treatyType
-     * @param string $terms
-     * @return bool
      */
     public function proposeTreaty(int $proposerUserId, int $targetAllianceId, string $treatyType, string $terms): bool
     {
@@ -80,13 +93,11 @@ class DiplomacyService
         
         $proposerAllianceId = $proposerUser->alliance_id;
 
-        // 1. Permission Check
         if (!$this->checkPermission($proposerUserId, $proposerAllianceId, 'can_manage_diplomacy')) {
             $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
             return false;
         }
 
-        // 2. Validation
         if ($proposerAllianceId === $targetAllianceId) {
             $this->session->setFlash('error', 'You cannot propose a treaty with your own alliance.');
             return false;
@@ -96,9 +107,6 @@ class DiplomacyService
             return false;
         }
         
-        // TODO: Check for existing pending/active treaties with this alliance
-
-        // 3. Create Proposal
         $this->treatyRepo->createTreaty($proposerAllianceId, $targetAllianceId, $treatyType, $terms);
         $this->session->setFlash('success', 'Treaty proposed successfully.');
         return true;
@@ -106,10 +114,6 @@ class DiplomacyService
 
     /**
      * Accepts a treaty proposal.
-     *
-     * @param int $adminUserId
-     * @param int $treatyId
-     * @return bool
      */
     public function acceptTreaty(int $adminUserId, int $treatyId): bool
     {
@@ -127,7 +131,6 @@ class DiplomacyService
             return false;
         }
         
-        // Permission Check
         if (!$this->checkPermission($adminUserId, $adminUser->alliance_id, 'can_manage_diplomacy')) {
             $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
             return false;
@@ -145,11 +148,6 @@ class DiplomacyService
 
     /**
      * Declines or breaks a treaty.
-     *
-     * @param int $adminUserId
-     * @param int $treatyId
-     * @param string $action ('decline' or 'break')
-     * @return bool
      */
     public function endTreaty(int $adminUserId, int $treatyId, string $action): bool
     {
@@ -167,7 +165,6 @@ class DiplomacyService
             return false;
         }
         
-        // Permission Check
         if (!$this->checkPermission($adminUserId, $adminUser->alliance_id, 'can_manage_diplomacy')) {
             $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
             return false;
@@ -189,10 +186,6 @@ class DiplomacyService
 
     /**
      * Declares a rivalry (or increases heat).
-     *
-     * @param int $userId
-     * @param int $targetAllianceId
-     * @return bool
      */
     public function declareRivalry(int $userId, int $targetAllianceId): bool
     {
@@ -207,16 +200,13 @@ class DiplomacyService
             return false;
         }
 
-        // Note: No permission check, as this is a hostile action any member can take.
-        // We can add a permission for this later if needed.
-        
         $this->rivalryRepo->createOrUpdateRivalry($user->alliance_id, $targetAllianceId);
         $this->session->setFlash('success', 'Rivalry has been declared/updated.');
         return true;
     }
 
     /**
-     * Helper function to check if a user has a specific permission.
+     * Helper function to check permissions.
      */
     private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
     {

@@ -2,14 +2,18 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\WarService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
-use App\Core\Database;
 
 /**
  * Handles all HTTP requests for the Alliance War page.
+ * * Refactored for Strict Dependency Injection.
  */
 class WarController extends BaseController
 {
@@ -18,15 +22,33 @@ class WarController extends BaseController
     private AllianceRepository $allianceRepo;
     private AllianceRoleRepository $roleRepo;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->warService = new WarService();
-        
-        $db = Database::getInstance();
-        $this->userRepo = new UserRepository($db);
-        $this->allianceRepo = new AllianceRepository($db);
-        $this->roleRepo = new AllianceRoleRepository($db);
+    /**
+     * DI Constructor.
+     *
+     * @param WarService $warService
+     * @param UserRepository $userRepo
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        WarService $warService,
+        UserRepository $userRepo,
+        AllianceRepository $allianceRepo,
+        AllianceRoleRepository $roleRepo,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->warService = $warService;
+        $this->userRepo = $userRepo;
+        $this->allianceRepo = $allianceRepo;
+        $this->roleRepo = $roleRepo;
     }
 
     /**
@@ -61,10 +83,7 @@ class WarController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
         
-        // This service will be expanded to fetch war data
-        // $data = $this->warService->getWarData($viewerData['allianceId']);
-        
-        // For now, just get data for the "Declare War" form
+        // Fetch alliances for the "Declare War" dropdown
         $allAlliances = $this->allianceRepo->getAllAlliances();
         $otherAlliances = array_filter($allAlliances, function($alliance) use ($viewerData) {
             return $alliance->id !== $viewerData['allianceId'];
@@ -77,13 +96,13 @@ class WarController extends BaseController
             'canDeclareWar' => $viewerData['canDeclareWar'],
             'allianceId' => $viewerData['allianceId'],
             'otherAlliances' => $otherAlliances,
-            'activeWars' => [], // Placeholder
+            'activeWars' => [], // Placeholder until WarService implements getWarData
             'historicalWars' => [] // Placeholder
         ]);
     }
 
     /**
-     * Handles proposing a new treaty.
+     * Handles declaring a war.
      */
     public function handleDeclareWar(): void
     {

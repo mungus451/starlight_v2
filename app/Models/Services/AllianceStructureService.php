@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
@@ -16,33 +15,57 @@ use Throwable;
 
 /**
  * Handles all business logic for Alliance Structures.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceStructureService
 {
     private PDO $db;
     private Session $session;
+    
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceStructureRepository $allianceStructRepo;
     private AllianceStructureDefinitionRepository $structDefRepo;
     private UserRepository $userRepo;
     private AllianceRoleRepository $roleRepo;
+    
     private AlliancePolicyService $policyService;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceBankLogRepository $bankLogRepo
+     * @param AllianceStructureRepository $allianceStructRepo
+     * @param AllianceStructureDefinitionRepository $structDefRepo
+     * @param UserRepository $userRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param AlliancePolicyService $policyService
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        AllianceRepository $allianceRepo,
+        AllianceBankLogRepository $bankLogRepo,
+        AllianceStructureRepository $allianceStructRepo,
+        AllianceStructureDefinitionRepository $structDefRepo,
+        UserRepository $userRepo,
+        AllianceRoleRepository $roleRepo,
+        AlliancePolicyService $policyService
+    ) {
+        $this->db = $db;
+        $this->session = $session;
         
-        // Load all necessary repositories
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->bankLogRepo = new AllianceBankLogRepository($this->db);
-        $this->allianceStructRepo = new AllianceStructureRepository($this->db);
-        $this->structDefRepo = new AllianceStructureDefinitionRepository($this->db);
-        $this->userRepo = new UserRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
+        $this->allianceRepo = $allianceRepo;
+        $this->bankLogRepo = $bankLogRepo;
+        $this->allianceStructRepo = $allianceStructRepo;
+        $this->structDefRepo = $structDefRepo;
+        $this->userRepo = $userRepo;
+        $this->roleRepo = $roleRepo;
         
-        $this->policyService = new AlliancePolicyService();
+        $this->policyService = $policyService;
     }
 
     /**
@@ -154,12 +177,6 @@ class AllianceStructureService
 
     /**
      * Calculates the cost of a structure at a given level.
-     * Formula: base_cost * (multiplier ^ (level - 1))
-     *
-     * @param int $baseCost
-     * @param float $multiplier
-     * @param int $level The level to calculate the cost for
-     * @return int The calculated cost
      */
     private function calculateCost(int $baseCost, float $multiplier, int $level): int
     {

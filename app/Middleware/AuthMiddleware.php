@@ -7,17 +7,23 @@ use App\Models\Services\AuthService;
 
 /**
  * Checks if a user is authenticated before allowing access to a route.
+ * * Refactored for Strict Dependency Injection.
  */
 class AuthMiddleware
 {
     private AuthService $authService;
     private Session $session;
 
-    public function __construct()
+    /**
+     * DI Constructor.
+     *
+     * @param AuthService $authService Injected by the container
+     * @param Session $session Injected by the container
+     */
+    public function __construct(AuthService $authService, Session $session)
     {
-        // The middleware needs the AuthService to check if a user is logged in
-        $this->authService = new AuthService();
-        $this->session = new Session();
+        $this->authService = $authService;
+        $this->session = $session;
     }
 
     /**

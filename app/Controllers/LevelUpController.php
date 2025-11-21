@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Level Up page.
+ * * Refactored for Strict Dependency Injection.
  */
 class LevelUpController extends BaseController
 {
     private LevelUpService $levelUpService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->levelUpService = new LevelUpService();
+    /**
+     * DI Constructor.
+     *
+     * @param LevelUpService $levelUpService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        LevelUpService $levelUpService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->levelUpService = $levelUpService;
     }
 
     /**
@@ -33,17 +52,13 @@ class LevelUpController extends BaseController
      */
     public function handleSpend(): void
     {
-        // 1. Validate CSRF token
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
-            // --- FIX ---
             $this->session->setFlash('error', 'Invalid security token.');
-            // --- FIX ---
             $this->redirect('/level-up');
             return;
         }
 
-        // 2. Get data from form (cast to int)
         $userId = $this->session->get('user_id');
         $strength = (int)($_POST['strength'] ?? 0);
         $constitution = (int)($_POST['constitution'] ?? 0);
@@ -51,7 +66,6 @@ class LevelUpController extends BaseController
         $dexterity = (int)($_POST['dexterity'] ?? 0);
         $charisma = (int)($_POST['charisma'] ?? 0);
 
-        // 3. Call the service
         $this->levelUpService->spendPoints(
             $userId,
             $strength,
@@ -61,8 +75,6 @@ class LevelUpController extends BaseController
             $charisma
         );
         
-        // 4. Redirect back
-        // --- FIX ---
         $this->redirect('/level-up');
     }
 }

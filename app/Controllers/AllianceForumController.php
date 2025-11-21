@@ -2,13 +2,17 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\AllianceForumService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
-use App\Core\Database;
 
 /**
  * Handles all HTTP requests for the Alliance Forum.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceForumController extends BaseController
 {
@@ -16,14 +20,30 @@ class AllianceForumController extends BaseController
     private UserRepository $userRepo;
     private AllianceRoleRepository $roleRepo;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->forumService = new AllianceForumService();
-        
-        $db = Database::getInstance();
-        $this->userRepo = new UserRepository($db);
-        $this->roleRepo = new AllianceRoleRepository($db);
+    /**
+     * DI Constructor.
+     *
+     * @param AllianceForumService $forumService
+     * @param UserRepository $userRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        AllianceForumService $forumService,
+        UserRepository $userRepo,
+        AllianceRoleRepository $roleRepo,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->forumService = $forumService;
+        $this->userRepo = $userRepo;
+        $this->roleRepo = $roleRepo;
     }
 
     /**

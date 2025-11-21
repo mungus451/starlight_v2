@@ -2,31 +2,40 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
-use PDO;
 
 /**
  * Handles all business logic for fetching public player profiles.
+ * * Refactored for Strict Dependency Injection.
  */
 class ProfileService
 {
-    private PDO $db;
     private UserRepository $userRepo;
     private StatsRepository $statsRepo;
     private AllianceRepository $allianceRepo;
     private AllianceRoleRepository $roleRepo;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->userRepo = new UserRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db);
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
+    /**
+     * DI Constructor.
+     *
+     * @param UserRepository $userRepo
+     * @param StatsRepository $statsRepo
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceRoleRepository $roleRepo
+     */
+    public function __construct(
+        UserRepository $userRepo,
+        StatsRepository $statsRepo,
+        AllianceRepository $allianceRepo,
+        AllianceRoleRepository $roleRepo
+    ) {
+        $this->userRepo = $userRepo;
+        $this->statsRepo = $statsRepo;
+        $this->allianceRepo = $allianceRepo;
+        $this->roleRepo = $roleRepo;
     }
 
     /**

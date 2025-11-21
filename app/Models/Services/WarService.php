@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
@@ -11,17 +10,17 @@ use App\Models\Repositories\WarRepository;
 use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Repositories\WarHistoryRepository;
 use App\Models\Entities\User;
-use App\Models\Entities\War;
 use PDO;
-use Throwable;
 
 /**
  * Handles all business logic for Alliance Wars.
+ * * Refactored for Strict Dependency Injection.
  */
 class WarService
 {
     private PDO $db;
     private Session $session;
+    
     private UserRepository $userRepo;
     private AllianceRepository $allianceRepo;
     private AllianceRoleRepository $roleRepo;
@@ -29,17 +28,36 @@ class WarService
     private WarBattleLogRepository $warLogRepo;
     private WarHistoryRepository $warHistoryRepo;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        
-        $this->userRepo = new UserRepository($this->db);
-        $this->allianceRepo = new AllianceRepository($this->db);
-        $this->roleRepo = new AllianceRoleRepository($this->db);
-        $this->warRepo = new WarRepository($this->db);
-        $this->warLogRepo = new WarBattleLogRepository($this->db);
-        $this->warHistoryRepo = new WarHistoryRepository($this->db);
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param UserRepository $userRepo
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param WarRepository $warRepo
+     * @param WarBattleLogRepository $warLogRepo
+     * @param WarHistoryRepository $warHistoryRepo
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        UserRepository $userRepo,
+        AllianceRepository $allianceRepo,
+        AllianceRoleRepository $roleRepo,
+        WarRepository $warRepo,
+        WarBattleLogRepository $warLogRepo,
+        WarHistoryRepository $warHistoryRepo
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->userRepo = $userRepo;
+        $this->allianceRepo = $allianceRepo;
+        $this->roleRepo = $roleRepo;
+        $this->warRepo = $warRepo;
+        $this->warLogRepo = $warLogRepo;
+        $this->warHistoryRepo = $warHistoryRepo;
     }
 
     /**
@@ -139,7 +157,6 @@ class WarService
         $scoreGained = 0;
         $isDeclarer = false;
 
-        // Only attacker victories count towards war goals (as per V1 plan)
         if ($attackResult === 'victory') {
             $scoringAllianceId = $attacker->alliance_id;
             
@@ -153,7 +170,6 @@ class WarService
         }
 
         // 4. Create the battle log
-        // We log the attacker's contribution, regardless of who scored
         $this->warLogRepo->createLog(
             $war->id,
             $battleReportId,
@@ -167,13 +183,8 @@ class WarService
         // 5. Update the war score if a goal was progressed
         if ($scoreGained > 0 && $scoringAllianceId !== null) {
             $this->warRepo->updateWarScore($war->id, $isDeclarer, $scoreGained);
-            
-            // TODO: Check if $scoreGained meets $war->goal_threshold to end the war.
-            // This logic will be added to the endWar() method for the cron job.
         }
     }
-    
-    // TODO: public function endWar(int $warId) - for cron/admin
 
     /**
      * Helper function to check if a user has a specific permission.

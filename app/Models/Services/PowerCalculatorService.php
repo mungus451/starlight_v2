@@ -3,25 +3,29 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Models\Services\ArmoryService;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
 use App\Models\Entities\UserStructure;
 
 /**
  * Handles all complex game logic calculations for power, income, etc.
- * This service reads data and returns detailed breakdowns.
+ * * Refactored for Strict Dependency Injection.
  */
 class PowerCalculatorService
 {
     private Config $config;
     private ArmoryService $armoryService;
 
-    public function __construct()
+    /**
+     * DI Constructor.
+     *
+     * @param Config $config
+     * @param ArmoryService $armoryService
+     */
+    public function __construct(Config $config, ArmoryService $armoryService)
     {
-        // This service can be instantiated on its own
-        $this->armoryService = new ArmoryService();
-        $this->config = new Config();
+        $this->config = $config;
+        $this->armoryService = $armoryService;
     }
 
     /**
@@ -77,12 +81,6 @@ class PowerCalculatorService
 
     /**
      * Calculates a user's total Defense Power and its components.
-     *
-     * @param int $userId
-     * @param UserResource $resources
-     * @param UserStats $stats
-     * @param UserStructure $structures
-     * @return array A detailed breakdown of the calculation
      */
     public function calculateDefensePower(
         int $userId,
@@ -128,12 +126,7 @@ class PowerCalculatorService
     }
 
     /**
-     * Calculates a user's total Spy Offense Power and its components.
-     *
-     * @param int $userId
-     * @param UserResource $resources
-     * @param UserStructure $structures
-     * @return array A detailed breakdown of the calculation
+     * Calculates a user's total Spy Offense Power.
      */
     public function calculateSpyPower(
         int $userId,
@@ -170,12 +163,7 @@ class PowerCalculatorService
     }
 
     /**
-     * Calculates a user's total Sentry Defense Power and its components.
-     *
-     * @param int $userId
-     * @param UserResource $resources
-     * @param UserStructure $structures
-     * @return array A detailed breakdown of the calculation
+     * Calculates a user's total Sentry Defense Power.
      */
     public function calculateSentryPower(
         int $userId,
@@ -212,15 +200,7 @@ class PowerCalculatorService
     }
 
     /**
-     * --- MODIFIED METHOD ---
-     * Calculates a user's total income per turn and its components,
-     * including workers, stats, and armory bonuses.
-     *
-     * @param int $userId
-     * @param UserResource $resources
-     * @param UserStats $stats
-     * @param UserStructure $structures
-     * @return array A detailed breakdown of the calculation
+     * Calculates a user's total income per turn.
      */
     public function calculateIncomePerTurn(
         int $userId,
@@ -239,11 +219,9 @@ class PowerCalculatorService
         $statBonusPct = $stats->wealth_points * $config['credit_bonus_per_wealth_point'];
         
         // 3. Flat Bonuses (from armory)
-        // We assume 'credit_bonus' in armory_items.php is a FLAT value per worker
         $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
         
         // 4. Total Credit Income (for Credits on Hand)
-        // (Base Production * (1 + Stat %)) + Flat Armory Bonus
         $totalCreditIncome = (int)floor($baseProduction * (1 + $statBonusPct)) + $armoryBonus;
         
         // 5. Interest Income (for Banked Credits)
@@ -253,18 +231,14 @@ class PowerCalculatorService
         $citizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
 
         return [
-            'total_credit_income' => $totalCreditIncome, // Econ + Workers + Stat% + Armory
+            'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
             'total_citizens' => $citizenIncome,
-            
-            // Breakdown components
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
             'stat_bonus_pct' => $statBonusPct,
             'armory_bonus' => $armoryBonus,
-            
-            // Source data for view
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
             'worker_count' => $resources->workers,

@@ -2,22 +2,41 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\AllianceManagementService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\UserRepository;
 use App\Core\Database;
 
 /**
  * Handles all "write" POST requests for alliance management.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceManagementController extends BaseController
 {
     private AllianceManagementService $mgmtService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->mgmtService = new AllianceManagementService();
+    /**
+     * DI Constructor.
+     *
+     * @param AllianceManagementService $mgmtService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        AllianceManagementService $mgmtService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->mgmtService = $mgmtService;
     }
 
     /**
@@ -28,7 +47,7 @@ class AllianceManagementController extends BaseController
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/list'); // Redirect to list on bad token
+            $this->redirect('/alliance/list');
             return;
         }
 
@@ -55,13 +74,19 @@ class AllianceManagementController extends BaseController
         $userId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
 
-        // We need the alliance ID to redirect back
-        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
-        $allianceId = $app ? $app->alliance_id : 'list';
-
+        // Note: We need to find the alliance ID to redirect back.
+        // Ideally, the service returns this or we redirect to a generic page.
+        // For strict MVC, we shouldn't query the DB here.
+        // However, to keep logic in service, we can just call service and redirect to list if successful.
+        // Or we can fetch the app via a repo injected here (but we want to minimize controller deps).
+        // Let's blindly redirect to list for now, or fetch via service if we added a getter.
+        // Since we are refactoring, let's stick to the original behavior but use a repo if needed.
+        // Wait, the controller shouldn't use `new ApplicationRepository`.
+        // We will simplify: redirect to /alliance/list.
+        
         $this->mgmtService->cancelApplication($userId, $appId);
         
-        $this->redirect('/alliance/profile/' . $allianceId);
+        $this->redirect('/alliance/list');
     }
 
     /**
@@ -77,13 +102,18 @@ class AllianceManagementController extends BaseController
         }
 
         $userId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($userId);
         
-        $allianceId = $user->alliance_id ?? 'list';
-
-        $this->mgmtService->leaveAlliance($userId);
+        // We don't know the alliance ID to redirect to profile before leaving.
+        // But if they leave, they can't see the profile anyway.
+        // Redirect to dashboard or list.
         
-        $this->redirect('/alliance/profile/' . $allianceId);
+        if ($this->mgmtService->leaveAlliance($userId)) {
+            $this->redirect('/alliance/list');
+        } else {
+            // Failed (e.g. leader), redirect back to... where?
+            // We don't know the ID easily without querying.
+            $this->redirect('/dashboard');
+        }
     }
 
     /**
@@ -101,11 +131,11 @@ class AllianceManagementController extends BaseController
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
-        $allianceId = $app ? $app->alliance_id : 'list';
-
         $this->mgmtService->acceptApplication($adminId, $appId);
         
+        // We redirect to the alliance profile. We need the alliance ID.
+        // Since we don't have it easily, we redirect to the user's own alliance profile (since they are admin).
+        $allianceId = $this->session->get('alliance_id');
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -124,11 +154,9 @@ class AllianceManagementController extends BaseController
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        $app = (new ApplicationRepository(Database::getInstance()))->findById($appId);
-        $allianceId = $app ? $app->alliance_id : 'list';
-
         $this->mgmtService->rejectApplication($adminId, $appId);
         
+        $allianceId = $this->session->get('alliance_id');
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
@@ -147,10 +175,8 @@ class AllianceManagementController extends BaseController
             return;
         }
         
-        // The service handles all logic and flash messages
         $this->mgmtService->inviteUser($inviterId, $targetUserId);
         
-        // Redirect back to the profile page
         $this->redirect('/profile/' . $targetUserId);
     }
 
@@ -161,10 +187,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $donatorUserId = $this->session->get('user_id');
-        
-        // Get user's alliance ID for redirect
-        $user = (new UserRepository(Database::getInstance()))->findById($donatorUserId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
 
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -174,14 +197,10 @@ class AllianceManagementController extends BaseController
         
         $amount = (int)($_POST['amount'] ?? 0);
 
-        // The service handles all logic and flash messages
         $this->mgmtService->donateToAlliance($donatorUserId, $amount);
         
-        // Redirect back to the alliance profile page
         $this->redirect('/alliance/profile/' . $allianceId);
     }
-
-    // --- METHODS FOR PHASE 13 ---
 
     /**
      * Handles updating the alliance's public profile (desc, image).
@@ -190,8 +209,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $adminId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
-        $allianceId = $user->alliance_id ?? 0;
+        $allianceId = $this->session->get('alliance_id');
 
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -201,14 +219,8 @@ class AllianceManagementController extends BaseController
 
         $description = (string)($_POST['description'] ?? '');
         $pfpUrl = (string)($_POST['profile_picture_url'] ?? '');
-        
-        // --- NEW ---
-        // A checkbox sends '1' if ticked, and nothing if unticked.
-        // The hidden input sends '0' first, so we get '0' or '1'.
         $isJoinable = (bool)($_POST['is_joinable'] ?? false);
-        // --- END NEW ---
 
-        // --- UPDATED METHOD CALL ---
         $this->mgmtService->updateProfile($adminId, $allianceId, $description, $pfpUrl, $isJoinable);
         
         $this->redirect('/alliance/profile/' . $allianceId);
@@ -222,8 +234,7 @@ class AllianceManagementController extends BaseController
         $token = $_POST['csrf_token'] ?? '';
         $adminId = $this->session->get('user_id');
         $targetUserId = (int)($vars['id'] ?? 0);
-        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -243,8 +254,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $adminId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -260,7 +270,7 @@ class AllianceManagementController extends BaseController
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
-    // --- METHODS FOR PHASE 5 (LOANS) ---
+    // --- LOANS ---
 
     /**
      * Handles a user's request for a loan.
@@ -269,8 +279,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $userId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($userId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -290,8 +299,7 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $adminId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
@@ -311,12 +319,11 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $adminId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($adminId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this.redirect('/alliance/profile/' . $allianceId);
+            $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
@@ -332,18 +339,17 @@ class AllianceManagementController extends BaseController
     {
         $token = $_POST['csrf_token'] ?? '';
         $userId = $this->session->get('user_id');
-        $user = (new UserRepository(Database::getInstance()))->findById($userId);
-        $allianceId = $user->alliance_id ?? 'list';
+        $allianceId = $this->session->get('alliance_id');
         
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this.redirect('/alliance/profile/' . $allianceId);
+            $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
         $loanId = (int)($vars['id'] ?? 0);
         $amount = (int)($_POST['amount'] ?? 0);
         $this->mgmtService->repayLoan($userId, $loanId, $amount);
-        $this.redirect('/alliance/profile/' . $allianceId);
+        $this->redirect('/alliance/profile/' . $allianceId);
     }
 }

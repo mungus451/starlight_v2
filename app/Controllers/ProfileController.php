@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\ProfileService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the public Player Profile page.
+ * * Refactored for Strict Dependency Injection.
  */
 class ProfileController extends BaseController
 {
     private ProfileService $profileService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->profileService = new ProfileService();
+    /**
+     * DI Constructor.
+     *
+     * @param ProfileService $profileService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        ProfileService $profileService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->profileService = $profileService;
     }
 
     /**
@@ -41,7 +60,7 @@ class ProfileController extends BaseController
             return;
         }
 
-        $data['layoutMode'] = 'full'; // Use the full-width layout
+        $data['layoutMode'] = 'full';
         $data['title'] = $data['profile']['character_name'] . "'s Profile";
 
         $this->render('profile/show.php', $data);

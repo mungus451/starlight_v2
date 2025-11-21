@@ -2,14 +2,36 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
+
 /**
  * Handles all public-facing static pages like Home and Contact.
+ * * Refactored for Strict Dependency Injection.
  */
 class PagesController extends BaseController
 {
     /**
+     * DI Constructor.
+     *
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+    }
+
+    /**
      * Displays the public homepage.
-     * If the user is already logged in, they are redirected to their dashboard.
      */
     public function showHome(): void
     {
@@ -19,21 +41,11 @@ class PagesController extends BaseController
             return;
         }
 
-        // User is a guest, show the public homepage
-        // We pass a custom description and image, but REMOVE 'keywords'
-        // so it inherits the master list from config/seo.php
-        $this->render('pages/home.php', [
-            'title' => 'Home',
-            'seo' => [
-                'description' => 'Join Starlight Dominion, the ultimate browser-based space strategy MMO. Build fleets, trade resources, and conquer the galaxy.',
-                'image' => '/background.avif'
-            ]
-        ]);
+        $this->render('pages/home.php', ['title' => 'Starlight Dominion']);
     }
 
     /**
      * Displays the public contact page.
-     * If the user is already logged in, they are redirected to their dashboard.
      */
     public function showContact(): void
     {
@@ -43,11 +55,9 @@ class PagesController extends BaseController
             return;
         }
 
-        // User is a guest, show the public contact page
-        // No explicit 'seo' array passed, so BaseController uses all defaults from config/seo.php
         $this->render('pages/contact.php', [
             'title' => 'Contact Us',
-            'layoutMode' => 'full' // Use the full-width layout
+            'layoutMode' => 'full'
         ]);
     }
 }

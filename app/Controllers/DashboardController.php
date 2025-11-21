@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\DashboardService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles displaying the user's main dashboard.
+ * * Refactored for Strict Dependency Injection.
  */
 class DashboardController extends BaseController
 {
     private DashboardService $dashboardService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->dashboardService = new DashboardService();
+    /**
+     * DI Constructor.
+     *
+     * @param DashboardService $dashboardService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        DashboardService $dashboardService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->dashboardService = $dashboardService;
     }
 
     /**
@@ -24,11 +43,9 @@ class DashboardController extends BaseController
     public function show(): void
     {
         // We can safely assume the user is logged in
-        // because the AuthMiddleware will run before this method.
         $userId = $this->session->get('user_id');
 
         if (is_null($userId)) {
-            // This should theoretically never be reached, but as a safeguard:
             $this->session->setFlash('error', 'Session error. Please log in again.');
             $this->redirect('/login');
             return;
@@ -37,14 +54,10 @@ class DashboardController extends BaseController
         // 1. Call the service to get all our data in one array
         $data = $this->dashboardService->getDashboardData((int)$userId);
 
-        // --- THIS IS THE CHANGE ---
         // Tell the layout to render in full-width mode
         $data['layoutMode'] = 'full';
 
-        // 2. Render the "dumb" view, passing in the data
-        // BaseController::render() will extract the array keys
-        // into $user, $resources, $stats, and $structures variables
-        // for the view file to use.
+        // 2. Render the view
         $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);
     }
 }

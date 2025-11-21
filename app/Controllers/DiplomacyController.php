@@ -2,13 +2,17 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\DiplomacyService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
-use App\Core\Database;
 
 /**
  * Handles all HTTP requests for the Alliance Diplomacy page.
+ * * Refactored for Strict Dependency Injection.
  */
 class DiplomacyController extends BaseController
 {
@@ -16,14 +20,30 @@ class DiplomacyController extends BaseController
     private UserRepository $userRepo;
     private AllianceRoleRepository $roleRepo;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->diplomacyService = new DiplomacyService();
-        
-        $db = Database::getInstance();
-        $this->userRepo = new UserRepository($db);
-        $this->roleRepo = new AllianceRoleRepository($db);
+    /**
+     * DI Constructor.
+     *
+     * @param DiplomacyService $diplomacyService
+     * @param UserRepository $userRepo
+     * @param AllianceRoleRepository $roleRepo
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        DiplomacyService $diplomacyService,
+        UserRepository $userRepo,
+        AllianceRoleRepository $roleRepo,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->diplomacyService = $diplomacyService;
+        $this->userRepo = $userRepo;
+        $this->roleRepo = $roleRepo;
     }
 
     /**
@@ -60,13 +80,13 @@ class DiplomacyController extends BaseController
         
         $data = $this->diplomacyService->getDiplomacyData($viewerData['allianceId']);
 
-        $this->render('alliance/diplomacy.php', $data + [
-            'title' => 'Alliance Diplomacy',
-            'layoutMode' => 'full',
-            'viewer' => $viewerData['user'],
-            'canManage' => $viewerData['canManage'],
-            'allianceId' => $viewerData['allianceId']
-        ]);
+        $data['layoutMode'] = 'full';
+        $data['viewer'] = $viewerData['user'];
+        $data['canManage'] = $viewerData['canManage'];
+        $data['allianceId'] = $viewerData['allianceId'];
+        $data['title'] = 'Alliance Diplomacy';
+
+        $this->render('alliance/diplomacy.php', $data);
     }
 
     /**

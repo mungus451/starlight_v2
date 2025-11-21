@@ -3,7 +3,6 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -12,44 +11,71 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
 use App\Models\Services\ArmoryService; 
 use App\Models\Services\PowerCalculatorService;
-use App\Models\Services\LevelUpService; // --- NEW IMPORT ---
+use App\Models\Services\LevelUpService;
 use PDO;
 use Throwable;
 
 /**
  * Handles all business logic for Espionage.
+ * * Refactored for Strict Dependency Injection.
  */
 class SpyService
 {
     private PDO $db;
     private Session $session;
     private Config $config;
+    
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private SpyRepository $spyRepo;
+    
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
-    private LevelUpService $levelUpService; // --- NEW PROPERTY ---
+    private LevelUpService $levelUpService;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param Config $config
+     * @param UserRepository $userRepo
+     * @param ResourceRepository $resourceRepo
+     * @param StructureRepository $structureRepo
+     * @param StatsRepository $statsRepo
+     * @param SpyRepository $spyRepo
+     * @param ArmoryService $armoryService
+     * @param PowerCalculatorService $powerCalculatorService
+     * @param LevelUpService $levelUpService
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        Config $config,
+        UserRepository $userRepo,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo,
+        StatsRepository $statsRepo,
+        SpyRepository $spyRepo,
+        ArmoryService $armoryService,
+        PowerCalculatorService $powerCalculatorService,
+        LevelUpService $levelUpService
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->config = $config;
         
-        $this->userRepo = new UserRepository($this->db);
-        $this->resourceRepo = new ResourceRepository($this->db);
-        $this->structureRepo = new StructureRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db);
-        $this->spyRepo = new SpyRepository($this->db);
+        $this->userRepo = $userRepo;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
+        $this->statsRepo = $statsRepo;
+        $this->spyRepo = $spyRepo;
         
-        $this->armoryService = new ArmoryService();
-        $this->powerCalculatorService = new PowerCalculatorService();
-        
-        // --- NEW: Instantiate LevelUpService ---
-        $this->levelUpService = new LevelUpService();
+        $this->armoryService = $armoryService;
+        $this->powerCalculatorService = $powerCalculatorService;
+        $this->levelUpService = $levelUpService;
     }
 
     /**
@@ -141,7 +167,7 @@ class SpyService
         $defenderStructures = $this->structureRepo->findByUserId($defender->id);
         
         $config = $this->config->get('game_balance.spy');
-        $xpConfig = $this->config->get('game_balance.xp.rewards'); // --- NEW ---
+        $xpConfig = $this->config->get('game_balance.xp.rewards');
 
         // --- 3. Check Costs & Availability ---
         $spiesSent = $attackerResources->spies;
@@ -259,7 +285,9 @@ class SpyService
             $this->db->commit();
             
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Spy Operation Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. The operation was cancelled.');
             return false;

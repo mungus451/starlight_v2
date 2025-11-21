@@ -1,21 +1,39 @@
 <?php
 
-namespace App\Controllers; // Correct namespace
+namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\ArmoryService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Armory.
+ * * Refactored for Strict Dependency Injection.
  */
 class ArmoryController extends BaseController
 {
     private ArmoryService $armoryService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        // Instantiate the new service
-        $this->armoryService = new ArmoryService();
+    /**
+     * DI Constructor.
+     *
+     * @param ArmoryService $armoryService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        ArmoryService $armoryService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->armoryService = $armoryService;
     }
 
     /**
@@ -25,15 +43,13 @@ class ArmoryController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        // --- THIS IS NOW ACTIVE ---
         // Get all data (config, resources, structures, inventory, loadouts)
         $data = $this->armoryService->getArmoryData($userId);
         
         // Add title and set layout mode
         $data['title'] = 'Armory';
-        $data['layoutMode'] = 'full'; // Use the full-width layout
+        $data['layoutMode'] = 'full';
 
-        // We will create 'armory/show.php' in the next phase
         $this->render('armory/show.php', $data);
     }
 
@@ -53,8 +69,6 @@ class ArmoryController extends BaseController
         $itemKey = (string)($_POST['item_key'] ?? '');
         $quantity = (int)($_POST['quantity'] ?? 0);
 
-        // --- THIS IS NOW ACTIVE ---
-        // Call the service, which handles all logic and flash messages
         $this->armoryService->manufactureItem($userId, $itemKey, $quantity);
         
         $this->redirect('/armory');
@@ -77,8 +91,6 @@ class ArmoryController extends BaseController
         $categoryKey = (string)($_POST['category_key'] ?? '');
         $itemKey = (string)($_POST['item_key'] ?? '');
 
-        // --- THIS IS NOW ACTIVE ---
-        // Call the service, which handles all logic and flash messages
         $this->armoryService->equipItem($userId, $unitKey, $categoryKey, $itemKey);
         
         $this->redirect('/armory');

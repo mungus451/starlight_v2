@@ -2,19 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\BankService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Bank.
+ * * Refactored for Strict Dependency Injection.
  */
 class BankController extends BaseController
 {
     private BankService $bankService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->bankService = new BankService();
+    /**
+     * DI Constructor.
+     *
+     * @param BankService $bankService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        BankService $bankService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->bankService = $bankService;
     }
 
     /**
@@ -24,13 +43,11 @@ class BankController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        // --- THIS IS THE UPDATE ---
-        // getBankData() now returns an array with resources, stats, and config
         $data = $this->bankService->getBankData($userId);
 
         $this->render('bank/show.php', $data + [
             'title' => 'Bank',
-            'layoutMode' => 'full' // Use the full-width layout
+            'layoutMode' => 'full'
         ]);
     }
 
@@ -49,7 +66,6 @@ class BankController extends BaseController
         $userId = $this->session->get('user_id');
         $amount = (int)($_POST['amount'] ?? 0);
         
-        // The service handles all logic and flash messages
         $this->bankService->deposit($userId, $amount);
         
         $this->redirect('/bank');

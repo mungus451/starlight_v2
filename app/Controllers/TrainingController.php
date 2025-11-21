@@ -2,19 +2,39 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\TrainingService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Training page.
+ * * Refactored for Strict Dependency Injection.
  */
 class TrainingController extends BaseController
 {
     private TrainingService $trainingService;
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->trainingService = new TrainingService();
+    /**
+     * DI Constructor.
+     *
+     * @param TrainingService $trainingService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        TrainingService $trainingService,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        // Pass mandatory base dependencies to the parent
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->trainingService = $trainingService;
     }
 
     /**
@@ -24,11 +44,8 @@ class TrainingController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        // Get both resources and costs from the service
         $data = $this->trainingService->getTrainingData($userId);
 
-        // --- THIS IS THE FIX ---
-        // Render in full-width mode to match Structures/Armory
         $this->render('training/show.php', $data + [
             'title' => 'Training',
             'layoutMode' => 'full'
@@ -40,25 +57,19 @@ class TrainingController extends BaseController
      */
     public function handleTrain(): void
     {
-        // 1. Validate CSRF token
         $token = $_POST['csrf_token'] ?? '';
         if (!$this->csrfService->validateToken($token)) {
             $this->session->setFlash('error', 'Invalid security token.');
-            // --- THIS IS THE FIX ---
             $this->redirect('/training');
             return;
         }
 
-        // 2. Get data from form
         $userId = $this->session->get('user_id');
         $unitType = (string)($_POST['unit_type'] ?? '');
         $amount = (int)($_POST['amount'] ?? 0);
 
-        // 3. Call the service (it handles all logic and flash messages)
         $this->trainingService->trainUnits($userId, $unitType, $amount);
         
-        // 4. Redirect back to the training page
-        // --- THIS IS THE FIX ---
         $this->redirect('/training');
     }
 }

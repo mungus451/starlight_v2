@@ -3,7 +3,6 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\ArmoryRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -14,31 +13,51 @@ use Throwable;
 
 /**
  * Handles all business logic for the Armory (Manufacturing & Equipping).
+ * * Refactored for Strict Dependency Injection.
  */
 class ArmoryService
 {
     private PDO $db;
     private Session $session;
     private Config $config;
+    
     private ArmoryRepository $armoryRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo; 
+    
     private array $armoryConfig;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        $this->config = new Config();
+    /**
+     * DI Constructor.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param Config $config
+     * @param ArmoryRepository $armoryRepo
+     * @param ResourceRepository $resourceRepo
+     * @param StructureRepository $structureRepo
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        Config $config,
+        ArmoryRepository $armoryRepo,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo,
+        StatsRepository $statsRepo
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->config = $config;
         
-        // This service now needs 4 repositories
-        $this->armoryRepo = new ArmoryRepository($this->db);
-        $this->resourceRepo = new ResourceRepository($this->db);
-        $this->structureRepo = new StructureRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db); // --- NEW ---
+        $this->armoryRepo = $armoryRepo;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
+        $this->statsRepo = $statsRepo;
         
-        // Load the armory config once
+        // Load the armory config immediately
         $this->armoryConfig = $this->config->get('armory_items', []);
     }
 
@@ -53,7 +72,7 @@ class ArmoryService
         // Get all data in parallel
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
-        $userStats = $this->statsRepo->findByUserId($userId); // --- NEW ---
+        $userStats = $this->statsRepo->findByUserId($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
         $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
 
@@ -74,17 +93,16 @@ class ArmoryService
             'armoryConfig' => $this->armoryConfig,
             'userResources' => $userResources,
             'userStructures' => $userStructures,
-            'userStats' => $userStats, // --- NEW ---
+            'userStats' => $userStats,
             'inventory' => $inventory,
             'loadouts' => $loadouts,
             'itemLookup' => $itemLookup,
-            'discountConfig' => $discountConfig, // --- NEW ---
+            'discountConfig' => $discountConfig,
         ];
     }
 
     /**
      * Attempts to manufacture (or upgrade) a specific quantity of an item.
-     * This implements the "consumptive upgrade" logic and Charisma discounts.
      *
      * @param int $userId
      * @param string $itemKey
@@ -108,7 +126,7 @@ class ArmoryService
         // 2. Get User Data
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
-        $userStats = $this->statsRepo->findByUserId($userId); // --- NEW ---
+        $userStats = $this->statsRepo->findByUserId($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
 
         // 3. Check Prerequisites
@@ -119,7 +137,7 @@ class ArmoryService
             return false;
         }
 
-        // --- NEW: Calculate Discounted Cost ---
+        // Calculate Discounted Cost
         $baseCost = $item['cost'];
         $discountSettings = $this->config->get('game_balance.armory', []);
         $rate = $discountSettings['discount_per_charisma'] ?? 0.01;
@@ -129,7 +147,7 @@ class ArmoryService
         $discountPercent = min($userStats->charisma_points * $rate, $cap);
         $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
         
-        // Check 3b: Total Cost (using effective cost)
+        // Check 3b: Total Cost
         $totalCost = $effectiveUnitCost * $quantity;
         
         if ($userResources->credits < $totalCost) {
@@ -164,7 +182,9 @@ class ArmoryService
 
             $this->db->commit();
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Armory Manufacture Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred during manufacturing.');
             return false;
@@ -220,8 +240,7 @@ class ArmoryService
     }
 
     /**
-     * Calculates the total stat bonus for a unit stack based on their loadout
-     * and the available inventory.
+     * Calculates the total stat bonus for a unit stack based on their loadout.
      *
      * @param int $userId
      * @param string $unitKey (e.g., 'soldier')
@@ -239,10 +258,10 @@ class ArmoryService
         $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
         
-        // 2. Get the categories for this unit (e.g., 'main_weapon', 'sidearm', ...)
+        // 2. Get the categories for this unit
         $categories = $this->armoryConfig[$unitKey]['categories'] ?? [];
         if (empty($categories)) {
-            return 0; // This unit has no armory slots
+            return 0;
         }
 
         $totalBonus = 0;
@@ -253,23 +272,23 @@ class ArmoryService
             // 4. Find what item is equipped in this slot
             $equippedItemKey = $loadouts[$unitKey][$categoryKey] ?? null;
             if (!$equippedItemKey) {
-                continue; // Nothing equipped in this slot
+                continue; 
             }
 
             // 5. Get the item's details and stat bonus
             $item = $this->findItemByKey($equippedItemKey);
             $itemBonus = $item[$statType] ?? 0;
             if (!$item || $itemBonus === 0) {
-                continue; // This item doesn't provide the stat we're looking for
+                continue;
             }
 
             // 6. Get the inventory count for this item
             $itemInStock = $inventory[$equippedItemKey] ?? 0;
             if ($itemInStock === 0) {
-                continue; // User equipped an item they have 0 of
+                continue;
             }
 
-            // 7. This is our core logic: min(units, items_in_stock)
+            // 7. Core logic: min(units, items_in_stock)
             $eligibleUnits = min($unitCount, $itemInStock);
 
             // 8. Add the bonus for those units
@@ -281,9 +300,6 @@ class ArmoryService
 
     /**
      * Helper function to find an item's data from the nested config array.
-     *
-     * @param string $itemKey
-     * @return array|null
      */
     private function findItemByKey(string $itemKey): ?array
     {

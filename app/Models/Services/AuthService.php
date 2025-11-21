@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Core\Session;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -11,6 +10,10 @@ use App\Models\Repositories\StructureRepository;
 use PDO;
 use Throwable;
 
+/**
+ * Handles user registration and login logic.
+ * * Refactored for Strict Dependency Injection.
+ */
 class AuthService
 {
     private PDO $db;
@@ -21,31 +24,61 @@ class AuthService
     private StatsRepository $statsRepository;
     private StructureRepository $structureRepository;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
-        $this->session = new Session();
-        
-        $this->userRepository = new UserRepository($this->db);
-        $this->resourceRepository = new ResourceRepository($this->db);
-        $this->statsRepository = new StatsRepository($this->db);
-        $this->structureRepository = new StructureRepository($this->db);
+    /**
+     * DI Constructor.
+     * All dependencies are injected by the container.
+     *
+     * @param PDO $db
+     * @param Session $session
+     * @param UserRepository $userRepository
+     * @param ResourceRepository $resourceRepository
+     * @param StatsRepository $statsRepository
+     * @param StructureRepository $structureRepository
+     */
+    public function __construct(
+        PDO $db,
+        Session $session,
+        UserRepository $userRepository,
+        ResourceRepository $resourceRepository,
+        StatsRepository $statsRepository,
+        StructureRepository $structureRepository
+    ) {
+        $this->db = $db;
+        $this->session = $session;
+        $this->userRepository = $userRepository;
+        $this->resourceRepository = $resourceRepository;
+        $this->statsRepository = $statsRepository;
+        $this->structureRepository = $structureRepository;
     }
 
     /**
      * Attempts to register a new user.
      * Creates rows in users, user_resources, user_stats, and user_structures.
-     * * Refactored: Basic validation (format, length, matching) is now handled by the Controller/Validator.
-     * This method focuses on Database integrity/business rules.
      *
      * @param string $email
      * @param string $characterName
      * @param string $password
+     * @param string $confirmPassword
      * @return bool
      */
-    public function register(string $email, string $characterName, string $password): bool
+    public function register(string $email, string $characterName, string $password, string $confirmPassword): bool
     {
-        // 1. State/Business Validation (Duplicates)
+        // 1. Validate input (no transaction needed yet)
+        if ($password !== $confirmPassword) {
+            $this->session->setFlash('error', 'Passwords do not match.');
+            return false;
+        }
+
+        if (strlen($password) < 3) {
+            $this->session->setFlash('error', 'Password must be at least 3 characters long.');
+            return false;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->session->setFlash('error', 'Invalid email address.');
+            return false;
+        }
+
         if ($this->userRepository->findByEmail($email)) {
             $this->session->setFlash('error', 'Email address is already in use.');
             return false;
@@ -77,7 +110,9 @@ class AuthService
             
         } catch (Throwable $e) {
             // 6. Rollback on failure
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Registration Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred during registration. Please try again.');
             return false;
@@ -111,8 +146,6 @@ class AuthService
 
         session_regenerate_id(true);
         $this->session->set('user_id', $user->id);
-        
-        // Store alliance_id in session for the nav bar
         $this->session->set('alliance_id', $user->alliance_id);
 
         return true;

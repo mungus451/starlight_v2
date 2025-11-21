@@ -2,13 +2,17 @@
 
 namespace App\Controllers;
 
+use App\Core\Session;
+use App\Core\CSRFService;
 use App\Models\Services\AllianceManagementService;
+use App\Models\Services\LevelCalculatorService;
+use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\UserRepository;
-use App\Core\Database;
 
 /**
  * Handles all requests for creating, editing, and deleting alliance roles.
+ * * Refactored for Strict Dependency Injection.
  */
 class AllianceRoleController extends BaseController
 {
@@ -16,16 +20,30 @@ class AllianceRoleController extends BaseController
     private AllianceRoleRepository $roleRepo;
     private UserRepository $userRepo;
 
-    public function __construct()
-    {
-        parent::__construct();
-        // This controller uses the Management Service for "write" actions
-        $this->mgmtService = new AllianceManagementService();
-        
-        // It uses the repositories directly for "read" actions
-        $db = Database::getInstance();
-        $this->roleRepo = new AllianceRoleRepository($db);
-        $this->userRepo = new UserRepository($db);
+    /**
+     * DI Constructor.
+     *
+     * @param AllianceManagementService $mgmtService
+     * @param AllianceRoleRepository $roleRepo
+     * @param UserRepository $userRepo
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
+    public function __construct(
+        AllianceManagementService $mgmtService,
+        AllianceRoleRepository $roleRepo,
+        UserRepository $userRepo,
+        Session $session,
+        CSRFService $csrfService,
+        LevelCalculatorService $levelCalculator,
+        StatsRepository $statsRepo
+    ) {
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        $this->mgmtService = $mgmtService;
+        $this->roleRepo = $roleRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -47,12 +65,11 @@ class AllianceRoleController extends BaseController
 
         $roles = $this->roleRepo->findByAllianceId($allianceId);
 
-        // --- THIS IS THE CHANGE ---
         $data = [
             'title' => 'Manage Alliance Roles',
             'roles' => $roles,
             'alliance_id' => $allianceId,
-            'layoutMode' => 'full' // Use the full-width layout
+            'layoutMode' => 'full'
         ];
 
         $this->render('alliance/manage_roles.php', $data);
