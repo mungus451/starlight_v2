@@ -190,7 +190,7 @@
         white-space: pre-wrap; /* Respects newlines */
     }
 
-    /* --- Modal CSS (Copied from Battle) --- */
+    /* --- Modal CSS --- */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -240,8 +240,6 @@
     <div class="profile-grid">
 
         <div class="data-card profile-header-card">
-            
-            <?php // --- THIS BLOCK IS CHANGED --- ?>
             <?php if ($profile['profile_picture_url']): ?>
                 <img src="/serve/avatar/<?= htmlspecialchars($profile['profile_picture_url']) ?>" alt="Avatar" class="profile-avatar">
             <?php else: ?>
@@ -298,7 +296,8 @@
             </div>
         </div>
 
-    </div> </div>
+    </div>
+</div>
 
 <div class="modal-overlay" id="attack-modal">
     <div class="modal-content">
@@ -347,59 +346,4 @@
     </div>
 </div>
 
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- Modal Control Logic ---
-    const allModals = document.querySelectorAll('.modal-overlay');
-    
-    // Function to open a specific modal
-    function openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'flex';
-            setTimeout(() => {
-                modal.classList.add('active');
-            }, 10);
-        }
-    }
-
-    // Function to close a specific modal
-    function closeModal(modal) {
-        modal.classList.remove('active');
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-    }
-
-    // Open buttons
-    document.querySelectorAll('[data-modal-target]').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const modalId = this.getAttribute('data-modal-target');
-            openModal(modalId);
-        });
-    });
-
-    // Close buttons
-    document.querySelectorAll('.modal-close-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const modal = this.closest('.modal-overlay');
-            if (modal) {
-                closeModal(modal);
-            }
-        });
-    });
-    
-    // Close by clicking background
-    allModals.forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal(modal);
-            }
-        });
-    });
-});
-</script>
+<script src="/js/profile.js"></script>
