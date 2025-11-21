@@ -22,9 +22,8 @@ use App\Controllers\PagesController;
 use App\Controllers\ProfileController;
 use App\Controllers\FileController;
 use App\Middleware\AuthMiddleware;
-
-// Start the session, which will be needed for authentication
-session_start();
+use App\Core\DatabaseSessionHandler; // Phase 1: DB Sessions
+use App\Middleware\RateLimitMiddleware; // Phase 3: Rate Limiting
 
 // 1. Autoloader
 require __DIR__ . '/../vendor/autoload.php';
@@ -50,40 +49,62 @@ if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
     ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
 }
 
-// 4. Router Definition
+// 4. Session Initialization (Database Backed)
+// Set session cookie parameters to 24 hours (86400 seconds)
+ini_set('session.gc_maxlifetime', 86400);
+session_set_cookie_params([
+    'lifetime' => 86400,
+    'path' => '/',
+    'domain' => '', // Defaults to current domain
+    'secure' => isset($_SERVER['HTTPS']), // True if HTTPS
+    'httponly' => true, // Prevent JS access
+    'samesite' => 'Strict'
+]);
+
+try {
+    // Instantiate our custom handler and register it
+    $sessionHandler = new DatabaseSessionHandler();
+    session_set_save_handler($sessionHandler, true);
+    
+    // Start the session
+    session_start();
+} catch (\Throwable $e) {
+    // Fallback if DB connection fails for session
+    die("Critical Session Error: " . $e->getMessage());
+}
+
+// 5. Router Definition
 $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     // Landing Page Route
     $r->addRoute('GET', '/', [PagesController::class, 'showHome']);
     $r->addRoute('GET', '/contact', [PagesController::class, 'showContact']);
 
-    // --- Phase 1: Auth Routes ---
+    // --- Auth Routes ---
     $r->addRoute('GET', '/login', [AuthController::class, 'showLogin']);
     $r->addRoute('POST', '/login', [AuthController::class, 'handleLogin']);
     $r->addRoute('GET', '/register', [AuthController::class, 'showRegister']);
     $r->addRoute('POST', '/register', [AuthController::class, 'handleRegister']);
     $r->addRoute('GET', '/logout', [AuthController::class, 'handleLogout']);
 
-    // --- Phase 2: Dashboard ---
+    // --- Dashboard ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
 
-    // --- Public Profile Route ---
+    // --- Profile & File Routes ---
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
-
-    // --- Secure File Serving Route ---
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
 
-    // --- Phase 3: Bank Routes ---
+    // --- Bank Routes ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
     $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
     $r->addRoute('POST', '/bank/withdraw', [BankController::class, 'handleWithdraw']);
     $r->addRoute('POST', '/bank/transfer', [BankController::class, 'handleTransfer']);
 
-    // --- Phase 4: Training Routes ---
+    // --- Training Routes ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
     $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
 
-    // --- Phase 5: Structures Routes ---
+    // --- Structure Routes ---
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
 
@@ -92,39 +113,39 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/armory/manufacture', [ArmoryController::class, 'handleManufacture']);
     $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
 
-    // --- Phase 6: Settings Routes ---
+    // --- Settings Routes ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
     $r->addRoute('POST', '/settings/profile', [SettingsController::class, 'handleProfile']);
     $r->addRoute('POST', '/settings/email', [SettingsController::class, 'handleEmail']);
     $r->addRoute('POST', '/settings/password', [SettingsController::class, 'handlePassword']);
     $r->addRoute('POST', '/settings/security', [SettingsController::class, 'handleSecurity']);
 
-    // --- Phase 7: Spy Routes ---
+    // --- Spy Routes ---
     $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
     $r->addRoute('GET', '/spy/page/{page:\d+}', [SpyController::class, 'show']);
     $r->addRoute('POST', '/spy/conduct', [SpyController::class, 'handleSpy']);
     $r->addRoute('GET', '/spy/reports', [SpyController::class, 'showReports']);
     $r->addRoute('GET', '/spy/report/{id:\d+}', [SpyController::class, 'showReport']);
 
-    // --- Phase 8: Battle Routes ---
+    // --- Battle Routes ---
     $r->addRoute('GET', '/battle', [BattleController::class, 'show']);
     $r->addRoute('GET', '/battle/page/{page:\d+}', [BattleController::class, 'show']);
     $r->addRoute('POST', '/battle/attack', [BattleController::class, 'handleAttack']);
     $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
     $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
 
-    // --- Phase 9: Level Up Routes ---
+    // --- Level Up Routes ---
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
-    // --- Phase 11: Alliance Routes ---
+    // --- Alliance Routes ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/profile/{id:\d+}', [AllianceController::class, 'showProfile']);
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 
-    // --- Phase 12: Alliance Management Routes ---
+    // --- Alliance Management Routes ---
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceManagementController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceManagementController::class, 'handleCancelApp']);
     $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
@@ -133,7 +154,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceManagementController::class, 'handleInvite']);
     $r->addRoute('POST', '/alliance/donate', [AllianceManagementController::class, 'handleDonation']);
     
-    // --- Phase 13: Alliance Admin Routes ---
+    // --- Alliance Admin Routes ---
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
     $r->addRoute('POST', '/alliance/kick/{id:\d+}', [AllianceManagementController::class, 'handleKickMember']);
     $r->addRoute('POST', '/alliance/role/assign', [AllianceManagementController::class, 'handleAssignRole']);
@@ -176,9 +197,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
 });
 
-// 5. Global Error Handler
+// 6. Global Error Handler
 try {
-    // 6. Router Dispatch
+    // 7. Dispatcher Prep
     $httpMethod = $_SERVER['REQUEST_METHOD'];
     $uri = $_SERVER['REQUEST_URI'];
 
@@ -186,6 +207,30 @@ try {
         $uri = substr($uri, 0, $pos);
     }
     $uri = rawurldecode($uri);
+
+    // --- Phase 3: Rate Limiting Logic ---
+    // We protect specific sensitive routes from abuse.
+    // Limit: 5 requests per minute (strict)
+    $sensitiveRoutes = [
+        '/login', 
+        '/register',
+        '/alliance/forum/topic/create',
+    ];
+
+    $isRateLimited = in_array($uri, $sensitiveRoutes);
+    
+    // Also check for dynamic routes (e.g., replying to a topic)
+    if (!$isRateLimited) {
+        if (str_starts_with($uri, '/alliance/forum/topic/') && str_ends_with($uri, '/reply')) {
+            $isRateLimited = true;
+        }
+    }
+
+    if ($isRateLimited) {
+        // 5 requests per 60 seconds
+        (new RateLimitMiddleware(5, 60))->handle($uri);
+    }
+    // --- End Rate Limiting ---
 
     $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
@@ -204,7 +249,7 @@ try {
             $handler = $routeInfo[1];
             $vars = $routeInfo[2];
 
-            // --- UPDATED: Middleware Check ---
+            // Auth Middleware Check
             $protectedRoutes = [
                 '/dashboard',
                 '/bank', '/bank/deposit', '/bank/withdraw', '/bank/transfer',
@@ -226,7 +271,7 @@ try {
                 '/alliance/structures/upgrade',
                 '/alliance/forum',
                 '/alliance/forum/topic/create',
-                '/alliance/loan/request', // --- THIS IS THE ROUTE THAT CAUSED THE ERROR ---
+                '/alliance/loan/request',
                 '/alliance/diplomacy',
                 '/alliance/diplomacy/treaty/propose',
                 '/alliance/diplomacy/rivalry/declare',
@@ -239,55 +284,26 @@ try {
 
             // Check prefixed routes (for routes with parameters)
             if (!$isProtected) {
-                if (str_starts_with($uri, '/spy/report/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/spy/page/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/battle/page/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/battle/report/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/list/page/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/profile/')) { // Alliance profile
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/apply/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/cancel-app/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/accept-app/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/reject-app/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/kick/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/roles/update/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/roles/delete/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/profile/')) { // Player profile
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/invite/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/serve/avatar/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/forum/page/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/forum/topic/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/loan/approve/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/loan/deny/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/loan/repay/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/diplomacy/')) {
-                    $isProtected = true;
-                } elseif (str_starts_with($uri, '/alliance/war/')) {
-                    $isProtected = true;
+                $protectedPrefixes = [
+                    '/spy/report/', '/spy/page/',
+                    '/battle/page/', '/battle/report/',
+                    '/alliance/list/page/', '/alliance/profile/',
+                    '/alliance/apply/', '/alliance/cancel-app/',
+                    '/alliance/accept-app/', '/alliance/reject-app/',
+                    '/alliance/kick/', '/alliance/roles/update/', '/alliance/roles/delete/',
+                    '/profile/', '/alliance/invite/', '/serve/avatar/',
+                    '/alliance/forum/page/', '/alliance/forum/topic/',
+                    '/alliance/loan/approve/', '/alliance/loan/deny/', '/alliance/loan/repay/',
+                    '/alliance/diplomacy/', '/alliance/war/'
+                ];
+
+                foreach ($protectedPrefixes as $prefix) {
+                    if (str_starts_with($uri, $prefix)) {
+                        $isProtected = true;
+                        break;
+                    }
                 }
             }
-            // --- End Middleware Check ---
 
             if ($isProtected) {
                 (new AuthMiddleware())->handle();

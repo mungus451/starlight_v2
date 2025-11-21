@@ -16,7 +16,6 @@ class AuthService
     private PDO $db;
     private Session $session;
     
-    // We now hold all repositories as properties
     private UserRepository $userRepository;
     private ResourceRepository $resourceRepository;
     private StatsRepository $statsRepository;
@@ -27,7 +26,6 @@ class AuthService
         $this->db = Database::getInstance();
         $this->session = new Session();
         
-        // We instantiate all repositories, passing them the *same* DB connection
         $this->userRepository = new UserRepository($this->db);
         $this->resourceRepository = new ResourceRepository($this->db);
         $this->statsRepository = new StatsRepository($this->db);
@@ -37,31 +35,17 @@ class AuthService
     /**
      * Attempts to register a new user.
      * Creates rows in users, user_resources, user_stats, and user_structures.
+     * * Refactored: Basic validation (format, length, matching) is now handled by the Controller/Validator.
+     * This method focuses on Database integrity/business rules.
      *
      * @param string $email
      * @param string $characterName
      * @param string $password
-     * @param string $confirmPassword
      * @return bool
      */
-    public function register(string $email, string $characterName, string $password, string $confirmPassword): bool
+    public function register(string $email, string $characterName, string $password): bool
     {
-        // 1. Validate input (no transaction needed yet)
-        if ($password !== $confirmPassword) {
-            $this->session->setFlash('error', 'Passwords do not match.');
-            return false;
-        }
-
-        if (strlen($password) < 3) {
-            $this->session->setFlash('error', 'Password must be at least 3 characters long.');
-            return false;
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->session->setFlash('error', 'Invalid email address.');
-            return false;
-        }
-
+        // 1. State/Business Validation (Duplicates)
         if ($this->userRepository->findByEmail($email)) {
             $this->session->setFlash('error', 'Email address is already in use.');
             return false;
@@ -94,14 +78,13 @@ class AuthService
         } catch (Throwable $e) {
             // 6. Rollback on failure
             $this->db->rollBack();
-            error_log('Registration Error: ' . $e->getMessage()); // Log for debugging
+            error_log('Registration Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred during registration. Please try again.');
             return false;
         }
 
         // 7. Log the new user in
         $this->session->set('user_id', $newUserId);
-        // --- NEW ---
         // A new user has no alliance, so we explicitly set it to null
         $this->session->set('alliance_id', null);
         
@@ -129,9 +112,8 @@ class AuthService
         session_regenerate_id(true);
         $this->session->set('user_id', $user->id);
         
-        // --- NEW: Store alliance_id in session for the nav bar ---
+        // Store alliance_id in session for the nav bar
         $this->session->set('alliance_id', $user->alliance_id);
-        // --- END NEW ---
 
         return true;
     }
