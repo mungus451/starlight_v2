@@ -80,7 +80,7 @@
         color: var(--accent-red);
     }
     
-    /* --- NEW: Timer Countdown --- */
+    /* --- Timer Countdown --- */
     .timer-countdown {
         display: block;
         font-size: 0.85rem;
@@ -167,7 +167,6 @@
         flex-shrink: 0; /* Prevents button from shrinking */
     }
 
-    /* --- THIS IS THE FIX --- */
     .amount-input-group .btn-submit {
         width: auto; /* Overrides the 100% width from .item-card .btn-submit */
     }
@@ -194,7 +193,13 @@
             <strong class="<?= $stats->deposit_charges > 0 ? 'status-ok' : 'status-bad' ?>">
                 <?= $stats->deposit_charges ?> / <?= $bankConfig['deposit_max_charges'] ?>
             </strong>
-            <span class="timer-countdown" id="deposit-timer-countdown"></span>
+            
+            <span class="timer-countdown" id="deposit-timer-countdown"
+                  data-last-deposit="<?= htmlspecialchars($stats->last_deposit_at ?? '') ?>"
+                  data-current-charges="<?= (int)$stats->deposit_charges ?>"
+                  data-max-charges="<?= (int)$bankConfig['deposit_max_charges'] ?>"
+                  data-regen-hours="<?= (int)$bankConfig['deposit_charge_regen_hours'] ?>">
+            </span>
         </div>
     </div>
 
@@ -208,7 +213,11 @@
                     <div class="amount-input-group">
                         <input type="text" id="dep-amount-display" class="formatted-amount" placeholder="e.g., 1,000,000" required>
                         <input type="hidden" name="amount" id="dep-amount-hidden" value="0">
-                        <button type="button" class="btn-submit" id="btn-max-deposit">Max</button>
+                        
+                        <button type="button" class="btn-submit" id="btn-max-deposit" 
+                                data-limit="<?= $bankConfig['deposit_percent_limit'] ?? 0.8 ?>">
+                            Max
+                        </button>
                     </div>
                 </div>
                 <button type="submit" class="btn-submit" <?= $stats->deposit_charges <= 0 ? 'disabled' : '' ?>>
@@ -252,153 +261,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- Helper Functions ---
-    /**
-     * Formats a raw number string into a comma-separated string.
-     * @param {string} numStr A string containing only digits.
-     * @returns {string} A formatted number string.
-     */
-    function formatNumber(numStr) {
-        if (!numStr) return '';
-        // Use toLocaleString for reliable comma formatting
-        return parseInt(numStr, 10).toLocaleString('en-US');
-    }
-
-    /**
-     * Removes all non-digit characters from a string.
-     * @param {string} str A formatted string, e.g., "1,000,000"
-     * @returns {string} A raw number string, e.g., "1000000"
-     */
-    function unformatNumber(str) {
-        return str.replace(/[^0-9]/g, '');
-    }
-
-    /**
-     * Sets up an event listener on a visible input to format it
-     * and update a hidden input with the raw value.
-     * @param {string} displayInputId The ID of the visible <input type="text">
-     * @param {string} hiddenInputId The ID of the hidden <input type="hidden">
-     */
-    function setupInputMask(displayInputId, hiddenInputId) {
-        const displayInput = document.getElementById(displayInputId);
-        const hiddenInput = document.getElementById(hiddenInputId);
-
-        if (displayInput && hiddenInput) {
-            displayInput.addEventListener('input', function(e) {
-                // Get raw value and cursor position
-                const rawValue = unformatNumber(e.target.value);
-                const cursorStart = e.target.selectionStart;
-                const originalLength = e.target.value.length;
-
-                // Get the numeric value, or 0 if empty
-                const numValue = rawValue ? parseInt(rawValue, 10) : 0;
-                
-                // Update hidden input
-                hiddenInput.value = numValue;
-
-                // Format and update display input
-                const formattedValue = (numValue === 0) ? '' : formatNumber(rawValue);
-                e.target.value = formattedValue;
-                
-                // Attempt to restore cursor position
-                const newLength = formattedValue.length;
-                const lengthDifference = newLength - originalLength;
-                const newCursorPosition = cursorStart + lengthDifference;
-                
-                // Only set cursor if it's not at the very beginning
-                if (cursorStart > 0) {
-                     e.target.setSelectionRange(newCursorPosition, newCursorPosition);
-                }
-            });
-        }
-    }
-    
-    // Apply the masking to all three amount inputs
-    setupInputMask('dep-amount-display', 'dep-amount-hidden');
-    setupInputMask('wit-amount-display', 'wit-amount-hidden');
-    setupInputMask('tran-amount-display', 'tran-amount-hidden');
-
-
-    // --- Get Max Button Elements ---
-    const maxDepositBtn = document.getElementById('btn-max-deposit');
-    const maxWithdrawBtn = document.getElementById('btn-max-withdraw');
-    
-    // --- Get Resource Values ---
-    const USER_CREDITS = parseInt(document.getElementById('global-user-credits').getAttribute('data-credits'), 10);
-    const USER_BANKED = parseInt(document.getElementById('global-user-banked').getAttribute('data-banked'), 10);
-    const DEPOSIT_LIMIT_PERCENT = <?= $bankConfig['deposit_percent_limit'] ?? 0.8 ?>;
-
-    // --- Max Deposit Logic (80%) ---
-    if (maxDepositBtn) {
-        maxDepositBtn.addEventListener('click', function() {
-            const displayInput = document.getElementById('dep-amount-display');
-            const hiddenInput = document.getElementById('dep-amount-hidden');
-            const maxAmount = Math.floor(USER_CREDITS * DEPOSIT_LIMIT_PERCENT);
-            
-            displayInput.value = (maxAmount > 0) ? formatNumber(maxAmount.toString()) : '';
-            hiddenInput.value = (maxAmount > 0) ? maxAmount : 0;
-        });
-    }
-
-    // --- Max Withdraw Logic (100%) ---
-    if (maxWithdrawBtn) {
-        maxWithdrawBtn.addEventListener('click', function() {
-            const displayInput = document.getElementById('wit-amount-display');
-            const hiddenInput = document.getElementById('wit-amount-hidden');
-            const maxAmount = USER_BANKED > 0 ? USER_BANKED : 0;
-            
-            displayInput.value = (maxAmount > 0) ? formatNumber(maxAmount.toString()) : '';
-            hiddenInput.value = maxAmount;
-        });
-    }
-
-    // --- NEW: Deposit Charge Countdown Timer ---
-    const countdownElement = document.getElementById('deposit-timer-countdown');
-    const lastDepositAt = '<?= $stats->last_deposit_at ?>';
-    const currentCharges = <?= (int)$stats->deposit_charges ?>;
-    const maxCharges = <?= (int)$bankConfig['deposit_max_charges'] ?>;
-    const regenHours = <?= (int)$bankConfig['deposit_charge_regen_hours'] ?>;
-
-    if (currentCharges < maxCharges && lastDepositAt && countdownElement) {
-        // 1. Calculate the next regeneration timestamp
-        // Parse the MySQL timestamp (which is in UTC) as UTC
-        const lastDepositTime = new Date(lastDepositAt.replace(' ', 'T') + 'Z');
-        const regenMillis = regenHours * 60 * 60 * 1000;
-        const nextRegenTime = new Date(lastDepositTime.getTime() + regenMillis);
-
-        // 2. Start a timer to update the countdown
-        const timerInterval = setInterval(function() {
-            const now = new Date();
-            const diff = nextRegenTime - now;
-
-            if (diff <= 0) {
-                // Time's up
-                clearInterval(timerInterval);
-                countdownElement.textContent = "Reloading to claim charge...";
-                // Reload the page to have the server grant the new charge
-                window.location.reload();
-                return;
-            }
-
-            // 3. Format the time remaining
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            // Pad with leading zeros
-            const hh = String(hours).padStart(2, '0');
-            const mm = String(minutes).padStart(2, '0');
-            const ss = String(seconds).padStart(2, '0');
-
-            countdownElement.textContent = `Next charge in: ${hh}:${mm}:${ss}`;
-            
-        }, 1000);
-    } else if (currentCharges === maxCharges) {
-        countdownElement.textContent = "Charges are full";
-    }
-
-});
-</script>
+<script src="/js/bank.js"></script>
