@@ -179,7 +179,7 @@
                 </div>
                 
                 <div class="stat-total">
-                    Total to Spend: <span id="total-to-spend">0</span> / <?= $stats->level_up_points ?>
+                    Total to Spend: <span id="total-to-spend">0</span> / <?= number_format($stats->level_up_points) ?>
                 </div>
 
                 <button type="submit" class="btn-submit" id="spend-points-btn" disabled>Spend Points</button>
@@ -188,46 +188,4 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('level-up-form');
-        const inputs = form.querySelectorAll('.stat-input');
-        const totalSpan = document.getElementById('total-to-spend');
-        const availablePoints = parseInt(document.getElementById('available-points').getAttribute('data-points'), 10);
-        const submitBtn = document.getElementById('spend-points-btn');
-        const costPerPoint = <?= $costs['cost_per_point'] ?>;
-
-        function updateTotal() {
-            let totalPointsAllocated = 0;
-            inputs.forEach(input => {
-                let val = parseInt(input.value, 10);
-                if (isNaN(val) || val < 0) {
-                    val = 0;
-                }
-                totalPointsAllocated += val;
-            });
-            
-            const totalCost = totalPointsAllocated * costPerPoint;
-            totalSpan.textContent = totalCost;
-
-            // Disable button if spending 0 points or more than available
-            if (totalCost > 0 && totalCost <= availablePoints) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = `Spend ${totalCost} Points`;
-            } else if (totalCost > availablePoints) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Not Enough Points';
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Spend Points';
-            }
-        }
-        
-        inputs.forEach(input => {
-            input.addEventListener('input', updateTotal);
-        });
-
-        // Initial check in case form is pre-filled
-        updateTotal();
-    });
-</script>
+<script src="/js/level_up.js"></script>
