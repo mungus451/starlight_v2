@@ -11,18 +11,17 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
-use App\Models\Repositories\WarRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
-use App\Models\Services\WarService;
 use App\Models\Services\LevelUpService;
-use App\Models\Services\NotificationService; // --- NEW IMPORT ---
+use App\Core\Events\EventDispatcher; // --- NEW IMPORT ---
+use App\Events\BattleConcludedEvent; // --- NEW IMPORT ---
 use PDO;
 use Throwable;
 
 /**
  * Handles all business logic for PvP Attacks.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored to use EventDispatcher for side effects (Notifications, War Logs).
  */
 class AttackService
 {
@@ -37,33 +36,15 @@ class AttackService
     private BattleRepository $battleRepo;
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
-    private WarRepository $warRepo;
     
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
-    private WarService $warService;
     private LevelUpService $levelUpService;
-    private NotificationService $notificationService; // --- NEW PROPERTY ---
+    private EventDispatcher $dispatcher; // --- REPLACED SERVICES ---
 
     /**
      * DI Constructor.
-     *
-     * @param PDO $db
-     * @param Session $session
-     * @param Config $config
-     * @param UserRepository $userRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     * @param BattleRepository $battleRepo
-     * @param AllianceRepository $allianceRepo
-     * @param AllianceBankLogRepository $bankLogRepo
-     * @param WarRepository $warRepo
-     * @param ArmoryService $armoryService
-     * @param PowerCalculatorService $powerCalculatorService
-     * @param WarService $warService
-     * @param LevelUpService $levelUpService
-     * @param NotificationService $notificationService // --- NEW PARAM ---
+     * Removed WarService and NotificationService dependencies.
      */
     public function __construct(
         PDO $db,
@@ -76,12 +57,10 @@ class AttackService
         BattleRepository $battleRepo,
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
-        WarRepository $warRepo,
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
-        WarService $warService,
         LevelUpService $levelUpService,
-        NotificationService $notificationService // --- NEW INJECTION ---
+        EventDispatcher $dispatcher // --- INJECTED ---
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -94,13 +73,11 @@ class AttackService
         $this->battleRepo = $battleRepo;
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
-        $this->warRepo = $warRepo;
         
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
-        $this->warService = $warService;
         $this->levelUpService = $levelUpService;
-        $this->notificationService = $notificationService; // --- NEW ASSIGNMENT ---
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -164,11 +141,6 @@ class AttackService
 
     /**
      * Conducts an "all-in" PvP Attack.
-     *
-     * @param int $attackerId
-     * @param string $targetName
-     * @param string $attackType
-     * @return bool True on success
      */
     public function conductAttack(int $attackerId, string $targetName, string $attackType): bool
     {
@@ -343,26 +315,18 @@ class AttackService
                 }
             }
             
-            // 8g. Log War Battle
-            $this->warService->logBattle($battleReportId, $attacker, $defender, $attackResult, $warPrestigeGained, $defenderGuardsLost, $creditsPlundered);
-            
-            // --- 8h. SEND NOTIFICATION TO DEFENDER ---
-            // The attacker gets immediate feedback via Flash, but the defender needs to know.
-            $notifTitle = "You were attacked by {$attacker->characterName}!";
-            $notifMsg = "Defense Report: " . ucfirst($attackResult === 'victory' ? 'Defeat' : 'Victory'); // Attacker Victory = Defender Defeat
-            $notifMsg .= ". You lost " . number_format($defenderGuardsLost) . " guards.";
-            if ($creditsPlundered > 0) {
-                $notifMsg .= " {$attacker->characterName} plundered " . number_format($creditsPlundered) . " credits.";
-            }
-            
-            $this->notificationService->sendNotification(
-                $defender->id,
-                'attack',
-                $notifTitle,
-                $notifMsg,
-                "/battle/report/{$battleReportId}"
+            // --- 8g. DISPATCH EVENT (Replaces old service calls) ---
+            $event = new BattleConcludedEvent(
+                $battleReportId,
+                $attacker,
+                $defender,
+                $attackResult,
+                $warPrestigeGained,
+                $defenderGuardsLost,
+                $creditsPlundered
             );
-            // -----------------------------------------
+            $this->dispatcher->dispatch($event);
+            // ------------------------------------------------------
 
             $this->db->commit();
             

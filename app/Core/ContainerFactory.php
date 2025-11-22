@@ -10,12 +10,15 @@ use Redis;
 use Exception;
 use App\Models\Repositories\NotificationRepository;
 use App\Models\Services\NotificationService;
+use App\Core\Events\EventDispatcher;
+use App\Events\BattleConcludedEvent;
+use App\Listeners\BattleNotificationListener;
+use App\Listeners\WarLoggerListener;
 
 /**
  * ContainerFactory
  * * Responsible for building and configuring the Dependency Injection Container.
- * It registers the core services (Database, Session, Config, Redis) so they can be
- * automatically injected into any Controller or Service.
+ * * Now configures the EventDispatcher and binds Domain Events to Listeners.
  */
 class ContainerFactory
 {
@@ -48,24 +51,20 @@ class ContainerFactory
 
                 $redis = new Redis();
                 
-                // Attempt connection
                 if (!@$redis->connect($redisConfig['host'], $redisConfig['port'])) {
                     throw new Exception("Could not connect to Redis at {$redisConfig['host']}:{$redisConfig['port']}");
                 }
 
-                // Authenticate
                 if (!empty($redisConfig['password'])) {
                     if (!$redis->auth($redisConfig['password'])) {
                         throw new Exception("Redis authentication failed.");
                     }
                 }
 
-                // Select database
                 if (isset($redisConfig['database'])) {
                     $redis->select($redisConfig['database']);
                 }
 
-                // Set global prefix
                 if (!empty($redisConfig['prefix'])) {
                     $redis->setOption(Redis::OPT_PREFIX, $redisConfig['prefix']);
                 }
@@ -87,13 +86,32 @@ class ContainerFactory
             },
 
             // 6. Notification System
-            // Explicitly registering these ensures they are available for injection
             NotificationRepository::class => function (ContainerInterface $c) {
                 return new NotificationRepository($c->get(PDO::class));
             },
 
             NotificationService::class => function (ContainerInterface $c) {
                 return new NotificationService($c->get(NotificationRepository::class));
+            },
+
+            // 7. Event Dispatcher (The Hub)
+            EventDispatcher::class => function (ContainerInterface $c) {
+                $dispatcher = new EventDispatcher();
+
+                // --- Register Listeners for BattleConcludedEvent ---
+                // 1. Send Notification to Defender
+                $dispatcher->addListener(
+                    BattleConcludedEvent::class,
+                    $c->get(BattleNotificationListener::class)
+                );
+
+                // 2. Log War Battle (if applicable)
+                $dispatcher->addListener(
+                    BattleConcludedEvent::class,
+                    $c->get(WarLoggerListener::class)
+                );
+
+                return $dispatcher;
             },
         ]);
 
