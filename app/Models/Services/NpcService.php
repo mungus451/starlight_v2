@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-use App\Core\Database;
 use App\Models\Entities\User;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -20,10 +19,13 @@ use Throwable;
 /**
  * Orchestrates the autonomous behavior of NPC agents ("The Void Syndicate").
  * Intended to be run via Cron.
+ * * Refactored for Strict Dependency Injection to fix constructor errors.
  */
 class NpcService
 {
     private PDO $db;
+    
+    // Repositories
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
@@ -40,23 +42,49 @@ class NpcService
     // Logging
     private string $logFile;
 
-    public function __construct()
-    {
-        $this->db = Database::getInstance();
+    /**
+     * DI Constructor.
+     * All dependencies are injected by the Container.
+     * * @param PDO $db
+     * @param UserRepository $userRepo
+     * @param ResourceRepository $resourceRepo
+     * @param StructureRepository $structureRepo
+     * @param StatsRepository $statsRepo
+     * @param AllianceRepository $allianceRepo
+     * @param StructureService $structureService
+     * @param TrainingService $trainingService
+     * @param ArmoryService $armoryService
+     * @param AttackService $attackService
+     * @param AllianceStructureService $allianceStructureService
+     */
+    public function __construct(
+        PDO $db,
+        UserRepository $userRepo,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo,
+        StatsRepository $statsRepo,
+        AllianceRepository $allianceRepo,
+        StructureService $structureService,
+        TrainingService $trainingService,
+        ArmoryService $armoryService,
+        AttackService $attackService,
+        AllianceStructureService $allianceStructureService
+    ) {
+        $this->db = $db;
         
         // Repositories
-        $this->userRepo = new UserRepository($this->db);
-        $this->resourceRepo = new ResourceRepository($this->db);
-        $this->structureRepo = new StructureRepository($this->db);
-        $this->statsRepo = new StatsRepository($this->db);
-        $this->allianceRepo = new AllianceRepository($this->db);
+        $this->userRepo = $userRepo;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
+        $this->statsRepo = $statsRepo;
+        $this->allianceRepo = $allianceRepo;
 
         // Services
-        $this->structureService = new StructureService();
-        $this->trainingService = new TrainingService();
-        $this->armoryService = new ArmoryService();
-        $this->attackService = new AttackService();
-        $this->allianceStructureService = new AllianceStructureService();
+        $this->structureService = $structureService;
+        $this->trainingService = $trainingService;
+        $this->armoryService = $armoryService;
+        $this->attackService = $attackService;
+        $this->allianceStructureService = $allianceStructureService;
 
         // Set log path (relative to this file location in /app/Models/Services)
         $this->logFile = __DIR__ . '/../../../logs/npc_actions.log';
