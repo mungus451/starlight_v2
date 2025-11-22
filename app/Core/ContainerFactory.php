@@ -8,6 +8,8 @@ use Psr\Container\ContainerInterface;
 use PDO;
 use Redis;
 use Exception;
+use App\Models\Repositories\NotificationRepository;
+use App\Models\Services\NotificationService;
 
 /**
  * ContainerFactory
@@ -30,7 +32,6 @@ class ContainerFactory
         $builder->addDefinitions([
             
             // 1. Configuration Loader
-            // Loads settings from /config/*.php
             Config::class => function (ContainerInterface $c) {
                 return new Config();
             },
@@ -41,32 +42,26 @@ class ContainerFactory
             },
 
             // 3. Redis Connection
-            // Configures and connects the Redis client
             Redis::class => function (ContainerInterface $c) {
                 $config = $c->get(Config::class);
                 $redisConfig = $config->get('redis');
 
                 $redis = new Redis();
                 
-                // Attempt connection
-                // Suppress warning to handle connection failure gracefully via Exception
                 if (!@$redis->connect($redisConfig['host'], $redisConfig['port'])) {
                     throw new Exception("Could not connect to Redis at {$redisConfig['host']}:{$redisConfig['port']}");
                 }
 
-                // Authenticate if password is set
                 if (!empty($redisConfig['password'])) {
                     if (!$redis->auth($redisConfig['password'])) {
                         throw new Exception("Redis authentication failed.");
                     }
                 }
 
-                // Select database
                 if (isset($redisConfig['database'])) {
                     $redis->select($redisConfig['database']);
                 }
 
-                // Set global prefix if defined
                 if (!empty($redisConfig['prefix'])) {
                     $redis->setOption(Redis::OPT_PREFIX, $redisConfig['prefix']);
                 }
@@ -75,17 +70,29 @@ class ContainerFactory
             },
 
             // 4. Session
-            // Wraps the global $_SESSION
             Session::class => function (ContainerInterface $c) {
                 return new Session();
             },
 
             // 5. CSRF Service
-            // Handles security tokens - Now correctly injects Redis and Session
             CSRFService::class => function (ContainerInterface $c) {
                 return new CSRFService(
                     $c->get(Redis::class),
                     $c->get(Session::class)
+                );
+            },
+
+            // 6. Notification Repository
+            NotificationRepository::class => function (ContainerInterface $c) {
+                return new NotificationRepository(
+                    $c->get(PDO::class)
+                );
+            },
+
+            // 7. Notification Service
+            NotificationService::class => function (ContainerInterface $c) {
+                return new NotificationService(
+                    $c->get(NotificationRepository::class)
                 );
             },
         ]);

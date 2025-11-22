@@ -6,11 +6,11 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Models\Services\DashboardService;
 use App\Models\Services\LevelCalculatorService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\StatsRepository;
 
 /**
- * Handles displaying the user's main dashboard.
- * * Refactored for Strict Dependency Injection.
+ * Handles the main dashboard view.
  */
 class DashboardController extends BaseController
 {
@@ -24,40 +24,34 @@ class DashboardController extends BaseController
      * @param CSRFService $csrfService
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
+     * @param NotificationService $notificationService
      */
     public function __construct(
         DashboardService $dashboardService,
         Session $session,
         CSRFService $csrfService,
         LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        StatsRepository $statsRepo,
+        NotificationService $notificationService
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo, $notificationService);
         $this->dashboardService = $dashboardService;
     }
 
     /**
-     * Shows the main dashboard.
-     * The route for this is protected by AuthMiddleware.
+     * Displays the dashboard.
      */
     public function show(): void
     {
-        // We can safely assume the user is logged in
         $userId = $this->session->get('user_id');
+        
+        // Get dashboard data (stats, resources, recent activity)
+        $data = $this->dashboardService->getDashboardData($userId);
 
-        if (is_null($userId)) {
-            $this->session->setFlash('error', 'Session error. Please log in again.');
-            $this->redirect('/login');
-            return;
-        }
-
-        // 1. Call the service to get all our data in one array
-        $data = $this->dashboardService->getDashboardData((int)$userId);
-
-        // Tell the layout to render in full-width mode
-        $data['layoutMode'] = 'full';
-
-        // 2. Render the view
-        $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);
+        // Render the view
+        $this->render('dashboard/show.php', $data + [
+            'title' => 'Dashboard',
+            'layoutMode' => 'full'
+        ]);
     }
 }

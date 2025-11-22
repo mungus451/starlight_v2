@@ -6,6 +6,7 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Models\Services\NotificationService;
 
 /**
  * BaseController
@@ -18,6 +19,7 @@ class BaseController
     protected CSRFService $csrfService;
     protected LevelCalculatorService $levelCalculator;
     protected StatsRepository $statsRepo;
+    protected NotificationService $notificationService;
 
     /**
      * Strict Constructor.
@@ -27,17 +29,20 @@ class BaseController
      * @param CSRFService $csrfService
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
+     * @param NotificationService $notificationService
      */
     public function __construct(
         Session $session,
         CSRFService $csrfService,
         LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        StatsRepository $statsRepo,
+        NotificationService $notificationService
     ) {
         $this->session = $session;
         $this->csrfService = $csrfService;
         $this->levelCalculator = $levelCalculator;
         $this->statsRepo = $statsRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -54,18 +59,20 @@ class BaseController
         // Auto-generate and pass CSRF token to all views
         $data['csrf_token'] = $this->csrfService->generateToken();
         
-        // Inject XP Data if Logged In
+        // Inject Global User Data if Logged In
         if ($this->session->has('user_id')) {
             $userId = $this->session->get('user_id');
             $stats = $this->statsRepo->findByUserId($userId);
             
             if ($stats) {
-                // Calculate progress using the injected service
+                // 1. Level/XP Data
                 $xpData = $this->levelCalculator->getLevelProgress($stats->experience, $stats->level);
-                
-                // Inject into data array for the navbar
                 $data['global_xp_data'] = $xpData;
                 $data['global_user_level'] = $stats->level;
+
+                // 2. Unread Notifications Count
+                $unreadCount = $this->notificationService->getUnreadCount($userId);
+                $data['unread_notification_count'] = $unreadCount;
             }
         }
         
