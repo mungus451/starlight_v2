@@ -17,8 +17,7 @@
         width: 100%;
         max-width: 1400px;
         text-align: left;
-        /* --- CHANGED: This is no longer a grid, but a flex column --- */
-        display: flex;
+        display: flex; /* Flex column layout */
         flex-direction: column;
         gap: 1.5rem;
         margin-inline: auto;
@@ -30,6 +29,7 @@
     .structures-container::before {
         content: "";
         position: absolute;
+        /* Default desktop bleed */
         inset: -80px -120px 0;
         background-image:
             linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 0),
@@ -41,7 +41,6 @@
 
     .structures-container h1 {
         text-align: center;
-        /* --- REMOVED grid-column --- */
         margin-bottom: 0.25rem;
         font-size: clamp(2.1rem, 3vw, 2.6rem);
         letter-spacing: -0.03em;
@@ -49,15 +48,14 @@
     }
 
     .structures-subtitle {
-        /* --- REMOVED grid-column --- */
         text-align: center;
         color: var(--muted);
         margin-bottom: 1rem;
         font-size: 0.85rem;
-        margin-top: -1rem; /* Pull up closer to title */
+        margin-top: -1rem;
     }
 
-    /* --- NEW: Top Grid for Finances + Controls --- */
+    /* --- Top Grid for Finances + Controls --- */
     .top-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -85,8 +83,6 @@
         color: #fff;
         border-color: rgba(45, 209, 209, 0.4);
     }
-    /* --- END NEW --- */
-
 
     /* Sidebar / info card */
     .data-card {
@@ -135,13 +131,12 @@
         font-size: 0.75rem;
     }
 
-    /* --- NEW: Main grid for structures --- */
+    /* --- Main grid for structures --- */
     .structure-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1.5rem;
     }
-
 
     /* Category header */
     .structure-category-header {
@@ -183,7 +178,6 @@
     }
 
     .card-header {
-        /* --- CHANGED: Added padding-bottom --- */
         padding: 1rem 1.25rem 1rem;
         background: rgba(6, 7, 14, 0.35);
         cursor: pointer;
@@ -204,14 +198,12 @@
         color: rgba(232, 232, 255, 0.35);
     }
     
-    /* --- NEW: Benefit Stat in Header --- */
     .card-header-stat {
         font-size: 0.85rem;
         font-weight: 600;
         color: var(--accent); /* Teal */
         padding-top: 0.35rem;
     }
-    /* --- END NEW --- */
 
     .card-body {
         padding: 0 1.25rem;
@@ -282,7 +274,6 @@
         cursor: not-allowed;
     }
 
-    /* Expanded state (kept the same class hooks) */
     .structure-card.is-expanded .card-body {
         max-height: 480px;
         padding-top: 1rem;
@@ -295,14 +286,22 @@
         border-top: 1px solid rgba(255, 255, 255, 0.03);
     }
 
-    /* Responsive */
+    /* Responsive & Overflow Fixes */
     @media (max-width: 980px) {
-        /* --- CHANGED: Stack both top grid and structure grid --- */
         .top-grid, .structure-grid {
             grid-template-columns: 1fr;
         }
         .controls-card {
-            justify-content: center; /* Center buttons on mobile */
+            justify-content: center;
+        }
+        
+        /* --- FIX: Constrain the grid overlay on mobile to prevent overflow --- */
+        .structures-container::before {
+            inset: 0; 
+        }
+        
+        .structures-container {
+            padding: 1rem; /* Slightly less padding on small screens */
         }
     }
 </style>
@@ -357,7 +356,7 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
                 $description = $details['description'] ?? 'No description available.';
                 $canAfford = $resources->credits >= $upgradeCost;
                 
-                // --- NEW: Benefit Text Logic ---
+                // --- Benefit Text Logic ---
                 $benefitText = '';
                 switch ($key) {
                     case 'economy_upgrade':
@@ -388,7 +387,6 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
                         $benefitText = "Unlocks & Upgrades Item Tiers";
                         break;
                 }
-                // --- END NEW Benefit Text Logic ---
             ?>
                 <div class="structure-card">
                     <div class="card-header">
