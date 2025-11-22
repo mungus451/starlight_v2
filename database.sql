@@ -680,3 +680,48 @@ CREATE TABLE `war_history` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_war_id` (`war_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `sessions` (
+            `id` VARCHAR(128) NOT NULL,
+            `user_id` INT UNSIGNED NULL DEFAULT NULL,
+            `payload` MEDIUMTEXT NOT NULL,
+            `last_activity` INT UNSIGNED NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_last_activity` (`last_activity`),
+            KEY `idx_user_id` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `rate_limits` (
+            `client_hash` VARCHAR(64) NOT NULL,
+            `route_uri` VARCHAR(191) NOT NULL,
+            `request_count` INT UNSIGNED NOT NULL DEFAULT 1,
+            `window_start` INT UNSIGNED NOT NULL,
+            PRIMARY KEY (`client_hash`, `route_uri`),
+            KEY `idx_window` (`window_start`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `notifications` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `user_id` INT UNSIGNED NOT NULL,
+            `type` ENUM('attack', 'spy', 'alliance', 'system') NOT NULL,
+            `title` VARCHAR(255) NOT NULL,
+            `message` TEXT NOT NULL,
+            `link` VARCHAR(255) NULL DEFAULT NULL,
+            `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            
+            PRIMARY KEY (`id`),
+            
+            -- Foreign Key constraint to ensure data integrity
+            CONSTRAINT `fk_notification_user`
+                FOREIGN KEY (`user_id`) 
+                REFERENCES `users`(`id`)
+                ON DELETE CASCADE,
+
+            -- Index for fetching unread counts quickly (The 'Red Badge' query)
+            KEY `idx_user_read` (`user_id`, `is_read`),
+            
+            -- Index for paginating recent notifications history
+            KEY `idx_user_created` (`user_id`, `created_at` DESC)
+            
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

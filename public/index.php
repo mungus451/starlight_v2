@@ -26,13 +26,18 @@ use App\Controllers\SpyController;
 use App\Controllers\BattleController;
 use App\Controllers\LevelUpController;
 use App\Controllers\AllianceController;
-use App\Controllers\AllianceManagementController;
+// --- Refactored Alliance Controllers ---
+use App\Controllers\AllianceApplicationController;
+use App\Controllers\AllianceFundingController;
+use App\Controllers\AllianceMemberController;
+use App\Controllers\AllianceSettingsController;
+// ---------------------------------------
 use App\Controllers\AllianceRoleController;
 use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
-use App\Controllers\NotificationController; // --- NEW IMPORT ---
+use App\Controllers\NotificationController;
 use App\Middleware\AuthMiddleware;
 
 // 1. Autoloader
@@ -67,7 +72,6 @@ try {
 }
 
 // 5. Setup Redis Session Handler
-// We must do this BEFORE session_start()
 try {
     $redis = $container->get(Redis::class);
     $handler = new RedisSessionHandler($redis);
@@ -78,7 +82,6 @@ try {
     // Now start the session
     session_start();
 } catch (Exception $e) {
-    // Fallback or die if Redis fails entirely
     die('CRITICAL: Session storage unavailable. ' . $e->getMessage());
 }
 
@@ -148,26 +151,39 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 
-    $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceManagementController::class, 'handleApply']);
-    $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceManagementController::class, 'handleCancelApp']);
-    $r->addRoute('POST', '/alliance/leave', [AllianceManagementController::class, 'handleLeave']);
-    $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceManagementController::class, 'handleAcceptApp']);
-    $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceManagementController::class, 'handleRejectApp']);
-    $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceManagementController::class, 'handleInvite']);
-    $r->addRoute('POST', '/alliance/donate', [AllianceManagementController::class, 'handleDonation']);
+    // Refactored: Recruitment (Applications & Invites) -> AllianceApplicationController
+    $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceApplicationController::class, 'handleApply']);
+    $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceApplicationController::class, 'handleCancelApp']);
+    $r->addRoute('POST', '/alliance/accept-app/{id:\d+}', [AllianceApplicationController::class, 'handleAcceptApp']);
+    $r->addRoute('POST', '/alliance/reject-app/{id:\d+}', [AllianceApplicationController::class, 'handleRejectApp']);
+    $r->addRoute('POST', '/alliance/invite/{id:\d+}', [AllianceApplicationController::class, 'handleInvite']);
+
+    // Refactored: Member Actions -> AllianceMemberController
+    $r->addRoute('POST', '/alliance/leave', [AllianceMemberController::class, 'handleLeave']);
+    $r->addRoute('POST', '/alliance/kick/{id:\d+}', [AllianceMemberController::class, 'handleKickMember']);
+    $r->addRoute('POST', '/alliance/role/assign', [AllianceMemberController::class, 'handleAssignRole']);
+
+    // Refactored: Funding & Banking -> AllianceFundingController
+    $r->addRoute('POST', '/alliance/donate', [AllianceFundingController::class, 'handleDonation']);
+    $r->addRoute('POST', '/alliance/loan/request', [AllianceFundingController::class, 'handleLoanRequest']);
+    $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceFundingController::class, 'handleLoanApprove']);
+    $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceFundingController::class, 'handleLoanDeny']);
+    $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceFundingController::class, 'handleLoanRepay']);
     
-    $r->addRoute('POST', '/alliance/profile/edit', [AllianceManagementController::class, 'handleUpdateProfile']);
-    $r->addRoute('POST', '/alliance/kick/{id:\d+}', [AllianceManagementController::class, 'handleKickMember']);
-    $r->addRoute('POST', '/alliance/role/assign', [AllianceManagementController::class, 'handleAssignRole']);
+    // Refactored: Settings -> AllianceSettingsController
+    $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
     
+    // Roles (Fixed routing: mapped DELETE to AllianceRoleController instead of old ManagementController)
     $r->addRoute('GET', '/alliance/roles', [AllianceRoleController::class, 'showAll']);
     $r->addRoute('POST', '/alliance/roles/create', [AllianceRoleController::class, 'handleCreate']);
     $r->addRoute('POST', '/alliance/roles/update/{id:\d+}', [AllianceRoleController::class, 'handleUpdate']);
-    $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceManagementController::class, 'handleDelete']);
+    $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceRoleController::class, 'handleDelete']);
     
+    // Structures
     $r->addRoute('GET', '/alliance/structures', [AllianceStructureController::class, 'show']);
     $r->addRoute('POST', '/alliance/structures/upgrade', [AllianceStructureController::class, 'handleUpgrade']);
     
+    // Forums
     $r->addRoute('GET', '/alliance/forum', [AllianceForumController::class, 'showForum']);
     $r->addRoute('GET', '/alliance/forum/page/{page:\d+}', [AllianceForumController::class, 'showForum']);
     $r->addRoute('GET', '/alliance/forum/topic/create', [AllianceForumController::class, 'showCreateTopic']);
@@ -177,11 +193,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/pin', [AllianceForumController::class, 'handlePinTopic']);
     $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/lock', [AllianceForumController::class, 'handleLockTopic']);
     
-    $r->addRoute('POST', '/alliance/loan/request', [AllianceManagementController::class, 'handleLoanRequest']);
-    $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceManagementController::class, 'handleLoanApprove']);
-    $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceManagementController::class, 'handleLoanDeny']);
-    $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceManagementController::class, 'handleLoanRepay']);
-
+    // Diplomacy & War
     $r->addRoute('GET', '/alliance/diplomacy', [DiplomacyController::class, 'show']);
     $r->addRoute('POST', '/alliance/diplomacy/treaty/propose', [DiplomacyController::class, 'handleProposeTreaty']);
     $r->addRoute('POST', '/alliance/diplomacy/treaty/accept/{id:\d+}', [DiplomacyController::class, 'handleAcceptTreaty']);
@@ -230,7 +242,7 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/notifications' // Added notifications to protected routes
+                '/serve/avatar', '/notifications'
             ];
             
             $isProtected = false;
