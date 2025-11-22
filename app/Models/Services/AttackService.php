@@ -14,14 +14,14 @@ use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
-use App\Core\Events\EventDispatcher; // --- NEW IMPORT ---
-use App\Events\BattleConcludedEvent; // --- NEW IMPORT ---
+use App\Core\Events\EventDispatcher;
+use App\Events\BattleConcludedEvent;
 use PDO;
 use Throwable;
 
 /**
  * Handles all business logic for PvP Attacks.
- * * Refactored to use EventDispatcher for side effects (Notifications, War Logs).
+ * * Refactored to support nested transactions and EventDispatcher.
  */
 class AttackService
 {
@@ -40,12 +40,8 @@ class AttackService
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
-    private EventDispatcher $dispatcher; // --- REPLACED SERVICES ---
+    private EventDispatcher $dispatcher;
 
-    /**
-     * DI Constructor.
-     * Removed WarService and NotificationService dependencies.
-     */
     public function __construct(
         PDO $db,
         Session $session,
@@ -60,7 +56,7 @@ class AttackService
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService,
-        EventDispatcher $dispatcher // --- INJECTED ---
+        EventDispatcher $dispatcher
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -80,25 +76,18 @@ class AttackService
         $this->dispatcher = $dispatcher;
     }
 
-    /**
-     * Gets all data needed for the main Battle page.
-     */
     public function getAttackPageData(int $userId, int $page): array
     {
-        // 1. Get Attacker's info
         $attackerResources = $this->resourceRepo->findByUserId($userId);
         $attackerStats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.attack', []);
 
-        // 2. Get Pagination config
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
-        
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
         $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
         $offset = ($page - 1) * $perPage;
 
-        // 3. Get Player Target List
         $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $userId);
 
         return [
@@ -114,9 +103,6 @@ class AttackService
         ];
     }
 
-    /**
-     * Gets a unified list of battle reports (offensive and defensive) for the user.
-     */
     public function getBattleReports(int $userId): array
     {
         $offensiveReports = $this->battleRepo->findReportsByAttackerId($userId);
@@ -131,17 +117,11 @@ class AttackService
         return $allReports;
     }
 
-    /**
-     * Gets a single, specific battle report, ensuring the viewer was involved.
-     */
     public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport
     {
         return $this->battleRepo->findReportById($reportId, $viewerId);
     }
 
-    /**
-     * Conducts an "all-in" PvP Attack.
-     */
     public function conductAttack(int $attackerId, string $targetName, string $attackType): bool
     {
         // --- 1. Validation (Input) ---
@@ -268,8 +248,13 @@ class AttackService
         
         $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
-        // --- 8. Execute Transaction ---
-        $this->db->beginTransaction();
+        // --- 8. Execute Transaction (Nested Safe) ---
+        $transactionStartedByMe = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStartedByMe = true;
+        }
+
         try {
             // 8a. Update Attacker Resources
             $attackerNewCredits = $attackerResources->credits + $attackerCreditGain;
@@ -315,7 +300,7 @@ class AttackService
                 }
             }
             
-            // --- 8g. DISPATCH EVENT (Replaces old service calls) ---
+            // --- 8g. DISPATCH EVENT ---
             $event = new BattleConcludedEvent(
                 $battleReportId,
                 $attacker,
@@ -326,16 +311,25 @@ class AttackService
                 $creditsPlundered
             );
             $this->dispatcher->dispatch($event);
-            // ------------------------------------------------------
+            // --------------------------
 
-            $this->db->commit();
+            // Commit only if we started the transaction
+            if ($transactionStartedByMe) {
+                $this->db->commit();
+            }
             
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            // Rollback only if we started the transaction
+            if ($transactionStartedByMe && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Attack Operation Error: '. $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred. The attack was cancelled.');
+            
+            // If we didn't start it, we must re-throw so the parent can rollback
+            if (!$transactionStartedByMe) {
+                throw $e; 
+            }
             return false;
         }
 
