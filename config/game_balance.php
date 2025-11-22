@@ -91,6 +91,10 @@ return [
     // --- Phase 8 ---
     'attack' => [
         'attack_turn_cost' => 1,
+        
+        // Casualty Tuning
+        'global_casualty_scalar' => 0.5, // Reduces all calculated deaths by 50%
+        
         'power_per_soldier' => 1.0,
         'power_per_offense_level' => 0.1,
         'power_per_strength_point' => 0.05,
@@ -98,10 +102,13 @@ return [
         'power_per_fortification_level' => 0.1,
         'power_per_defense_level' => 0.1,
         'power_per_constitution_point' => 0.05,
-        'winner_loss_percent_min' => 0.10,
-        'winner_loss_percent_max' => 0.20,
-        'loser_loss_percent_min' => 0.30,
-        'loser_loss_percent_max' => 0.50,
+        
+        // Base Percentages (Scalar is applied to these)
+        'winner_loss_percent_min' => 0.05, // Was 0.10
+        'winner_loss_percent_max' => 0.15, // Was 0.20
+        'loser_loss_percent_min' => 0.20,  // Was 0.30
+        'loser_loss_percent_max' => 0.40,  // Was 0.50
+        
         'plunder_percent' => 0.10,
         'net_worth_steal_percent' => 0.05,
         'experience_gain_base' => 500, // Legacy value, kept for reference

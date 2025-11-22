@@ -238,6 +238,9 @@ class AttackService
         $defenderGuardsLost = 0;
         $attackerXpGain = 0;
         $defenderXpGain = 0;
+        
+        // Retrieve the Global Scalar (default to 1.0 if missing)
+        $casualtyScalar = $config['global_casualty_scalar'] ?? 1.0;
 
         if ($attackResult === 'victory') {
             $attackerSoldiersLost = (int)mt_rand((int)($soldiersSent * $config['winner_loss_percent_min']), (int)($soldiersSent * $config['winner_loss_percent_max']));
@@ -261,6 +264,11 @@ class AttackService
             $defenderXpGain = $xpConfig['battle_defense_win'] ?? 100;
         }
         
+        // Apply Scalar
+        $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * $casualtyScalar);
+        $defenderGuardsLost = (int)ceil($defenderGuardsLost * $casualtyScalar);
+        
+        // Final cap check
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
@@ -301,33 +309,7 @@ class AttackService
             $attackerNewNetWorth = $attackerStats->net_worth + $netWorthStolen;
             $attackerNewPrestige = $attackerStats->war_prestige + $warPrestigeGained;
             
-            // Note: We updated experience in grantExperience, but updateBattleAttackerStats might update other fields.
-            // We need to ensure we don't overwrite the XP/Level change.
-            // StatsRepository::updateBattleAttackerStats updates turns, net worth, exp, prestige.
-            // So we should fetch the *latest* XP from the repo or calculate it.
-            // To be safe, let's just pass the new values we know.
-            // But wait, grantExperience might have bumped the level.
-            // Simpler approach: Just update the specific fields we changed here.
-            // But updateBattleAttackerStats updates 4 fields at once.
-            // Let's use the $attackerNewExperience we calculated?
-            // No, grantExperience handles level calculation which is complex.
-            // Let's assume grantExperience works and we just pass the *new* total XP to updateBattleAttackerStats if it expects it.
-            // Looking at StatsRepository, updateBattleAttackerStats takes $newExperience.
-            // So we must calculate it correctly:
             $attackerNewExperience = $attackerStats->experience + $attackerXpGain;
-            
-            // This call updates turns, net worth, xp, prestige. It does NOT update level.
-            // grantExperience updates xp, level, points.
-            // We have a conflict. We should split these updates or be very careful.
-            // Ideally, grantExperience handles XP/Level/Points.
-            // And updateBattleAttackerStats handles Turns/NetWorth/Prestige.
-            // But updateBattleAttackerStats currently updates experience too.
-            // Let's refactor updateBattleAttackerStats in StatsRepository later to NOT update XP if it conflicts.
-            // For now, we will just update the stats here, and assume grantExperience re-updates the level if needed.
-            // Actually, grantExperience runs an UPDATE query. This runs another UPDATE query.
-            // If we run grantExperience first, it saves the new XP.
-            // Then we run updateBattleAttackerStats, it overwrites the XP (with the same value).
-            // This is fine, as long as the value is correct.
             
             $this->statsRepo->updateBattleAttackerStats($attackerId, $attackerNewAttackTurns, $attackerNewNetWorth, $attackerNewExperience, $attackerNewPrestige);
 
