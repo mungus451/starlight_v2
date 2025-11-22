@@ -32,6 +32,7 @@ use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
+use App\Controllers\NotificationController;
 use App\Middleware\AuthMiddleware;
 
 // 1. Autoloader
@@ -140,6 +141,12 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
+    // --- Notification System ---
+    $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
+    $r->addRoute('GET', '/notifications/page/{page:\d+}', [NotificationController::class, 'index']);
+    $r->addRoute('POST', '/notifications/read', [NotificationController::class, 'handleMarkRead']);
+    $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
+
     // --- Alliance System ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
@@ -223,6 +230,7 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
+                '/notifications',
                 '/serve/avatar'
             ];
             

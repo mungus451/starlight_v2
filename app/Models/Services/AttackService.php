@@ -16,6 +16,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\WarService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -43,6 +44,8 @@ class AttackService
     private WarService $warService;
     private LevelUpService $levelUpService;
 
+    private NotificationService $notificationService;
+
     /**
      * DI Constructor.
      *
@@ -61,6 +64,7 @@ class AttackService
      * @param PowerCalculatorService $powerCalculatorService
      * @param WarService $warService
      * @param LevelUpService $levelUpService
+     * @param NotificationService $notificationService
      */
     public function __construct(
         PDO $db,
@@ -77,7 +81,8 @@ class AttackService
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         WarService $warService,
-        LevelUpService $levelUpService
+        LevelUpService $levelUpService,
+        notificationService $notificationService
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -96,6 +101,8 @@ class AttackService
         $this->powerCalculatorService = $powerCalculatorService;
         $this->warService = $warService;
         $this->levelUpService = $levelUpService;
+
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -354,6 +361,17 @@ class AttackService
                 $warPrestigeGained,
                 $defenderGuardsLost,
                 $creditsPlundered
+            );
+
+            // [NOTIFICATION SYSTEM] Alert the defender
+            // We determine the outcome text based on the defender's perspective.
+            // If attacker 'victory', defender was 'Defeated'.
+            $defenderOutcome = ($attackResult === 'victory') ? 'Defeat' : (($attackResult === 'defeat') ? 'Victory' : 'Stalemate');
+            
+            $this->notificationService->createAttackAlert(
+                $defender->id,
+                $attacker->characterName,
+                $defenderOutcome
             );
             
             $this->db->commit();

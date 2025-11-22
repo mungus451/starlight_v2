@@ -60,6 +60,24 @@
             transition: background 0.2s ease, color 0.2s ease;
             display: inline-block;
             white-space: nowrap;
+            position: relative; /* For badge positioning */
+        }
+
+        /* [NOTIFICATION SYSTEM] Badge Styles */
+        .notification-badge {
+            background-color: #e53e3e; /* Red */
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            min-width: 18px;
+            text-align: center;
+            line-height: 1;
         }
 
         /* Mobile specific adjustments */
@@ -300,6 +318,14 @@
             <?php endif; ?>
             
             <a href="/settings">Settings</a>
+            
+            <a href="/notifications">
+                Alerts
+                <?php if (isset($unread_notification_count) && $unread_notification_count > 0): ?>
+                    <span class="notification-badge"><?= $unread_notification_count > 99 ? '99+' : $unread_notification_count ?></span>
+                <?php endif; ?>
+            </a>
+            
             <a href="/logout">Logout</a>
 
             <?php if (isset($global_xp_data) && isset($global_user_level)): ?>

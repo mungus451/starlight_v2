@@ -11,6 +11,7 @@ use App\Models\Services\AlliancePolicyService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -32,6 +33,8 @@ class AllianceManagementService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
 
+    private NotificationService $notificationService;
+
     /**
      * DI Constructor.
      *
@@ -45,6 +48,7 @@ class AllianceManagementService
      * @param ResourceRepository $resourceRepo
      * @param AllianceBankLogRepository $bankLogRepo
      * @param AllianceLoanRepository $loanRepo
+     * @param NotificationService $notificationService
      */
     public function __construct(
         PDO $db,
@@ -56,7 +60,8 @@ class AllianceManagementService
         AlliancePolicyService $policyService,
         ResourceRepository $resourceRepo,
         AllianceBankLogRepository $bankLogRepo,
-        AllianceLoanRepository $loanRepo
+        AllianceLoanRepository $loanRepo, 
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -68,6 +73,7 @@ class AllianceManagementService
         $this->resourceRepo = $resourceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -194,6 +200,16 @@ class AllianceManagementService
         try {
             $this->userRepo->setAlliance($targetUser->id, $targetAllianceId, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
+
+            // [NOTIFICATION SYSTEM] Notify the user they have been accepted
+            // We check if they didn't just join via the open button (where adminId == targetUserId)
+            if ($adminId !== $targetUserId) {
+                $this->notificationService->createSystemNotification(
+                    $targetUser->id,
+                    "Your application to join [{$alliance->name}] has been accepted!"
+                );
+            }
+
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
@@ -227,6 +243,13 @@ class AllianceManagementService
         }
 
         $this->appRepo->delete($appId);
+
+        // [NOTIFICATION SYSTEM] Notify user of rejection
+        $this->notificationService->createSystemNotification(
+            $app->user_id,
+            "Your application to join [{$alliance->name}] was rejected."
+        );
+
         $this->session->setFlash('success', 'Application rejected.');
         return true;
     }
@@ -267,6 +290,17 @@ class AllianceManagementService
         try {
             $this->userRepo->setAlliance($targetUser->id, $inviterUser->alliance_id, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
+
+            // [NOTIFICATION SYSTEM] Create specific Invite Alert
+            // Note: Our current 'inviteUser' logic auto-adds them (aggressive invite).
+            // If this was a request-to-join system, we'd send a request. 
+            // But per current logic, they are added instantly.
+            $this->notificationService->createAllianceInviteAlert(
+                $targetUser->id,
+                $alliance->name,
+                $inviterUser->characterName
+            );
+
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
@@ -331,6 +365,12 @@ class AllianceManagementService
         }
 
         $this->userRepo->leaveAlliance($targetUserId);
+
+        // [NOTIFICATION SYSTEM] Notify the kicked user
+        $this->notificationService->createSystemNotification(
+            $targetUser->id,
+            "You have been kicked from the alliance [{$alliance->name}] by {$adminUser->characterName}."
+        );
         
         if ($adminId === $targetUserId) {
             $this->session->set('alliance_id', null);
@@ -373,6 +413,13 @@ class AllianceManagementService
         }
 
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
+
+        // [NOTIFICATION SYSTEM] Notify user of role change
+        $this->notificationService->createSystemNotification(
+            $targetUser->id,
+            "Your role has been updated to '{$newRole->name}'."
+        );
+
         $this->session->setFlash('success', $targetUser->characterName . "'s role has been updated to " . $newRole->name . ".");
         return true;
     }
@@ -566,6 +613,12 @@ class AllianceManagementService
             $this->bankLogRepo->createLog($loan->alliance_id, $adminUserId, 'loan_approved', -$loan->amount_requested, $message);
             
             $this->loanRepo->updateLoan($loanId, 'active', $loan->amount_to_repay);
+
+            // [NOTIFICATION SYSTEM] Notify borrower
+            $this->notificationService->createSystemNotification(
+                $borrower->id,
+                "Your loan request for " . number_format($loan->amount_requested) . " credits has been approved."
+            );
             
             $this->db->commit();
             
@@ -602,6 +655,13 @@ class AllianceManagementService
         }
         
         $this->loanRepo->updateLoan($loanId, 'denied', 0);
+
+        // [NOTIFICATION SYSTEM] Notify borrower
+        $this->notificationService->createSystemNotification(
+            $loan->user_id,
+            "Your loan request for " . number_format($loan->amount_requested) . " credits has been denied."
+        );
+        
         $this->session->setFlash('success', 'Loan request has been denied.');
         return true;
     }
