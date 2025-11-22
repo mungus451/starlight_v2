@@ -35,14 +35,13 @@
         padding-top: 1.5rem;
     }
 
-    /* --- List Table (from Battle) --- */
+    /* --- List Table --- */
     .alliance-table-container {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 1rem;
         box-shadow: var(--shadow);
-        overflow-x: auto;
         max-width: 1000px;
         margin: 0 auto 1.5rem auto;
     }
@@ -53,12 +52,14 @@
         max-width: 300px;
         margin: 0 auto 1.5rem auto;
         text-align: center;
+        text-decoration: none;
+        padding: 0.8rem;
     }
 
     .alliance-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 600px;
+        min-width: 100%;
     }
     .alliance-table th, .alliance-table td {
         padding: 0.75rem 1rem;
@@ -94,7 +95,59 @@
         font-size: 1.1rem;
     }
 
-    /* --- Pagination (from Battle) --- */
+    /* --- MOBILE CARD TRANSFORMATION --- */
+    @media (max-width: 768px) {
+        /* Force table elements to display as block/flex */
+        .alliance-table, .alliance-table thead, .alliance-table tbody, .alliance-table th, .alliance-table td, .alliance-table tr { 
+            display: block; 
+        }
+        
+        /* Hide headers */
+        .alliance-table thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        /* Card Style for Rows */
+        .alliance-table tr { 
+            margin-bottom: 1rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(13, 15, 27, 0.4);
+            padding: 1rem;
+        }
+        
+        /* Flex Cells */
+        .alliance-table td { 
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            position: relative;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: right;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+        }
+        
+        .alliance-table td:last-child {
+            border-bottom: 0;
+        }
+
+        /* Labels via pseudo-element */
+        .alliance-table td::before { 
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            text-align: left;
+        }
+    }
+
+    /* --- Pagination --- */
     .pagination {
         display: flex;
         justify-content: center;
@@ -146,17 +199,17 @@
                 <?php else: ?>
                     <?php foreach ($alliances as $alliance): ?>
                         <tr>
-                            <td>
+                            <td data-label="Tag">
                                 <span class="alliance-tag">[<?= htmlspecialchars($alliance->tag) ?>]</span>
                             </td>
-                            <td>
+                            <td data-label="Name">
                                 <span class="alliance-name">
                                     <a href="/alliance/profile/<?= $alliance->id ?>">
                                         <?= htmlspecialchars($alliance->name) ?>
                                     </a>
                                 </span>
                             </td>
-                            <td><?= number_format($alliance->net_worth) ?></td>
+                            <td data-label="Net Worth"><?= number_format($alliance->net_worth) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

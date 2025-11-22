@@ -41,7 +41,7 @@
         padding-top: 1.5rem;
     }
 
-    /* --- Attacker Header Card (from Bank) --- */
+    /* --- Attacker Header Card --- */
     .attacker-header-card {
         background: radial-gradient(circle at top, rgba(45, 209, 209, 0.12), rgba(11, 13, 24, 0.9));
         border: 1px solid rgba(45, 209, 209, 0.4);
@@ -58,7 +58,6 @@
     .header-stat {
         text-align: center;
         flex-grow: 1;
-        /* --- FIX 1: Add flex alignment properties --- */
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -70,20 +69,15 @@
         color: var(--muted);
         margin-bottom: 0.25rem;
     }
-    /* --- FIX 1.1: Ensure link/button inside span also centers --- */
     .header-stat span .btn-submit {
-        margin-top: 0; /* Remove default button margin */
+        margin-top: 0;
     }
     .header-stat strong {
         font-size: 1.5rem;
         color: #fff;
     }
-    .header-stat strong.accent-gold {
-        color: var(--accent-2);
-    }
-    .header-stat strong.accent-red {
-        color: var(--accent-red);
-    }
+    .header-stat strong.accent-gold { color: var(--accent-2); }
+    .header-stat strong.accent-red { color: var(--accent-red); }
 
     /* --- Player List Table --- */
     .player-table-container {
@@ -92,19 +86,19 @@
         border-radius: var(--radius);
         padding: 1rem;
         box-shadow: var(--shadow);
-        overflow-x: auto; /* Allow horizontal scroll on small screens */
+        /* overflow-x: auto; removed to allow card view to take over */
     }
     
     .player-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 600px; /* Prevent squishing on mobile */
+        min-width: 100%;
     }
     .player-table th, .player-table td {
         padding: 0.75rem 1rem;
         text-align: left;
         border-bottom: 1px solid var(--border);
-        vertical-align: middle; /* Added for consistency */
+        vertical-align: middle;
     }
     .player-table th {
         color: var(--accent-2);
@@ -151,10 +145,6 @@
         text-decoration: underline;
         color: var(--accent);
     }
-    .player-level {
-        font-size: 0.9rem;
-        color: var(--muted);
-    }
 
     .btn-attack {
         padding: 0.6rem 1rem;
@@ -167,9 +157,80 @@
         color: white;
         border: none;
         cursor: pointer;
+        white-space: nowrap;
     }
     .btn-attack:hover {
         filter: brightness(1.1);
+    }
+
+    /* --- MOBILE CARD TRANSFORMATION --- */
+    @media (max-width: 768px) {
+        /* Force table to be block-level */
+        .player-table, .player-table thead, .player-table tbody, .player-table th, .player-table td, .player-table tr { 
+            display: block; 
+        }
+        
+        /* Hide headers */
+        .player-table thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        /* Card Style for Rows */
+        .player-table tr { 
+            margin-bottom: 1rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(13, 15, 27, 0.4);
+            padding: 1rem;
+        }
+        
+        /* Flex Cells */
+        .player-table td { 
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            position: relative;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: right;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+        }
+        
+        .player-table td:last-child {
+            border-bottom: 0;
+            justify-content: center;
+            padding-top: 1rem;
+        }
+
+        /* Labels */
+        .player-table td::before { 
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            text-align: left;
+            margin-right: 1rem;
+        }
+        
+        /* Special handling for the Avatar/Name cell */
+        .player-table td:first-child {
+            justify-content: flex-start;
+            gap: 1rem;
+        }
+        .player-table td:first-child::before {
+            display: none; /* Hide "Player:" label, avatar is self-explanatory */
+        }
+        
+        /* Full width button */
+        .btn-attack {
+            width: 100%;
+            padding: 0.8rem;
+        }
     }
 
     /* --- Pagination --- */
@@ -202,7 +263,7 @@
     
     /* --- Attack Modal --- */
     .modal-overlay {
-        display: none; /* Hidden by default */
+        display: none;
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.75);
@@ -214,9 +275,7 @@
         opacity: 0;
         transition: opacity 0.3s ease;
     }
-    .modal-overlay.active {
-        opacity: 1;
-    }
+    .modal-overlay.active { opacity: 1; }
     
     .modal-content {
         background: var(--card);
@@ -224,14 +283,12 @@
         border-radius: var(--radius);
         box-shadow: var(--shadow);
         padding: 1.5rem;
-        width: 100%;
+        width: 95%;
         max-width: 500px;
         transform: scale(0.95);
         transition: transform 0.3s ease;
     }
-    .modal-overlay.active .modal-content {
-        transform: scale(1);
-    }
+    .modal-overlay.active .modal-content { transform: scale(1); }
 
     .modal-header {
         display: flex;
@@ -241,35 +298,18 @@
         padding-bottom: 0.75rem;
         margin-bottom: 1rem;
     }
-    .modal-header h3 {
-        margin: 0;
-        color: #fff;
-        font-size: 1.3rem;
-    }
+    .modal-header h3 { margin: 0; color: #fff; font-size: 1.3rem; }
     .modal-close-btn {
-        background: none;
-        border: none;
-        color: var(--muted);
-        font-size: 1.5rem;
-        cursor: pointer;
-        line-height: 1;
+        background: none; border: none; color: var(--muted);
+        font-size: 1.5rem; cursor: pointer; line-height: 1;
     }
-    .modal-close-btn:hover {
-        color: #fff;
-    }
+    .modal-close-btn:hover { color: #fff; }
     
     .modal-summary {
-        font-size: 1rem;
-        color: var(--muted);
-        background: #1e1e3f;
-        padding: 1rem;
-        border-radius: 5px;
-        border: 1px solid var(--border);
-        margin-bottom: 1rem;
+        font-size: 1rem; color: var(--muted); background: #1e1e3f;
+        padding: 1rem; border-radius: 5px; border: 1px solid var(--border); margin-bottom: 1rem;
     }
-    .modal-summary strong {
-        color: var(--accent-2);
-    }
+    .modal-summary strong { color: var(--accent-2); }
 </style>
 
 <div class="battle-container-full">
@@ -299,7 +339,7 @@
                 <tr>
                     <th>Player</th>
                     <th>Level</th>
-                    <th>Credits (On Hand)</th>
+                    <th>Credits</th>
                     <th>Army Size</th>
                     <th>Actions</th>
                 </tr>
@@ -313,9 +353,8 @@
                             data-target-id="<?= $target['id'] ?>"
                             data-target-name="<?= htmlspecialchars($target['character_name']) ?>">
                             
-                            <td>
+                            <td data-label="Player">
                                 <div class="player-cell">
-                                    
                                     <?php if ($target['profile_picture_url']): ?>
                                         <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal">
                                     <?php else: ?>
@@ -328,16 +367,15 @@
                                         <span class="player-name">
                                             <a href="/profile/<?= $target['id'] ?>"><?= htmlspecialchars($target['character_name']) ?></a>
                                         </span>
-                                        </div>
+                                    </div>
                                 </div>
                             </td>
                             
-                            <td><?= $target['level'] ?></td>
-
-                            <td><?= number_format($target['credits']) ?></td>
-                            <td><?= number_format($target['army_size']) ?></td>
+                            <td data-label="Level"><strong><?= $target['level'] ?></strong></td>
+                            <td data-label="Credits"><?= number_format($target['credits']) ?></td>
+                            <td data-label="Army Size"><?= number_format($target['army_size']) ?></td>
                             
-                            <td>
+                            <td data-label="Actions">
                                 <button class="btn-attack btn-attack-modal">Attack</button>
                             </td>
                         </tr>

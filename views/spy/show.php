@@ -94,13 +94,13 @@ $turn_cost = $costs['attack_turn_cost'];
         border-radius: var(--radius);
         padding: 1rem;
         box-shadow: var(--shadow);
-        overflow-x: auto;
+        /* overflow-x: auto; removed to allow card view to take over */
     }
     
     .player-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 600px;
+        min-width: 100%;
     }
     .player-table th, .player-table td {
         padding: 0.75rem 1rem;
@@ -165,9 +165,80 @@ $turn_cost = $costs['attack_turn_cost'];
         color: white;
         border: none;
         cursor: pointer;
+        white-space: nowrap;
     }
     .btn-spy:hover {
         filter: brightness(1.1);
+    }
+
+    /* --- MOBILE CARD TRANSFORMATION --- */
+    @media (max-width: 768px) {
+        /* Force table to be block-level */
+        .player-table, .player-table thead, .player-table tbody, .player-table th, .player-table td, .player-table tr { 
+            display: block; 
+        }
+        
+        /* Hide headers */
+        .player-table thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        /* Card Style for Rows */
+        .player-table tr { 
+            margin-bottom: 1rem; 
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(13, 15, 27, 0.4);
+            padding: 1rem;
+        }
+        
+        /* Flex Cells */
+        .player-table td { 
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            position: relative;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: right;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+        }
+        
+        .player-table td:last-child {
+            border-bottom: 0;
+            justify-content: center;
+            padding-top: 1rem;
+        }
+
+        /* Labels */
+        .player-table td::before { 
+            content: attr(data-label);
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            text-align: left;
+            margin-right: 1rem;
+        }
+        
+        /* Special handling for the Avatar/Name cell */
+        .player-table td:first-child {
+            justify-content: flex-start;
+            gap: 1rem;
+        }
+        .player-table td:first-child::before {
+            display: none; /* Hide "Player:" label, avatar is self-explanatory */
+        }
+        
+        /* Full width button */
+        .btn-spy {
+            width: 100%;
+            padding: 0.8rem;
+        }
     }
 
     /* --- Pagination --- */
@@ -222,7 +293,7 @@ $turn_cost = $costs['attack_turn_cost'];
         border-radius: var(--radius);
         box-shadow: var(--shadow);
         padding: 1.5rem;
-        width: 100%;
+        width: 95%;
         max-width: 500px;
         transform: scale(0.95);
         transition: transform 0.3s ease;
@@ -300,7 +371,7 @@ $turn_cost = $costs['attack_turn_cost'];
                 <tr>
                     <th>Player</th>
                     <th>Level</th>
-                    <th>Credits (On Hand)</th>
+                    <th>Credits</th>
                     <th>Army Size</th>
                     <th>Actions</th>
                 </tr>
@@ -314,10 +385,9 @@ $turn_cost = $costs['attack_turn_cost'];
                             data-target-id="<?= $target['id'] ?>"
                             data-target-name="<?= htmlspecialchars($target['character_name']) ?>">
                             
-                            <td>
+                            <td data-label="Player">
                                 <div class="player-cell">
                                     
-                                    <?php // --- THIS BLOCK IS CHANGED --- ?>
                                     <?php if ($target['profile_picture_url']): ?>
                                         <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-spy-modal">
                                     <?php else: ?>
@@ -334,11 +404,11 @@ $turn_cost = $costs['attack_turn_cost'];
                                 </div>
                             </td>
                             
-                            <td><?= $target['level'] ?></td>
-                            <td><?= number_format($target['credits']) ?></td>
-                            <td><?= number_format($target['army_size']) ?></td>
+                            <td data-label="Level"><strong><?= $target['level'] ?></strong></td>
+                            <td data-label="Credits"><?= number_format($target['credits']) ?></td>
+                            <td data-label="Army Size"><?= number_format($target['army_size']) ?></td>
                             
-                            <td>
+                            <td data-label="Actions">
                                 <button class="btn-spy btn-spy-modal">Spy</button>
                             </td>
                         </tr>
