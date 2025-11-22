@@ -6,10 +6,12 @@
  * 1. Autoloading
  * 2. Environment Variables
  * 3. Dependency Injection Container
- * 4. Routing & Dispatching
+ * 4. Session Setup (Now via Redis)
+ * 5. Routing & Dispatching
  */
 
 use App\Core\ContainerFactory;
+use App\Core\RedisSessionHandler;
 use App\Controllers\PagesController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
@@ -31,9 +33,6 @@ use App\Controllers\AllianceForumController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Middleware\AuthMiddleware;
-
-// Start the PHP session immediately
-session_start();
 
 // 1. Autoloader
 require __DIR__ . '/../vendor/autoload.php';
@@ -66,7 +65,23 @@ try {
     die('CRITICAL: Failed to initialize application container. ' . $e->getMessage());
 }
 
-// 5. Router Definition
+// 5. Setup Redis Session Handler
+// We must do this BEFORE session_start()
+try {
+    $redis = $container->get(Redis::class);
+    $handler = new RedisSessionHandler($redis);
+    
+    // Register the custom handler
+    session_set_save_handler($handler, true);
+    
+    // Now start the session
+    session_start();
+} catch (Exception $e) {
+    // Fallback or die if Redis fails entirely
+    die('CRITICAL: Session storage unavailable. ' . $e->getMessage());
+}
+
+// 6. Router Definition
 $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     // --- Public Pages ---
@@ -177,7 +192,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
 });
 
-// 6. Dispatch
+// 7. Dispatch
 try {
     $httpMethod = $_SERVER['REQUEST_METHOD'];
     $uri = $_SERVER['REQUEST_URI'];
@@ -220,8 +235,6 @@ try {
             }
 
             if ($isProtected) {
-                // *** FIXED: Use Container to resolve Middleware ***
-                // This injects AuthService (and its dependencies) into AuthMiddleware
                 $container->get(AuthMiddleware::class)->handle();
             }
 
