@@ -27,14 +27,14 @@
         --shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
     }
 
-    /* --- Base Grid (from V1 Screenshot) --- */
+    /* --- Base Grid --- */
     .dashboard-grid {
         text-align: left;
         width: 100%;
         margin: 0 auto;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: auto auto auto 1fr; /* Define rows */
+        grid-template-rows: auto auto auto 1fr;
         gap: 1.5rem;
         position: relative;
     }
@@ -45,28 +45,34 @@
     .grid-col-span-3 { grid-column: span 3; }
     .grid-row-span-2 { grid-row: span 2; }
     
-    /* --- Responsive Grid --- */
+    /* --- Responsive Grid Logic --- */
     @media (max-width: 1200px) {
         .dashboard-grid {
-            grid-template-columns: 1fr 1fr; /* 2 columns */
+            grid-template-columns: 1fr 1fr;
         }
-        /* Make main cards span full width */
         .grid-col-span-2 { grid-column: span 2; }
-        .grid-row-span-2 { grid-row: span 1; } /* Stack rows */
+        /* Reset row spans on tablet to prevent gaps */
+        .grid-row-span-2 { grid-row: span 1; } 
     }
+
     @media (max-width: 768px) {
         .dashboard-grid {
-            grid-template-columns: 1fr; /* 1 column */
+            display: flex; /* Switch to Flexbox for simpler vertical stacking */
+            flex-direction: column;
+            gap: 1rem;
         }
-        /* All items span 1 column */
-        .grid-col-span-1, .grid-col-span-2, .grid-col-span-3 {
-            grid-column: span 1;
+        
+        /* Reset all grid properties for mobile components */
+        .grid-col-span-1, .grid-col-span-2, .grid-col-span-3, .grid-row-span-2 {
+            grid-column: auto;
+            grid-row: auto;
+            width: 100%;
         }
     }
 
-    /* --- Player Header (V1 Style) --- */
+    /* --- Player Header --- */
     .player-header {
-        grid-column: 1 / -1; /* Full width */
+        grid-column: 1 / -1;
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -86,8 +92,8 @@
     }
     
     .player-avatar {
-        width: 100px;
-        height: 100px;
+        width: 80px; /* Slightly smaller for better mobile fit */
+        height: 80px;
         flex-shrink: 0;
         border-radius: 50%;
         background: #1e1e3f;
@@ -95,39 +101,41 @@
         object-fit: cover;
     }
     .player-avatar-svg {
-        padding: 1.5rem;
+        padding: 1rem;
         color: var(--muted);
     }
     
     .player-info h2 {
         margin: 0;
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         color: #fff;
+        line-height: 1.2;
     }
     .player-info .sub-text {
         font-size: 0.9rem;
         color: var(--muted);
         display: block;
+        margin-top: 0.25rem;
     }
     .player-info .sub-text a {
         color: var(--accent);
         text-decoration: none;
         font-weight: 600;
+        padding: 0.5rem 0; /* Touch padding */
     }
-    .player-info .sub-text a:hover {
-        text-decoration: underline;
-    }
+    
     .player-stats {
         display: flex;
-        gap: 1.5rem;
+        gap: 1rem;
         flex-wrap: wrap;
         text-align: right;
+        justify-content: flex-end;
     }
     .player-stat {
-        flex-grow: 1;
+        min-width: 80px;
     }
     .player-stat span {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -135,17 +143,37 @@
         margin-bottom: 0.25rem;
     }
     .player-stat strong {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         color: #fff;
         font-weight: 600;
     }
     
-    /* --- Main Data Card (V1 Style) --- */
+    @media (max-width: 768px) {
+        .player-header {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 1.25rem;
+        }
+        .player-stats {
+            width: 100%;
+            justify-content: space-between;
+            text-align: left;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+        .player-stat {
+            text-align: center;
+            min-width: auto;
+            flex: 1;
+        }
+    }
+    
+    /* --- Main Data Card --- */
     .data-card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.25rem 1.5rem;
+        padding: 1.25rem;
         box-shadow: var(--shadow);
         backdrop-filter: blur(6px);
         display: flex;
@@ -156,7 +184,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
         border-bottom: 1px solid var(--border);
         padding-bottom: 0.75rem;
     }
@@ -166,29 +194,41 @@
         font-size: 1.1rem;
         letter-spacing: 0.02em;
     }
+    
+    /* Touch-optimized Toggle */
     .card-toggle {
         font-size: 0.85rem;
         color: var(--muted);
         cursor: pointer;
         text-decoration: none;
+        /* Hitbox expansion */
+        padding: 0.75rem;
+        margin: -0.75rem; 
+        user-select: none;
     }
-    .card-toggle:hover {
+    @media (hover: hover) {
+        .card-toggle:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+    }
+    .card-toggle:active {
         color: var(--accent);
-        text-decoration: underline;
+        opacity: 0.8;
     }
     
     /* Stats List */
     .card-stats-list {
         list-style: none;
         padding: 0;
-        margin: 0 0 1rem 0;
+        margin: 0 0 0.5rem 0;
         flex-grow: 1;
     }
     .card-stats-list li {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.6rem 0.25rem;
+        padding: 0.75rem 0.25rem; /* Increased vertical padding for touch spacing */
         border-bottom: 1px solid rgba(58, 58, 90, 0.08);
     }
     .card-stats-list li:last-child {
@@ -206,7 +246,7 @@
     
     /* Value Colors */
     .value-total {
-        font-size: 1.5rem !important;
+        font-size: 1.4rem !important;
         font-weight: 700 !important;
     }
     .value-green { color: var(--accent-green) !important; }
@@ -215,7 +255,7 @@
 
     /* Breakdown (Inline Card) */
     .card-breakdown {
-        display: none; /* Hidden by default */
+        display: none;
         background: rgba(5, 7, 18, 0.4);
         border: 1px solid var(--border);
         border-radius: 12px;
@@ -224,11 +264,17 @@
     }
     .card-breakdown.active {
         display: block;
+        animation: fadeIn 0.2s ease-out;
     }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
     .card-breakdown ul {
         list-style: none;
         padding: 0;
-        margin: 0;
+        margin: 0.5rem 0 1rem 0;
     }
     .card-breakdown li {
         display: flex;
@@ -247,8 +293,6 @@
 
     <div class="player-header">
         <div class="player-info">
-            
-            <?php // --- THIS BLOCK IS CHANGED --- ?>
             <?php if ($user->profile_picture_url): ?>
                 <img src="/serve/avatar/<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="player-avatar">
             <?php else: ?>
