@@ -10,7 +10,8 @@ use App\Models\Services\NotificationService;
 use App\Models\Repositories\StatsRepository;
 
 /**
- * Handles the main dashboard view.
+ * Handles displaying the user's main dashboard.
+ * * Refactored for Strict Dependency Injection.
  */
 class DashboardController extends BaseController
 {
@@ -39,19 +40,27 @@ class DashboardController extends BaseController
     }
 
     /**
-     * Displays the dashboard.
+     * Shows the main dashboard.
+     * The route for this is protected by AuthMiddleware.
      */
     public function show(): void
     {
+        // We can safely assume the user is logged in
         $userId = $this->session->get('user_id');
-        
-        // Get dashboard data (stats, resources, recent activity)
-        $data = $this->dashboardService->getDashboardData($userId);
 
-        // Render the view
-        $this->render('dashboard/show.php', $data + [
-            'title' => 'Dashboard',
-            'layoutMode' => 'full'
-        ]);
+        if (is_null($userId)) {
+            $this->session->setFlash('error', 'Session error. Please log in again.');
+            $this->redirect('/login');
+            return;
+        }
+
+        // 1. Call the service to get all our data in one array
+        $data = $this->dashboardService->getDashboardData((int)$userId);
+
+        // Tell the layout to render in full-width mode
+        $data['layoutMode'] = 'full';
+
+        // 2. Render the view
+        $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);
     }
 }

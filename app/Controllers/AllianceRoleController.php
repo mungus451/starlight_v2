@@ -6,6 +6,7 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\LevelCalculatorService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\UserRepository;
@@ -30,6 +31,7 @@ class AllianceRoleController extends BaseController
      * @param CSRFService $csrfService
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
+     * @param NotificationService $notificationService
      */
     public function __construct(
         AllianceManagementService $mgmtService,
@@ -38,9 +40,10 @@ class AllianceRoleController extends BaseController
         Session $session,
         CSRFService $csrfService,
         LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        StatsRepository $statsRepo,
+        NotificationService $notificationService
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo, $notificationService);
         $this->mgmtService = $mgmtService;
         $this->roleRepo = $roleRepo;
         $this->userRepo = $userRepo;
