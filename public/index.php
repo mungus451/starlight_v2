@@ -142,8 +142,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
     // --- Notification System ---
-    $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
-    $r->addRoute('GET', '/notifications/page/{page:\d+}', [NotificationController::class, 'index']);
+    $r->addRoute('GET', '/notifications', [NotificationController::class, 'show']);
+    $r->addRoute('GET', '/notifications/page/{page:\d+}', [NotificationController::class, 'show']);
     $r->addRoute('POST', '/notifications/read', [NotificationController::class, 'handleMarkRead']);
     $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
 

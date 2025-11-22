@@ -30,14 +30,14 @@ class NotificationController extends BaseController
     /**
      * Displays the notifications page.
      */
-    public function index(array $vars): void
+    public function show(array $vars): void
     {
         $userId = $this->session->get('user_id');
         $page = isset($vars['page']) ? (int)$vars['page'] : 1;
         
         $data = $this->notificationService->getUserNotifications($userId, $page, 20);
         
-        $this->render('notifications/index.php', [
+        $this->render('notifications/show.php', [
             'title' => 'Notifications',
             'notifications' => $data['notifications'],
             'pagination' => $data['pagination'],
