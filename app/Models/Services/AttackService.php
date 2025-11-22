@@ -16,6 +16,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\WarService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\NotificationService; // --- NEW IMPORT ---
 use PDO;
 use Throwable;
 
@@ -42,6 +43,7 @@ class AttackService
     private PowerCalculatorService $powerCalculatorService;
     private WarService $warService;
     private LevelUpService $levelUpService;
+    private NotificationService $notificationService; // --- NEW PROPERTY ---
 
     /**
      * DI Constructor.
@@ -61,6 +63,7 @@ class AttackService
      * @param PowerCalculatorService $powerCalculatorService
      * @param WarService $warService
      * @param LevelUpService $levelUpService
+     * @param NotificationService $notificationService // --- NEW PARAM ---
      */
     public function __construct(
         PDO $db,
@@ -77,7 +80,8 @@ class AttackService
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         WarService $warService,
-        LevelUpService $levelUpService
+        LevelUpService $levelUpService,
+        NotificationService $notificationService // --- NEW INJECTION ---
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -96,6 +100,7 @@ class AttackService
         $this->powerCalculatorService = $powerCalculatorService;
         $this->warService = $warService;
         $this->levelUpService = $levelUpService;
+        $this->notificationService = $notificationService; // --- NEW ASSIGNMENT ---
     }
 
     /**
@@ -239,7 +244,6 @@ class AttackService
         $attackerXpGain = 0;
         $defenderXpGain = 0;
         
-        // Retrieve the Global Scalar (default to 1.0 if missing)
         $casualtyScalar = $config['global_casualty_scalar'] ?? 1.0;
 
         if ($attackResult === 'victory') {
@@ -264,11 +268,9 @@ class AttackService
             $defenderXpGain = $xpConfig['battle_defense_win'] ?? 100;
         }
         
-        // Apply Scalar
         $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * $casualtyScalar);
         $defenderGuardsLost = (int)ceil($defenderGuardsLost * $casualtyScalar);
         
-        // Final cap check
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
@@ -302,15 +304,12 @@ class AttackService
             $attackerNewSoldiers = $attackerResources->soldiers - $attackerSoldiersLost;
             $this->resourceRepo->updateBattleAttacker($attackerId, $attackerNewCredits, $attackerNewSoldiers);
 
-            // 8b. Update Attacker Stats (XP & Level Up)
+            // 8b. Update Attacker Stats
             $this->levelUpService->grantExperience($attackerId, $attackerXpGain);
-            
             $attackerNewAttackTurns = $attackerStats->attack_turns - $turnCost;
             $attackerNewNetWorth = $attackerStats->net_worth + $netWorthStolen;
             $attackerNewPrestige = $attackerStats->war_prestige + $warPrestigeGained;
-            
             $attackerNewExperience = $attackerStats->experience + $attackerXpGain;
-            
             $this->statsRepo->updateBattleAttackerStats($attackerId, $attackerNewAttackTurns, $attackerNewNetWorth, $attackerNewExperience, $attackerNewPrestige);
 
             // 8c. Update Defender Resources
@@ -318,9 +317,8 @@ class AttackService
             $defenderNewGuards = max(0, $defenderResources->guards - $defenderGuardsLost);
             $this->resourceRepo->updateBattleDefender($defender->id, $defenderNewCredits, $defenderNewGuards);
 
-            // 8d. Update Defender Stats & XP
+            // 8d. Update Defender Stats
             $this->levelUpService->grantExperience($defender->id, $defenderXpGain);
-            
             $defenderNewNetWorth = max(0, $defenderStats->net_worth - $netWorthStolen);
             $this->statsRepo->updateBattleDefenderStats($defender->id, $defenderNewNetWorth);
 
@@ -332,7 +330,7 @@ class AttackService
                 (int)$offensePower, (int)$defensePower
             );
             
-            // 8f. Update Alliance Bank & Logs
+            // 8f. Update Alliance Bank
             if ($totalTaxAmount > 0 && $attacker->alliance_id !== null) {
                 $this->allianceRepo->updateBankCreditsRelative($attacker->alliance_id, $totalTaxAmount);
                 if ($battleTaxAmount > 0) {
@@ -346,16 +344,26 @@ class AttackService
             }
             
             // 8g. Log War Battle
-            $this->warService->logBattle(
-                $battleReportId,
-                $attacker,
-                $defender,
-                $attackResult,
-                $warPrestigeGained,
-                $defenderGuardsLost,
-                $creditsPlundered
-            );
+            $this->warService->logBattle($battleReportId, $attacker, $defender, $attackResult, $warPrestigeGained, $defenderGuardsLost, $creditsPlundered);
             
+            // --- 8h. SEND NOTIFICATION TO DEFENDER ---
+            // The attacker gets immediate feedback via Flash, but the defender needs to know.
+            $notifTitle = "You were attacked by {$attacker->characterName}!";
+            $notifMsg = "Defense Report: " . ucfirst($attackResult === 'victory' ? 'Defeat' : 'Victory'); // Attacker Victory = Defender Defeat
+            $notifMsg .= ". You lost " . number_format($defenderGuardsLost) . " guards.";
+            if ($creditsPlundered > 0) {
+                $notifMsg .= " {$attacker->characterName} plundered " . number_format($creditsPlundered) . " credits.";
+            }
+            
+            $this->notificationService->sendNotification(
+                $defender->id,
+                'attack',
+                $notifTitle,
+                $notifMsg,
+                "/battle/report/{$battleReportId}"
+            );
+            // -----------------------------------------
+
             $this->db->commit();
             
         } catch (Throwable $e) {

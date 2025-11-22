@@ -32,6 +32,7 @@ use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
+use App\Controllers\NotificationController; // --- NEW IMPORT ---
 use App\Middleware\AuthMiddleware;
 
 // 1. Autoloader
@@ -190,6 +191,12 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
     $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
+
+    // --- Notification System ---
+    $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
+    $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
+    $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
+    $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
 });
 
 // 7. Dispatch
@@ -223,7 +230,7 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar'
+                '/serve/avatar', '/notifications' // Added notifications to protected routes
             ];
             
             $isProtected = false;

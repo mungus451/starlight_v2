@@ -3,10 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <?php 
+        // Ensure CSRF service is available; falling back safely if not set in view vars yet
+        $csrfToken = $_SESSION['csrf_token'] ?? ''; 
+    ?>
+    <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken) ?>">
+
     <title><?= $title ?? 'StarlightDominion' ?></title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         /* --- Global Reset & Touch Optimization --- */
         *, *::before, *::after {
@@ -31,7 +42,6 @@
 
         /* --- Responsive Navigation --- */
         nav {
-            /* REVERTED: Solid theme color */
             background: #1e1e3f;
             border-bottom: 1px solid #3a3a5a;
             padding: 0.75rem;
@@ -40,7 +50,6 @@
             top: 0;
             left: 0;
             z-index: 100;
-            /* Removed backdrop-filter to keep solid look */
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -60,6 +69,7 @@
             transition: background 0.2s ease, color 0.2s ease;
             display: inline-block;
             white-space: nowrap;
+            position: relative; /* For badge positioning */
         }
 
         /* Mobile specific adjustments */
@@ -95,6 +105,32 @@
             transform: scale(0.98);
         }
         
+        /* --- Notification Badge --- */
+        .nav-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            display: none; /* Hidden by default until JS enables it */
+            animation: none;
+        }
+        
+        .nav-badge.pulse {
+            animation: badgePulse 2s infinite;
+        }
+
+        @keyframes badgePulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
         /* --- XP Bar Styles --- */
         .xp-bar-container {
             position: absolute;
@@ -141,7 +177,6 @@
             width: 100%;
             max-width: 800px;
             text-align: center;
-            /* REVERTED: Solid theme color */
             background: #1e1e3f;
             padding: 2rem;
             border-radius: 18px;
@@ -154,12 +189,11 @@
             width: 100%;
             max-width: 1600px;
             text-align: left;
-            /* REVERTED: Solid theme color */
             background: #1e1e3f;
             padding: 1rem; 
-            border-radius: 18px; /* Re-added border radius */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Re-added shadow */
-            border: 1px solid #3a3a5a; /* Re-added border */
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #3a3a5a;
             margin: 1rem auto;
         }
 
@@ -168,7 +202,7 @@
                 padding: 1rem;
                 margin: 0.5rem auto;
                 width: 100%;
-                border-radius: 0; /* Full width on mobile looks cleaner */
+                border-radius: 0;
                 border-left: none;
                 border-right: none;
             }
@@ -223,7 +257,7 @@
             font-weight: 700;
             font-size: 1rem;
             transition: filter 0.2s ease, transform 0.1s ease;
-            background: #5a67d8; /* Reverted to original solid Indigo */
+            background: #5a67d8;
             color: white;
             border: none;
             cursor: pointer;
@@ -253,11 +287,11 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         .flash-error {
-            background: #e53e3e; /* Solid Red */
+            background: #e53e3e;
             color: white;
         }
         .flash-success {
-            background: #4CAF50; /* Solid Green */
+            background: #4CAF50;
             color: white;
         }
         
@@ -280,6 +314,11 @@
         <?php if ($session->has('user_id')): ?>
             <?php $userAllianceId = $session->get('alliance_id'); ?>
         
+            <a href="/notifications" class="position-relative">
+                <i class="fas fa-bell"></i>
+                <span id="nav-notification-badge" class="nav-badge"></span>
+            </a>
+
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
             <a href="/training">Training</a>
@@ -345,5 +384,9 @@
     </div>
 
     <script src="/js/utils.js"></script>
+    
+    <?php if ($session->has('user_id')): ?>
+        <script src="/js/notifications.js"></script>
+    <?php endif; ?>
 </body>
 </html>

@@ -12,6 +12,7 @@ use App\Models\Repositories\SpyRepository;
 use App\Models\Services\ArmoryService; 
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\NotificationService; // --- NEW IMPORT ---
 use PDO;
 use Throwable;
 
@@ -34,6 +35,7 @@ class SpyService
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
+    private NotificationService $notificationService; // --- NEW PROPERTY ---
 
     /**
      * DI Constructor.
@@ -49,6 +51,7 @@ class SpyService
      * @param ArmoryService $armoryService
      * @param PowerCalculatorService $powerCalculatorService
      * @param LevelUpService $levelUpService
+     * @param NotificationService $notificationService // --- NEW PARAM ---
      */
     public function __construct(
         PDO $db,
@@ -61,7 +64,8 @@ class SpyService
         SpyRepository $spyRepo,
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
-        LevelUpService $levelUpService
+        LevelUpService $levelUpService,
+        NotificationService $notificationService // --- NEW INJECTION ---
     ) {
         $this->db = $db;
         $this->session = $session;
@@ -76,6 +80,7 @@ class SpyService
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
+        $this->notificationService = $notificationService; // --- NEW ASSIGNMENT ---
     }
 
     /**
@@ -83,19 +88,16 @@ class SpyService
      */
     public function getSpyData(int $userId, int $page): array
     {
-        // 1. Get Attacker's info
         $resources = $this->resourceRepo->findByUserId($userId);
         $stats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.spy', []);
 
-        // 2. Get Pagination config
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
         $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
         $offset = ($page - 1) * $perPage;
 
-        // 3. Get Player Target List
         $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $userId);
 
         return [
@@ -160,6 +162,7 @@ class SpyService
         }
 
         // --- 2. Get All Data ---
+        $attacker = $this->userRepo->findById($attackerId); // Need Attacker Name for report/notification
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
         $attackerStructures = $this->structureRepo->findByUserId($attackerId);
@@ -224,7 +227,6 @@ class SpyService
         if ($isSuccess) {
             $attackerXp = $xpConfig['spy_success'] ?? 100;
         } else {
-            // Failed but not caught = 25, Caught = 10
             $attackerXp = $isCaught ? ($xpConfig['spy_caught'] ?? 10) : ($xpConfig['spy_fail_survived'] ?? 25);
         }
         
@@ -254,33 +256,51 @@ class SpyService
         // --- 8. Execute Transaction ---
         $this->db->beginTransaction();
         try {
-            // 8a. Update Attacker Resources
+            // 8a. Update Attacker
             $newCredits = $attackerResources->credits - $creditCost;
             $newSpies = $attackerResources->spies - $spiesLost;
             $this->resourceRepo->updateSpyAttacker($attackerId, $newCredits, $newSpies);
             
-            // 8b. Update Attacker Stats (Turns) & Grant XP
             $newAttackTurns = $attackerStats->attack_turns - $turnCost;
             $this->statsRepo->updateAttackTurns($attackerId, $newAttackTurns);
             
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
 
-            // 8c. Update Defender Resources (if caught) & Grant XP
+            // 8b. Update Defender & Notify
             if ($isCaught) {
                 if ($sentriesLost > 0) {
                     $newSentries = max(0, $defenderResources->sentries - $sentriesLost);
                     $this->resourceRepo->updateSpyDefender($defender->id, $newSentries);
                 }
-                // Grant defender XP for catching spy
                 $this->levelUpService->grantExperience($defender->id, $defenderXp);
             }
 
-            // 8d. Create Spy Report
-            $this->spyRepo->createReport(
+            // 8c. Create Spy Report
+            // We capture the ID to link it in the notification
+            $reportId = $this->spyRepo->createReport(
                 $attackerId, $defender->id, $operation_result, $spiesSent, $spiesLost, $sentriesLost,
                 $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
                 $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
             );
+
+            // --- 8d. SEND NOTIFICATION (If Caught) ---
+            if ($isCaught) {
+                $notifTitle = "Security Alert: Spy Neutralized";
+                $notifMsg = "An enemy spy from {$attacker->characterName} was intercepted by your sentries.";
+                if ($sentriesLost > 0) {
+                    $notifMsg .= " You lost {$sentriesLost} sentries during the operation.";
+                }
+                $notifMsg .= " XP Gained: +{$defenderXp}.";
+
+                $this->notificationService->sendNotification(
+                    $defender->id,
+                    'spy',
+                    $notifTitle,
+                    $notifMsg,
+                    "/spy/report/{$reportId}"
+                );
+            }
+            // -----------------------------------------
 
             $this->db->commit();
             
