@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Function to open the modal ---
     function openModal(targetName) {
+        if (!targetName) {
+            console.error('Battle script: Target name is missing.');
+            // Optionally, show a user-facing error here
+            return;
+        }
         modalTargetNameInput.value = targetName;
         modalTargetNameDisplay.textContent = targetName;
         
@@ -41,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
     allAttackButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            const playerRow = this.closest('.player-row');
-            const targetName = playerRow.getAttribute('data-target-name');
+            // Robustly get the target name directly from the clicked element's data attribute
+            const targetName = this.getAttribute('data-target-name');
             openModal(targetName);
         });
     });

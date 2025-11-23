@@ -356,9 +356,9 @@
                             <td data-label="Player">
                                 <div class="player-cell">
                                     <?php if ($target['profile_picture_url']): ?>
-                                        <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal">
+                                        <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal" data-target-name="<?= htmlspecialchars($target['character_name']) ?>">
                                     <?php else: ?>
-                                        <svg class="player-avatar player-avatar-svg btn-attack-modal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <svg class="player-avatar player-avatar-svg btn-attack-modal" data-target-name="<?= htmlspecialchars($target['character_name']) ?>" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                         </svg>
                                     <?php endif; ?>
@@ -376,7 +376,7 @@
                             <td data-label="Army Size"><?= number_format($target['army_size']) ?></td>
                             
                             <td data-label="Actions">
-                                <button class="btn-attack btn-attack-modal">Attack</button>
+                                <button class="btn-attack btn-attack-modal" data-target-name="<?= htmlspecialchars($target['character_name']) ?>">Attack</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
