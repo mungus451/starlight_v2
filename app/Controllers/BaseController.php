@@ -79,34 +79,37 @@ class BaseController
 
     /**
      * Renders a view file, wrapping it in the main layout.
+     * Handles extraction of Global View Data (Session, XP, CSRF) to keep Views pure.
      *
      * @param string $view The view file to render (e.g., 'auth/login.php')
      * @param array $data Data to extract into variables for the view
      */
     protected function render(string $view, array $data = []): void
     {
-        // Make $session available in all views
-        $session = $this->session;
-
-        // Auto-generate and pass CSRF token to all views
+        // 1. Global: CSRF Token
         $data['csrf_token'] = $this->csrfService->generateToken();
         
-        // Inject XP Data if Logged In
-        if ($this->session->has('user_id')) {
+        // 2. Global: Authentication State
+        $data['isLoggedIn'] = $this->session->has('user_id');
+        $data['currentUserAllianceId'] = $this->session->get('alliance_id');
+        
+        // 3. Global: Flash Messages (Extract and Remove)
+        $data['flashError'] = $this->session->getFlash('error');
+        $data['flashSuccess'] = $this->session->getFlash('success');
+
+        // 4. Global: XP / Navbar Stats (Only if logged in)
+        if ($data['isLoggedIn']) {
             $userId = $this->session->get('user_id');
             $stats = $this->statsRepo->findByUserId($userId);
             
             if ($stats) {
-                // Calculate progress using the injected service
                 $xpData = $this->levelCalculator->getLevelProgress($stats->experience, $stats->level);
-                
-                // Inject into data array for the navbar
                 $data['global_xp_data'] = $xpData;
                 $data['global_user_level'] = $stats->level;
             }
         }
         
-        // Extract the data array into local variables
+        // Extract the data array into local variables for the view
         extract($data);
 
         // Start output buffering
