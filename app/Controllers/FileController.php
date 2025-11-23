@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
@@ -20,16 +21,18 @@ class FileController extends BaseController
      *
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
     public function __construct(
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         
         // Define the storage root relative to this file
         // __DIR__ is /app/Controllers, so ../../ is the project root

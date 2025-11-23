@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Armory.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class ArmoryController extends BaseController
 {
@@ -22,6 +23,7 @@ class ArmoryController extends BaseController
      * @param ArmoryService $armoryService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class ArmoryController extends BaseController
         ArmoryService $armoryService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->armoryService = $armoryService;
     }
 
@@ -58,18 +61,23 @@ class ArmoryController extends BaseController
      */
     public function handleManufacture(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'item_key' => 'required|string',
+            'quantity' => 'required|int|min:1'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/armory');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $itemKey = (string)($_POST['item_key'] ?? '');
-        $quantity = (int)($_POST['quantity'] ?? 0);
-
-        $this->armoryService->manufactureItem($userId, $itemKey, $quantity);
+        $this->armoryService->manufactureItem($userId, $data['item_key'], $data['quantity']);
         
         $this->redirect('/armory');
     }
@@ -79,19 +87,29 @@ class ArmoryController extends BaseController
      */
     public function handleEquip(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        // item_key can be nullable (empty string in POST) to signify un-equipping
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'unit_key' => 'required|string',
+            'category_key' => 'required|string',
+            'item_key' => 'nullable|string'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/armory');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $unitKey = (string)($_POST['unit_key'] ?? '');
-        $categoryKey = (string)($_POST['category_key'] ?? '');
-        $itemKey = (string)($_POST['item_key'] ?? '');
+        
+        // Map null (from validation) to empty string (expected by Service for un-equipping)
+        $itemKey = $data['item_key'] ?? '';
 
-        $this->armoryService->equipItem($userId, $unitKey, $categoryKey, $itemKey);
+        $this->armoryService->equipItem($userId, $data['unit_key'], $data['category_key'], $itemKey);
         
         $this->redirect('/armory');
     }

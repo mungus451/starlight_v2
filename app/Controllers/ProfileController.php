@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\ProfileService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the public Player Profile page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation support.
  */
 class ProfileController extends BaseController
 {
@@ -22,6 +23,7 @@ class ProfileController extends BaseController
      * @param ProfileService $profileService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class ProfileController extends BaseController
         ProfileService $profileService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->profileService = $profileService;
     }
 

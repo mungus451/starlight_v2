@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\BankService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Bank.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class BankController extends BaseController
 {
@@ -22,6 +23,7 @@ class BankController extends BaseController
      * @param BankService $bankService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class BankController extends BaseController
         BankService $bankService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->bankService = $bankService;
     }
 
@@ -56,17 +59,22 @@ class BankController extends BaseController
      */
     public function handleDeposit(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/bank');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $amount = (int)($_POST['amount'] ?? 0);
-        
-        $this->bankService->deposit($userId, $amount);
+        $this->bankService->deposit($userId, $data['amount']);
         
         $this->redirect('/bank');
     }
@@ -76,17 +84,22 @@ class BankController extends BaseController
      */
     public function handleWithdraw(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/bank');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $amount = (int)($_POST['amount'] ?? 0);
-        
-        $this->bankService->withdraw($userId, $amount);
+        $this->bankService->withdraw($userId, $data['amount']);
         
         $this->redirect('/bank');
     }
@@ -96,18 +109,23 @@ class BankController extends BaseController
      */
     public function handleTransfer(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1',
+            'recipient_name' => 'required|string|min:3|max:20'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/bank');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $amount = (int)($_POST['amount'] ?? 0);
-        $recipientName = (string)($_POST['recipient_name'] ?? '');
-        
-        $this->bankService->transfer($userId, $recipientName, $amount);
+        $this->bankService->transfer($userId, $data['recipient_name'], $data['amount']);
         
         $this->redirect('/bank');
     }

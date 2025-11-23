@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all "read" GET requests for the Alliance feature.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceController extends BaseController
 {
@@ -22,6 +23,7 @@ class AllianceController extends BaseController
      * @param AllianceService $allianceService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class AllianceController extends BaseController
         AllianceService $allianceService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->allianceService = $allianceService;
     }
 
@@ -96,21 +99,27 @@ class AllianceController extends BaseController
      */
     public function handleCreate(): void
     {
-        // 1. Validate CSRF token
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'alliance_name' => 'required|string|min:3|max:100',
+            'alliance_tag' => 'required|string|min:3|max:5'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/create');
             return;
         }
 
-        // 2. Get data from form
-        $userId = $this->session->get('user_id');
-        $name = (string)($_POST['alliance_name'] ?? '');
-        $tag = (string)($_POST['alliance_tag'] ?? '');
-
         // 3. Call the service
-        $newAllianceId = $this->allianceService->createAlliance($userId, $name, $tag);
+        $userId = $this->session->get('user_id');
+        $newAllianceId = $this->allianceService->createAlliance(
+            $userId, 
+            $data['alliance_name'], 
+            $data['alliance_tag']
+        );
 
         if ($newAllianceId !== null) {
             // Success! Redirect to the new alliance's profile.

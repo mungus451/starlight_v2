@@ -4,12 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\NotificationService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles notification displays and AJAX polling.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class NotificationController extends BaseController
 {
@@ -17,9 +19,11 @@ class NotificationController extends BaseController
 
     /**
      * DI Constructor.
-     * * @param NotificationService $notificationService
+     * 
+     * @param NotificationService $notificationService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -27,10 +31,11 @@ class NotificationController extends BaseController
         NotificationService $notificationService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->notificationService = $notificationService;
     }
 
@@ -42,9 +47,6 @@ class NotificationController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        // Mark all as read immediately upon visiting the inbox? 
-        // Or let them click "Mark All Read"? 
-        // We'll let them manually mark or click specific ones, but we fetch recent history here.
         $notifications = $this->notificationService->getRecentNotifications($userId, 50);
 
         $this->render('notifications/index.php', [
@@ -76,11 +78,10 @@ class NotificationController extends BaseController
             $recent = $this->notificationService->getRecentNotifications($userId, 1);
             if (!empty($recent)) {
                 $item = $recent[0];
-                // Only send the latest if it is actually unread
                 if (!$item->is_read) {
                     $latest = [
                         'title' => $item->title,
-                        'message' => $item->message, // Truncated in JS if needed
+                        'message' => $item->message,
                         'type' => $item->type,
                         'created_at' => $item->created_at
                     ];
@@ -105,6 +106,9 @@ class NotificationController extends BaseController
         $userId = $this->session->get('user_id');
         $notifId = (int)($vars['id'] ?? 0);
 
+        // Note: We typically don't validate CSRF on this specific highly-frequent AJAX action
+        // in this specific architecture to keep the JS lightweight, but authentication is checked.
+        
         if ($this->notificationService->markAsRead($notifId, $userId)) {
             echo json_encode(['success' => true]);
         } else {
@@ -120,9 +124,20 @@ class NotificationController extends BaseController
     {
         header('Content-Type: application/json');
 
-        // Basic CSRF Check for bulk actions
-        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Manual Validation (to return JSON instead of Redirect)
+        $val = $this->validator->make($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        if ($val->fails()) {
+            echo json_encode(['success' => false, 'error' => 'Invalid input data']);
+            return;
+        }
+        
+        $data = $val->validated();
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             echo json_encode(['success' => false, 'error' => 'Invalid Token']);
             return;
         }

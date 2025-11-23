@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceForumService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
@@ -12,7 +13,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance Forum.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceForumController extends BaseController
 {
@@ -28,6 +29,7 @@ class AllianceForumController extends BaseController
      * @param AllianceRoleRepository $roleRepo
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -37,10 +39,11 @@ class AllianceForumController extends BaseController
         AllianceRoleRepository $roleRepo,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->forumService = $forumService;
         $this->userRepo = $userRepo;
         $this->roleRepo = $roleRepo;
@@ -135,17 +138,27 @@ class AllianceForumController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
         
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'title' => 'required|string|min:3|max:255',
+            'content' => 'required|string|min:3|max:10000'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/forum/create');
             return;
         }
 
-        $title = (string)($_POST['title'] ?? '');
-        $content = (string)($_POST['content'] ?? '');
-
-        $newTopicId = $this->forumService->createTopic($viewerData['user']->id, $viewerData['allianceId'], $title, $content);
+        // 3. Execute Logic
+        $newTopicId = $this->forumService->createTopic(
+            $viewerData['user']->id, 
+            $viewerData['allianceId'], 
+            $data['title'], 
+            $data['content']
+        );
 
         if ($newTopicId !== null) {
             $this->redirect('/alliance/forum/topic/' . $newTopicId);
@@ -164,16 +177,21 @@ class AllianceForumController extends BaseController
         
         $topicId = (int)($vars['id'] ?? 0);
         
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'content' => 'required|string|min:3|max:10000'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/forum/topic/' . $topicId);
             return;
         }
 
-        $content = (string)($_POST['content'] ?? '');
-
-        $this->forumService->createPost($viewerData['user']->id, $topicId, $content);
+        // 3. Execute Logic
+        $this->forumService->createPost($viewerData['user']->id, $topicId, $data['content']);
         
         // Redirect back to the topic
         $this->redirect('/alliance/forum/topic/' . $topicId);
@@ -188,6 +206,19 @@ class AllianceForumController extends BaseController
         if ($viewerData === null) return;
 
         $topicId = (int)($vars['id'] ?? 0);
+        
+        // 1. Validate Input (CSRF)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+        
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/forum/topic/' . $topicId);
+            return;
+        }
+
         $this->forumService->toggleTopicPin($viewerData['user']->id, $topicId);
         $this->redirect('/alliance/forum/topic/' . $topicId);
     }
@@ -201,6 +232,19 @@ class AllianceForumController extends BaseController
         if ($viewerData === null) return;
 
         $topicId = (int)($vars['id'] ?? 0);
+        
+        // 1. Validate Input (CSRF)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+        
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/forum/topic/' . $topicId);
+            return;
+        }
+
         $this->forumService->toggleTopicLock($viewerData['user']->id, $topicId);
         $this->redirect('/alliance/forum/topic/' . $topicId);
     }

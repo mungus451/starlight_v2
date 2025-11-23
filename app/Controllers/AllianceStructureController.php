@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceStructureService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
@@ -12,7 +13,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance Structures page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceStructureController extends BaseController
 {
@@ -28,6 +29,7 @@ class AllianceStructureController extends BaseController
      * @param AllianceRoleRepository $roleRepo
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -37,10 +39,11 @@ class AllianceStructureController extends BaseController
         AllianceRoleRepository $roleRepo,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->structureService = $structureService;
         $this->userRepo = $userRepo;
         $this->roleRepo = $roleRepo;
@@ -76,17 +79,21 @@ class AllianceStructureController extends BaseController
      */
     public function handleUpgrade(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'structure_key' => 'required|string'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/structures');
             return;
         }
         
         $userId = $this->session->get('user_id');
-        $structureKey = (string)($_POST['structure_key'] ?? '');
-
-        $this->structureService->purchaseOrUpgradeStructure($userId, $structureKey);
+        $this->structureService->purchaseOrUpgradeStructure($userId, $data['structure_key']);
         
         $this->redirect('/alliance/structures');
     }

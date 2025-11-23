@@ -14,11 +14,11 @@ use App\Core\Events\EventDispatcher;
 use App\Events\BattleConcludedEvent;
 use App\Listeners\BattleNotificationListener;
 use App\Listeners\WarLoggerListener;
+use App\Core\Validator; // --- ADDED ---
 
 /**
  * ContainerFactory
  * * Responsible for building and configuring the Dependency Injection Container.
- * * Now configures the EventDispatcher and binds Domain Events to Listeners.
  */
 class ContainerFactory
 {
@@ -111,19 +111,22 @@ class ContainerFactory
                 $dispatcher = new EventDispatcher();
 
                 // --- Register Listeners for BattleConcludedEvent ---
-                // 1. Send Notification to Defender
                 $dispatcher->addListener(
                     BattleConcludedEvent::class,
                     $c->get(BattleNotificationListener::class)
                 );
 
-                // 2. Log War Battle (if applicable)
                 $dispatcher->addListener(
                     BattleConcludedEvent::class,
                     $c->get(WarLoggerListener::class)
                 );
 
                 return $dispatcher;
+            },
+
+            // 9. Input Validator (New)
+            Validator::class => function (ContainerInterface $c) {
+                return new Validator();
             },
         ]);
 

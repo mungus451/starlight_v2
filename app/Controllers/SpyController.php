@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\SpyService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Espionage feature.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class SpyController extends BaseController
 {
@@ -22,6 +23,7 @@ class SpyController extends BaseController
      * @param SpyService $spyService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class SpyController extends BaseController
         SpyService $spyService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->spyService = $spyService;
     }
 
@@ -56,17 +59,23 @@ class SpyController extends BaseController
      */
     public function handleSpy(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'target_name' => 'required|string'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/spy');
             return;
         }
         
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $targetName = (string)($_POST['target_name'] ?? '');
         
-        $this->spyService->conductOperation($userId, $targetName);
+        $this->spyService->conductOperation($userId, $data['target_name']);
         
         $this->redirect('/spy/reports');
     }

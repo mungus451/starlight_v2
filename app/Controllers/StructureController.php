@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\StructureService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Structures page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class StructureController extends BaseController
 {
@@ -22,6 +23,7 @@ class StructureController extends BaseController
      * @param StructureService $structureService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class StructureController extends BaseController
         StructureService $structureService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->structureService = $structureService;
     }
 
@@ -55,17 +58,22 @@ class StructureController extends BaseController
      */
     public function handleUpgrade(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'structure_key' => 'required|string'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/structures');
             return;
         }
         
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $structureKey = (string)($_POST['structure_key'] ?? '');
-
-        $this->structureService->upgradeStructure($userId, $structureKey);
+        $this->structureService->upgradeStructure($userId, $data['structure_key']);
         
         $this->redirect('/structures');
     }

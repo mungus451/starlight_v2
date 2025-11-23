@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\SettingsService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Settings page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class SettingsController extends BaseController
 {
@@ -22,6 +23,7 @@ class SettingsController extends BaseController
      * @param SettingsService $settingsService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class SettingsController extends BaseController
         SettingsService $settingsService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->settingsService = $settingsService;
     }
 
@@ -54,20 +57,36 @@ class SettingsController extends BaseController
      */
     public function handleProfile(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'bio' => 'nullable|string|max:500',
+            'phone_number' => 'nullable|string|max:20',
+            'remove_picture' => 'nullable' // Checkbox, present if checked
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/settings');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $bio = (string)($_POST['bio'] ?? '');
-        $phone = (string)($_POST['phone_number'] ?? '');
+        
+        // Note: File uploads ($_FILES) are handled directly by the service validation logic
+        // as our Validator currently focuses on $_POST data array inputs.
         $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
-        $removePhoto = isset($_POST['remove_picture']) && $_POST['remove_picture'] === '1';
+        $removePhoto = isset($data['remove_picture']) && $data['remove_picture'] == '1';
 
-        $this->settingsService->updateProfile($userId, $bio, $file, $phone, $removePhoto);
+        $this->settingsService->updateProfile(
+            $userId, 
+            $data['bio'] ?? '', 
+            $file, 
+            $data['phone_number'] ?? '', 
+            $removePhoto
+        );
         
         $this->redirect('/settings');
     }
@@ -77,18 +96,27 @@ class SettingsController extends BaseController
      */
     public function handleEmail(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'email' => 'required|email',
+            'current_password_email' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/settings');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $newEmail = (string)($_POST['email'] ?? '');
-        $password = (string)($_POST['current_password_email'] ?? '');
-
-        $this->settingsService->updateEmail($userId, $newEmail, $password);
+        $this->settingsService->updateEmail(
+            $userId, 
+            $data['email'], 
+            $data['current_password_email']
+        );
         
         $this->redirect('/settings');
     }
@@ -98,19 +126,29 @@ class SettingsController extends BaseController
      */
     public function handlePassword(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'old_password' => 'required',
+            'new_password' => 'required|min:3',
+            'confirm_password' => 'required|match:new_password'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/settings');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $oldPass = (string)($_POST['old_password'] ?? '');
-        $newPass = (string)($_POST['new_password'] ?? '');
-        $confirmPass = (string)($_POST['confirm_password'] ?? '');
-
-        $this->settingsService->updatePassword($userId, $oldPass, $newPass, $confirmPass);
+        $this->settingsService->updatePassword(
+            $userId, 
+            $data['old_password'], 
+            $data['new_password'], 
+            $data['confirm_password']
+        );
         
         $this->redirect('/settings');
     }
@@ -120,21 +158,33 @@ class SettingsController extends BaseController
      */
     public function handleSecurity(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'question_1' => 'required|string|max:255',
+            'answer_1' => 'required|string|max:255',
+            'question_2' => 'required|string|max:255',
+            'answer_2' => 'required|string|max:255',
+            'current_password_security' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/settings');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $q1 = (string)($_POST['question_1'] ?? '');
-        $a1 = (string)($_POST['answer_1'] ?? '');
-        $q2 = (string)($_POST['question_2'] ?? '');
-        $a2 = (string)($_POST['answer_2'] ?? '');
-        $password = (string)($_POST['current_password_security'] ?? '');
-
-        $this->settingsService->updateSecurityQuestions($userId, $q1, $a1, $q2, $a2, $password);
+        $this->settingsService->updateSecurityQuestions(
+            $userId, 
+            $data['question_1'], 
+            $data['answer_1'], 
+            $data['question_2'], 
+            $data['answer_2'], 
+            $data['current_password_security']
+        );
         
         $this->redirect('/settings');
     }

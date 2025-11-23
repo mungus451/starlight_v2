@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\TrainingService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Training page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class TrainingController extends BaseController
 {
@@ -22,6 +23,7 @@ class TrainingController extends BaseController
      * @param TrainingService $trainingService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,11 +31,12 @@ class TrainingController extends BaseController
         TrainingService $trainingService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
         // Pass mandatory base dependencies to the parent
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->trainingService = $trainingService;
     }
 
@@ -57,18 +60,23 @@ class TrainingController extends BaseController
      */
     public function handleTrain(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'unit_type' => 'required|string',
+            'amount' => 'required|int|min:1'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/training');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $unitType = (string)($_POST['unit_type'] ?? '');
-        $amount = (int)($_POST['amount'] ?? 0);
-
-        $this->trainingService->trainUnits($userId, $unitType, $amount);
+        $this->trainingService->trainUnits($userId, $data['unit_type'], $data['amount']);
         
         $this->redirect('/training');
     }

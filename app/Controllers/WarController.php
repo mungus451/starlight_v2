@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\WarService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
@@ -13,7 +14,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance War page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class WarController extends BaseController
 {
@@ -31,6 +32,7 @@ class WarController extends BaseController
      * @param AllianceRoleRepository $roleRepo
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -41,10 +43,11 @@ class WarController extends BaseController
         AllianceRoleRepository $roleRepo,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->warService = $warService;
         $this->userRepo = $userRepo;
         $this->allianceRepo = $allianceRepo;
@@ -109,26 +112,31 @@ class WarController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
 
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'target_alliance_id' => 'required|int',
+            'war_name' => 'required|string|min:3|max:100',
+            'casus_belli' => 'nullable|string|max:1000',
+            'goal_key' => 'required|string|in:credits_plundered,units_killed',
+            'goal_threshold' => 'required|int|min:1'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/war');
             return;
         }
         
-        $targetAllianceId = (int)($_POST['target_alliance_id'] ?? 0);
-        $name = (string)($_POST['war_name'] ?? 'War');
-        $casusBelli = (string)($_POST['casus_belli'] ?? '');
-        $goalKey = (string)($_POST['goal_key'] ?? 'credits_plundered');
-        $goalThreshold = (int)($_POST['goal_threshold'] ?? 10000000);
-
+        // 3. Execute Logic
         $this->warService->declareWar(
             $viewerData['user']->id,
-            $targetAllianceId,
-            $name,
-            $casusBelli,
-            $goalKey,
-            $goalThreshold
+            $data['target_alliance_id'],
+            $data['war_name'],
+            $data['casus_belli'] ?? '',
+            $data['goal_key'],
+            $data['goal_threshold']
         );
         
         $this->redirect('/alliance/war');

@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Level Up page.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class LevelUpController extends BaseController
 {
@@ -22,6 +23,7 @@ class LevelUpController extends BaseController
      * @param LevelUpService $levelUpService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class LevelUpController extends BaseController
         LevelUpService $levelUpService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->levelUpService = $levelUpService;
     }
 
@@ -52,27 +55,32 @@ class LevelUpController extends BaseController
      */
     public function handleSpend(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input (Strict Non-Negative Integers)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'strength' => 'required|int|min:0',
+            'constitution' => 'required|int|min:0',
+            'wealth' => 'required|int|min:0',
+            'dexterity' => 'required|int|min:0',
+            'charisma' => 'required|int|min:0',
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/level-up');
             return;
         }
 
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $strength = (int)($_POST['strength'] ?? 0);
-        $constitution = (int)($_POST['constitution'] ?? 0);
-        $wealth = (int)($_POST['wealth'] ?? 0);
-        $dexterity = (int)($_POST['dexterity'] ?? 0);
-        $charisma = (int)($_POST['charisma'] ?? 0);
-
         $this->levelUpService->spendPoints(
             $userId,
-            $strength,
-            $constitution,
-            $wealth,
-            $dexterity,
-            $charisma
+            $data['strength'],
+            $data['constitution'],
+            $data['wealth'],
+            $data['dexterity'],
+            $data['charisma']
         );
         
         $this->redirect('/level-up');

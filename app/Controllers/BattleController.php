@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AttackService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all HTTP requests for the Battle feature.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class BattleController extends BaseController
 {
@@ -22,6 +23,7 @@ class BattleController extends BaseController
      * @param AttackService $attackService
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -29,10 +31,11 @@ class BattleController extends BaseController
         AttackService $attackService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->attackService = $attackService;
     }
 
@@ -56,18 +59,24 @@ class BattleController extends BaseController
      */
     public function handleAttack(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'target_name' => 'required|string',
+            'attack_type' => 'required|string|in:plunder' // Strict allowance
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/battle');
             return;
         }
         
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $targetName = (string)($_POST['target_name'] ?? '');
-        $attackType = (string)($_POST['attack_type'] ?? 'plunder');
         
-        $this->attackService->conductAttack($userId, $targetName, $attackType);
+        $this->attackService->conductAttack($userId, $data['target_name'], $data['attack_type']);
         
         $this->redirect('/battle/reports');
     }

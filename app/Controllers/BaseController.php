@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
@@ -16,6 +17,7 @@ class BaseController
 {
     protected Session $session;
     protected CSRFService $csrfService;
+    protected Validator $validator;
     protected LevelCalculatorService $levelCalculator;
     protected StatsRepository $statsRepo;
 
@@ -25,19 +27,54 @@ class BaseController
      *
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
     public function __construct(
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
         $this->session = $session;
         $this->csrfService = $csrfService;
+        $this->validator = $validator;
         $this->levelCalculator = $levelCalculator;
         $this->statsRepo = $statsRepo;
+    }
+
+    /**
+     * Centralized Input Validation.
+     * 
+     * Validates and sanitizes input. If validation fails, it automatically
+     * sets flash errors and redirects back to the previous page.
+     *
+     * @param array $data Input data (usually $_POST)
+     * @param array $rules Validation rules (e.g. ['email' => 'required|email'])
+     * @return array The clean, sanitized data (only fields defined in rules)
+     */
+    protected function validate(array $data, array $rules): array
+    {
+        // Create validation instance
+        $val = $this->validator->make($data, $rules);
+
+        // Check for failures
+        if ($val->fails()) {
+            // Combine all errors into a single string for the simple Flash system
+            $errorMessages = implode(' ', $val->errors());
+            
+            $this->session->setFlash('error', $errorMessages);
+            
+            // Redirect back to the form
+            $referer = $_SERVER['HTTP_REFERER'] ?? '/dashboard';
+            header("Location: $referer");
+            exit; // Stop execution immediately
+        }
+
+        // Return only the safe, sanitized data
+        return $val->validated();
     }
 
     /**

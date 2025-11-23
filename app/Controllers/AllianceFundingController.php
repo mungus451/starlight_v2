@@ -4,25 +4,38 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles alliance finances (donations and loans).
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceFundingController extends BaseController
 {
     private AllianceManagementService $mgmtService;
 
+    /**
+     * DI Constructor.
+     * 
+     * @param AllianceManagementService $mgmtService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param Validator $validator
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
     public function __construct(
         AllianceManagementService $mgmtService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->mgmtService = $mgmtService;
     }
 
@@ -31,19 +44,23 @@ class AllianceFundingController extends BaseController
      */
     public function handleDonation(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $donatorUserId = $this->session->get('user_id');
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1'
+        ]);
+
         $allianceId = $this->session->get('alliance_id');
 
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
-        $amount = (int)($_POST['amount'] ?? 0);
-
-        $this->mgmtService->donateToAlliance($donatorUserId, $amount);
+        $donatorUserId = $this->session->get('user_id');
+        $this->mgmtService->donateToAlliance($donatorUserId, $data['amount']);
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -53,18 +70,24 @@ class AllianceFundingController extends BaseController
      */
     public function handleLoanRequest(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $userId = $this->session->get('user_id');
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1'
+        ]);
+
         $allianceId = $this->session->get('alliance_id');
         
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
-        $amount = (int)($_POST['amount'] ?? 0);
-        $this->mgmtService->requestLoan($userId, $amount);
+        $userId = $this->session->get('user_id');
+        $this->mgmtService->requestLoan($userId, $data['amount']);
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -73,18 +96,25 @@ class AllianceFundingController extends BaseController
      */
     public function handleLoanApprove(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $adminId = $this->session->get('user_id');
+        // 1. Validate Input (CSRF only)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
         $allianceId = $this->session->get('alliance_id');
         
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
+        $adminId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
+        
         $this->mgmtService->approveLoan($adminId, $loanId);
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -93,18 +123,25 @@ class AllianceFundingController extends BaseController
      */
     public function handleLoanDeny(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $adminId = $this->session->get('user_id');
+        // 1. Validate Input (CSRF only)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
         $allianceId = $this->session->get('alliance_id');
         
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
+        $adminId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
+        
         $this->mgmtService->denyLoan($adminId, $loanId);
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -113,19 +150,26 @@ class AllianceFundingController extends BaseController
      */
     public function handleLoanRepay(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $userId = $this->session->get('user_id');
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|int|min:1'
+        ]);
+
         $allianceId = $this->session->get('alliance_id');
         
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
         
+        $userId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
-        $amount = (int)($_POST['amount'] ?? 0);
-        $this->mgmtService->repayLoan($userId, $loanId, $amount);
+        
+        $this->mgmtService->repayLoan($userId, $loanId, $data['amount']);
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 }

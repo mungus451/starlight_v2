@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
@@ -12,7 +13,7 @@ use App\Models\Repositories\UserRepository;
 
 /**
  * Handles all requests for creating, editing, and deleting alliance roles.
- * * Refactored for Strict Dependency Injection.
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceRoleController extends BaseController
 {
@@ -28,6 +29,7 @@ class AllianceRoleController extends BaseController
      * @param UserRepository $userRepo
      * @param Session $session
      * @param CSRFService $csrfService
+     * @param Validator $validator
      * @param LevelCalculatorService $levelCalculator
      * @param StatsRepository $statsRepo
      */
@@ -37,10 +39,11 @@ class AllianceRoleController extends BaseController
         UserRepository $userRepo,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->mgmtService = $mgmtService;
         $this->roleRepo = $roleRepo;
         $this->userRepo = $userRepo;
@@ -80,21 +83,28 @@ class AllianceRoleController extends BaseController
      */
     public function handleCreate(): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $adminId = $this->session->get('user_id');
-        $admin = $this->userRepo->findById($adminId);
-        $allianceId = $admin->alliance_id ?? 0;
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'role_name' => 'required|string|min:3|max:30'
+        ]);
 
-        if (!$this->csrfService->validateToken($token)) {
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/roles');
             return;
         }
 
-        $name = (string)($_POST['role_name'] ?? '');
+        $adminId = $this->session->get('user_id');
+        $admin = $this->userRepo->findById($adminId);
+        $allianceId = $admin->alliance_id ?? 0;
+
+        // 3. Execute Logic
+        // Permissions are an array of checkboxes, handled safely by the Service.
         $permissions = (array)($_POST['permissions'] ?? []);
 
-        $this->mgmtService->createRole($adminId, $allianceId, $name, $permissions);
+        $this->mgmtService->createRole($adminId, $allianceId, $data['role_name'], $permissions);
         
         $this->redirect('/alliance/roles');
     }
@@ -104,22 +114,26 @@ class AllianceRoleController extends BaseController
      */
     public function handleUpdate(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $adminId = $this->session->get('user_id');
-        $roleId = (int)($vars['id'] ?? 0);
-        
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'role_name' => 'required|string|min:3|max:30'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/roles');
             return;
         }
 
-        $name = (string)($_POST['role_name'] ?? '');
+        $adminId = $this->session->get('user_id');
+        $roleId = (int)($vars['id'] ?? 0);
         $permissions = (array)($_POST['permissions'] ?? []);
         
-        $this->mgmtService->updateRole($adminId, $roleId, $name, $permissions);
+        $this->mgmtService->updateRole($adminId, $roleId, $data['role_name'], $permissions);
 
-        $this.redirect('/alliance/roles');
+        $this->redirect('/alliance/roles');
     }
 
     /**
@@ -127,15 +141,20 @@ class AllianceRoleController extends BaseController
      */
     public function handleDelete(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $adminId = $this->session->get('user_id');
-        $roleId = (int)($vars['id'] ?? 0);
-        
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/roles');
             return;
         }
+
+        $adminId = $this->session->get('user_id');
+        $roleId = (int)($vars['id'] ?? 0);
 
         $this->mgmtService->deleteRole($adminId, $roleId);
         

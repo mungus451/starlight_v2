@@ -4,25 +4,38 @@ namespace App\Controllers;
 
 use App\Core\Session;
 use App\Core\CSRFService;
+use App\Core\Validator;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles alliance recruitment (applications and invites).
+ * * Refactored for Strict Dependency Injection & Centralized Validation.
  */
 class AllianceApplicationController extends BaseController
 {
     private AllianceManagementService $mgmtService;
 
+    /**
+     * DI Constructor.
+     *
+     * @param AllianceManagementService $mgmtService
+     * @param Session $session
+     * @param CSRFService $csrfService
+     * @param Validator $validator
+     * @param LevelCalculatorService $levelCalculator
+     * @param StatsRepository $statsRepo
+     */
     public function __construct(
         AllianceManagementService $mgmtService,
         Session $session,
         CSRFService $csrfService,
+        Validator $validator,
         LevelCalculatorService $levelCalculator,
         StatsRepository $statsRepo
     ) {
-        parent::__construct($session, $csrfService, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->mgmtService = $mgmtService;
     }
 
@@ -31,8 +44,13 @@ class AllianceApplicationController extends BaseController
      */
     public function handleApply(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input (CSRF only, ID is in route)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
@@ -51,8 +69,13 @@ class AllianceApplicationController extends BaseController
      */
     public function handleCancelApp(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
@@ -71,8 +94,13 @@ class AllianceApplicationController extends BaseController
      */
     public function handleAcceptApp(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
@@ -92,8 +120,13 @@ class AllianceApplicationController extends BaseController
      */
     public function handleRejectApp(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/list');
             return;
@@ -113,15 +146,20 @@ class AllianceApplicationController extends BaseController
      */
     public function handleInvite(array $vars): void
     {
-        $token = $_POST['csrf_token'] ?? '';
-        $inviterId = $this->session->get('user_id');
-        $targetUserId = (int)($vars['id'] ?? 0);
-        
-        if (!$this->csrfService->validateToken($token)) {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/profile/' . $targetUserId);
+            $this->redirect('/profile/' . ($vars['id'] ?? 0));
             return;
         }
+
+        $inviterId = $this->session->get('user_id');
+        $targetUserId = (int)($vars['id'] ?? 0);
         
         $this->mgmtService->inviteUser($inviterId, $targetUserId);
         
