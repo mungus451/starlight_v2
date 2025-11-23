@@ -1,6 +1,6 @@
 /* 
  * Starlight Dominion - Core Stylesheet
- * Version: 1.5 (Phase 3.5b: Info Boxes & Logs)
+ * Version: 1.6 (Phase 3.5d: Checkboxes & Statuses)
  */
 
 :root {
@@ -318,7 +318,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .remove-pfp-group label { margin-bottom: 0; font-size: 0.9rem; color: var(--muted); }
 .remove-pfp-group input { width: 1.1rem; height: 1.1rem; }
 
-/* --- NEW UTILITIES (Phase 3.5b) --- */
 .info-box { background: rgba(13, 15, 27, 0.4); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; text-align: center; color: var(--muted); font-size: 1.1rem; }
 .info-box strong { color: var(--accent-2); font-size: 1.2rem; }
 
@@ -331,3 +330,15 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .log-amount { font-weight: 700; flex-shrink: 0; margin-left: 1rem; }
 .log-amount.positive { color: var(--accent-green); }
 .log-amount.negative { color: var(--accent-red); }
+
+/* --- NEW UTILITIES (Phase 3.5d) --- */
+.checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.checkbox-group label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+.checkbox-group label:hover { color: var(--text); }
+.checkbox-group input { width: 1.1rem; height: 1.1rem; margin: 0; }
+@media (max-width: 600px) { .checkbox-grid { grid-template-columns: 1fr; } }
+
+.text-status-proposed { color: var(--accent-blue); }
+.text-status-active { color: var(--accent-green); }
+.text-status-broken { color: var(--accent-red); }
+.text-status-declined { color: var(--accent-red); }
