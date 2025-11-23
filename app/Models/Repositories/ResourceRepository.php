@@ -23,7 +23,21 @@ class ResourceRepository
      */
     public function findByUserId(int $userId): ?UserResource
     {
-        $stmt = $this->db->prepare("SELECT * FROM user_resources WHERE user_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT
+                user_id,
+                credits,
+                banked_credits,
+                gemstones,
+                naquadah_crystals,
+                untrained_citizens,
+                workers,
+                soldiers,
+                guards,
+                spies,
+                sentries
+            FROM user_resources WHERE user_id = ?
+        ");
         $stmt->execute([$userId]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -195,6 +209,41 @@ class ResourceRepository
     // --- END NEW METHOD ---
 
     /**
+     * Atomically updates a user's resources using relative changes.
+     *
+     * @param int $userId
+     * @param float|null $creditsChange
+     * @param float|null $naquadahCrystalsChange
+     * @return bool
+     */
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null): bool
+    {
+        $updates = [];
+        $params = [];
+
+        if ($creditsChange !== null) {
+            $updates[] = "credits = credits + :credits_change";
+            $params[':credits_change'] = $creditsChange;
+        }
+
+        if ($naquadahCrystalsChange !== null) {
+            $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change";
+            $params[':naquadah_crystals_change'] = $naquadahCrystalsChange;
+        }
+
+        if (empty($updates)) {
+            return true; // Nothing to update
+        }
+
+        $params[':user_id'] = $userId;
+
+        $sql = "UPDATE user_resources SET " . implode(', ', $updates) . " WHERE user_id = :user_id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    /**
      * Helper method to convert a database row (array) into a UserResource entity.
      *
      * @param array $data
@@ -207,6 +256,7 @@ class ResourceRepository
             credits: (int)$data['credits'],
             banked_credits: (int)$data['banked_credits'],
             gemstones: (int)$data['gemstones'],
+            naquadah_crystals: (float)$data['naquadah_crystals'],
             untrained_citizens: (int)$data['untrained_citizens'],
             workers: (int)$data['workers'],
             soldiers: (int)$data['soldiers'],

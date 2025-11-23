@@ -321,6 +321,7 @@
 
             <a href="/dashboard">Dashboard</a>
             <a href="/bank">Bank</a>
+            <a href="/black-market/converter">Black Market</a>
             <a href="/training">Training</a>
             <a href="/structures">Structures</a>
             <a href="/armory">Armory</a>

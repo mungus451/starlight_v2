@@ -94,7 +94,19 @@ class ContainerFactory
                 return new NotificationService($c->get(NotificationRepository::class));
             },
 
-            // 7. Event Dispatcher (The Hub)
+            // 7. Currency Converter
+            \App\Models\Repositories\HouseFinanceRepository::class => function (ContainerInterface $c) {
+                return new \App\Models\Repositories\HouseFinanceRepository($c->get(PDO::class));
+            },
+            \App\Models\Services\CurrencyConverterService::class => function (ContainerInterface $c) {
+                return new \App\Models\Services\CurrencyConverterService(
+                    $c->get(\App\Models\Repositories\ResourceRepository::class),
+                    $c->get(\App\Models\Repositories\HouseFinanceRepository::class),
+                    $c->get(PDO::class)
+                );
+            },
+
+            // 8. Event Dispatcher (The Hub)
             EventDispatcher::class => function (ContainerInterface $c) {
                 $dispatcher = new EventDispatcher();
 

@@ -725,3 +725,14 @@ CREATE TABLE `notifications` (
             KEY `idx_user_created` (`user_id`, `created_at` DESC)
             
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE user_resources
+    ADD COLUMN `naquadah_crystals` DECIMAL(19, 4) NOT NULL DEFAULT 0.0000 COMMENT 'Player\'s balance of Naquadah Crystals' AFTER `gemstones`;
+
+CREATE TABLE `house_finances` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `credits_taxed` DECIMAL(19, 4) NOT NULL DEFAULT 0.0000 COMMENT 'Total credits collected as conversion fees',
+  `crystals_taxed` DECIMAL(19, 4) NOT NULL DEFAULT 0.0000 COMMENT 'Total crystals collected as conversion fees'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Stores the total fees collected by the house';
+
+INSERT INTO `house_finances` (`id`, `credits_taxed`, `crystals_taxed`) VALUES (1, 0.0000, 0.0000);

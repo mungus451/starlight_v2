@@ -37,6 +37,7 @@ use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
+use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
 use App\Middleware\AuthMiddleware;
 
@@ -109,6 +110,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/bank/deposit', [BankController::class, 'handleDeposit']);
     $r->addRoute('POST', '/bank/withdraw', [BankController::class, 'handleWithdraw']);
     $r->addRoute('POST', '/bank/transfer', [BankController::class, 'handleTransfer']);
+
+    // --- Black Market ---
+    $r->addRoute('GET', '/black-market/converter', [CurrencyConverterController::class, 'show']);
+    $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
 
     // --- Military ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
@@ -242,7 +247,7 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/notifications'
+                '/serve/avatar', '/notifications', '/black-market'
             ];
             
             $isProtected = false;
