@@ -1,40 +1,4 @@
-<style>
-    :root {
-        --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.07), rgba(13, 15, 27, 0.6));
-        --border: rgba(255, 255, 255, 0.03);
-        --accent: #2dd1d1;
-        --accent-2: #f9c74f;
-        --text: #eff1ff;
-        --muted: #a8afd4;
-        --radius: 18px;
-        --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-    }
-    
-    .auth-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 1.25rem 1.5rem;
-        box-shadow: var(--shadow);
-        display: flex;
-        flex-direction: column;
-        max-width: 500px; /* Constrain form width */
-        margin: 2rem auto 0 auto; /* Center the card */
-        text-align: left;
-    }
-    
-    .auth-card h1 {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        font-size: 1.8rem;
-    }
-    
-    .auth-card .form-link {
-        text-align: center;
-    }
-</style>
-
-<div class="auth-card">
+<div class="container-narrow">
     <h1>Register</h1>
 
     <form action="/register" method="POST">
@@ -42,12 +6,12 @@
 
         <div class="form-group">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" required placeholder="commander@example.com">
         </div>
 
         <div class="form-group">
             <label for="character_name">Character Name</label>
-            <input type="text" id="character_name" name="character_name" required>
+            <input type="text" id="character_name" name="character_name" required placeholder="Callsign">
         </div>
         
         <div class="form-group">
