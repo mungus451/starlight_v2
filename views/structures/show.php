@@ -1,313 +1,16 @@
-<style>
-    :root {
-        --bg: radial-gradient(circle at 10% 0%, #0c101e 0%, #050712 42%, #02030a 75%);
-        --bg-panel: rgba(12, 14, 25, 0.65);
-        --card: rgba(17, 20, 34, 0.75);
-        --border: rgba(255, 255, 255, 0.03);
-        --accent: #2dd1d1; /* calmer teal */
-        --accent-soft: rgba(45, 209, 209, 0.12);
-        --accent-2: #f9c74f;
-        --text: #eff1ff;
-        --muted: #a8afd4;
-        --radius: 18px;
-        --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-    }
-
-    .structures-container {
-        width: 100%;
-        max-width: 1400px;
-        text-align: left;
-        display: flex; /* Flex column layout */
-        flex-direction: column;
-        gap: 1.5rem;
-        margin-inline: auto;
-        padding: 1.5rem 1.5rem 3.5rem;
-        position: relative;
-    }
-
-    /* faint grid overlay for sci-fi feel */
-    .structures-container::before {
-        content: "";
-        position: absolute;
-        /* Default desktop bleed */
-        inset: -80px -120px 0;
-        background-image:
-            linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 0),
-            linear-gradient(0deg, rgba(255,255,255,0.015) 1px, transparent 0);
-        background-size: 120px 120px;
-        pointer-events: none;
-        z-index: -1;
-    }
-
-    .structures-container h1 {
-        text-align: center;
-        margin-bottom: 0.25rem;
-        font-size: clamp(2.1rem, 3vw, 2.6rem);
-        letter-spacing: -0.03em;
-        color: #fff;
-    }
-
-    .structures-subtitle {
-        text-align: center;
-        color: var(--muted);
-        margin-bottom: 1rem;
-        font-size: 0.85rem;
-        margin-top: -1rem;
-    }
-
-    /* --- Top Grid for Finances + Controls --- */
-    .top-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-    }
-    .controls-card {
-        display: flex;
-        gap: 1rem;
-        align-items: flex-start;
-        justify-content: flex-end;
-    }
-    .btn-control {
-        padding: 0.6rem 1rem;
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--muted);
-        font-weight: 600;
-        font-size: 0.85rem;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .btn-control:hover {
-        background: rgba(255,255,255, 0.03);
-        color: #fff;
-        border-color: rgba(45, 209, 209, 0.4);
-    }
-
-    /* Sidebar / info card */
-    .data-card {
-        background: radial-gradient(circle at top, rgba(45, 209, 209, 0.12), rgba(11, 13, 24, 0.9));
-        border: 1px solid rgba(45, 209, 209, 0.4);
-        border-radius: var(--radius);
-        padding: 1.25rem 1.5rem 1.1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(6px);
-    }
-    .data-card h3 {
-        color: #fff;
-        margin-top: 0;
-        border-bottom: 1px solid rgba(233, 219, 255, 0.04);
-        padding-bottom: 0.5rem;
-        font-size: 1rem;
-        letter-spacing: 0.02em;
-    }
-    .data-card ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .data-card li {
-        font-size: 0.9rem;
-        color: #e0e0e0;
-        padding: 0.35rem 0;
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        align-items: center;
-    }
-    .data-card li span:first-child {
-        font-weight: 500;
-        color: rgba(239, 241, 255, 0.7);
-    }
-    .data-badge {
-        background: rgba(45, 209, 209, 0.14);
-        color: #fefefe;
-        border: 1px solid rgba(45, 209, 209, 0.45);
-        padding: 0.25rem 0.5rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-    }
-
-    /* --- Main grid for structures --- */
-    .structure-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1.5rem;
-    }
-
-    /* Category header */
-    .structure-category-header {
-        grid-column: 1 / -1;
-        color: #ffffff;
-        font-size: 0.95rem;
-        font-weight: 600;
-        border-bottom: 1px solid rgba(249, 199, 79, 0.06);
-        padding-bottom: 0.3rem;
-        margin: 0.6rem 0 0.2rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-    .structure-category-header::before {
-        content: "";
-        width: 5px;
-        height: 18px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, #2dd1d1, rgba(2, 3, 10, 0));
-        box-shadow: 0 0 20px rgba(45, 209, 209, 0.35);
-    }
-
-    /* Structure cards */
-    .structure-card {
-        background: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.07), rgba(13, 15, 27, 0.6));
-        border: 1px solid rgba(255, 255, 255, 0.01);
-        border-radius: var(--radius);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-        transition: transform 0.15s ease-out, border 0.15s ease-out;
-        position: relative;
-    }
-    .structure-card:hover {
-        transform: translateY(-2px);
-        border: 1px solid rgba(45, 209, 209, 0.4);
-    }
-
-    .card-header {
-        padding: 1rem 1.25rem 1rem;
-        background: rgba(6, 7, 14, 0.35);
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-    }
-    .card-header h4 {
-        margin: 0;
-        font-size: 1rem;
-        color: #fff;
-        display: flex;
-        gap: 0.35rem;
-        align-items: center;
-    }
-    .card-header span {
-        font-size: 0.75rem;
-        color: rgba(232, 232, 255, 0.35);
-    }
-    
-    .card-header-stat {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--accent); /* Teal */
-        padding-top: 0.35rem;
-    }
-
-    .card-body {
-        padding: 0 1.25rem;
-        font-size: 0.85rem;
-        color: #e0e0e0;
-        flex-grow: 1;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
-    }
-    .card-body p {
-        margin: 0 0 0.75rem 0;
-        line-height: 1.35;
-        color: rgba(232, 232, 255, 0.85);
-    }
-    .card-body .cost {
-        font-size: 0.78rem;
-        color: #c0c0e0;
-        margin-bottom: 0.35rem;
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-        align-items: center;
-    }
-    .card-body .cost strong {
-        color: #fff;
-        font-size: 0.8rem;
-    }
-    .cost-pill {
-        background: rgba(249, 199, 79, 0.04);
-        border: 1px solid rgba(249, 199, 79, 0.25);
-        border-radius: 999px;
-        padding: 0.3rem 0.55rem;
-        font-size: 0.68rem;
-        color: #fff;
-    }
-
-    .card-footer {
-        padding: 0 1rem;
-        background: rgba(2, 3, 10, 0.9);
-        border-top: none;
-        margin-top: auto;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out, border-top 0.4s ease-out;
-    }
-
-    .card-footer .btn-submit {
-        width: 100%;
-        margin-top: 0;
-        border: none;
-        background: linear-gradient(120deg, #2dd1d1 0%, #1f8ac5 100%);
-        color: #fff;
-        padding: 0.6rem 0.75rem;
-        border-radius: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: filter 0.1s ease-out, transform 0.1s ease-out;
-    }
-    .card-footer .btn-submit:not([disabled]):hover {
-        filter: brightness(1.02);
-        transform: translateY(-1px);
-    }
-    .card-footer .btn-submit[disabled] {
-        background: rgba(187, 76, 76, 0.15);
-        border: 1px solid rgba(187, 76, 76, 0.3);
-        color: rgba(255, 255, 255, 0.35);
-        cursor: not-allowed;
-    }
-
-    .structure-card.is-expanded .card-body {
-        max-height: 480px;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-    }
-    .structure-card.is-expanded .card-footer {
-        max-height: 140px;
-        padding-top: 0.7rem;
-        padding-bottom: 0.8rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.03);
-    }
-
-    /* Responsive & Overflow Fixes */
-    @media (max-width: 980px) {
-        .top-grid, .structure-grid {
-            grid-template-columns: 1fr;
-        }
-        .controls-card {
-            justify-content: center;
-        }
-        
-        /* --- FIX: Constrain the grid overlay on mobile to prevent overflow --- */
-        .structures-container::before {
-            inset: 0; 
-        }
-        
-        .structures-container {
-            padding: 1rem; /* Slightly less padding on small screens */
-        }
-    }
-</style>
-
 <?php
-// --- Grouping Logic (unchanged) ---
+/**
+ * @var array $structureFormulas Array of all structure definitions.
+ * @var \App\Models\Entities\UserStructure $structures User's current structure levels.
+ * @var \App\Models\Entities\UserResource $resources User's current resources.
+ * @var array $costs Array of upgrade costs for next level.
+ * @var array $turnConfig Global turn configuration.
+ * @var array $attackConfig Global attack configuration.
+ * @var array $spyConfig Global spy configuration.
+ * @var string $csrf_token CSRF token for forms.
+ */
+
+// --- Grouping Logic (unchanged from original) ---
 $groupedStructures = [];
 foreach ($structureFormulas as $key => $details) {
     $category = $details['category'] ?? 'Uncategorized';
@@ -317,46 +20,358 @@ foreach ($structureFormulas as $key => $details) {
 $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
 ?>
 
-<div class="structures-container">
-    <h1>Structures</h1>
-    <p class="structures-subtitle">Expand a structure to view its description, next level, and upgrade cost.</p>
+<style>
+    /* Reset & Base Styles - Inherited from main.php or global styles */
+    :root {
+        --bg: radial-gradient(circle at 10% 0%, #0c101e 0%, #050712 42%, #02030a 75%);
+        --card: radial-gradient(circle at 30% -10%, rgba(45, 209, 209, 0.07), rgba(13, 15, 27, 0.6));
+        --border: rgba(255, 255, 255, 0.03);
+        --accent: #2dd1d1; /* Main Accent (Teal) */
+        --accent-soft: rgba(45, 209, 209, 0.12);
+        --accent-2: #f9c74f; /* Secondary Accent (Gold) */
+        --accent-red: #e53e3e;
+        --text: #eff1ff;
+        --muted: #a8afd4;
+        --radius: 18px;
+        --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        --card-bg-hover: rgba(249, 199, 79, 0.07); /* Light gold tint for hover */
+        --max-level-glow: 0 0 15px rgba(249, 199, 79, 0.5);
+    }
 
-    <div class="top-grid">
-        <div class="data-card">
-            <h3>Finances</h3>
-            <ul>
-                <li>
-                    <span>Credits:</span>
-                    <span class="data-badge"><?= number_format($resources->credits) ?></span>
-                </li>
-            </ul>
+    .structures-dashboard {
+        width: 100%;
+        max-width: 1400px;
+        margin-inline: auto;
+        padding: 1.5rem 1.5rem 3.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        position: relative;
+    }
+
+    .structures-dashboard h1 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+        font-size: clamp(2.2rem, 4vw, 3rem);
+        letter-spacing: -0.05em;
+        color: #fff;
+        text-shadow: 0 0 15px rgba(45, 209, 209, 0.3);
+    }
+
+    .structures-dashboard .subtitle {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin-top: -0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* --- User Resources Card --- */
+    .user-resources-card {
+        background: radial-gradient(circle at top, rgba(45, 209, 209, 0.15), rgba(11, 13, 24, 0.95));
+        border: 1px solid rgba(45, 209, 209, 0.4);
+        border-radius: var(--radius);
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(6px);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center; /* Changed from space-around to center */
+        gap: 2.5rem; /* Increased gap */
+        margin-bottom: 2rem;
+    }
+
+    .resource-item {
+        text-align: center;
+        flex-basis: 150px; /* Give it a base width */
+    }
+    .resource-item .icon {
+        font-size: 2.5rem; /* Larger icons */
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .resource-item .value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+    }
+    .resource-item .label {
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+    /* Specific icons */
+    .icon-credits::before { content: '◎'; } /* Placeholder for Credits icon */
+    .icon-energy::before { content: '⚡'; } /* Placeholder for Energy icon */
+    .icon-soldiers::before { content: '⚔️'; } /* Placeholder for Soldiers icon */
+
+    /* --- Structures Grid --- */
+    .structures-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .structure-category {
+        grid-column: 1 / -1; /* Span full width */
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        text-align: left;
+    }
+    .structure-category h2 {
+        font-size: 1.7rem;
+        color: var(--accent-2);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin: 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(249, 199, 79, 0.2);
+        display: inline-block;
+        position: relative;
+        text-shadow: 0 0 10px rgba(249, 199, 79, 0.3);
+    }
+    .structure-category h2::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(to right, var(--accent-2), transparent);
+    }
+
+    /* --- Structure Card --- */
+    .structure-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: all 0.2s ease-out;
+        position: relative;
+        transform: translateZ(0); /* Force GPU acceleration */
+    }
+    .structure-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent);
+        box-shadow: var(--shadow), 0 0 25px var(--accent-soft);
+    }
+
+    /* Max Level State */
+    .structure-card.max-level {
+        border-color: var(--accent-2);
+        box-shadow: var(--shadow), var(--max-level-glow);
+        transform: scale(1.01);
+    }
+    .structure-card.max-level:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: var(--shadow), var(--max-level-glow);
+    }
+
+
+    .card-header-main {
+        padding: 1rem 1.5rem;
+        background: rgba(6, 7, 14, 0.4);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .card-icon {
+        font-size: 2.2rem;
+        color: var(--accent);
+        line-height: 1;
+    }
+    .card-title-group {
+        flex-grow: 1;
+    }
+    .card-title {
+        margin: 0;
+        font-size: 1.3rem;
+        color: var(--text);
+        letter-spacing: -0.02em;
+    }
+    .card-level {
+        font-size: 0.9rem;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    .card-body-main {
+        padding: 1.25rem 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .card-description {
+        font-size: 0.95rem;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .card-benefit {
+        background: rgba(45, 209, 209, 0.08);
+        border: 1px solid var(--accent-soft);
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--accent);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .card-benefit .icon {
+        font-size: 1.2rem;
+    }
+
+    .card-costs-next {
+        border-top: 1px dashed rgba(255, 255, 255, 0.05);
+        padding-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+    }
+    .cost-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+    .cost-item.insufficient .value {
+        color: var(--accent-red);
+    }
+    .cost-item .icon {
+        font-size: 1.1rem;
+        color: var(--accent-2);
+    }
+    .cost-item .value {
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .card-footer-actions {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid var(--border);
+        background: rgba(6, 7, 14, 0.4);
+    }
+
+    .btn-upgrade {
+        width: 100%;
+        padding: 0.8rem 1.25rem;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: linear-gradient(135deg, var(--accent) 0%, #1a9c9c 100%);
+        color: #02030a;
+        box-shadow: 0 5px 20px rgba(45, 209, 209, 0.3);
+    }
+    .btn-upgrade:not([disabled]):hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(45, 209, 209, 0.4);
+    }
+    .btn-upgrade[disabled] {
+        background: rgba(187, 76, 76, 0.2);
+        color: rgba(255, 255, 255, 0.4);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+        border: 1px solid rgba(187, 76, 76, 0.3);
+    }
+    
+    .max-level-badge {
+        background: linear-gradient(135deg, var(--accent-2) 0%, #d4a940 100%);
+        color: #02030a;
+        padding: 0.8rem 1.25rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 5px 20px rgba(249, 199, 79, 0.3);
+    }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .structures-dashboard {
+            padding: 1rem;
+        }
+        .user-resources-card {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .resource-item {
+            flex-basis: auto;
+        }
+        .structures-grid {
+            grid-template-columns: 1fr;
+        }
+        .structure-category h2 {
+            font-size: 1.4rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+        }
+        .btn-upgrade {
+            font-size: 1rem;
+            padding: 0.7rem 1rem;
+        }
+    }
+</style>
+
+<div class="structures-dashboard">
+    <h1>Strategic Structures</h1>
+    <p class="subtitle">Build and upgrade your infrastructure to expand your influence and power.</p>
+
+    <div class="user-resources-card">
+        <div class="resource-item">
+            <span class="icon icon-credits"></span>
+            <div class="value"><?= number_format($resources->credits) ?></div>
+            <div class="label">Credits</div>
         </div>
-        
-        <div class="controls-card">
-            <button class="btn-control" id="btn-expand-all">Expand All</button>
-            <button class="btn-control" id="btn-collapse-all">Collapse All</button>
+        <!-- Add other resources relevant to structures here if needed -->
+
+        <div class="resource-item">
+            <span class="icon icon-soldiers"></span>
+            <div class="value"><?= number_format($resources->soldiers) ?></div>
+            <div class="label">Soldiers</div>
         </div>
     </div>
-    <div class="structure-grid">
-        <?php
-        foreach ($categoryOrder as $categoryName):
-            if (!isset($groupedStructures[$categoryName])) continue;
 
-            $structuresInCategory = $groupedStructures[$categoryName];
-        ?>
-            <h2 class="structure-category-header"><?= htmlspecialchars($categoryName) ?></h2>
+    <div class="structures-grid">
+        <?php foreach ($categoryOrder as $categoryName):
+            if (!isset($groupedStructures[$categoryName])) continue; ?>
 
-            <?php foreach ($structuresInCategory as $details):
+            <div class="structure-category">
+                <h2><?= htmlspecialchars($categoryName) ?></h2>
+            </div>
+
+            <?php foreach ($groupedStructures[$categoryName] as $details):
                 $key = $details['key'];
                 $columnName = $key . '_level';
                 $currentLevel = $structures->{$columnName} ?? 0;
-                $nextLevel = $currentLevel + 1;
                 $upgradeCost = $costs[$key] ?? 0;
+                $isMaxLevel = ($upgradeCost === 0 && isset($costs[$key])); // True if cost is explicitly 0
+                $nextLevel = $currentLevel + 1;
                 $displayName = $details['name'] ?? 'Unknown';
                 $description = $details['description'] ?? 'No description available.';
                 $canAfford = $resources->credits >= $upgradeCost;
                 
-                // --- Benefit Text Logic ---
+                // --- Benefit Text Logic (from original code) ---
                 $benefitText = '';
                 switch ($key) {
                     case 'economy_upgrade':
@@ -387,55 +402,62 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
                         $benefitText = "Unlocks & Upgrades Item Tiers";
                         break;
                 }
+                
+                // Determine icon based on category for visual distinction
+                $categoryIcon = '';
+                switch ($categoryName) {
+                    case 'Economy': $categoryIcon = '💰'; break;
+                    case 'Defense': $categoryIcon = '🛡️'; break;
+                    case 'Offense': $categoryIcon = '⚔️'; break;
+                    case 'Intel': $categoryIcon = '📡'; break;
+                    default: $categoryIcon = '⚙️'; break;
+                }
             ?>
-                <div class="structure-card">
-                    <div class="card-header">
-                        <h4><?= htmlspecialchars($displayName) ?></h4>
+                <div class="structure-card <?= $isMaxLevel ? 'max-level' : '' ?>">
+                    <div class="card-header-main">
+                        <span class="card-icon"><?= $categoryIcon ?></span>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= htmlspecialchars($displayName) ?></h3>
+                            <p class="card-level">Level: <?= $currentLevel ?></p>
+                        </div>
+                    </div>
+                    <div class="card-body-main">
+                        <p class="card-description"><?= htmlspecialchars($description) ?></p>
                         
                         <?php if ($benefitText): ?>
-                            <span class="card-header-stat"><?= htmlspecialchars($benefitText) ?></span>
-                        <?php endif; ?>
-                        
-                        <span>Current Level: <?= $currentLevel ?></span>
-                    </div>
-
-                    <div class="card-body">
-                        <p><?= htmlspecialchars($description) ?></p>
-                        <div class="cost">
-                            <span>Next Level</span>
-                            <strong><?= $nextLevel ?></strong>
-                        </div>
-                        <div class="cost">
-                            <span>Cost</span>
-                            <span class="cost-pill"><?= number_format($upgradeCost) ?> C</span>
-                        </div>
-                        <?php if (!$canAfford): ?>
-                            <div class="cost" style="color: rgba(252, 122, 122, 0.9);">
-                                <span>Status</span>
-                                <span>Not enough credits</span>
+                            <div class="card-benefit">
+                                <span class="icon">✨</span>
+                                <?= htmlspecialchars($benefitText) ?>
                             </div>
+                        <?php endif; ?>
+
+                        <?php if (!$isMaxLevel): ?>
+                            <div class="card-costs-next">
+                                <div class="cost-item <?= !$canAfford ? 'insufficient' : '' ?>">
+                                    <span class="icon icon-credits"></span>
+                                    <span class="value"><?= number_format($upgradeCost) ?></span>
+                                    <span class="label">Credits</span>
+                                </div>
+                                <!-- Add other resource costs here if structures cost more than just credits -->
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-footer-actions">
+                        <?php if ($isMaxLevel): ?>
+                            <div class="max-level-badge">Max Level Achieved!</div>
                         <?php else: ?>
-                            <div class="cost" style="color: rgba(191, 255, 217, 0.8);">
-                                <span>Status</span>
-                                <span>Affordable</span>
-                            </div>
+                            <form action="/structures/upgrade" method="POST">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                <input type="hidden" name="structure_key" value="<?= htmlspecialchars($key) ?>">
+
+                                <button type="submit" class="btn-upgrade" <?= !$canAfford ? 'disabled' : '' ?>>
+                                    <?= !$canAfford ? 'Insufficient Credits' : 'Upgrade to Level ' . $nextLevel ?>
+                                </button>
+                            </form>
                         <?php endif; ?>
-                    </div>
-
-                    <div class="card-footer">
-                        <form action="/structures/upgrade" method="POST">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                            <input type="hidden" name="structure_key" value="<?= htmlspecialchars($key) ?>">
-
-                            <button type="submit" class="btn-submit" <?= !$canAfford ? 'disabled' : '' ?>>
-                                <?= $canAfford ? 'Upgrade to Level ' . $nextLevel : 'Not Enough Credits' ?>
-                            </button>
-                        </form>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endforeach; ?>
-
-    </div> </div>
-
-<script src="/js/structures.js"></script>
+    </div>
+</div>
