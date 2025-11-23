@@ -1,6 +1,6 @@
 /* 
  * Starlight Dominion - Core Stylesheet
- * Version: 1.4 (Phase 3.5a: Tables & Lists)
+ * Version: 1.5 (Phase 3.5b: Info Boxes & Logs)
  */
 
 :root {
@@ -189,7 +189,7 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 @media (max-width: 1200px) { .grid-col-span-2 { grid-column: span 2; } .grid-row-span-2 { grid-row: span 1; } }
 @media (max-width: 768px) { .grid-col-span-1, .grid-col-span-2, .grid-col-span-3, .grid-row-span-2 { grid-column: auto; grid-row: auto; width: 100%; } }
 
-/* --- COMPONENTS: TABS --- */
+/* --- COMPONENTS --- */
 .tabs-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
 .tab-link { padding: 0.75rem 1.25rem; border: 1px solid var(--border); border-bottom: none; background: var(--card-gradient); color: var(--muted); font-weight: 600; font-size: 0.9rem; border-radius: 12px 12px 0 0; cursor: pointer; transition: all 0.2s ease; position: relative; top: 1px; }
 .tab-link:hover { background: rgba(255,255,255, 0.03); color: #fff; }
@@ -197,7 +197,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* --- COMPONENTS: HEADER CARDS --- */
 .player-header { grid-column: 1 / -1; background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem; box-shadow: var(--shadow); backdrop-filter: blur(6px); }
 .player-info { display: flex; align-items: center; gap: 1rem; }
 .player-avatar { width: 80px; height: 80px; flex-shrink: 0; border-radius: 50%; background: #1e1e3f; border: 2px solid var(--accent); object-fit: cover; }
@@ -219,7 +218,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .header-stat strong.status-ok { color: var(--accent-green); }
 .header-stat strong.status-bad { color: var(--accent-red); }
 
-/* --- DATA CARDS --- */
 .item-card, .data-card { background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); backdrop-filter: blur(6px); display: flex; flex-direction: column; transition: transform 0.1s ease-out, border 0.1s ease-out; }
 .item-card:hover { transform: translateY(-2px); border-color: rgba(45, 209, 209, 0.4); }
 .item-card h4, .data-card h3 { color: #fff; margin: 0 0 1rem 0; font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; letter-spacing: 0.02em; }
@@ -251,7 +249,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .amount-input-group button { margin-top: 0; flex-shrink: 0; }
 .amount-input-group .btn-submit { width: auto; }
 
-/* --- STRUCTURES --- */
 .structure-category { grid-column: 1 / -1; margin-top: 1.5rem; margin-bottom: 1rem; text-align: left; border-bottom: 1px solid rgba(249, 199, 79, 0.2); padding-bottom: 0.5rem; }
 .structure-category h2 { color: var(--accent-2); font-size: 1.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; text-shadow: 0 0 10px rgba(249, 199, 79, 0.3); }
 .structure-card { background: var(--card-gradient); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s ease-out; }
@@ -273,15 +270,12 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .card-footer-actions { padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); background: rgba(6, 7, 14, 0.4); margin-top: auto; }
 .max-level-badge { background: linear-gradient(135deg, var(--accent-2) 0%, #d4a940 100%); color: #02030a; padding: 0.8rem 1.25rem; border-radius: 10px; font-size: 1.1rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 5px 20px rgba(249, 199, 79, 0.3); }
 
-/* --- DATA TABLES & LISTS (NEW) --- */
 .data-table-container { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 100%; }
 .data-table th, .data-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
 .data-table th { color: var(--accent-2); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table a { font-weight: 600; }
-
-/* Mobile Table */
 @media (max-width: 768px) {
     .data-table thead { display: none; }
     .data-table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 12px; background: rgba(13, 15, 27, 0.4); padding: 1rem; }
@@ -290,7 +284,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
     .data-table td::before { content: attr(data-label); font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; margin-right: 1rem; }
 }
 
-/* Data Lists */
 .data-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 .data-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: rgba(13, 15, 27, 0.7); padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border); gap: 1rem; }
 .item-info .role { font-size: 0.9rem; color: var(--accent-2); font-weight: 600; display: block; }
@@ -299,7 +292,6 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .item-actions .btn-submit, .item-actions select { margin-top: 0; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
 .item-actions select { height: 34px; }
 
-/* Item Info List (Armory/Bank) */
 .item-info { list-style: none; padding: 0; margin: 0 0 1rem 0; }
 .item-info li { font-size: 0.9rem; color: var(--muted); padding: 0.35rem 0; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); }
 .item-info li:last-child { border: none; }
@@ -308,13 +300,11 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .item-info li .status-bad { color: var(--accent-red); }
 .item-notes { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem 0; font-style: italic; flex-grow: 1; line-height: 1.4; }
 
-/* Pagination */
 .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; }
 .pagination a, .pagination span { color: var(--muted); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: 5px; border: 1px solid var(--border); background: var(--card-gradient); }
 .pagination a:hover { background: rgba(255,255,255, 0.03); color: #fff; border-color: var(--accent); }
 .pagination span { background: var(--accent); color: #02030a; border-color: var(--accent); font-weight: bold; }
 
-/* Misc */
 .cost-original { text-decoration: line-through; color: var(--muted); font-size: 0.8em; margin-right: 5px; }
 .cost-discounted { color: var(--accent-2); }
 .item-stats { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
@@ -327,3 +317,17 @@ form { display: flex; flex-direction: column; gap: 1.25rem; text-align: left; }
 .remove-pfp-group { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
 .remove-pfp-group label { margin-bottom: 0; font-size: 0.9rem; color: var(--muted); }
 .remove-pfp-group input { width: 1.1rem; height: 1.1rem; }
+
+/* --- NEW UTILITIES (Phase 3.5b) --- */
+.info-box { background: rgba(13, 15, 27, 0.4); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; text-align: center; color: var(--muted); font-size: 1.1rem; }
+.info-box strong { color: var(--accent-2); font-size: 1.2rem; }
+
+.scrollable-list { max-height: 400px; overflow-y: auto; padding-right: 0.5rem; }
+.scrollable-list::-webkit-scrollbar { width: 6px; }
+.scrollable-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+.scrollable-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+.log-item { display: flex; justify-content: space-between; align-items: center; background: rgba(13, 15, 27, 0.7); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.log-amount { font-weight: 700; flex-shrink: 0; margin-left: 1rem; }
+.log-amount.positive { color: var(--accent-green); }
+.log-amount.negative { color: var(--accent-red); }
