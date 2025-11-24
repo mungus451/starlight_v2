@@ -11,8 +11,7 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles notification displays and AJAX polling.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled: Consumes ServiceResponse objects for AJAX actions.
+ * * Refactored to delegate polling logic to Service.
  */
 class NotificationController extends BaseController
 {
@@ -63,37 +62,20 @@ class NotificationController extends BaseController
      */
     public function check(): void
     {
+        // Ensure JSON response header
         header('Content-Type: application/json');
 
         $userId = $this->session->get('user_id');
+        
         if (!$userId) {
             echo json_encode(['unread' => 0, 'latest' => null]);
             return;
         }
 
-        $unreadCount = $this->notificationService->getUnreadCount($userId);
-        $latest = null;
+        // Delegate logic to service
+        $data = $this->notificationService->getPollingData($userId);
 
-        // If there are unread items, fetch the very latest one to display in the Push Notification
-        if ($unreadCount > 0) {
-            $recent = $this->notificationService->getRecentNotifications($userId, 1);
-            if (!empty($recent)) {
-                $item = $recent[0];
-                if (!$item->is_read) {
-                    $latest = [
-                        'title' => $item->title,
-                        'message' => $item->message,
-                        'type' => $item->type,
-                        'created_at' => $item->created_at
-                    ];
-                }
-            }
-        }
-
-        echo json_encode([
-            'unread' => $unreadCount,
-            'latest' => $latest
-        ]);
+        echo json_encode($data);
     }
 
     /**

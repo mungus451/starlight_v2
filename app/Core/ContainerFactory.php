@@ -14,7 +14,8 @@ use App\Core\Events\EventDispatcher;
 use App\Events\BattleConcludedEvent;
 use App\Listeners\BattleNotificationListener;
 use App\Listeners\WarLoggerListener;
-use App\Core\Validator; // --- ADDED ---
+use App\Core\Validator;
+use App\Core\Logger;
 
 /**
  * ContainerFactory
@@ -30,6 +31,9 @@ class ContainerFactory
     public static function createContainer(): Container
     {
         $builder = new ContainerBuilder();
+        
+        // Enable attributes for Injection (e.g. #[Inject('NpcLogger')])
+        $builder->useAttributes(true);
 
         // Configure the container definitions
         $builder->addDefinitions([
@@ -110,7 +114,6 @@ class ContainerFactory
             EventDispatcher::class => function (ContainerInterface $c) {
                 $dispatcher = new EventDispatcher();
 
-                // --- Register Listeners for BattleConcludedEvent ---
                 $dispatcher->addListener(
                     BattleConcludedEvent::class,
                     $c->get(BattleNotificationListener::class)
@@ -124,9 +127,22 @@ class ContainerFactory
                 return $dispatcher;
             },
 
-            // 9. Input Validator (New)
+            // 9. Input Validator
             Validator::class => function (ContainerInterface $c) {
                 return new Validator();
+            },
+
+            // 10. Default System Logger (Standard app logs)
+            Logger::class => function (ContainerInterface $c) {
+                $logPath = __DIR__ . '/../../logs/app.log';
+                return new Logger($logPath, false);
+            },
+
+            // 11. Specific NPC Logger (Writes to npc_actions.log AND stdout for CLI)
+            'NpcLogger' => function (ContainerInterface $c) {
+                $logPath = __DIR__ . '/../../logs/npc_actions.log';
+                // True = Echo to Stdout (CLI)
+                return new Logger($logPath, true);
             },
         ]);
 

@@ -2,13 +2,13 @@
 
 namespace App\Models\Services;
 
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\NotificationRepository;
 
 /**
  * Handles the creation and retrieval of user notifications.
  * Acts as the bridge between game events and the notification database.
- * * Refactored to return ServiceResponse for state-changing methods.
+ * * Refactored to centralize polling logic.
  */
 class NotificationService
 {
@@ -37,7 +37,6 @@ class NotificationService
      */
     public function sendNotification(int $userId, string $type, string $title, string $message, ?string $link = null): int
     {
-        // Kept as returning int (ID) for internal utility usage
         return $this->notificationRepo->create($userId, $type, $title, $message, $link);
     }
 
@@ -65,6 +64,42 @@ class NotificationService
     }
 
     /**
+     * Retrieves the specific data structure required by the frontend poller.
+     * This logic was previously in the controller.
+     *
+     * @param int $userId
+     * @return array ['unread' => int, 'latest' => array|null]
+     */
+    public function getPollingData(int $userId): array
+    {
+        $unreadCount = $this->notificationRepo->getUnreadCount($userId);
+        $latest = null;
+
+        // Only fetch details if there are unread items to save DB calls
+        if ($unreadCount > 0) {
+            $recent = $this->notificationRepo->getRecent($userId, 1);
+            
+            if (!empty($recent)) {
+                $item = $recent[0];
+                // Ensure the most recent item is actually unread before popping it up
+                if (!$item->is_read) {
+                    $latest = [
+                        'title' => $item->title,
+                        'message' => $item->message,
+                        'type' => $item->type,
+                        'created_at' => $item->created_at
+                    ];
+                }
+            }
+        }
+
+        return [
+            'unread' => $unreadCount,
+            'latest' => $latest
+        ];
+    }
+
+    /**
      * Marks a notification as read.
      *
      * @param int $notificationId
@@ -78,7 +113,6 @@ class NotificationService
         if ($success) {
             return ServiceResponse::success('Notification marked as read.');
         } else {
-            // Usually fails if ID not found or User doesn't own it
             return ServiceResponse::error('Failed to mark notification as read.');
         }
     }

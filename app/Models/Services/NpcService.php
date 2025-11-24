@@ -13,13 +13,15 @@ use App\Models\Services\TrainingService;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\AttackService;
 use App\Models\Services\AllianceStructureService;
+use App\Core\Logger;
+use DI\Attribute\Inject;
 use PDO;
 use Throwable;
 
 /**
  * Orchestrates the autonomous behavior of NPC agents ("The Void Syndicate").
  * Intended to be run via Cron.
- * * FULLY UPDATED: Now handles ServiceResponse objects for ALL interactions.
+ * * Refactored to use Injected Logger (Decoupled I/O).
  */
 class NpcService
 {
@@ -39,9 +41,13 @@ class NpcService
     private AttackService $attackService;
     private AllianceStructureService $allianceStructureService;
 
-    // Logging
-    private string $logFile;
+    // Logger
+    private Logger $logger;
 
+    /**
+     * DI Constructor.
+     * Note the use of #[Inject('NpcLogger')] to get the specific CLI-enabled logger.
+     */
     public function __construct(
         PDO $db,
         UserRepository $userRepo,
@@ -53,7 +59,8 @@ class NpcService
         TrainingService $trainingService,
         ArmoryService $armoryService,
         AttackService $attackService,
-        AllianceStructureService $allianceStructureService
+        AllianceStructureService $allianceStructureService,
+        #[Inject('NpcLogger')] Logger $logger
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
@@ -67,33 +74,20 @@ class NpcService
         $this->armoryService = $armoryService;
         $this->attackService = $attackService;
         $this->allianceStructureService = $allianceStructureService;
-
-        $this->logFile = __DIR__ . '/../../../logs/npc_actions.log';
-    }
-
-    /**
-     * Internal logger helper.
-     */
-    private function log(string $message): void
-    {
-        $timestamp = date('Y-m-d H:i:s');
-        $line = "[$timestamp] $message" . PHP_EOL;
-        file_put_contents($this->logFile, $line, FILE_APPEND);
-        if (php_sapi_name() === 'cli') {
-            echo $line;
-        }
+        
+        $this->logger = $logger;
     }
 
     public function runNpcCycle(): void
     {
-        $this->log("--- STARTING NPC AGENT CYCLE ---");
+        $this->logger->info("--- STARTING NPC AGENT CYCLE ---");
         
         $npcs = $this->userRepo->findNpcs();
         $count = count($npcs);
-        $this->log("Found {$count} NPC agents active.");
+        $this->logger->info("Found {$count} NPC agents active.");
 
         if ($count === 0) {
-            $this->log("WARNING: No NPCs found.");
+            $this->logger->info("WARNING: No NPCs found.");
             return;
         }
         
@@ -101,16 +95,16 @@ class NpcService
             try {
                 $this->processNpc($npc);
             } catch (Throwable $e) {
-                $this->log("ERROR processing {$npc->characterName}: " . $e->getMessage());
+                $this->logger->error("ERROR processing {$npc->characterName}: " . $e->getMessage());
             }
         }
 
-        $this->log("--- NPC CYCLE COMPLETE ---");
+        $this->logger->info("--- NPC CYCLE COMPLETE ---");
     }
 
     private function processNpc(User $npc): void
     {
-        $this->log("Processing Agent: {$npc->characterName} (ID: {$npc->id})");
+        $this->logger->info("Processing Agent: {$npc->characterName} (ID: {$npc->id})");
 
         $this->manageEconomy($npc);
         $this->manageTraining($npc);
@@ -118,8 +112,8 @@ class NpcService
         $this->manageAlliance($npc);
         $this->manageAggression($npc);
         
-        $this->log("Agent {$npc->characterName} finished.");
-        $this->log("----------------------------------------");
+        $this->logger->info("Agent {$npc->characterName} finished.");
+        $this->logger->info("----------------------------------------");
     }
 
     private function manageEconomy(User $npc): void
@@ -137,7 +131,7 @@ class NpcService
 
         $response = $this->structureService->upgradeStructure($npc->id, $target);
         if ($response->isSuccess()) {
-            $this->log("  -> SUCCESS: Upgraded {$target}.");
+            $this->logger->info("  -> SUCCESS: Upgraded {$target}.");
         }
     }
 
@@ -156,21 +150,21 @@ class NpcService
 
         if ($soldiers > 0) {
             $res = $this->trainingService->trainUnits($npc->id, 'soldiers', $soldiers);
-            if ($res->isSuccess()) $this->log("  -> Trained {$soldiers} Soldiers.");
+            if ($res->isSuccess()) $this->logger->info("  -> Trained {$soldiers} Soldiers.");
         }
         if ($guards > 0) {
             $res = $this->trainingService->trainUnits($npc->id, 'guards', $guards);
-            if ($res->isSuccess()) $this->log("  -> Trained {$guards} Guards.");
+            if ($res->isSuccess()) $this->logger->info("  -> Trained {$guards} Guards.");
         }
         if ($spies > 0) {
             $res = $this->trainingService->trainUnits($npc->id, 'spies', $spies);
-            if ($res->isSuccess()) $this->log("  -> Trained {$spies} Spies.");
+            if ($res->isSuccess()) $this->logger->info("  -> Trained {$spies} Spies.");
         }
     }
 
     private function manageArmory(User $npc): void
     {
-        $this->log("  -> Armory Check...");
+        $this->logger->info("  -> Armory Check...");
         
         $armoryData = $this->armoryService->getArmoryData($npc->id);
         $structures = $this->structureRepo->findByUserId($npc->id);
@@ -206,7 +200,7 @@ class NpcService
                     if ($owned < $needed && $resources->credits > ($bestItemCost * $needed)) {
                         $response = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $needed);
                         if ($response->isSuccess()) {
-                            $this->log("  -> Manufactured {$needed}x {$bestItemName}.");
+                            $this->logger->info("  -> Manufactured {$needed}x {$bestItemName}.");
                             $actionsTaken++;
                             $resources = $this->resourceRepo->findByUserId($npc->id);
                         }
@@ -217,7 +211,7 @@ class NpcService
                     if ($newOwned > 0) {
                         $response = $this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey);
                         if ($response->isSuccess()) {
-                            $this->log("  -> Equipped {$bestItemName} to {$unitKey} ({$catKey}).");
+                            $this->logger->info("  -> Equipped {$bestItemName} to {$unitKey} ({$catKey}).");
                             $actionsTaken++;
                         }
                     }
@@ -226,7 +220,7 @@ class NpcService
         }
 
         if ($actionsTaken === 0) {
-            $this->log("  -> Armory: No actions taken.");
+            $this->logger->info("  -> Armory: No actions taken.");
         }
     }
 
@@ -240,10 +234,9 @@ class NpcService
                 $defs = ['citadel_shield', 'command_nexus', 'galactic_research_hub', 'orbital_training_grounds'];
                 $target = $defs[array_rand($defs)];
                 
-                // UPDATED: Now uses ServiceResponse
                 $response = $this->allianceStructureService->purchaseOrUpgradeStructure($npc->id, $target);
                 if ($response->isSuccess()) {
-                    $this->log("  -> ALLIANCE UPGRADE: Purchased/Upgraded {$target}.");
+                    $this->logger->info("  -> ALLIANCE UPGRADE: Purchased/Upgraded {$target}.");
                 }
             }
         }
@@ -274,15 +267,14 @@ class NpcService
         $victimUser = $this->userRepo->findById($victim['id']);
         if ($victimUser && $victimUser->alliance_id === $npc->alliance_id) return;
 
-        $this->log("  -> ATTACKING: {$victim['character_name']} (ID: {$victim['id']})");
+        $this->logger->info("  -> ATTACKING: {$victim['character_name']} (ID: {$victim['id']})");
         
-        // UPDATED: Now uses ServiceResponse
         $response = $this->attackService->conductAttack($npc->id, $victim['character_name'], 'plunder');
         
         if ($response->isSuccess()) {
-            $this->log("  -> Attack COMPLETE.");
+            $this->logger->info("  -> Attack COMPLETE.");
         } else {
-            $this->log("  -> Attack FAILED: " . $response->message);
+            $this->logger->info("  -> Attack FAILED: " . $response->message);
         }
     }
 }
