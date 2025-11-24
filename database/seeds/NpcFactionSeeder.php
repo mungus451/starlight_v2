@@ -28,7 +28,8 @@ class NpcFactionSeeder extends AbstractSeed
         // Create NPC users
         foreach ($npcs as $name => $data) {
             // Check if NPC exists
-            $existing = $this->fetchRow("SELECT id FROM users WHERE email = :email", ['email' => $data['email']]);
+            $stmt = $adapter->query("SELECT id FROM users WHERE email = ?", [$data['email']]);
+            $existing = $stmt->fetch();
 
             if ($existing) {
                 $npcIds[$name] = $existing['id'];
@@ -73,7 +74,8 @@ class NpcFactionSeeder extends AbstractSeed
 
         // Create The Void Syndicate alliance
         $allianceName = 'The Void Syndicate';
-        $alliance = $this->fetchRow("SELECT id FROM alliances WHERE name = :name", ['name' => $allianceName]);
+        $stmt = $adapter->query("SELECT id FROM alliances WHERE name = ?", [$allianceName]);
+        $alliance = $stmt->fetch();
 
         if (!$alliance) {
             $this->table('alliances')->insert([
