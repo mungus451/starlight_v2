@@ -127,7 +127,7 @@ Run database migrations:
 ```bash
 cd /usr/local/var/www/starlight_v2
 composer install
-php vendor/bin/phinx migrate --configuration=config/phinx.php
+composer phinx migrate
 ```
 
 3. Application Setup
