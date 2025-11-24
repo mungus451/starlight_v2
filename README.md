@@ -80,18 +80,54 @@ Make sure you have Homebrew installed.
 # Start the MariaDB service
 `brew services start mariadb`
 ## 2. Database Setup
+
+### Using Docker (Recommended)
+The easiest way to run Starlight V2 is using Docker:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd starlight_v2
+
+# Copy environment configuration
+cp .env.example .env
+
+# Start containers
+docker-compose up -d
+
+# Run database migrations
+docker exec starlight_app composer phinx migrate
+
+# Check migration status
+docker exec starlight_app composer phinx status
+```
+
+The application will be available at http://localhost:8000
+
+### Manual Setup (Local MySQL/MariaDB)
 Log in to MariaDB/MySQL:
 
-`mysql -u root`
-<h3> Create the new database and user (use the credentials you provided): </h6>
+```bash
+mysql -u root
+```
 
-`CREATE DATABASE starlightDB;`<br>
-`CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';`<br>
-`GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';`<br>
-`FLUSH PRIVILEGES;`<br>
-`EXIT;`<br>
+Create the database and user:
 
-<h4>Use the database.sql file provided to match the schema.</h4>
+```sql
+CREATE DATABASE starlightDB;
+CREATE USER 'sd_admin'@'localhost' IDENTIFIED BY 'starlight';
+GRANT ALL PRIVILEGES ON starlightDB.* TO 'sd_admin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+Run database migrations:
+
+```bash
+cd /usr/local/var/www/starlight_v2
+composer install
+php vendor/bin/phinx migrate --configuration=config/phinx.php
+```
 
 3. Application Setup
 `Place the project files in /usr/local/var/www/starlight_v2.`

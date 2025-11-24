@@ -28,11 +28,8 @@ services:
       MYSQL_PASSWORD: starlight
     volumes:
       - db_data:/var/lib/mysql
-      # On first run, initializes with V1 schema, then applies V2 migrations
-      - ./database_v1.sql:/docker-entrypoint-initdb.d/01_v1_schema.sql
-      # DO NOT auto-apply V2 migrations on container startup to avoid duplicate CREATEs.
-      # Apply `database.sql` manually using the `apply-migrations.sh` helper or
-      # `docker exec -i starlight_db mysql -u sd_admin -pstarlight starlightDB < database.sql`
+      # Database schema is managed by Phinx migrations
+      # After first `docker-compose up`, run: docker exec starlight_app composer phinx migrate
     networks:
       - starlight_network
 
