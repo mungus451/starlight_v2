@@ -23,7 +23,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --optimize-autoloader
 
 # Configure Apache to serve from /public
 RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
