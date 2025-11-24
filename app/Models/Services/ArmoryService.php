@@ -14,6 +14,7 @@ use Throwable;
 /**
  * Handles all business logic for the Armory (Manufacturing & Equipping).
  * * Refactored for Strict Dependency Injection.
+ * * V2: Now includes View Model Preparation to remove logic from templates.
  */
 class ArmoryService
 {
@@ -28,17 +29,6 @@ class ArmoryService
     
     private array $armoryConfig;
 
-    /**
-     * DI Constructor.
-     *
-     * @param PDO $db
-     * @param Session $session
-     * @param Config $config
-     * @param ArmoryRepository $armoryRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     */
     public function __construct(
         PDO $db,
         Session $session,
@@ -57,26 +47,33 @@ class ArmoryService
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
         
-        // Load the armory config immediately
         $this->armoryConfig = $this->config->get('armory_items', []);
     }
 
     /**
      * Gets all data needed to render the full Armory UI.
+     * Prepares a "dumb" view model array to strictly separate concerns.
      *
      * @param int $userId
      * @return array
      */
     public function getArmoryData(int $userId): array
     {
-        // Get all data in parallel
+        // 1. Fetch Raw Data
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
         $userStats = $this->statsRepo->findByUserId($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
         $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
 
-        // Create the item lookup map
+        // 2. Calculate Discounts (Business Logic)
+        $discountConfig = $this->config->get('game_balance.armory', []);
+        $charisma = $userStats->charisma_points ?? 0;
+        $rate = $discountConfig['discount_per_charisma'] ?? 0.01;
+        $cap = $discountConfig['max_discount'] ?? 0.75;
+        $discountPercent = min($charisma * $rate, $cap);
+
+        // 3. Build Item Lookup Map
         $itemLookup = [];
         foreach ($this->armoryConfig as $unitData) {
             foreach ($unitData['categories'] as $categoryData) {
@@ -85,33 +82,137 @@ class ArmoryService
                 }
             }
         }
-        
-        // Get discount config
-        $discountConfig = $this->config->get('game_balance.armory', []);
+
+        // 4. Prepare Tiered Manufacturing Data (The "View Model" logic)
+        $manufacturingData = [];
+        foreach ($this->armoryConfig as $unitKey => $unitData) {
+            // Get flat tiered list
+            $tieredRaw = $this->organizeByTier($unitData);
+            
+            // Enrich every item with display logic status
+            $enrichedTiers = [];
+            foreach ($tieredRaw as $tier => $items) {
+                foreach ($items as $item) {
+                    $enrichedTiers[$tier][] = $this->enrichItemData(
+                        $item,
+                        $inventory,
+                        $userStructures->armory_level,
+                        $discountPercent,
+                        $itemLookup
+                    );
+                }
+            }
+            $manufacturingData[$unitKey] = $enrichedTiers;
+        }
 
         return [
-            'armoryConfig' => $this->armoryConfig,
+            // Raw Entities (Safe for view to read properties)
             'userResources' => $userResources,
             'userStructures' => $userStructures,
             'userStats' => $userStats,
+            
+            // Logic-Free Arrays
+            'armoryConfig' => $this->armoryConfig, // Structure for Loadouts
+            'manufacturingData' => $manufacturingData, // Pre-calculated for View
             'inventory' => $inventory,
             'loadouts' => $loadouts,
-            'itemLookup' => $itemLookup,
-            'discountConfig' => $discountConfig,
+            
+            // Display Helpers
+            'discountPercent' => $discountPercent,
+            'hasDiscount' => $discountPercent > 0
         ];
     }
 
     /**
-     * Attempts to manufacture (or upgrade) a specific quantity of an item.
-     *
-     * @param int $userId
-     * @param string $itemKey
-     * @param int $quantity
-     * @return bool True on success
+     * Enriches a raw item array with calculated statuses, costs, and flags.
+     * This removes all `if()` logic from the View.
      */
+    private function enrichItemData(array $item, array $inventory, int $armoryLevel, float $discountPercent, array $lookup): array
+    {
+        $itemKey = $item['item_key'];
+        
+        // Prerequisites
+        $isTier1 = !isset($item['requires']);
+        $prereqKey = $item['requires'] ?? null;
+        $prereqName = $prereqKey ? ($lookup[$prereqKey] ?? 'Unknown Item') : null;
+        $prereqOwned = $prereqKey ? (int)($inventory[$prereqKey] ?? 0) : 0;
+        
+        // Costs
+        $baseCost = $item['cost'];
+        $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
+        
+        // Status Checks
+        $reqLevel = $item['armory_level_req'] ?? 0;
+        $hasLevel = $armoryLevel >= $reqLevel;
+        $hasPrereq = $isTier1 || $prereqOwned > 0;
+        $canManufacture = $hasLevel && $hasPrereq;
+        
+        // Add enriched fields
+        $item['is_tier_1'] = $isTier1;
+        $item['prereq_key'] = $prereqKey;
+        $item['prereq_name'] = $prereqName;
+        $item['prereq_owned'] = $prereqOwned;
+        $item['current_owned'] = (int)($inventory[$itemKey] ?? 0);
+        
+        $item['base_cost'] = $baseCost;
+        $item['effective_cost'] = $effectiveCost;
+        $item['armory_level_req'] = $reqLevel;
+        
+        $item['can_manufacture'] = $canManufacture;
+        $item['level_status_class'] = $hasLevel ? 'status-ok' : 'status-bad';
+        $item['manufacture_btn_text'] = $isTier1 ? 'Manufacture' : 'Upgrade';
+        
+        // Stat Badges (Pre-formatted for simple loop in view)
+        $badges = [];
+        if (isset($item['attack'])) $badges[] = ['type' => 'attack', 'label' => "+{$item['attack']} Atk"];
+        if (isset($item['defense'])) $badges[] = ['type' => 'defense', 'label' => "+{$item['defense']} Def"];
+        if (isset($item['credit_bonus'])) $badges[] = ['type' => 'defense', 'label' => "+{$item['credit_bonus']} Cr"]; // Re-using defense style for gold
+        $item['stat_badges'] = $badges;
+
+        return $item;
+    }
+
+    /**
+     * Reorganizes a Unit's config from Categories -> Tiers.
+     */
+    private function organizeByTier(array $unitData): array
+    {
+        $allItems = [];
+        
+        // 1. Flatten items and attach Category Name (Slot Name)
+        foreach ($unitData['categories'] as $catKey => $catData) {
+            foreach ($catData['items'] as $itemKey => $item) {
+                $item['item_key'] = $itemKey;
+                $item['slot_name'] = $catData['title'];
+                $item['category_key'] = $catKey; 
+                $allItems[$itemKey] = $item;
+            }
+        }
+
+        // 2. Calculate Tier for every item
+        $tieredItems = [];
+        foreach ($allItems as $key => $item) {
+            $tier = $this->calculateItemTier($key, $allItems);
+            $tieredItems[$tier][] = $item;
+        }
+
+        ksort($tieredItems);
+        return $tieredItems;
+    }
+
+    private function calculateItemTier(string $itemKey, array $allItems, int $depth = 0): int
+    {
+        if ($depth > 10) return 99; 
+        $item = $allItems[$itemKey] ?? null;
+        if (!$item) return 1; 
+        if (empty($item['requires'])) return 1;
+        return 1 + $this->calculateItemTier($item['requires'], $allItems, $depth + 1);
+    }
+
+    // --- Transactional Actions (Unchanged logic, kept for completeness) ---
+
     public function manufactureItem(int $userId, string $itemKey, int $quantity): bool
     {
-        // 1. Validation (Input)
         if ($quantity <= 0) {
             $this->session->setFlash('error', 'Quantity must be a positive number.');
             return false;
@@ -123,31 +224,24 @@ class ArmoryService
             return false;
         }
 
-        // 2. Get User Data
         $userResources = $this->resourceRepo->findByUserId($userId);
         $userStructures = $this->structureRepo->findByUserId($userId);
         $userStats = $this->statsRepo->findByUserId($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
 
-        // 3. Check Prerequisites
-        // Check 3a: Armory Level
         $levelReq = $item['armory_level_req'] ?? 0;
         if ($userStructures->armory_level < $levelReq) {
             $this->session->setFlash('error', "You must have an Armory (Level {$levelReq}) to manufacture this item.");
             return false;
         }
 
-        // Calculate Discounted Cost
         $baseCost = $item['cost'];
         $discountSettings = $this->config->get('game_balance.armory', []);
         $rate = $discountSettings['discount_per_charisma'] ?? 0.01;
         $cap = $discountSettings['max_discount'] ?? 0.75;
-        
-        // Discount formula: Charisma * Rate, capped at Max
         $discountPercent = min($userStats->charisma_points * $rate, $cap);
         $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
         
-        // Check 3b: Total Cost
         $totalCost = $effectiveUnitCost * $quantity;
         
         if ($userResources->credits < $totalCost) {
@@ -155,7 +249,6 @@ class ArmoryService
             return false;
         }
 
-        // Check 3c: Consumable Prerequisite Item (if not Tier 1)
         $prereqKey = $item['requires'] ?? null;
         if ($prereqKey) {
             $prereqInStock = $inventory[$prereqKey] ?? 0;
@@ -166,25 +259,16 @@ class ArmoryService
             }
         }
         
-        // 4. Execute Transaction
         $this->db->beginTransaction();
         try {
-            // 4a. Deduct Credits
             $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
-
-            // 4b. Deduct Prerequisite Item (if applicable)
             if ($prereqKey) {
                 $this->armoryRepo->updateItemQuantity($userId, $prereqKey, -$quantity);
             }
-
-            // 4c. Add New Item
             $this->armoryRepo->updateItemQuantity($userId, $itemKey, +$quantity);
-
             $this->db->commit();
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
+            if ($this->db->inTransaction()) $this->db->rollBack();
             error_log('Armory Manufacture Error: ' . $e->getMessage());
             $this->session->setFlash('error', 'A database error occurred during manufacturing.');
             return false;
@@ -200,25 +284,13 @@ class ArmoryService
         return true;
     }
 
-    /**
-     * Equips an item to a unit's loadout slot.
-     *
-     * @param int $userId
-     * @param string $unitKey
-     * @param string $categoryKey
-     * @param string $itemKey
-     * @return bool True on success
-     */
     public function equipItem(int $userId, string $unitKey, string $categoryKey, string $itemKey): bool
     {
-        // 1. Validate inputs
         if (empty($unitKey) || empty($categoryKey)) {
             $this->session->setFlash('error', 'Invalid loadout data provided.');
             return false;
         }
         
-        // 2. Check that this is a valid assignment
-        // Handle "None Equipped"
         if (empty($itemKey)) {
             $this->armoryRepo->clearLoadoutSlot($userId, $unitKey, $categoryKey); 
             $this->session->setFlash('success', "Loadout slot cleared for " . $this->armoryConfig[$unitKey]['title'] . ".");
@@ -233,74 +305,41 @@ class ArmoryService
             return false;
         }
 
-        // 3. Execute Update
         $this->armoryRepo->setLoadout($userId, $unitKey, $categoryKey, $itemKey);
         $this->session->setFlash('success', $item['name'] . " is now the standard issue for all " . $this->armoryConfig[$unitKey]['title'] . ".");
         return true;
     }
 
-    /**
-     * Calculates the total stat bonus for a unit stack based on their loadout.
-     *
-     * @param int $userId
-     * @param string $unitKey (e.g., 'soldier')
-     * @param string $statType (e.g., 'attack' or 'defense')
-     * @param int $unitCount (e.g., 1000 soldiers)
-     * @return int The total aggregate bonus.
-     */
     public function getAggregateBonus(int $userId, string $unitKey, string $statType, int $unitCount): int
     {
-        if ($unitCount <= 0) {
-            return 0;
-        }
+        if ($unitCount <= 0) return 0;
 
-        // 1. Get all required data
         $loadouts = $this->armoryRepo->getUnitLoadouts($userId);
         $inventory = $this->armoryRepo->getInventory($userId);
-        
-        // 2. Get the categories for this unit
         $categories = $this->armoryConfig[$unitKey]['categories'] ?? [];
-        if (empty($categories)) {
-            return 0;
-        }
+        
+        if (empty($categories)) return 0;
 
         $totalBonus = 0;
 
-        // 3. Loop through each category slot for the unit
         foreach ($categories as $categoryKey => $categoryData) {
-            
-            // 4. Find what item is equipped in this slot
             $equippedItemKey = $loadouts[$unitKey][$categoryKey] ?? null;
-            if (!$equippedItemKey) {
-                continue; 
-            }
+            if (!$equippedItemKey) continue; 
 
-            // 5. Get the item's details and stat bonus
             $item = $this->findItemByKey($equippedItemKey);
             $itemBonus = $item[$statType] ?? 0;
-            if (!$item || $itemBonus === 0) {
-                continue;
-            }
+            if (!$item || $itemBonus === 0) continue;
 
-            // 6. Get the inventory count for this item
             $itemInStock = $inventory[$equippedItemKey] ?? 0;
-            if ($itemInStock === 0) {
-                continue;
-            }
+            if ($itemInStock === 0) continue;
 
-            // 7. Core logic: min(units, items_in_stock)
             $eligibleUnits = min($unitCount, $itemInStock);
-
-            // 8. Add the bonus for those units
             $totalBonus += ($eligibleUnits * $itemBonus);
         }
 
         return $totalBonus;
     }
 
-    /**
-     * Helper function to find an item's data from the nested config array.
-     */
     private function findItemByKey(string $itemKey): ?array
     {
         foreach ($this->armoryConfig as $unitData) {

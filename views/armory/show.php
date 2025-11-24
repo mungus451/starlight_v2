@@ -2,19 +2,12 @@
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\UserResource $userResources */
 /* @var \App\Models\Entities\UserStructure $userStructures */
-/* @var \App\Models\Entities\UserStats $userStats */
 /* @var array $armoryConfig */
+/* @var array $manufacturingData Prepared DTOs for the view */
 /* @var array $inventory */
 /* @var array $loadouts */
-/* @var array $itemLookup */
-/* @var array $discountConfig */
-
-// --- Calculate Discount Percentage for View ---
-$charisma = $userStats->charisma_points ?? 0;
-$rate = $discountConfig['discount_per_charisma'] ?? 0.01;
-$cap = $discountConfig['max_discount'] ?? 0.75;
-$discountPercent = min($charisma * $rate, $cap); 
-$hasDiscount = $discountPercent > 0;
+/* @var float $discountPercent */
+/* @var bool $hasDiscount */
 ?>
 
 <div class="container-full">
@@ -57,15 +50,19 @@ $hasDiscount = $discountPercent > 0;
         <?php 
             $unitResourceKey = $unitData['unit']; 
             $unitCount = $userResources->{$unitResourceKey} ?? 0;
+            // Use the Service-prepared data
+            $tieredItems = $manufacturingData[$unitKey] ?? [];
         ?>
         <div id="tab-<?= $unitKey ?>" class="tab-content <?= $i === 0 ? 'active' : '' ?>" data-unit-key="<?= $unitKey ?>" data-unit-count="<?= $unitCount ?>">
             
-            <!-- Split Grid: Loadout (Left) | Manufacturing (Right) -->
             <div class="split-grid">
                 
                 <!-- Left Column: Loadout Management -->
-                <div class="data-card">
-                    <h3>Current Loadout (<?= number_format($unitCount) ?> <?= htmlspecialchars(ucfirst($unitResourceKey)) ?>)</h3>
+                <div class="data-card sticky-sidebar">
+                    <h3 class="text-accent">Loadout</h3>
+                    <p class="form-note mb-1">
+                        Active Units: <strong><?= number_format($unitCount) ?> <?= htmlspecialchars(ucfirst($unitResourceKey)) ?></strong>
+                    </p>
                     
                     <form action="/armory/equip" method="POST" class="equip-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
@@ -76,7 +73,7 @@ $hasDiscount = $discountPercent > 0;
                                 <label for="equip-<?= $unitKey ?>-<?= $categoryKey ?>">
                                     <?= htmlspecialchars($categoryData['title']) ?>
                                 </label>
-                                <select class="equip-select" 
+                                <select class="equip-select w-full p-05 text-sm" 
                                         data-category-key="<?= $categoryKey ?>">
                                     <option value="">-- None Equipped --</option>
                                     <?php 
@@ -97,101 +94,99 @@ $hasDiscount = $discountPercent > 0;
                     </form>
                 </div>
 
-                <!-- Right Column: Manufacturing Items -->
+                <!-- Right Column: Manufacturing (Logic-Free View) -->
                 <div>
-                    <!-- 3 Column Grid for Items -->
-                    <div class="item-grid grid-3">
-                        <?php foreach ($unitData['categories'] as $categoryKey => $categoryData): ?>
+                    <?php foreach ($tieredItems as $tier => $items): ?>
+                        <details class="tier-accordion" <?= $tier === 1 ? 'open' : '' ?>>
+                            <summary class="tier-summary">
+                                Tier <?= $tier ?> Equipment
+                            </summary>
                             
-                            <!-- Section Header spans full width of grid -->
-                            <h2 class="section-header"><?= htmlspecialchars($categoryData['title']) ?></h2>
+                            <div class="tier-content">
+                                <div class="item-grid grid-3">
+                                    <?php foreach ($items as $item): ?>
+                                        <div class="item-card">
+                                            <div class="flex-between mb-05">
+                                                <h4 class="m-0 border-none font-1-1"><?= htmlspecialchars($item['name']) ?></h4>
+                                                <span class="data-badge text-uppercase bg-glass text-muted border-glass font-07">
+                                                    <?= htmlspecialchars($item['slot_name']) ?>
+                                                </span>
+                                            </div>
+                                            
+                                            <p class="item-notes mb-075"><?= htmlspecialchars($item['notes']) ?></p>
+                                            
+                                            <div class="item-stats">
+                                                <?php foreach ($item['stat_badges'] as $badge): ?>
+                                                    <span class="stat-pill <?= $badge['type'] ?>"><?= $badge['label'] ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
 
-                            <?php foreach ($categoryData['items'] as $itemKey => $item): ?>
-                                <?php
-                                $isTier1 = !isset($item['requires']);
-                                $prereqKey = $item['requires'] ?? null;
-                                $prereqName = $prereqKey ? ($itemLookup[$prereqKey] ?? 'N/A') : 'N/A';
-                                $prereqOwned = (int)($inventory[$prereqKey] ?? 0);
-                                $currentOwned = (int)($inventory[$itemKey] ?? 0);
-                                $armoryLvlReq = $item['armory_level_req'] ?? 0;
-                                $baseCost = $item['cost'];
-                                
-                                $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
-                                
-                                $hasLvl = $userStructures->armory_level >= $armoryLvlReq;
-                                $canManufacture = $hasLvl && ($isTier1 || $prereqOwned > 0);
-                                ?>
-                                <div class="item-card">
-                                    <h4><?= htmlspecialchars($item['name']) ?></h4>
-                                    <p class="item-notes"><?= htmlspecialchars($item['notes']) ?></p>
-                                    
-                                    <div class="item-stats">
-                                        <?php if (isset($item['attack'])): ?>
-                                            <span class="stat-pill attack">+<?= $item['attack'] ?> Attack</span>
-                                        <?php endif; ?>
-                                        <?php if (isset($item['defense'])): ?>
-                                            <span class="stat-pill defense">+<?= $item['defense'] ?> Defense</span>
-                                        <?php endif; ?>
-                                        <?php if (isset($item['credit_bonus'])): ?>
-                                            <span class="stat-pill defense">+<?= $item['credit_bonus'] ?> Credits</span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <ul class="item-info">
-                                        <li>
-                                            <span>Cost:</span> 
-                                            <div>
-                                                <?php if ($hasDiscount): ?>
-                                                    <span class="cost-original"><?= number_format($baseCost) ?></span>
-                                                    <strong class="cost-discounted"><?= number_format($effectiveCost) ?></strong>
-                                                <?php else: ?>
-                                                    <strong><?= number_format($baseCost) ?></strong>
+                                            <ul class="item-info font-085">
+                                                <li>
+                                                    <span>Cost:</span> 
+                                                    <div>
+                                                        <?php if ($hasDiscount): ?>
+                                                            <span class="cost-original"><?= number_format($item['base_cost']) ?></span>
+                                                            <strong class="cost-discounted"><?= number_format($item['effective_cost']) ?></strong>
+                                                        <?php else: ?>
+                                                            <strong><?= number_format($item['base_cost']) ?></strong>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </li>
+                                                <?php if ($item['armory_level_req'] > 0): ?>
+                                                    <li>
+                                                        <span>Armory:</span>
+                                                        <strong class="<?= $item['level_status_class'] ?>">
+                                                            Lvl <?= $item['armory_level_req'] ?>
+                                                        </strong>
+                                                    </li>
                                                 <?php endif; ?>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <span>Lvl Req:</span>
-                                            <strong class="<?= $hasLvl ? 'status-ok' : 'status-bad' ?>">
-                                                <?= $armoryLvlReq ?>
-                                            </strong>
-                                        </li>
-                                        <?php if (!$isTier1): ?>
-                                            <li>
-                                                <span>Requires:</span>
-                                                <strong><?= htmlspecialchars($prereqName) ?></strong>
-                                            </li>
-                                            <li>
-                                                <span>Req. Owned:</span>
-                                                <strong data-inventory-key="<?= $prereqKey ?>"><?= number_format($prereqOwned) ?></strong>
-                                            </li>
-                                        <?php endif; ?>
-                                        <li><span>Owned:</span> <strong data-inventory-key="<?= $itemKey ?>"><?= number_format($currentOwned) ?></strong></li>
-                                    </ul>
+                                                
+                                                <?php if (!$item['is_tier_1']): ?>
+                                                    <li>
+                                                        <span>Req:</span>
+                                                        <strong><?= htmlspecialchars($item['prereq_name']) ?></strong>
+                                                    </li>
+                                                    <li>
+                                                        <span>Req Owned:</span>
+                                                        <strong data-inventory-key="<?= $item['prereq_key'] ?>"><?= number_format($item['prereq_owned']) ?></strong>
+                                                    </li>
+                                                <?php endif; ?>
+                                                
+                                                <li class="border-top pt-05 mt-025">
+                                                    <span>Owned:</span> 
+                                                    <strong class="accent font-1-1" data-inventory-key="<?= $item['item_key'] ?>">
+                                                        <?= number_format($item['current_owned']) ?>
+                                                    </strong>
+                                                </li>
+                                            </ul>
 
-                                    <form action="/armory/manufacture" method="POST" class="manufacture-form">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                        <input type="hidden" name="item_key" value="<?= $itemKey ?>">
-                                        
-                                        <div class="form-group">
-                                            <div class="amount-input-group">
-                                                <input type="number" name="quantity" class="manufacture-amount" min="1" placeholder="Qty" required 
-                                                    data-item-key="<?= $itemKey ?>"
-                                                    data-item-cost="<?= $effectiveCost ?>" 
-                                                    data-prereq-key="<?= $prereqKey ?>"
-                                                    data-current-owned="<?= $currentOwned ?>"
-                                                >
-                                                <button type="button" class="btn-submit btn-accent btn-max-manufacture">Max</button>
-                                            </div>
+                                            <form action="/armory/manufacture" method="POST" class="manufacture-form mt-auto">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
+                                                
+                                                <div class="form-group">
+                                                    <div class="amount-input-group">
+                                                        <input type="number" name="quantity" class="manufacture-amount" min="1" placeholder="Qty" required 
+                                                            data-item-key="<?= $item['item_key'] ?>"
+                                                            data-item-cost="<?= $item['effective_cost'] ?>" 
+                                                            data-prereq-key="<?= $item['prereq_key'] ?? '' ?>"
+                                                            data-current-owned="<?= $item['current_owned'] ?>"
+                                                        >
+                                                        <button type="button" class="btn-submit btn-accent btn-max-manufacture p-05">Max</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="submit" class="btn-submit btn-manufacture-submit" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>
+                                                    <?= $item['manufacture_btn_text'] ?>
+                                                </button>
+                                            </form>
                                         </div>
-                                        
-                                        <button type="submit" class="btn-submit btn-manufacture-submit" <?= !$canManufacture ? 'disabled' : '' ?>>
-                                            <?= $isTier1 ? 'Manufacture' : 'Upgrade' ?>
-                                        </button>
-                                    </form>
+                                    <?php endforeach; ?>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php endforeach; ?>
-                    </div>
+                            </div>
+                        </details>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

@@ -8,19 +8,25 @@ use App\Core\Validator;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Models\Repositories\ResourceRepository; // Added for AJAX state refresh
+use App\Models\Repositories\ArmoryRepository;   // Added for AJAX state refresh
 
 /**
  * Handles all HTTP requests for the Armory.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to support AJAX interactions for Manufacture and Equip.
  */
 class ArmoryController extends BaseController
 {
     private ArmoryService $armoryService;
+    private ResourceRepository $resourceRepo;
+    private ArmoryRepository $armoryRepo;
 
     /**
      * DI Constructor.
      *
      * @param ArmoryService $armoryService
+     * @param ResourceRepository $resourceRepo
+     * @param ArmoryRepository $armoryRepo
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -29,6 +35,8 @@ class ArmoryController extends BaseController
      */
     public function __construct(
         ArmoryService $armoryService,
+        ResourceRepository $resourceRepo,
+        ArmoryRepository $armoryRepo,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -37,6 +45,8 @@ class ArmoryController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->armoryService = $armoryService;
+        $this->resourceRepo = $resourceRepo;
+        $this->armoryRepo = $armoryRepo;
     }
 
     /**
@@ -45,11 +55,8 @@ class ArmoryController extends BaseController
     public function show(): void
     {
         $userId = $this->session->get('user_id');
-        
-        // Get all data (config, resources, structures, inventory, loadouts)
         $data = $this->armoryService->getArmoryData($userId);
         
-        // Add title and set layout mode
         $data['title'] = 'Armory';
         $data['layoutMode'] = 'full';
 
@@ -58,28 +65,73 @@ class ArmoryController extends BaseController
 
     /**
      * Handles the "Manufacture / Upgrade" form submission.
+     * Supports both standard POST (Redirect) and AJAX (JSON).
      */
     public function handleManufacture(): void
     {
-        // 1. Validate Input
-        $data = $this->validate($_POST, [
+        $isJson = $this->wantsJson();
+        $rules = [
             'csrf_token' => 'required',
             'item_key' => 'required|string',
             'quantity' => 'required|int|min:1'
-        ]);
+        ];
 
-        // 2. Validate CSRF
-        if (!$this->csrfService->validateToken($data['csrf_token'])) {
-            $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/armory');
-            return;
+        // 1. Validation
+        if ($isJson) {
+            // Manual validation for AJAX to avoid Redirect
+            $val = $this->validator->make($_POST, $rules);
+            if ($val->fails()) {
+                $this->jsonResponse(['success' => false, 'error' => implode(' ', $val->errors())]);
+                return;
+            }
+            $data = $val->validated();
+            
+            // CSRF Check
+            if (!$this->csrfService->validateToken($data['csrf_token'])) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid security token.']);
+                return;
+            }
+        } else {
+            // Standard Redirect Validation
+            $data = $this->validate($_POST, $rules);
+            if (!$this->csrfService->validateToken($data['csrf_token'])) {
+                $this->session->setFlash('error', 'Invalid security token.');
+                $this->redirect('/armory');
+                return;
+            }
         }
 
-        // 3. Execute Logic
+        // 2. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->armoryService->manufactureItem($userId, $data['item_key'], $data['quantity']);
+        $success = $this->armoryService->manufactureItem($userId, $data['item_key'], $data['quantity']);
         
-        $this->redirect('/armory');
+        // 3. Response
+        if ($isJson) {
+            if ($success) {
+                // Fetch fresh data for the DOM update
+                $resources = $this->resourceRepo->findByUserId($userId);
+                $inventory = $this->armoryRepo->getInventory($userId);
+                $ownedCount = $inventory[$data['item_key']] ?? 0;
+                
+                // Also fetch prerequisite count if applicable (frontend logic might need it, 
+                // but usually just updating main item and credits is enough for 90% of cases).
+                // The success message is set in Session by Service, retrieve it.
+                $msg = $this->session->getFlash('success') ?? 'Manufacturing complete.';
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $msg,
+                    'new_credits' => $resources->credits,
+                    'new_owned' => $ownedCount,
+                    'item_key' => $data['item_key']
+                ]);
+            } else {
+                $error = $this->session->getFlash('error') ?? 'Manufacturing failed.';
+                $this->jsonResponse(['success' => false, 'error' => $error]);
+            }
+        } else {
+            $this->redirect('/armory');
+        }
     }
 
     /**
@@ -87,30 +139,78 @@ class ArmoryController extends BaseController
      */
     public function handleEquip(): void
     {
-        // 1. Validate Input
-        // item_key can be nullable (empty string in POST) to signify un-equipping
-        $data = $this->validate($_POST, [
+        $isJson = $this->wantsJson();
+        $rules = [
             'csrf_token' => 'required',
             'unit_key' => 'required|string',
             'category_key' => 'required|string',
             'item_key' => 'nullable|string'
-        ]);
+        ];
 
-        // 2. Validate CSRF
-        if (!$this->csrfService->validateToken($data['csrf_token'])) {
-            $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/armory');
-            return;
+        // 1. Validation
+        if ($isJson) {
+            $val = $this->validator->make($_POST, $rules);
+            if ($val->fails()) {
+                $this->jsonResponse(['success' => false, 'error' => implode(' ', $val->errors())]);
+                return;
+            }
+            $data = $val->validated();
+            
+            if (!$this->csrfService->validateToken($data['csrf_token'])) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid security token.']);
+                return;
+            }
+        } else {
+            $data = $this->validate($_POST, $rules);
+            if (!$this->csrfService->validateToken($data['csrf_token'])) {
+                $this->session->setFlash('error', 'Invalid security token.');
+                $this->redirect('/armory');
+                return;
+            }
         }
 
-        // 3. Execute Logic
+        // 2. Execute Logic
         $userId = $this->session->get('user_id');
-        
-        // Map null (from validation) to empty string (expected by Service for un-equipping)
         $itemKey = $data['item_key'] ?? '';
 
-        $this->armoryService->equipItem($userId, $data['unit_key'], $data['category_key'], $itemKey);
+        $success = $this->armoryService->equipItem($userId, $data['unit_key'], $data['category_key'], $itemKey);
         
-        $this->redirect('/armory');
+        // 3. Response
+        if ($isJson) {
+            if ($success) {
+                $msg = $this->session->getFlash('success') ?? 'Loadout updated.';
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $msg
+                ]);
+            } else {
+                $error = $this->session->getFlash('error') ?? 'Failed to equip item.';
+                $this->jsonResponse(['success' => false, 'error' => $error]);
+            }
+        } else {
+            $this->redirect('/armory');
+        }
+    }
+
+    /**
+     * Helper to detect JSON requests (AJAX).
+     */
+    private function wantsJson(): bool
+    {
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        // Also check specific X-Requested-With header often sent by JS fetch wrappers
+        $requestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+        
+        return str_contains($accept, 'application/json') || $requestedWith === 'XMLHttpRequest';
+    }
+
+    /**
+     * Helper to send JSON response and exit.
+     */
+    private function jsonResponse(array $data): void
+    {
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
     }
 }
