@@ -88,7 +88,7 @@ composer install
 ### Database Setup
 - Schema: `database.sql` documents V1→V2 migration (incremental ALTER statements)
 - The live database has the complete V2 schema with denormalized `users` table
-- Migrations: Run from project root: `php migrations/filename.php`
+- Migrations: Run via Phinx from project root: `composer phinx migrate` (manual scripts in `migrations/` are deprecated; see `migrations/README.md`)
 - Credentials: Configure via `.env` file (copy from `.env.example`)
 
 ## Common Patterns
