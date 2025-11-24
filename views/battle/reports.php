@@ -1,6 +1,6 @@
 <?php
 // --- Helper variables from the controller ---
-/* @var \App\Models\Entities\BattleReport[] $reports */
+/* @var array[] $reports Array of ViewModels from BattleReportPresenter */
 /* @var int $userId */
 ?>
 
@@ -21,75 +21,36 @@
                 No battle reports found.
             </div>
         <?php else: ?>
-            <?php foreach ($reports as $report): 
-                // --- LOGIC ---
-                $isAttacker = ($report->attacker_id === $userId);
-                $isWinner = false;
-                $isStalemate = ($report->attack_result === 'stalemate');
-                
-                if (!$isStalemate) {
-                    if ($isAttacker) {
-                        $isWinner = ($report->attack_result === 'victory');
-                    } else {
-                        $isWinner = ($report->attack_result === 'defeat');
-                    }
-                }
-                
-                $statusClass = 'status-stalemate';
-                $resultText = 'STALEMATE';
-                $resultTextClass = 'draw';
-                $icon = '⚖️';
-                
-                if (!$isStalemate) {
-                    if ($isWinner) {
-                        $statusClass = 'status-victory';
-                        $resultText = 'VICTORY';
-                        $resultTextClass = 'win';
-                        $icon = '🏆';
-                    } else {
-                        $statusClass = 'status-defeat';
-                        $resultText = 'DEFEAT';
-                        $resultTextClass = 'loss';
-                        $icon = '💀';
-                    }
-                }
-
-                $opponentName = $isAttacker ? $report->defender_name : $report->attacker_name;
-                $opponentName = htmlspecialchars($opponentName ?? 'Unknown Target');
-                
-                $roleText = $isAttacker ? 'Attacker' : 'Defender';
-                $roleClass = $isAttacker ? 'role-attacker' : 'role-defender';
-                // --- END LOGIC ---
-            ?>
+            <?php foreach ($reports as $report): ?>
             
-            <a href="/battle/report/<?= $report->id ?>" class="battle-card <?= $statusClass ?>">
+            <a href="/battle/report/<?= $report['id'] ?>" class="battle-card <?= $report['status_class'] ?>">
                 
                 <div class="card-icon-circle">
-                    <?= $icon ?>
+                    <?= $report['icon'] ?>
                 </div>
 
                 <div class="battle-info">
                     <h4>
-                        vs <?= $opponentName ?>
-                        <span class="role-badge <?= $roleClass ?>"><?= $roleText ?></span>
+                        <?= htmlspecialchars($report['versus_text']) ?>
+                        <span class="role-badge <?= $report['role_class'] ?>"><?= $report['role_text'] ?></span>
                     </h4>
                     
                     <div class="battle-details">
-                        <?php if ($isWinner): ?>
-                            <span class="positive">+<?= number_format($report->credits_plundered) ?> Credits</span>
-                        <?php elseif (!$isStalemate): ?>
+                        <?php if ($report['is_winner']): ?>
+                            <span class="positive">+<?= number_format($report['credits_plundered']) ?> Credits</span>
+                        <?php elseif (!$report['is_stalemate']): ?>
                             <span class="negative">Operation Failed</span>
                         <?php else: ?>
                             <span class="text-muted">No resources exchanged</span>
                         <?php endif; ?>
                         <span>|</span>
-                        <?= number_format($report->experience_gained) ?> XP
+                        <?= number_format($report['experience_gained']) ?> XP
                     </div>
                 </div>
 
                 <div class="battle-result-block">
-                    <span class="result-text <?= $resultTextClass ?>"><?= $resultText ?></span>
-                    <span class="battle-time"><?= date('M d, H:i', strtotime($report->created_at)) ?></span>
+                    <span class="result-text <?= $report['result_class'] ?>"><?= $report['result_text'] ?></span>
+                    <span class="battle-time"><?= $report['formatted_date'] ?></span>
                 </div>
             </a>
             

@@ -8,20 +8,22 @@ use App\Core\Validator;
 use App\Models\Services\SpyService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Presenters\SpyReportPresenter;
 
 /**
  * Handles all HTTP requests for the Espionage feature.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
- * * Decoupled: Consumes ServiceResponse.
+ * * Refactored to use SpyReportPresenter for View Logic.
  */
 class SpyController extends BaseController
 {
     private SpyService $spyService;
+    private SpyReportPresenter $presenter;
 
     /**
      * DI Constructor.
      *
      * @param SpyService $spyService
+     * @param SpyReportPresenter $presenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -30,6 +32,7 @@ class SpyController extends BaseController
      */
     public function __construct(
         SpyService $spyService,
+        SpyReportPresenter $presenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -38,6 +41,7 @@ class SpyController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->spyService = $spyService;
+        $this->presenter = $presenter;
     }
 
     /**
@@ -94,11 +98,16 @@ class SpyController extends BaseController
     public function showReports(): void
     {
         $userId = $this->session->get('user_id');
-        $reports = $this->spyService->getSpyReports($userId);
+        
+        // 1. Get Entities
+        $reportsRaw = $this->spyService->getSpyReports($userId);
+        
+        // 2. Transform to ViewModel
+        $reportsFormatted = $this->presenter->presentAll($reportsRaw, $userId);
 
         $this->render('spy/reports.php', [
             'title' => 'Spy Reports',
-            'reports' => $reports,
+            'reports' => $reportsFormatted,
             'userId' => $userId,
             'layoutMode' => 'full'
         ]);
@@ -112,18 +121,21 @@ class SpyController extends BaseController
         $userId = $this->session->get('user_id');
         $reportId = (int)($vars['id'] ?? 0);
         
-        $report = $this->spyService->getSpyReport($reportId, $userId);
+        // 1. Get Entity
+        $reportRaw = $this->spyService->getSpyReport($reportId, $userId);
 
-        if (is_null($report)) {
+        if (is_null($reportRaw)) {
             $this->session->setFlash('error', 'Spy report not found.');
             $this->redirect('/spy/reports');
             return;
         }
 
+        // 2. Transform to ViewModel
+        $reportFormatted = $this->presenter->present($reportRaw, $userId);
+
         $this->render('spy/report_view.php', [
-            'title' => 'Spy Report #' . $report->id,
-            'report' => $report,
-            'userId' => $userId,
+            'title' => 'Spy Report #' . $reportFormatted['id'],
+            'report' => $reportFormatted,
             'layoutMode' => 'full'
         ]);
     }

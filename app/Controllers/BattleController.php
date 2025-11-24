@@ -8,20 +8,22 @@ use App\Core\Validator;
 use App\Models\Services\AttackService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Presenters\BattleReportPresenter;
 
 /**
  * Handles all HTTP requests for the Battle feature.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
- * * Decoupled: Consumes ServiceResponse.
+ * * Refactored to use BattleReportPresenter for View Logic.
  */
 class BattleController extends BaseController
 {
     private AttackService $attackService;
+    private BattleReportPresenter $presenter;
 
     /**
      * DI Constructor.
      *
      * @param AttackService $attackService
+     * @param BattleReportPresenter $presenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -30,6 +32,7 @@ class BattleController extends BaseController
      */
     public function __construct(
         AttackService $attackService,
+        BattleReportPresenter $presenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -38,6 +41,7 @@ class BattleController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->attackService = $attackService;
+        $this->presenter = $presenter;
     }
 
     /**
@@ -94,11 +98,16 @@ class BattleController extends BaseController
     public function showReports(): void
     {
         $userId = $this->session->get('user_id');
-        $reports = $this->attackService->getBattleReports($userId);
+        
+        // 1. Get Entities
+        $reportsRaw = $this->attackService->getBattleReports($userId);
+        
+        // 2. Transform to ViewModel
+        $reportsFormatted = $this->presenter->presentAll($reportsRaw, $userId);
 
         $this->render('battle/reports.php', [
             'title' => 'Battle Reports',
-            'reports' => $reports,
+            'reports' => $reportsFormatted, // Passed as array, not entities
             'userId' => $userId,
             'layoutMode' => 'full'
         ]);
@@ -112,18 +121,21 @@ class BattleController extends BaseController
         $userId = $this->session->get('user_id');
         $reportId = (int)($vars['id'] ?? 0);
         
-        $report = $this->attackService->getBattleReport($reportId, $userId);
+        // 1. Get Entity
+        $reportRaw = $this->attackService->getBattleReport($reportId, $userId);
 
-        if (is_null($report)) {
+        if (is_null($reportRaw)) {
             $this->session->setFlash('error', 'Battle report not found.');
             $this->redirect('/battle/reports');
             return;
         }
 
+        // 2. Transform to ViewModel
+        $reportFormatted = $this->presenter->present($reportRaw, $userId);
+
         $this->render('battle/report_view.php', [
-            'title' => 'Battle Report #' . $report->id,
-            'report' => $report,
-            'userId' => $userId,
+            'title' => 'Battle Report #' . $reportFormatted['id'],
+            'report' => $reportFormatted,
             'layoutMode' => 'full'
         ]);
     }

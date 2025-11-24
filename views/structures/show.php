@@ -1,23 +1,13 @@
 <?php
 /**
- * @var array $structureFormulas Array of all structure definitions.
- * @var \App\Models\Entities\UserStructure $structures User's current structure levels.
+ * @var array $groupedStructures Formatted ViewModel from StructurePresenter.
  * @var \App\Models\Entities\UserResource $resources User's current resources.
- * @var array $costs Array of upgrade costs for next level.
- * @var array $turnConfig Global turn configuration.
- * @var array $attackConfig Global attack configuration.
- * @var array $spyConfig Global spy configuration.
  * @var string $csrf_token CSRF token for forms.
+ * @var bool $canManage Whether the user has permission to upgrade (for Alliance view).
  */
 
-// --- Grouping Logic ---
-$groupedStructures = [];
-foreach ($structureFormulas as $key => $details) {
-    $category = $details['category'] ?? 'Uncategorized';
-    $details['key'] = $key;
-    $groupedStructures[$category][] = $details;
-}
-$categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
+// If $canManage isn't set (Personal Structures), default to true.
+$canManage = $canManage ?? true;
 ?>
 
 <div class="container-full">
@@ -26,6 +16,7 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
         Build and upgrade your infrastructure to expand your influence and power.
     </p>
 
+    <!-- Header Stats -->
     <div class="resource-header-card">
         <div class="header-stat">
             <span>Credits</span>
@@ -41,109 +32,66 @@ $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
         </div>
     </div>
 
+    <!-- Structures Grid -->
     <div class="structures-grid">
-        <?php foreach ($categoryOrder as $categoryName):
-            if (!isset($groupedStructures[$categoryName])) continue; ?>
+        <?php foreach ($groupedStructures as $categoryName => $structures): ?>
 
             <div class="structure-category">
                 <h2><?= htmlspecialchars($categoryName) ?></h2>
             </div>
 
-            <?php foreach ($groupedStructures[$categoryName] as $details):
-                $key = $details['key'];
-                $columnName = $key . '_level';
-                $currentLevel = $structures->{$columnName} ?? 0;
-                $upgradeCost = $costs[$key] ?? 0;
-                $isMaxLevel = ($upgradeCost === 0 && isset($costs[$key])); 
-                $nextLevel = $currentLevel + 1;
-                $displayName = $details['name'] ?? 'Unknown';
-                $description = $details['description'] ?? 'No description available.';
-                $canAfford = $resources->credits >= $upgradeCost;
-                
-                // --- Benefit Text Logic ---
-                $benefitText = '';
-                switch ($key) {
-                    case 'economy_upgrade':
-                        $val = $turnConfig['credit_income_per_econ_level'] ?? 0;
-                        $benefitText = "+ " . number_format($val) . " Credits / Turn";
-                        break;
-                    case 'population':
-                        $val = $turnConfig['citizen_growth_per_pop_level'] ?? 0;
-                        $benefitText = "+ " . number_format($val) . " Citizens / Turn";
-                        break;
-                    case 'offense_upgrade':
-                        $val = ($attackConfig['power_per_offense_level'] ?? 0) * 100;
-                        $benefitText = "+ " . $val . "% Soldier Power";
-                        break;
-                    case 'fortification':
-                        $val = ($attackConfig['power_per_fortification_level'] ?? 0) * 100;
-                        $benefitText = "+ " . $val . "% Guard Power";
-                        break;
-                    case 'defense_upgrade':
-                        $val = ($attackConfig['power_per_defense_level'] ?? 0) * 100;
-                        $benefitText = "+ " . $val . "% Defense Power";
-                        break;
-                    case 'spy_upgrade':
-                        $val = ($spyConfig['offense_power_per_level'] ?? 0) * 100;
-                        $benefitText = "+ " . $val . "% Spy/Sentry Power";
-                        break;
-                    case 'armory':
-                        $benefitText = "Unlocks & Upgrades Item Tiers";
-                        break;
-                }
-                
-                // Determine icon
-                $categoryIcon = '';
-                switch ($categoryName) {
-                    case 'Economy': $categoryIcon = '💰'; break;
-                    case 'Defense': $categoryIcon = '🛡️'; break;
-                    case 'Offense': $categoryIcon = '⚔️'; break;
-                    case 'Intel': $categoryIcon = '📡'; break;
-                    default: $categoryIcon = '⚙️'; break;
-                }
-            ?>
-                <div class="structure-card <?= $isMaxLevel ? 'max-level' : '' ?>">
+            <?php foreach ($structures as $struct): ?>
+                <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
+                    
+                    <!-- Card Header -->
                     <div class="card-header-main">
-                        <span class="card-icon"><?= $categoryIcon ?></span>
+                        <span class="card-icon"><?= $struct['icon'] ?></span>
                         <div class="card-title-group">
-                            <h3 class="card-title"><?= htmlspecialchars($displayName) ?></h3>
-                            <p class="card-level">Level: <?= $currentLevel ?></p>
+                            <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
+                            <p class="card-level">Level: <?= $struct['current_level'] ?></p>
                         </div>
                     </div>
+
+                    <!-- Card Body -->
                     <div class="card-body-main">
-                        <p class="card-description"><?= htmlspecialchars($description) ?></p>
+                        <p class="card-description"><?= htmlspecialchars($struct['description']) ?></p>
                         
-                        <?php if ($benefitText): ?>
+                        <?php if (!empty($struct['benefit_text'])): ?>
                             <div class="card-benefit">
                                 <span class="icon">✨</span>
-                                <?= htmlspecialchars($benefitText) ?>
+                                <?= htmlspecialchars($struct['benefit_text']) ?>
                             </div>
                         <?php endif; ?>
 
-                        <?php if (!$isMaxLevel): ?>
+                        <?php if (!$struct['is_max_level']): ?>
                             <div class="card-costs-next">
-                                <div class="cost-item <?= !$canAfford ? 'insufficient' : '' ?>">
+                                <div class="cost-item <?= !$struct['can_afford'] ? 'insufficient' : '' ?>">
                                     <span class="icon">◎</span>
-                                    <span class="value"><?= number_format($upgradeCost) ?></span>
+                                    <span class="value"><?= $struct['cost_formatted'] ?></span>
                                     <span>Credits</span>
                                 </div>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="card-footer-actions">
-                        <?php if ($isMaxLevel): ?>
-                            <div class="max-level-badge">Max Level Achieved!</div>
-                        <?php else: ?>
-                            <form action="/structures/upgrade" method="POST">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                <input type="hidden" name="structure_key" value="<?= htmlspecialchars($key) ?>">
 
-                                <button type="submit" class="btn-upgrade" <?= !$canAfford ? 'disabled' : '' ?>>
-                                    <?= !$canAfford ? 'Insufficient Credits' : 'Upgrade to Level ' . $nextLevel ?>
-                                </button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
+                    <!-- Card Footer (Actions) -->
+                    <?php if ($canManage): ?>
+                        <div class="card-footer-actions">
+                            <?php if ($struct['is_max_level']): ?>
+                                <div class="max-level-badge">Max Level Achieved!</div>
+                            <?php else: ?>
+                                <form action="/structures/upgrade" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <input type="hidden" name="structure_key" value="<?= htmlspecialchars($struct['key']) ?>">
+
+                                    <button type="submit" class="btn-submit" <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
+                                        <?= $struct['can_afford'] ? 'Upgrade to Level ' . $struct['next_level'] : 'Insufficient Credits' ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    
                 </div>
             <?php endforeach; ?>
         <?php endforeach; ?>

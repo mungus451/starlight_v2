@@ -1,6 +1,6 @@
 <?php
 // --- Helper variables from the controller ---
-/* @var \App\Models\Entities\SpyReport[] $reports */
+/* @var array[] $reports Array of ViewModels from SpyReportPresenter */
 /* @var int $userId */
 ?>
 
@@ -21,51 +21,26 @@
                 No spy reports found.
             </div>
         <?php else: ?>
-            <?php foreach ($reports as $report): 
-                // --- LOGIC ---
-                $isAttacker = ($report->attacker_id === $userId);
-                
-                if ($isAttacker) {
-                    $viewerResult = $report->operation_result; // 'success' or 'failure'
-                    $viewerResultText = ucfirst($viewerResult);
-                    $statusClass = ($viewerResult === 'success') ? 'status-victory' : 'status-defeat';
-                    $resultClass = ($viewerResult === 'success') ? 'res-win' : 'res-loss';
-                    $icon = ($viewerResult === 'success') ? '📡' : '⚠️';
-                } else {
-                    // Defender logic
-                    $viewerResult = ($report->operation_result === 'success') ? 'failure' : 'success';
-                    $viewerResultText = ($report->operation_result === 'success') ? 'Failed (Breached)' : 'Success (Caught)';
-                    $statusClass = ($viewerResult === 'success') ? 'status-victory' : 'status-defeat';
-                    $resultClass = ($viewerResult === 'success') ? 'res-win' : 'res-loss';
-                    $icon = ($viewerResult === 'success') ? '🛡️' : '🚨';
-                }
-
-                $opponentName = $isAttacker ? $report->defender_name : $report->attacker_name;
-                $opponentName = htmlspecialchars($opponentName ?? 'Unknown Target');
-                
-                $roleText = $isAttacker ? 'Operator' : 'Target';
-                $roleClass = $isAttacker ? 'role-attacker' : 'role-defender';
-                // --- END LOGIC ---
-            ?>
+            <?php foreach ($reports as $report): ?>
             
-            <a href="/spy/report/<?= $report->id ?>" class="battle-card <?= $statusClass ?>">
+            <a href="/spy/report/<?= $report['id'] ?>" class="battle-card <?= $report['status_class'] ?>">
                 <div class="card-icon-circle">
-                    <?= $icon ?>
+                    <?= $report['icon'] ?>
                 </div>
 
                 <div class="battle-info">
                     <div class="battle-title">
-                        <span><?= $isAttacker ? 'vs' : 'from' ?> <?= $opponentName ?></span>
-                        <span class="role-badge <?= $roleClass ?>"><?= $roleText ?></span>
+                        <span><?= htmlspecialchars($report['versus_text']) ?></span>
+                        <span class="role-badge <?= $report['role_class'] ?>"><?= $report['role_text'] ?></span>
                     </div>
                     <div style="font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem;">
-                        ID: #<?= $report->id ?>
+                        ID: #<?= $report['id'] ?>
                     </div>
                 </div>
 
-                <div class="battle-result <?= $resultClass ?>">
-                    <?= htmlspecialchars($viewerResultText) ?>
-                    <span class="battle-date"><?= date('M j, H:i', strtotime($report->created_at)) ?></span>
+                <div class="battle-result <?= $report['result_class'] ?>">
+                    <?= htmlspecialchars($report['short_result_text']) ?>
+                    <span class="battle-date"><?= $report['formatted_date'] ?></span>
                 </div>
             </a>
             
