@@ -28,7 +28,7 @@ class NpcFactionSeeder extends AbstractSeed
         // Create NPC users
         foreach ($npcs as $name => $data) {
             // Check if NPC exists
-            $stmt = $adapter->query("SELECT id FROM users WHERE email = '{$data['email']}'");
+            $stmt = $adapter->query("SELECT id FROM users WHERE email = ?", [$data['email']]);
             $existing = $stmt->fetch();
 
             if ($existing) {
@@ -74,7 +74,7 @@ class NpcFactionSeeder extends AbstractSeed
 
         // Create The Void Syndicate alliance
         $allianceName = 'The Void Syndicate';
-        $stmt = $adapter->query("SELECT id FROM alliances WHERE name = '{$allianceName}'");
+        $stmt = $adapter->query("SELECT id FROM alliances WHERE name = ?", [$allianceName]);
         $alliance = $stmt->fetch();
 
         if (!$alliance) {
@@ -117,7 +117,10 @@ class NpcFactionSeeder extends AbstractSeed
             // Assign NPCs to alliance
             foreach ($npcs as $name => $data) {
                 $roleId = ($data['role'] === 'Leader') ? $leaderRoleId : $memberRoleId;
-                $adapter->execute("UPDATE users SET alliance_id = {$allianceId}, alliance_role_id = {$roleId} WHERE id = {$npcIds[$name]}");
+                $adapter->execute(
+                    "UPDATE users SET alliance_id = :alliance_id, alliance_role_id = :role_id WHERE id = :user_id",
+                    ['alliance_id' => $allianceId, 'role_id' => $roleId, 'user_id' => $npcIds[$name]]
+                );
             }
         }
     }
