@@ -49,7 +49,8 @@ Game Loop (Cron): A standalone script for processing turn-based income, citizen 
 `├── logs/               # Error and cron logs.` <br>
 `├── public/             # The *only* web-accessible directory.` <br>
 `│   └── index.php       # (The "Front Controller") All requests come here.` <br>
-`├── sql/                # All database migration scripts (in order).` <br>
+`├── database/           # Database-related files.` <br>
+`│   └── migrations/     # All Phinx migration scripts (in order).` <br>
 `├── vendor/             # Composer packages.` <br>
 `└── views/              # (The "V") All "dumb" HTML/PHP templates.` <br>
 `    ├── alliance/` <br>
