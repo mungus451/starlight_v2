@@ -2,7 +2,8 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\Config;
+use App\Core\ServiceResponse;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
@@ -15,13 +16,15 @@ use PDO;
 use Throwable;
 
 /**
- * Handles all "write" logic for managing alliance membership.
+ * Handles all "write" logic for managing alliances.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
+ * * Now includes createAlliance (moved from AllianceService).
  */
 class AllianceManagementService
 {
     private PDO $db;
-    private Session $session;
+    private Config $config;
     
     private AllianceRepository $allianceRepo;
     private UserRepository $userRepo;
@@ -32,23 +35,9 @@ class AllianceManagementService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
 
-    /**
-     * DI Constructor.
-     *
-     * @param PDO $db
-     * @param Session $session
-     * @param AllianceRepository $allianceRepo
-     * @param UserRepository $userRepo
-     * @param ApplicationRepository $appRepo
-     * @param AllianceRoleRepository $roleRepo
-     * @param AlliancePolicyService $policyService
-     * @param ResourceRepository $resourceRepo
-     * @param AllianceBankLogRepository $bankLogRepo
-     * @param AllianceLoanRepository $loanRepo
-     */
     public function __construct(
         PDO $db,
-        Session $session,
+        Config $config,
         AllianceRepository $allianceRepo,
         UserRepository $userRepo,
         ApplicationRepository $appRepo,
@@ -59,7 +48,7 @@ class AllianceManagementService
         AllianceLoanRepository $loanRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
+        $this->config = $config;
         $this->allianceRepo = $allianceRepo;
         $this->userRepo = $userRepo;
         $this->appRepo = $appRepo;
@@ -71,86 +60,152 @@ class AllianceManagementService
     }
 
     /**
+     * Attempts to create a new alliance.
+     * 
+     * @param int $userId
+     * @param string $name
+     * @param string $tag
+     * @return ServiceResponse
+     */
+    public function createAlliance(int $userId, string $name, string $tag): ServiceResponse
+    {
+        // 1. Validation
+        if (empty(trim($name)) || empty(trim($tag))) {
+            return ServiceResponse::error('Alliance name and tag cannot be empty.');
+        }
+        if (mb_strlen($name) < 3 || mb_strlen($name) > 100) {
+            return ServiceResponse::error('Alliance name must be between 3 and 100 characters.');
+        }
+        if (mb_strlen($tag) < 3 || mb_strlen($tag) > 5) {
+            return ServiceResponse::error('Alliance tag must be between 3 and 5 characters.');
+        }
+
+        if ($this->allianceRepo->findByName($name)) {
+            return ServiceResponse::error('An alliance with this name already exists.');
+        }
+        if ($this->allianceRepo->findByTag($tag)) {
+            return ServiceResponse::error('An alliance with this tag already exists.');
+        }
+
+        $user = $this->userRepo->findById($userId);
+        if ($user->alliance_id !== null) {
+            return ServiceResponse::error('You are already in an alliance.');
+        }
+
+        $cost = $this->config->get('game_balance.alliance.creation_cost', 50000000);
+        $resources = $this->resourceRepo->findByUserId($userId);
+
+        if ($resources->credits < $cost) {
+            return ServiceResponse::error('You do not have enough credits to found an alliance.');
+        }
+
+        // 2. Transaction
+        $this->db->beginTransaction();
+        try {
+            // 2a. Create the alliance
+            $newAllianceId = $this->allianceRepo->create($name, $tag, $userId);
+
+            // 2b. Create the default roles
+            $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
+                'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
+                'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
+                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1,
+                'can_manage_diplomacy' => 1, 'can_declare_war' => 1
+            ]);
+            
+            $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
+            $this->roleRepo->create($newAllianceId, 'Member', 9, []);
+
+            // 2c. Deduct credits
+            $newCredits = $resources->credits - $cost;
+            $this->resourceRepo->updateCredits($userId, $newCredits);
+
+            // 2d. Update the user to be the leader
+            $this->userRepo->setAlliance($userId, $newAllianceId, $leaderRoleId);
+
+            $this->db->commit();
+
+            return ServiceResponse::success(
+                'You have successfully founded the alliance: ' . $name,
+                ['alliance_id' => $newAllianceId]
+            );
+
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log('Alliance Creation Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred while creating the alliance.');
+        }
+    }
+
+    /**
      * A user applies to join an alliance.
      */
-    public function applyToAlliance(int $userId, int $allianceId): bool
+    public function applyToAlliance(int $userId, int $allianceId): ServiceResponse
     {
         $user = $this->userRepo->findById($userId);
         if ($user->alliance_id !== null) {
-            $this->session->setFlash('error', 'You are already in an alliance.');
-            return false;
+            return ServiceResponse::error('You are already in an alliance.');
         }
 
         if ($this->appRepo->findByUserAndAlliance($userId, $allianceId)) {
-            $this->session->setFlash('error', 'You have already applied to this alliance.');
-            return false;
+            return ServiceResponse::error('You have already applied to this alliance.');
         }
         
         $alliance = $this->allianceRepo->findById($allianceId);
         if ($alliance && $alliance->is_joinable) {
-            // If it's open, skip application and just join
-            $this->session->setFlash('success', 'This alliance has open recruitment! You have joined.');
+            // Recursively accept self if open recruitment
             return $this->acceptApplication($userId, null, $userId, $allianceId);
         }
 
         if ($this->appRepo->create($userId, $allianceId)) {
-            $this->session->setFlash('success', 'Application sent!');
-            return true;
+            return ServiceResponse::success('Application sent!');
         }
 
-        $this->session->setFlash('error', 'A database error occurred.');
-        return false;
+        return ServiceResponse::error('A database error occurred.');
     }
 
     /**
      * A user cancels their own application.
      */
-    public function cancelApplication(int $userId, int $appId): bool
+    public function cancelApplication(int $userId, int $appId): ServiceResponse
     {
         $app = $this->appRepo->findById($appId);
 
         if (!$app || $app->user_id !== $userId) {
-            $this->session->setFlash('error', 'Invalid application.');
-            return false;
+            return ServiceResponse::error('Invalid application.');
         }
 
         $this->appRepo->delete($appId);
-        $this->session->setFlash('success', 'Application cancelled.');
-        return true;
+        return ServiceResponse::success('Application cancelled.');
     }
 
     /**
-     * A user (not a leader) leaves their current alliance.
+     * A user leaves their current alliance.
      */
-    public function leaveAlliance(int $userId): bool
+    public function leaveAlliance(int $userId): ServiceResponse
     {
         $user = $this->userRepo->findById($userId);
 
         if ($user->alliance_id === null) {
-            $this->session->setFlash('error', 'You are not in an alliance.');
-            return false;
+            return ServiceResponse::error('You are not in an alliance.');
         }
         
         $role = $this->roleRepo->findById($user->alliance_role_id);
 
         if ($role && $role->name === 'Leader') {
-            $this->session->setFlash('error', 'Leaders must disband the alliance (feature coming soon). You cannot leave.');
-            return false;
+            return ServiceResponse::error('Leaders must disband the alliance or transfer leadership. You cannot leave.');
         }
 
         $this->userRepo->leaveAlliance($userId);
-        
-        // Update the user's session
-        $this->session->set('alliance_id', null);
-        
-        $this->session->setFlash('success', 'You have left the alliance.');
-        return true;
+        return ServiceResponse::success('You have left the alliance.');
     }
 
     /**
      * An alliance admin accepts a pending application.
      */
-    public function acceptApplication(int $adminId, ?int $appId, ?int $targetUserId = null, ?int $targetAllianceId = null): bool
+    public function acceptApplication(int $adminId, ?int $appId, ?int $targetUserId = null, ?int $targetAllianceId = null): ServiceResponse
     {
         $targetAllianceId = $targetAllianceId ?? 0;
         $targetUserId = $targetUserId ?? 0;
@@ -159,35 +214,30 @@ class AllianceManagementService
             // Standard flow
             $app = $this->appRepo->findById($appId);
             if (!$app) {
-                $this->session->setFlash('error', 'Application not found.');
-                return false;
+                return ServiceResponse::error('Application not found.');
             }
             $targetAllianceId = $app->alliance_id;
             $targetUserId = $app->user_id;
 
             if (!$this->checkPermission($adminId, $targetAllianceId, 'can_manage_applications')) {
-                $this->session->setFlash('error', 'You do not have permission to do this.');
-                return false;
+                return ServiceResponse::error('You do not have permission to do this.');
             }
         } else {
-            // 'is_joinable' flow
+            // 'is_joinable' flow (Self-join)
             if ($adminId !== $targetUserId) {
-                $this->session->setFlash('error', 'Invalid join operation.');
-                return false;
+                return ServiceResponse::error('Invalid join operation.');
             }
         }
 
         $targetUser = $this->userRepo->findById($targetUserId);
         if ($targetUser->alliance_id !== null) {
-            $this->session->setFlash('error', 'This user has already joined another alliance.');
             if ($appId) $this->appRepo->delete($appId);
-            return false;
+            return ServiceResponse::error('This user has already joined another alliance.');
         }
         
         $recruitRole = $this->roleRepo->findDefaultRole($targetAllianceId, 'Recruit');
         if (!$recruitRole) {
-            $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found for this alliance.');
-            return false;
+            return ServiceResponse::error('Critical error: Default "Recruit" role not found.');
         }
 
         $this->db->beginTransaction();
@@ -198,69 +248,55 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Accept Application Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred.');
-            return false;
+            return ServiceResponse::error('A database error occurred.');
         }
         
-        if ($adminId === $targetUserId) {
-            $this->session->set('alliance_id', $targetAllianceId);
-        }
-        
-        $this->session->setFlash('success', 'Member accepted!');
-        return true;
+        return ServiceResponse::success('Member accepted!', ['new_alliance_id' => $targetAllianceId]);
     }
 
     /**
      * An alliance admin rejects a pending application.
      */
-    public function rejectApplication(int $adminId, int $appId): bool
+    public function rejectApplication(int $adminId, int $appId): ServiceResponse
     {
         $app = $this->appRepo->findById($appId);
         if (!$app) {
-            $this->session->setFlash('error', 'Application not found.');
-            return false;
+            return ServiceResponse::error('Application not found.');
         }
 
         if (!$this->checkPermission($adminId, $app->alliance_id, 'can_manage_applications')) {
-            $this->session->setFlash('error', 'You do not have permission to do this.');
-            return false;
+            return ServiceResponse::error('You do not have permission to do this.');
         }
 
         $this->appRepo->delete($appId);
-        $this->session->setFlash('success', 'Application rejected.');
-        return true;
+        return ServiceResponse::success('Application rejected.');
     }
 
     /**
      * An alliance member with invite perms invites a user.
      */
-    public function inviteUser(int $inviterId, int $targetUserId): bool
+    public function inviteUser(int $inviterId, int $targetUserId): ServiceResponse
     {
         $inviterUser = $this->userRepo->findById($inviterId);
         if (!$inviterUser || $inviterUser->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to invite players.');
-            return false;
+            return ServiceResponse::error('You must be in an alliance to invite players.');
         }
 
         if (!$this->checkPermission($inviterId, $inviterUser->alliance_id, 'can_invite_members')) {
-            $this->session->setFlash('error', 'You do not have permission to invite members.');
-            return false;
+            return ServiceResponse::error('You do not have permission to invite members.');
         }
         
         $targetUser = $this->userRepo->findById($targetUserId);
         if (!$targetUser) {
-            $this->session->setFlash('error', 'Target player not found.');
-            return false;
+            return ServiceResponse::error('Target player not found.');
         }
         if ($targetUser->alliance_id !== null) {
-            $this->session->setFlash('error', 'That player is already in an alliance.');
-            return false;
+            return ServiceResponse::error('That player is already in an alliance.');
         }
         
         $recruitRole = $this->roleRepo->findDefaultRole($inviterUser->alliance_id, 'Recruit');
         if (!$recruitRole) {
-            $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found for your alliance.');
-            return false;
+            return ServiceResponse::error('Critical error: Default "Recruit" role not found.');
         }
         
         $this->db->beginTransaction();
@@ -271,86 +307,67 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Invite User Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while sending the invite.');
-            return false;
+            return ServiceResponse::error('A database error occurred while sending the invite.');
         }
         
-        if ($inviterId === $targetUserId) {
-            $this->session->set('alliance_id', $inviterUser->alliance_id);
-        }
-        
-        $this->session->setFlash('success', $targetUser->characterName . ' has accepted your invite and joined the alliance!');
-        return true;
+        return ServiceResponse::success("{$targetUser->characterName} has accepted your invite!");
     }
 
     /**
-     * Handles updating the alliance's public profile.
+     * Updates public profile.
      */
-    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl, bool $isJoinable): bool
+    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl, bool $isJoinable): ServiceResponse
     {
         if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
-            $this->session->setFlash('error', 'You do not have permission to edit the profile.');
-            return false;
+            return ServiceResponse::error('You do not have permission to edit the profile.');
         }
         
         if (!empty($pfpUrl) && !filter_var($pfpUrl, FILTER_VALIDATE_URL)) {
-            $this->session->setFlash('error', 'Profile picture must be a valid URL.');
-            return false;
+            return ServiceResponse::error('Profile picture must be a valid URL.');
         }
 
         $this->allianceRepo->updateProfile($allianceId, $description, $pfpUrl, $isJoinable);
-        $this->session->setFlash('success', 'Alliance profile updated.');
-        return true;
+        return ServiceResponse::success('Alliance profile updated.');
     }
 
     /**
-     * Kicks a member from an alliance.
+     * Kicks a member.
      */
-    public function kickMember(int $adminId, int $targetUserId): bool
+    public function kickMember(int $adminId, int $targetUserId): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
         
         if (!$adminUser || !$targetUser) {
-            $this->session->setFlash('error', 'Invalid operation.');
-            return false;
+            return ServiceResponse::error('Invalid operation.');
         }
 
         $adminRole = $this->roleRepo->findById($adminUser->alliance_role_id);
         $targetRole = $this->roleRepo->findById($targetUser->alliance_role_id);
 
         if (!$adminRole) {
-            $this->session->setFlash('error', 'You do not have an administrative role.');
-            return false;
+            return ServiceResponse::error('You do not have an administrative role.');
         }
         
         $authError = $this->policyService->canKick($adminUser, $adminRole, $targetUser, $targetRole);
         if ($authError !== null) {
-            $this->session->setFlash('error', $authError);
-            return false;
+            return ServiceResponse::error($authError);
         }
 
         $this->userRepo->leaveAlliance($targetUserId);
-        
-        if ($adminId === $targetUserId) {
-            $this->session->set('alliance_id', null);
-        }
-        
-        $this->session->setFlash('success', $targetUser->characterName . ' has been kicked from the alliance.');
-        return true;
+        return ServiceResponse::success("{$targetUser->characterName} has been kicked from the alliance.");
     }
 
     /**
      * Changes a member's role.
      */
-    public function changeMemberRole(int $adminId, int $targetUserId, int $newRoleId): bool
+    public function changeMemberRole(int $adminId, int $targetUserId, int $newRoleId): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminId);
         $targetUser = $this->userRepo->findById($targetUserId);
         
         if (!$adminUser || !$targetUser) {
-            $this->session->setFlash('error', 'Invalid operation.');
-            return false;
+            return ServiceResponse::error('Invalid operation.');
         }
 
         $adminRole = $this->roleRepo->findById($adminUser->alliance_role_id);
@@ -358,91 +375,70 @@ class AllianceManagementService
         $newRole = $this->roleRepo->findById($newRoleId);
 
         if (!$adminRole) {
-            $this->session->setFlash('error', 'You do not have an administrative role.');
-            return false;
+            return ServiceResponse::error('You do not have an administrative role.');
         }
         if (!$newRole) {
-            $this->session->setFlash('error', 'The selected role does not exist.');
-            return false;
+            return ServiceResponse::error('The selected role does not exist.');
         }
 
         $authError = $this->policyService->canAssignRole($adminUser, $adminRole, $targetUser, $targetRole, $newRole);
         if ($authError !== null) {
-            $this->session->setFlash('error', $authError);
-            return false;
+            return ServiceResponse::error($authError);
         }
 
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
-        $this->session->setFlash('success', $targetUser->characterName . "'s role has been updated to " . $newRole->name . ".");
-        return true;
+        return ServiceResponse::success("{$targetUser->characterName}'s role has been updated to {$newRole->name}.");
     }
 
-    /**
-     * Creates a new custom role.
-     */
-    public function createRole(int $adminId, int $allianceId, string $name, array $permissions): bool
+    // --- Role Management ---
+
+    public function createRole(int $adminId, int $allianceId, string $name, array $permissions): ServiceResponse
     {
         if (!$this->checkPermission($adminId, $allianceId, 'can_manage_roles')) {
-            $this->session->setFlash('error', 'You do not have permission to create roles.');
-            return false;
+            return ServiceResponse::error('You do not have permission to create roles.');
         }
         
         $this->roleRepo->create($allianceId, $name, 100, $permissions);
-        $this->session->setFlash('success', "Role '{$name}' created.");
-        return true;
+        return ServiceResponse::success("Role '{$name}' created.");
     }
 
-    /**
-     * Updates an existing custom role.
-     */
-    public function updateRole(int $adminId, int $roleId, string $name, array $permissions): bool
+    public function updateRole(int $adminId, int $roleId, string $name, array $permissions): ServiceResponse
     {
         $role = $this->roleRepo->findById($roleId);
         if (!$role) {
-            $this->session->setFlash('error', 'Role not found.');
-            return false;
+            return ServiceResponse::error('Role not found.');
         }
 
         if (!$this->checkPermission($adminId, $role->alliance_id, 'can_manage_roles')) {
-            $this->session->setFlash('error', 'You do not have permission to edit roles.');
-            return false;
+            return ServiceResponse::error('You do not have permission to edit roles.');
         }
         
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this->session->setFlash('error', 'You cannot edit default roles.');
-            return false;
+            return ServiceResponse::error('You cannot edit default roles.');
         }
 
         $this->roleRepo->update($roleId, $name, $permissions);
-        $this->session->setFlash('success', "Role '{$name}' updated.");
-        return true;
+        return ServiceResponse::success("Role '{$name}' updated.");
     }
 
-    /**
-     * Deletes a custom role.
-     */
-    public function deleteRole(int $adminId, int $roleId): bool
+    public function deleteRole(int $adminId, int $roleId): ServiceResponse
     {
         $role = $this->roleRepo->findById($roleId);
         if (!$role) {
-            $this->session->setFlash('error', 'Role not found.');
-            return false;
+            return ServiceResponse::error('Role not found.');
         }
 
         if (!$this->checkPermission($adminId, $role->alliance_id, 'can_manage_roles')) {
-            $this->session->setFlash('error', 'You do not have permission to delete roles.');
-            return false;
+            return ServiceResponse::error('You do not have permission to delete roles.');
         }
 
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            $this->session->setFlash('error', 'You cannot delete default roles.');
-            return false;
+            return ServiceResponse::error('You cannot delete default roles.');
         }
         
         $recruitRole = $this->roleRepo->findDefaultRole($role->alliance_id, 'Recruit');
         if (!$recruitRole) {
-            $this->session->setFlash('error', 'Critical error: Default "Recruit" role not found.');
-            return false;
+            return ServiceResponse::error('Critical error: Default "Recruit" role not found.');
         }
 
         $this->db->beginTransaction();
@@ -453,35 +449,29 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Delete Role Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred.');
-            return false;
+            return ServiceResponse::error('A database error occurred.');
         }
 
-        $this->session->setFlash('success', "Role '{$role->name}' deleted. Members were reassigned to Recruit.");
-        return true;
+        return ServiceResponse::success("Role '{$role->name}' deleted. Members reassigned to Recruit.");
     }
 
-    /**
-     * A user donates their personal credits to the alliance bank.
-     */
-    public function donateToAlliance(int $donatorUserId, int $amount): bool
+    // --- Funding ---
+
+    public function donateToAlliance(int $donatorUserId, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Donation amount must be a positive number.');
-            return false;
+            return ServiceResponse::error('Donation amount must be a positive number.');
         }
 
         $user = $this->userRepo->findById($donatorUserId);
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to donate.');
-            return false;
+            return ServiceResponse::error('You must be in an alliance to donate.');
         }
         $allianceId = $user->alliance_id;
 
         $resources = $this->resourceRepo->findByUserId($donatorUserId);
         if ($resources->credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough credits on hand to donate.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits on hand to donate.');
         }
 
         $this->db->beginTransaction();
@@ -494,67 +484,51 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Alliance Donation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during the donation.');
-            return false;
+            return ServiceResponse::error('A database error occurred during the donation.');
         }
 
-        $this->session->setFlash('success', 'You have successfully donated ' . number_format($amount) . ' credits to the alliance.');
-        return true;
+        return ServiceResponse::success('You have successfully donated ' . number_format($amount) . ' credits to the alliance.');
     }
 
-    /**
-     * A user requests a loan from the alliance bank.
-     */
-    public function requestLoan(int $userId, int $amount): bool
+    public function requestLoan(int $userId, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Loan amount must be a positive number.');
-            return false;
+            return ServiceResponse::error('Loan amount must be a positive number.');
         }
 
         $user = $this->userRepo->findById($userId);
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to request a loan.');
-            return false;
+            return ServiceResponse::error('You must be in an alliance to request a loan.');
         }
         
         $this->loanRepo->createLoanRequest($user->alliance_id, $userId, $amount);
-        $this->session->setFlash('success', 'Loan request for ' . number_format($amount) . ' credits has been submitted.');
-        return true;
+        return ServiceResponse::success('Loan request for ' . number_format($amount) . ' credits has been submitted.');
     }
 
-    /**
-     * An admin approves a loan, transferring funds.
-     */
-    public function approveLoan(int $adminUserId, int $loanId): bool
+    public function approveLoan(int $adminUserId, int $loanId): ServiceResponse
     {
         $loan = $this->loanRepo->findById($loanId);
         if (!$loan) {
-            $this->session->setFlash('error', 'Loan not found.');
-            return false;
+            return ServiceResponse::error('Loan not found.');
         }
 
         if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
-            $this->session->setFlash('error', 'You do not have permission to manage the bank.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage the bank.');
         }
         
         if ($loan->status !== 'pending') {
-            $this->session->setFlash('error', 'This loan is not pending approval.');
-            return false;
+            return ServiceResponse::error('This loan is not pending approval.');
         }
         
         $alliance = $this->allianceRepo->findById($loan->alliance_id);
         if ($alliance->bank_credits < $loan->amount_requested) {
-            $this->session->setFlash('error', 'The alliance bank does not have enough credits to approve this loan.');
-            return false;
+            return ServiceResponse::error('The alliance bank does not have enough credits.');
         }
         
         $borrower = $this->userRepo->findById($loan->user_id);
         $borrowerResources = $this->resourceRepo->findByUserId($loan->user_id);
         if (!$borrower || !$borrowerResources) {
-            $this->session->setFlash('error', 'Borrower not found.');
-            return false;
+            return ServiceResponse::error('Borrower not found.');
         }
 
         $this->db->beginTransaction();
@@ -572,66 +546,50 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Alliance Loan Approve Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while approving the loan.');
-            return false;
+            return ServiceResponse::error('A database error occurred.');
         }
         
-        $this->session->setFlash('success', 'Loan approved. ' . number_format($loan->amount_requested) . ' credits sent to ' . $borrower->characterName . '.');
-        return true;
+        return ServiceResponse::success("Loan approved. Credits sent to {$borrower->characterName}.");
     }
 
-    /**
-     * An admin denies a loan request.
-     */
-    public function denyLoan(int $adminUserId, int $loanId): bool
+    public function denyLoan(int $adminUserId, int $loanId): ServiceResponse
     {
         $loan = $this->loanRepo->findById($loanId);
         if (!$loan) {
-            $this->session->setFlash('error', 'Loan not found.');
-            return false;
+            return ServiceResponse::error('Loan not found.');
         }
 
         if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
-            $this->session->setFlash('error', 'You do not have permission to manage the bank.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage the bank.');
         }
         
         if ($loan->status !== 'pending') {
-            $this->session->setFlash('error', 'This loan is not pending approval.');
-            return false;
+            return ServiceResponse::error('This loan is not pending approval.');
         }
         
         $this->loanRepo->updateLoan($loanId, 'denied', 0);
-        $this->session->setFlash('success', 'Loan request has been denied.');
-        return true;
+        return ServiceResponse::success('Loan request has been denied.');
     }
 
-    /**
-     * A user repays part or all of a loan.
-     */
-    public function repayLoan(int $userId, int $loanId, int $amount): bool
+    public function repayLoan(int $userId, int $loanId, int $amount): ServiceResponse
     {
         $loan = $this->loanRepo->findById($loanId);
         
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Repayment amount must be positive.');
-            return false;
+            return ServiceResponse::error('Repayment amount must be positive.');
         }
         if (!$loan || $loan->user_id !== $userId) {
-            $this->session->setFlash('error', 'This is not your loan.');
-            return false;
+            return ServiceResponse::error('This is not your loan.');
         }
         if ($loan->status !== 'active') {
-            $this->session->setFlash('error', 'This loan is not active.');
-            return false;
+            return ServiceResponse::error('This loan is not active.');
         }
         
         $user = $this->userRepo->findById($userId);
         $resources = $this->resourceRepo->findByUserId($userId);
         
         if ($resources->credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough credits on hand for this repayment.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits on hand.');
         }
         
         $repayment = min($amount, $loan->amount_to_repay);
@@ -653,30 +611,22 @@ class AllianceManagementService
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Alliance Loan Repay Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during repayment.');
-            return false;
+            return ServiceResponse::error('A database error occurred.');
         }
         
-        $this->session->setFlash('success', 'Thank you for your payment of ' . number_format($repayment) . ' credits.');
+        $msg = 'Thank you for your payment of ' . number_format($repayment) . ' credits.';
         if ($newStatus === 'paid') {
-            $this->session->setFlash('success', 'Your loan has been fully repaid!');
+            $msg .= ' Your loan has been fully repaid!';
         }
-        return true;
+        return ServiceResponse::success($msg);
     }
 
-    /**
-     * Helper function to check if a user has a specific permission.
-     */
     private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
     {
         $user = $this->userRepo->findById($userId);
-        
-        if (!$user || $user->alliance_id !== $allianceId) {
-            return false;
-        }
+        if (!$user || $user->alliance_id !== $allianceId) return false;
         
         $role = $this->roleRepo->findById($user->alliance_role_id);
-
         return $role && property_exists($role, $permissionName) && $role->{$permissionName} === true;
     }
 }

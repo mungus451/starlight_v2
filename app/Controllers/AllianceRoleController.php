@@ -13,7 +13,7 @@ use App\Models\Repositories\UserRepository;
 
 /**
  * Handles all requests for creating, editing, and deleting alliance roles.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class AllianceRoleController extends BaseController
 {
@@ -100,11 +100,16 @@ class AllianceRoleController extends BaseController
         $admin = $this->userRepo->findById($adminId);
         $allianceId = $admin->alliance_id ?? 0;
 
-        // 3. Execute Logic
-        // Permissions are an array of checkboxes, handled safely by the Service.
+        // 3. Execute Service
         $permissions = (array)($_POST['permissions'] ?? []);
-
-        $this->mgmtService->createRole($adminId, $allianceId, $data['role_name'], $permissions);
+        $response = $this->mgmtService->createRole($adminId, $allianceId, $data['role_name'], $permissions);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/roles');
     }
@@ -131,7 +136,15 @@ class AllianceRoleController extends BaseController
         $roleId = (int)($vars['id'] ?? 0);
         $permissions = (array)($_POST['permissions'] ?? []);
         
-        $this->mgmtService->updateRole($adminId, $roleId, $data['role_name'], $permissions);
+        // 3. Execute Service
+        $response = $this->mgmtService->updateRole($adminId, $roleId, $data['role_name'], $permissions);
+
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
 
         $this->redirect('/alliance/roles');
     }
@@ -156,7 +169,15 @@ class AllianceRoleController extends BaseController
         $adminId = $this->session->get('user_id');
         $roleId = (int)($vars['id'] ?? 0);
 
-        $this->mgmtService->deleteRole($adminId, $roleId);
+        // 3. Execute Service
+        $response = $this->mgmtService->deleteRole($adminId, $roleId);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/roles');
     }

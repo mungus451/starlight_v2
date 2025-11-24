@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Settings page.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class SettingsController extends BaseController
 {
@@ -62,7 +63,7 @@ class SettingsController extends BaseController
             'csrf_token' => 'required',
             'bio' => 'nullable|string|max:500',
             'phone_number' => 'nullable|string|max:20',
-            'remove_picture' => 'nullable' // Checkbox, present if checked
+            'remove_picture' => 'nullable' // Checkbox
         ]);
 
         // 2. Validate CSRF
@@ -75,18 +76,23 @@ class SettingsController extends BaseController
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
         
-        // Note: File uploads ($_FILES) are handled directly by the service validation logic
-        // as our Validator currently focuses on $_POST data array inputs.
         $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
         $removePhoto = isset($data['remove_picture']) && $data['remove_picture'] == '1';
 
-        $this->settingsService->updateProfile(
+        $response = $this->settingsService->updateProfile(
             $userId, 
             $data['bio'] ?? '', 
             $file, 
             $data['phone_number'] ?? '', 
             $removePhoto
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/settings');
     }
@@ -112,11 +118,18 @@ class SettingsController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->settingsService->updateEmail(
+        $response = $this->settingsService->updateEmail(
             $userId, 
             $data['email'], 
             $data['current_password_email']
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/settings');
     }
@@ -143,12 +156,19 @@ class SettingsController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->settingsService->updatePassword(
+        $response = $this->settingsService->updatePassword(
             $userId, 
             $data['old_password'], 
             $data['new_password'], 
             $data['confirm_password']
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/settings');
     }
@@ -177,7 +197,7 @@ class SettingsController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->settingsService->updateSecurityQuestions(
+        $response = $this->settingsService->updateSecurityQuestions(
             $userId, 
             $data['question_1'], 
             $data['answer_1'], 
@@ -185,6 +205,13 @@ class SettingsController extends BaseController
             $data['answer_2'], 
             $data['current_password_security']
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/settings');
     }

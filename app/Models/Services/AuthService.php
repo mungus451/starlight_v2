@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
@@ -13,11 +13,11 @@ use Throwable;
 /**
  * Handles user registration and login logic.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse containing User entity.
  */
 class AuthService
 {
     private PDO $db;
-    private Session $session;
     
     private UserRepository $userRepository;
     private ResourceRepository $resourceRepository;
@@ -26,10 +26,9 @@ class AuthService
 
     /**
      * DI Constructor.
-     * All dependencies are injected by the container.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param UserRepository $userRepository
      * @param ResourceRepository $resourceRepository
      * @param StatsRepository $statsRepository
@@ -37,14 +36,12 @@ class AuthService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         UserRepository $userRepository,
         ResourceRepository $resourceRepository,
         StatsRepository $statsRepository,
         StructureRepository $structureRepository
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->userRepository = $userRepository;
         $this->resourceRepository = $resourceRepository;
         $this->statsRepository = $statsRepository;
@@ -59,34 +56,29 @@ class AuthService
      * @param string $characterName
      * @param string $password
      * @param string $confirmPassword
-     * @return bool
+     * @return ServiceResponse Returns success with 'user_id' or error message.
      */
-    public function register(string $email, string $characterName, string $password, string $confirmPassword): bool
+    public function register(string $email, string $characterName, string $password, string $confirmPassword): ServiceResponse
     {
-        // 1. Validate input (no transaction needed yet)
+        // 1. Validate input (Business Logic)
         if ($password !== $confirmPassword) {
-            $this->session->setFlash('error', 'Passwords do not match.');
-            return false;
+            return ServiceResponse::error('Passwords do not match.');
         }
 
         if (strlen($password) < 3) {
-            $this->session->setFlash('error', 'Password must be at least 3 characters long.');
-            return false;
+            return ServiceResponse::error('Password must be at least 3 characters long.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->session->setFlash('error', 'Invalid email address.');
-            return false;
+            return ServiceResponse::error('Invalid email address.');
         }
 
         if ($this->userRepository->findByEmail($email)) {
-            $this->session->setFlash('error', 'Email address is already in use.');
-            return false;
+            return ServiceResponse::error('Email address is already in use.');
         }
 
         if ($this->userRepository->findByCharacterName($characterName)) {
-            $this->session->setFlash('error', 'Character name is already taken.');
-            return false;
+            return ServiceResponse::error('Character name is already taken.');
         }
 
         // 2. Begin Transaction
@@ -108,64 +100,46 @@ class AuthService
             // 5. Commit Transaction
             $this->db->commit();
             
+            // Return success with ID so controller can handle session
+            return ServiceResponse::success('Registration successful.', ['user_id' => $newUserId]);
+            
         } catch (Throwable $e) {
             // 6. Rollback on failure
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Registration Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during registration. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred during registration. Please try again.');
         }
-
-        // 7. Log the new user in
-        $this->session->set('user_id', $newUserId);
-        // A new user has no alliance, so we explicitly set it to null
-        $this->session->set('alliance_id', null);
-        
-        session_regenerate_id(true); // Protect against session fixation
-
-        return true;
     }
 
     /**
-     * Attempts to log a user in.
+     * Attempts to authenticate a user.
      *
      * @param string $email
      * @param string $password
-     * @return bool
+     * @return ServiceResponse Returns success with 'user' entity or error message.
      */
-    public function login(string $email, string $password): bool
+    public function login(string $email, string $password): ServiceResponse
     {
         $user = $this->userRepository->findByEmail($email);
 
         if (!$user || !password_verify($password, $user->passwordHash)) {
-            $this->session->setFlash('error', 'Invalid email or password.');
-            return false;
+            return ServiceResponse::error('Invalid email or password.');
         }
 
-        session_regenerate_id(true);
-        $this->session->set('user_id', $user->id);
-        $this->session->set('alliance_id', $user->alliance_id);
-
-        return true;
-    }
-
-    /**
-     * Logs the user out.
-     */
-    public function logout(): void
-    {
-        $this->session->destroy();
+        // Return success with the User entity so controller can read ID and Alliance info
+        return ServiceResponse::success('Login successful.', ['user' => $user]);
     }
 
     /**
      * Checks if a user is currently logged in.
-     *
-     * @return bool
+     * Note: This is a stateless check helper, or effectively deprecated in Service layer
+     * since Services shouldn't know about Session. 
+     * We keep it but it needs Session context passed in, OR we remove it.
+     * 
+     * DECISION: Remove it. Authentication state checking belongs in Middleware/Controller.
+     * However, to avoid breaking the AuthController before it is updated, we will 
+     * temporarily remove it from here and rely on the Controller/Middleware to check Session directly.
      */
-    public function isLoggedIn(): bool
-    {
-        return $this->session->has('user_id');
-    }
 }

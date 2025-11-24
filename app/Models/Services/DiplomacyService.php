@@ -2,23 +2,22 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\TreatyRepository;
 use App\Models\Repositories\RivalryRepository;
 use PDO;
-use Throwable;
 
 /**
  * Handles all business logic for Alliance Diplomacy (Treaties & Rivalries).
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class DiplomacyService
 {
     private PDO $db;
-    private Session $session;
     
     private UserRepository $userRepo;
     private AllianceRepository $allianceRepo;
@@ -28,9 +27,9 @@ class DiplomacyService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param UserRepository $userRepo
      * @param AllianceRepository $allianceRepo
      * @param AllianceRoleRepository $roleRepo
@@ -39,7 +38,6 @@ class DiplomacyService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         UserRepository $userRepo,
         AllianceRepository $allianceRepo,
         AllianceRoleRepository $roleRepo,
@@ -47,8 +45,6 @@ class DiplomacyService
         RivalryRepository $rivalryRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
-        
         $this->userRepo = $userRepo;
         $this->allianceRepo = $allianceRepo;
         $this->roleRepo = $roleRepo;
@@ -58,9 +54,6 @@ class DiplomacyService
 
     /**
      * Gets all diplomacy data for an alliance.
-     *
-     * @param int $allianceId
-     * @return array
      */
     public function getDiplomacyData(int $allianceId): array
     {
@@ -82,127 +75,116 @@ class DiplomacyService
 
     /**
      * Proposes a new treaty with another alliance.
+     * 
+     * @return ServiceResponse
      */
-    public function proposeTreaty(int $proposerUserId, int $targetAllianceId, string $treatyType, string $terms): bool
+    public function proposeTreaty(int $proposerUserId, int $targetAllianceId, string $treatyType, string $terms): ServiceResponse
     {
         $proposerUser = $this->userRepo->findById($proposerUserId);
         if (!$proposerUser || $proposerUser->alliance_id === null) {
-            $this->session->setFlash('error', 'You are not in an alliance.');
-            return false;
+            return ServiceResponse::error('You are not in an alliance.');
         }
         
         $proposerAllianceId = $proposerUser->alliance_id;
 
         if (!$this->checkPermission($proposerUserId, $proposerAllianceId, 'can_manage_diplomacy')) {
-            $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage diplomacy.');
         }
 
         if ($proposerAllianceId === $targetAllianceId) {
-            $this->session->setFlash('error', 'You cannot propose a treaty with your own alliance.');
-            return false;
+            return ServiceResponse::error('You cannot propose a treaty with your own alliance.');
         }
         if (!in_array($treatyType, ['peace', 'non_aggression', 'mutual_defense'])) {
-            $this->session->setFlash('error', 'Invalid treaty type.');
-            return false;
+            return ServiceResponse::error('Invalid treaty type.');
         }
         
         $this->treatyRepo->createTreaty($proposerAllianceId, $targetAllianceId, $treatyType, $terms);
-        $this->session->setFlash('success', 'Treaty proposed successfully.');
-        return true;
+        return ServiceResponse::success('Treaty proposed successfully.');
     }
 
     /**
      * Accepts a treaty proposal.
+     * 
+     * @return ServiceResponse
      */
-    public function acceptTreaty(int $adminUserId, int $treatyId): bool
+    public function acceptTreaty(int $adminUserId, int $treatyId): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminUserId);
         $treaty = $this->treatyRepo->findById($treatyId);
 
         if (!$treaty) {
-            $this->session->setFlash('error', 'Treaty not found.');
-            return false;
+            return ServiceResponse::error('Treaty not found.');
         }
         
         // Check if user is an admin of the *target* alliance
         if (!$adminUser || $adminUser->alliance_id !== $treaty->alliance2_id) {
-            $this->session->setFlash('error', 'You are not authorized to respond to this treaty.');
-            return false;
+            return ServiceResponse::error('You are not authorized to respond to this treaty.');
         }
         
         if (!$this->checkPermission($adminUserId, $adminUser->alliance_id, 'can_manage_diplomacy')) {
-            $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage diplomacy.');
         }
         
         if ($treaty->status !== 'proposed') {
-            $this->session->setFlash('error', 'This treaty is not in a proposed state.');
-            return false;
+            return ServiceResponse::error('This treaty is not in a proposed state.');
         }
 
         $this->treatyRepo->updateTreatyStatus($treatyId, 'active');
-        $this->session->setFlash('success', 'Treaty accepted and is now active.');
-        return true;
+        return ServiceResponse::success('Treaty accepted and is now active.');
     }
 
     /**
      * Declines or breaks a treaty.
+     * 
+     * @return ServiceResponse
      */
-    public function endTreaty(int $adminUserId, int $treatyId, string $action): bool
+    public function endTreaty(int $adminUserId, int $treatyId, string $action): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminUserId);
         $treaty = $this->treatyRepo->findById($treatyId);
 
         if (!$treaty) {
-            $this->session->setFlash('error', 'Treaty not found.');
-            return false;
+            return ServiceResponse::error('Treaty not found.');
         }
 
         // User must be in one of the two alliances
         if (!$adminUser || ($adminUser->alliance_id !== $treaty->alliance1_id && $adminUser->alliance_id !== $treaty->alliance2_id)) {
-            $this->session->setFlash('error', 'You are not a part of this treaty.');
-            return false;
+            return ServiceResponse::error('You are not a part of this treaty.');
         }
         
         if (!$this->checkPermission($adminUserId, $adminUser->alliance_id, 'can_manage_diplomacy')) {
-            $this->session->setFlash('error', 'You do not have permission to manage diplomacy.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage diplomacy.');
         }
 
         if ($action === 'decline' && $treaty->status === 'proposed') {
             $this->treatyRepo->updateTreatyStatus($treatyId, 'declined');
-            $this->session->setFlash('success', 'Treaty proposal declined.');
-            return true;
+            return ServiceResponse::success('Treaty proposal declined.');
         } elseif ($action === 'break' && $treaty->status === 'active') {
             $this->treatyRepo->updateTreatyStatus($treatyId, 'broken');
-            $this->session->setFlash('success', 'Treaty has been broken.');
-            return true;
+            return ServiceResponse::success('Treaty has been broken.');
         }
         
-        $this->session->setFlash('error', 'Invalid action for this treaty\'s state.');
-        return false;
+        return ServiceResponse::error('Invalid action for this treaty\'s state.');
     }
 
     /**
      * Declares a rivalry (or increases heat).
+     * 
+     * @return ServiceResponse
      */
-    public function declareRivalry(int $userId, int $targetAllianceId): bool
+    public function declareRivalry(int $userId, int $targetAllianceId): ServiceResponse
     {
         $user = $this->userRepo->findById($userId);
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You must be in an alliance to do this.');
-            return false;
+            return ServiceResponse::error('You must be in an alliance to do this.');
         }
         
         if ($user->alliance_id === $targetAllianceId) {
-            $this->session->setFlash('error', 'You cannot declare a rivalry with yourself.');
-            return false;
+            return ServiceResponse::error('You cannot declare a rivalry with yourself.');
         }
 
         $this->rivalryRepo->createOrUpdateRivalry($user->alliance_id, $targetAllianceId);
-        $this->session->setFlash('success', 'Rivalry has been declared/updated.');
-        return true;
+        return ServiceResponse::success('Rivalry has been declared/updated.');
     }
 
     /**

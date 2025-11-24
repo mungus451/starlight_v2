@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Level Up page.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class LevelUpController extends BaseController
 {
@@ -74,7 +75,8 @@ class LevelUpController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->levelUpService->spendPoints(
+        
+        $response = $this->levelUpService->spendPoints(
             $userId,
             $data['strength'],
             $data['constitution'],
@@ -82,6 +84,13 @@ class LevelUpController extends BaseController
             $data['dexterity'],
             $data['charisma']
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/level-up');
     }

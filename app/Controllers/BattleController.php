@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Battle feature.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class BattleController extends BaseController
 {
@@ -63,7 +64,7 @@ class BattleController extends BaseController
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'target_name' => 'required|string',
-            'attack_type' => 'required|string|in:plunder' // Strict allowance
+            'attack_type' => 'required|string|in:plunder'
         ]);
 
         // 2. Validate CSRF
@@ -75,10 +76,16 @@ class BattleController extends BaseController
         
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
+        $response = $this->attackService->conductAttack($userId, $data['target_name'], $data['attack_type']);
         
-        $this->attackService->conductAttack($userId, $data['target_name'], $data['attack_type']);
-        
-        $this->redirect('/battle/reports');
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+            $this->redirect('/battle/reports');
+        } else {
+            $this->session->setFlash('error', $response->message);
+            $this->redirect('/battle');
+        }
     }
 
     /**

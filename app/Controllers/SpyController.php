@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Espionage feature.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class SpyController extends BaseController
 {
@@ -75,9 +76,16 @@ class SpyController extends BaseController
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
         
-        $this->spyService->conductOperation($userId, $data['target_name']);
+        $response = $this->spyService->conductOperation($userId, $data['target_name']);
         
-        $this->redirect('/spy/reports');
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+            $this->redirect('/spy/reports');
+        } else {
+            $this->session->setFlash('error', $response->message);
+            $this->redirect('/spy');
+        }
     }
 
     /**

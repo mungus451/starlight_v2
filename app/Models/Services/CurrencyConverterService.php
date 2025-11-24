@@ -2,40 +2,53 @@
 
 namespace App\Models\Services;
 
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Entities\HouseFinance;
 use PDO;
 use Exception;
 
+/**
+ * Handles the Black Market currency exchange logic.
+ * * Refactored for Strict Dependency Injection.
+ * * Standardized to return ServiceResponse.
+ */
 class CurrencyConverterService
 {
     private const CONVERSION_RATE = 100.0; // 1 Naquadah Crystal = 100 Credits
     private const FEE_PERCENTAGE = 0.10;   // 10% conversion fee
 
+    private ResourceRepository $resourceRepository;
+    private HouseFinanceRepository $houseFinanceRepository;
+    private PDO $db;
+
     public function __construct(
-        private ResourceRepository $resourceRepository,
-        private HouseFinanceRepository $houseFinanceRepository,
-        private PDO $db
+        ResourceRepository $resourceRepository,
+        HouseFinanceRepository $houseFinanceRepository,
+        PDO $db
     ) {
+        $this->resourceRepository = $resourceRepository;
+        $this->houseFinanceRepository = $houseFinanceRepository;
+        $this->db = $db;
     }
 
     /**
      * Converts Credits to Naquadah Crystals, applying a fee.
      *
-     * @param int $userId The ID of the user performing the conversion.
-     * @param float $creditAmount The amount of credits the user wants to convert.
-     * @return array An associative array with success status and a message.
+     * @param int $userId
+     * @param float $creditAmount
+     * @return ServiceResponse
      */
-    public function convertCreditsToCrystals(int $userId, float $creditAmount): array
+    public function convertCreditsToCrystals(int $userId, float $creditAmount): ServiceResponse
     {
         if ($creditAmount <= 0) {
-            return ['success' => false, 'message' => 'Conversion amount must be positive.'];
+            return ServiceResponse::error('Conversion amount must be positive.');
         }
 
         $userResources = $this->resourceRepository->findByUserId($userId);
         if (!$userResources || $userResources->credits < $creditAmount) {
-            return ['success' => false, 'message' => 'Insufficient credits for conversion.'];
+            return ServiceResponse::error('Insufficient credits for conversion.');
         }
 
         $this->db->beginTransaction();
@@ -60,34 +73,37 @@ class CurrencyConverterService
             }
 
             $this->db->commit();
-            return ['success' => true, 'message' => sprintf(
+            
+            $msg = sprintf(
                 'Successfully converted %s Credits to %s Naquadah Crystals.',
                 number_format($creditAmount, 2),
                 number_format($crystalsReceived, 4)
-            )];
+            );
+            return ServiceResponse::success($msg);
+
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Error converting credits to crystals for user {$userId}: " . $e->getMessage());
-            return ['success' => false, 'message' => 'A server error occurred during conversion. The transaction was rolled back.'];
+            return ServiceResponse::error('A server error occurred during conversion.');
         }
     }
 
     /**
      * Converts Naquadah Crystals to Credits, applying a fee.
      *
-     * @param int $userId The ID of the user performing the conversion.
-     * @param float $crystalAmount The amount of crystals the user wants to convert.
-     * @return array An associative array with success status and a message.
+     * @param int $userId
+     * @param float $crystalAmount
+     * @return ServiceResponse
      */
-    public function convertCrystalsToCredits(int $userId, float $crystalAmount): array
+    public function convertCrystalsToCredits(int $userId, float $crystalAmount): ServiceResponse
     {
         if ($crystalAmount <= 0) {
-            return ['success' => false, 'message' => 'Conversion amount must be positive.'];
+            return ServiceResponse::error('Conversion amount must be positive.');
         }
 
         $userResources = $this->resourceRepository->findByUserId($userId);
         if (!$userResources || $userResources->naquadah_crystals < $crystalAmount) {
-            return ['success' => false, 'message' => 'Insufficient Naquadah Crystals for conversion.'];
+            return ServiceResponse::error('Insufficient Naquadah Crystals for conversion.');
         }
 
         $this->db->beginTransaction();
@@ -112,23 +128,23 @@ class CurrencyConverterService
             }
 
             $this->db->commit();
-            return ['success' => true, 'message' => sprintf(
+            
+            $msg = sprintf(
                 'Successfully converted %s Naquadah Crystals to %s Credits.',
                 number_format($crystalAmount, 4),
                 number_format($creditsReceived, 2)
-            )];
+            );
+            return ServiceResponse::success($msg);
+
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Error converting crystals to credits for user {$userId}: " . $e->getMessage());
-            return ['success' => false, 'message' => 'A server error occurred during conversion. The transaction was rolled back.'];
+            return ServiceResponse::error('A server error occurred during conversion.');
         }
     }
 
     /**
      * Retrieves data necessary for displaying the currency converter page.
-     *
-     * @param int $userId The ID of the current user.
-     * @return array An associative array containing user resources and house finances.
      */
     public function getConverterPageData(int $userId): array
     {
@@ -136,8 +152,7 @@ class CurrencyConverterService
         $houseFinances = $this->houseFinanceRepository->getHouseFinances();
 
         if (!$houseFinances) {
-            error_log("CRITICAL ERROR: HouseFinances record not found (ID 1). It should have been created by migration.");
-            // Create a temporary, non-persistent object to prevent fatal errors in the view
+            // Fallback DTO if missing
             $houseFinances = new HouseFinance(id: 1, credits_taxed: 0.0, crystals_taxed: 0.0);
         }
 

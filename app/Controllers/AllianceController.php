@@ -6,21 +6,25 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceService;
+use App\Models\Services\AllianceManagementService; // --- NEW IMPORT ---
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles all "read" GET requests for the Alliance feature.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored for Strict Dependency Injection.
+ * * Now uses AllianceManagementService for creation logic.
  */
 class AllianceController extends BaseController
 {
     private AllianceService $allianceService;
+    private AllianceManagementService $mgmtService; // --- NEW PROP ---
 
     /**
      * DI Constructor.
      *
      * @param AllianceService $allianceService
+     * @param AllianceManagementService $mgmtService // --- NEW PARAM ---
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -29,6 +33,7 @@ class AllianceController extends BaseController
      */
     public function __construct(
         AllianceService $allianceService,
+        AllianceManagementService $mgmtService, // --- NEW INJECTION ---
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -37,6 +42,7 @@ class AllianceController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->allianceService = $allianceService;
+        $this->mgmtService = $mgmtService;
     }
 
     /**
@@ -58,9 +64,8 @@ class AllianceController extends BaseController
     public function showProfile(array $vars): void
     {
         $allianceId = (int)($vars['id'] ?? 0);
-        $viewerId = $this->session->get('user_id'); // Get the current user
+        $viewerId = $this->session->get('user_id');
         
-        // Pass the viewer's ID to the service to get context-aware data
         $data = $this->allianceService->getPublicProfileData($allianceId, $viewerId);
 
         if (is_null($data)) {
@@ -82,7 +87,7 @@ class AllianceController extends BaseController
         $userId = $this->session->get('user_id');
         $data = $this->allianceService->getCreateAllianceData($userId);
 
-        // If user is already in an alliance, redirect them to their alliance profile
+        // If user is already in an alliance, redirect them
         if ($data['user'] && $data['user']->alliance_id !== null) {
             $this->session->setFlash('error', 'You are already in an alliance.');
             $this->redirect('/alliance/profile/'. $data['user']->alliance_id);
@@ -115,17 +120,29 @@ class AllianceController extends BaseController
 
         // 3. Call the service
         $userId = $this->session->get('user_id');
-        $newAllianceId = $this->allianceService->createAlliance(
+        
+        // Use the Write Service
+        $response = $this->mgmtService->createAlliance(
             $userId, 
             $data['alliance_name'], 
             $data['alliance_tag']
         );
 
-        if ($newAllianceId !== null) {
-            // Success! Redirect to the new alliance's profile.
-            $this->redirect('/alliance/profile/' . $newAllianceId);
+        if ($response->isSuccess()) {
+            // 4a. Success: Update Session & Redirect
+            $this->session->setFlash('success', $response->message);
+            
+            // Important: Update session to reflect new alliance
+            if (isset($response->data['alliance_id'])) {
+                $this->session->set('alliance_id', $response->data['alliance_id']);
+                $this->redirect('/alliance/profile/' . $response->data['alliance_id']);
+            } else {
+                // Fallback if ID missing (shouldn't happen)
+                $this->redirect('/dashboard');
+            }
         } else {
-            // Failure. Redirect back to the create form.
+            // 4b. Failure: Flash Error & Back
+            $this->session->setFlash('error', $response->message);
             $this->redirect('/alliance/create');
         }
     }

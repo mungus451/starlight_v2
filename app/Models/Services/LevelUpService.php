@@ -3,23 +3,20 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\StatsRepository;
 use App\Models\Services\LevelCalculatorService;
 use PDO;
 use Throwable;
 
 /**
- * Handles all business logic for Leveling Up:
- * - Spending points
- * - Granting experience
- * - Calculating level gains
+ * Handles all business logic for Leveling Up.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class LevelUpService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private StatsRepository $statsRepo;
@@ -27,22 +24,20 @@ class LevelUpService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param StatsRepository $statsRepo
      * @param LevelCalculatorService $levelCalculator
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         StatsRepository $statsRepo,
         LevelCalculatorService $levelCalculator
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         $this->statsRepo = $statsRepo;
         $this->levelCalculator = $levelCalculator;
@@ -50,9 +45,6 @@ class LevelUpService
 
     /**
      * Gets all data needed to render the level up page.
-     *
-     * @param int $userId
-     * @return array
      */
     public function getLevelUpData(int $userId): array
     {
@@ -67,62 +59,59 @@ class LevelUpService
 
     /**
      * Grants experience points to a user and handles level-ups.
+     * This is primarily an internal method (called by Attack/Spy services),
+     * so it returns ServiceResponse to maintain consistency, even if often ignored.
      *
      * @param int $userId
      * @param int $amount
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function grantExperience(int $userId, int $amount): bool
+    public function grantExperience(int $userId, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            return true; // No change needed, technically a success
+            return ServiceResponse::success('No XP gained.');
         }
 
-        // 1. Get Current Stats
         $stats = $this->statsRepo->findByUserId($userId);
         if (!$stats) {
             error_log("LevelUpService: User {$userId} not found.");
-            return false;
+            return ServiceResponse::error('User stats not found.');
         }
 
-        // 2. Calculate New Totals
+        // Calculate New Totals
         $newExperience = $stats->experience + $amount;
         $newLevel = $this->levelCalculator->calculateLevelFromXp($newExperience);
         
-        // 3. Check for Level Up
+        // Check for Level Up
         $levelsGained = $newLevel - $stats->level;
         $newLevelUpPoints = $stats->level_up_points;
+        $message = "Gained {$amount} XP.";
 
         if ($levelsGained > 0) {
-            // Define points per level (standard 1 point per level gained)
             $pointsPerLevel = 1; 
             $pointsGained = $levelsGained * $pointsPerLevel;
             $newLevelUpPoints += $pointsGained;
-
-            // Set a flash message for the UI
-            $this->session->setFlash('success', "Level Up! You reached Level {$newLevel} and gained {$pointsGained} Skill Points.");
+            
+            // Append level up info to message
+            $message .= " Level Up! Reached Level {$newLevel}, +{$pointsGained} SP.";
         }
 
-        // 4. Persist Changes
         try {
             $this->statsRepo->updateLevelProgress($userId, $newExperience, $newLevel, $newLevelUpPoints);
-            return true;
+            return ServiceResponse::success($message, [
+                'levels_gained' => $levelsGained,
+                'new_level' => $newLevel
+            ]);
         } catch (Throwable $e) {
             error_log('Grant Experience Error: ' . $e->getMessage());
-            return false;
+            return ServiceResponse::error('Database error updating XP.');
         }
     }
 
     /**
      * Attempts to spend level up points on base stats.
-     *
-     * @param int $userId
-     * @param int $spendStrength
-     * @param int $spendConstitution
-     * @param int $spendWealth
-     * @param int $spendDexterity
-     * @param int $spendCharisma
-     * @return bool True on success
+     * 
+     * @return ServiceResponse
      */
     public function spendPoints(
         int $userId,
@@ -131,32 +120,29 @@ class LevelUpService
         int $spendWealth,
         int $spendDexterity,
         int $spendCharisma
-    ): bool {
-        // --- 1. Validation (Inputs) ---
+    ): ServiceResponse {
+        // 1. Validation (Inputs)
         if ($spendStrength < 0 || $spendConstitution < 0 || $spendWealth < 0 || $spendDexterity < 0 || $spendCharisma < 0) {
-            $this->session->setFlash('error', 'You cannot spend a negative number of points.');
-            return false;
+            return ServiceResponse::error('You cannot spend a negative number of points.');
         }
         
         $totalPointsToSpend = $spendStrength + $spendConstitution + $spendWealth + $spendDexterity + $spendCharisma;
 
         if ($totalPointsToSpend === 0) {
-            $this->session->setFlash('error', 'You did not allocate any points to spend.');
-            return false;
+            return ServiceResponse::error('You did not allocate any points to spend.');
         }
 
-        // --- 2. Validation (Costs) ---
+        // 2. Validation (Costs)
         $costPerPoint = $this->config->get('game_balance.level_up.cost_per_point', 1);
         $totalCost = $totalPointsToSpend * $costPerPoint;
         
         $stats = $this->statsRepo->findByUserId($userId);
 
         if ($stats->level_up_points < $totalCost) {
-            $this->session->setFlash('error', 'You do not have enough level up points to make this change.');
-            return false;
+            return ServiceResponse::error('You do not have enough level up points to make this change.');
         }
 
-        // --- 3. Calculate New Totals ---
+        // 3. Calculate New Totals
         $newLevelUpPoints = $stats->level_up_points - $totalCost;
         $newStrength = $stats->strength_points + $spendStrength;
         $newConstitution = $stats->constitution_points + $spendConstitution;
@@ -164,7 +150,7 @@ class LevelUpService
         $newDexterity = $stats->dexterity_points + $spendDexterity;
         $newCharisma = $stats->charisma_points + $spendCharisma;
 
-        // --- 4. Execute Transaction ---
+        // 4. Execute Transaction
         $this->db->beginTransaction();
         try {
             $this->statsRepo->updateBaseStats(
@@ -178,14 +164,12 @@ class LevelUpService
             );
 
             $this->db->commit();
-            $this->session->setFlash('success', 'You have successfully allocated ' . $totalPointsToSpend . ' points.');
-            return true;
+            return ServiceResponse::success('You have successfully allocated ' . $totalPointsToSpend . ' points.');
 
         } catch (Throwable $e) {
             $this->db->rollBack();
             error_log('Level Up Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
 }

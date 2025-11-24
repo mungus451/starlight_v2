@@ -14,6 +14,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 /**
  * Handles all HTTP requests for the Alliance Structures page.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class AllianceStructureController extends BaseController
 {
@@ -92,8 +93,16 @@ class AllianceStructureController extends BaseController
             return;
         }
         
+        // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->structureService->purchaseOrUpgradeStructure($userId, $data['structure_key']);
+        $response = $this->structureService->purchaseOrUpgradeStructure($userId, $data['structure_key']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/structures');
     }

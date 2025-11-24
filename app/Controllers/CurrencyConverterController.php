@@ -11,7 +11,7 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles the Black Market Currency Exchange.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class CurrencyConverterController extends BaseController
 {
@@ -70,20 +70,19 @@ class CurrencyConverterController extends BaseController
         }
 
         $userId = $this->session->get('user_id');
-        $result = [];
-
+        
         // 3. Execute Logic
         if ($data['conversion_direction'] === 'credits_to_crystals') {
-            $result = $this->converterService->convertCreditsToCrystals($userId, $data['amount']);
+            $response = $this->converterService->convertCreditsToCrystals($userId, $data['amount']);
         } else {
-            // Validated by 'in' rule, so this is safe
-            $result = $this->converterService->convertCrystalsToCredits($userId, $data['amount']);
+            $response = $this->converterService->convertCrystalsToCredits($userId, $data['amount']);
         }
 
-        if ($result['success']) {
-            $this->session->setFlash('success', $result['message']);
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
         } else {
-            $this->session->setFlash('error', $result['message']);
+            $this->session->setFlash('error', $response->message);
         }
 
         $this->redirect('/black-market/converter');

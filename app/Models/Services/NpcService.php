@@ -19,7 +19,7 @@ use Throwable;
 /**
  * Orchestrates the autonomous behavior of NPC agents ("The Void Syndicate").
  * Intended to be run via Cron.
- * * Refactored for Strict Dependency Injection to fix constructor errors.
+ * * FULLY UPDATED: Now handles ServiceResponse objects for ALL interactions.
  */
 class NpcService
 {
@@ -42,21 +42,6 @@ class NpcService
     // Logging
     private string $logFile;
 
-    /**
-     * DI Constructor.
-     * All dependencies are injected by the Container.
-     * * @param PDO $db
-     * @param UserRepository $userRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     * @param AllianceRepository $allianceRepo
-     * @param StructureService $structureService
-     * @param TrainingService $trainingService
-     * @param ArmoryService $armoryService
-     * @param AttackService $attackService
-     * @param AllianceStructureService $allianceStructureService
-     */
     public function __construct(
         PDO $db,
         UserRepository $userRepo,
@@ -71,45 +56,34 @@ class NpcService
         AllianceStructureService $allianceStructureService
     ) {
         $this->db = $db;
-        
-        // Repositories
         $this->userRepo = $userRepo;
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
         $this->allianceRepo = $allianceRepo;
 
-        // Services
         $this->structureService = $structureService;
         $this->trainingService = $trainingService;
         $this->armoryService = $armoryService;
         $this->attackService = $attackService;
         $this->allianceStructureService = $allianceStructureService;
 
-        // Set log path (relative to this file location in /app/Models/Services)
         $this->logFile = __DIR__ . '/../../../logs/npc_actions.log';
     }
 
     /**
-     * Internal logger helper. Writes to file and echos to console.
+     * Internal logger helper.
      */
     private function log(string $message): void
     {
         $timestamp = date('Y-m-d H:i:s');
         $line = "[$timestamp] $message" . PHP_EOL;
-        
-        // 1. Write to file
         file_put_contents($this->logFile, $line, FILE_APPEND);
-        
-        // 2. Output to console (if running in CLI)
         if (php_sapi_name() === 'cli') {
             echo $line;
         }
     }
 
-    /**
-     * Main entry point. Iterates through all NPCs and processes their turn.
-     */
     public function runNpcCycle(): void
     {
         $this->log("--- STARTING NPC AGENT CYCLE ---");
@@ -119,7 +93,7 @@ class NpcService
         $this->log("Found {$count} NPC agents active.");
 
         if ($count === 0) {
-            $this->log("WARNING: No NPCs found. Did you run the migration '17.1_create_npc_faction.php'?");
+            $this->log("WARNING: No NPCs found.");
             return;
         }
         
@@ -134,26 +108,14 @@ class NpcService
         $this->log("--- NPC CYCLE COMPLETE ---");
     }
 
-    /**
-     * Decisions Logic for a single NPC.
-     */
     private function processNpc(User $npc): void
     {
         $this->log("Processing Agent: {$npc->characterName} (ID: {$npc->id})");
 
-        // 1. Economy & Structures
         $this->manageEconomy($npc);
-
-        // 2. Recruitment
         $this->manageTraining($npc);
-
-        // 3. Armory & Equipment
         $this->manageArmory($npc);
-
-        // 4. Alliance Duties (Leader only)
         $this->manageAlliance($npc);
-
-        // 5. Aggression (Attacks)
         $this->manageAggression($npc);
         
         $this->log("Agent {$npc->characterName} finished.");
@@ -165,26 +127,17 @@ class NpcService
         $structures = $this->structureRepo->findByUserId($npc->id);
         $resources = $this->resourceRepo->findByUserId($npc->id);
         
-        if (!$structures || !$resources) {
-            $this->log("  -> SKIPPING Economy: Missing data.");
-            return;
-        }
+        if (!$structures || !$resources) return;
 
         $target = 'economy_upgrade';
-        // If Economy is decent, randomize development
         if ($structures->economy_upgrade_level >= 20) {
             $options = ['fortification', 'offense_upgrade', 'defense_upgrade', 'spy_upgrade', 'population', 'armory'];
             $target = $options[array_rand($options)];
         }
 
-        // Simple heuristic logging
-        $this->log("  -> Economy Check: Target={$target}, Current Credits=" . number_format($resources->credits));
-
-        // Attempt upgrade
-        if ($this->structureService->upgradeStructure($npc->id, $target)) {
+        $response = $this->structureService->upgradeStructure($npc->id, $target);
+        if ($response->isSuccess()) {
             $this->log("  -> SUCCESS: Upgraded {$target}.");
-        } else {
-            $this->log("  -> FAILURE: Could not upgrade {$target} (Likely insufficient funds).");
         }
     }
 
@@ -193,29 +146,25 @@ class NpcService
         $resources = $this->resourceRepo->findByUserId($npc->id);
         if (!$resources) return;
         
-        $this->log("  -> Training Check: Citizens={$resources->untrained_citizens}, Soldiers={$resources->soldiers}, Guards={$resources->guards}");
+        if ($resources->untrained_citizens < 100) return;
 
-        if ($resources->untrained_citizens < 100) {
-            $this->log("  -> SKIPPING Training: Not enough citizens.");
-            return;
-        }
-
-        // Train in batches
         $toTrain = min($resources->untrained_citizens, 500);
         
-        // 40% Soldiers, 40% Guards, 20% Spies
         $soldiers = (int)floor($toTrain * 0.4);
         $guards = (int)floor($toTrain * 0.4);
         $spies = (int)floor($toTrain * 0.2);
 
-        if ($soldiers > 0 && $this->trainingService->trainUnits($npc->id, 'soldiers', $soldiers)) {
-            $this->log("  -> Trained {$soldiers} Soldiers.");
+        if ($soldiers > 0) {
+            $res = $this->trainingService->trainUnits($npc->id, 'soldiers', $soldiers);
+            if ($res->isSuccess()) $this->log("  -> Trained {$soldiers} Soldiers.");
         }
-        if ($guards > 0 && $this->trainingService->trainUnits($npc->id, 'guards', $guards)) {
-            $this->log("  -> Trained {$guards} Guards.");
+        if ($guards > 0) {
+            $res = $this->trainingService->trainUnits($npc->id, 'guards', $guards);
+            if ($res->isSuccess()) $this->log("  -> Trained {$guards} Guards.");
         }
-        if ($spies > 0 && $this->trainingService->trainUnits($npc->id, 'spies', $spies)) {
-            $this->log("  -> Trained {$spies} Spies.");
+        if ($spies > 0) {
+            $res = $this->trainingService->trainUnits($npc->id, 'spies', $spies);
+            if ($res->isSuccess()) $this->log("  -> Trained {$spies} Spies.");
         }
     }
 
@@ -223,7 +172,6 @@ class NpcService
     {
         $this->log("  -> Armory Check...");
         
-        // Fetch armory data to see what's available
         $armoryData = $this->armoryService->getArmoryData($npc->id);
         $structures = $this->structureRepo->findByUserId($npc->id);
         $resources = $this->resourceRepo->findByUserId($npc->id);
@@ -236,10 +184,8 @@ class NpcService
 
         foreach ($config as $unitKey => $unitData) {
             foreach ($unitData['categories'] as $catKey => $catData) {
-                // Check equipped item
                 $equipped = $loadouts[$unitKey][$catKey] ?? null;
                 
-                // Identify best unlocked item for this slot
                 $bestItemKey = null;
                 $bestItemCost = 0;
                 $bestItemName = '';
@@ -254,26 +200,23 @@ class NpcService
                 }
 
                 if ($bestItemKey && $bestItemKey !== $equipped) {
-                    // Check inventory
                     $owned = $inventory[$bestItemKey] ?? 0;
-                    $needed = 1000; // Target batch size
+                    $needed = 1000; 
 
-                    // Buy if needed
                     if ($owned < $needed && $resources->credits > ($bestItemCost * $needed)) {
-                        if ($this->armoryService->manufactureItem($npc->id, $bestItemKey, $needed)) {
+                        $response = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $needed);
+                        if ($response->isSuccess()) {
                             $this->log("  -> Manufactured {$needed}x {$bestItemName}.");
                             $actionsTaken++;
-                            // Update local credit count roughly
                             $resources = $this->resourceRepo->findByUserId($npc->id);
                         }
                     }
 
-                    // Equip if available
-                    // Refresh inventory count (in case we just bought it)
                     $newOwned = ($inventory[$bestItemKey] ?? 0) + ($actionsTaken > 0 ? $needed : 0);
                     
                     if ($newOwned > 0) {
-                        if ($this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey)) {
+                        $response = $this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey);
+                        if ($response->isSuccess()) {
                             $this->log("  -> Equipped {$bestItemName} to {$unitKey} ({$catKey}).");
                             $actionsTaken++;
                         }
@@ -283,7 +226,7 @@ class NpcService
         }
 
         if ($actionsTaken === 0) {
-            $this->log("  -> Armory: No actions taken (Equipped optimally or broke).");
+            $this->log("  -> Armory: No actions taken.");
         }
     }
 
@@ -291,21 +234,16 @@ class NpcService
     {
         if (!$npc->alliance_id) return;
 
-        // Check if this user is the leader
         $alliance = $this->allianceRepo->findById($npc->alliance_id);
         if ($alliance && $alliance->leader_id === $npc->id) {
-            
-            $this->log("  -> Alliance Leader Action Check (Bank: " . number_format($alliance->bank_credits) . ")");
-
-            // If bank is healthy (> 100M), upgrade random structure
             if ($alliance->bank_credits > 100000000) {
                 $defs = ['citadel_shield', 'command_nexus', 'galactic_research_hub', 'orbital_training_grounds'];
                 $target = $defs[array_rand($defs)];
                 
-                if ($this->allianceStructureService->purchaseOrUpgradeStructure($npc->id, $target)) {
+                // UPDATED: Now uses ServiceResponse
+                $response = $this->allianceStructureService->purchaseOrUpgradeStructure($npc->id, $target);
+                if ($response->isSuccess()) {
                     $this->log("  -> ALLIANCE UPGRADE: Purchased/Upgraded {$target}.");
-                } else {
-                    $this->log("  -> Alliance Upgrade Failed ({$target}).");
                 }
             }
         }
@@ -314,19 +252,11 @@ class NpcService
     private function manageAggression(User $npc): void
     {
         $roll = mt_rand(1, 100);
-        $this->log("  -> Aggression Roll: {$roll} (Needs > 30)");
-
-        if ($roll <= 30) {
-            return;
-        }
+        if ($roll <= 30) return;
 
         $stats = $this->statsRepo->findByUserId($npc->id);
-        if ($stats->attack_turns < 1) {
-            $this->log("  -> SKIPPING Attack: No turns.");
-            return;
-        }
+        if ($stats->attack_turns < 1) return;
 
-        // Find a target
         $totalTargets = $this->statsRepo->getTotalTargetCount($npc->id);
         if ($totalTargets === 0) return;
 
@@ -337,30 +267,22 @@ class NpcService
 
         $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $npc->id);
         
-        if (empty($targets)) {
-            $this->log("  -> Attack: No targets found.");
-            return;
-        }
+        if (empty($targets)) return;
 
-        // Pick random target
         $victim = $targets[array_rand($targets)];
         
-        // Check if friendly
         $victimUser = $this->userRepo->findById($victim['id']);
-        if ($victimUser && $victimUser->alliance_id === $npc->alliance_id) {
-            $this->log("  -> Attack Aborted: Target {$victim['character_name']} is an ally.");
-            return;
-        }
+        if ($victimUser && $victimUser->alliance_id === $npc->alliance_id) return;
 
-        // Attack!
         $this->log("  -> ATTACKING: {$victim['character_name']} (ID: {$victim['id']})");
         
-        // conductAttack returns true/false and sets session flash
-        // Since we are in CLI, we don't see flash, but we can assume it worked if true
-        if ($this->attackService->conductAttack($npc->id, $victim['character_name'], 'plunder')) {
+        // UPDATED: Now uses ServiceResponse
+        $response = $this->attackService->conductAttack($npc->id, $victim['character_name'], 'plunder');
+        
+        if ($response->isSuccess()) {
             $this->log("  -> Attack COMPLETE.");
         } else {
-            $this->log("  -> Attack FAILED (Logic error or low resources).");
+            $this->log("  -> Attack FAILED: " . $response->message);
         }
     }
 }

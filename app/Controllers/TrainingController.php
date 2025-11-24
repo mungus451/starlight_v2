@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Training page.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse.
  */
 class TrainingController extends BaseController
 {
@@ -76,7 +77,14 @@ class TrainingController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->trainingService->trainUnits($userId, $data['unit_type'], $data['amount']);
+        $response = $this->trainingService->trainUnits($userId, $data['unit_type'], $data['amount']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/training');
     }

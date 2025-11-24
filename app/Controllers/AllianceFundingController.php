@@ -11,7 +11,7 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles alliance finances (donations and loans).
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class AllianceFundingController extends BaseController
 {
@@ -60,7 +60,16 @@ class AllianceFundingController extends BaseController
         }
         
         $donatorUserId = $this->session->get('user_id');
-        $this->mgmtService->donateToAlliance($donatorUserId, $data['amount']);
+        
+        // 3. Execute Service
+        $response = $this->mgmtService->donateToAlliance($donatorUserId, $data['amount']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -86,7 +95,13 @@ class AllianceFundingController extends BaseController
         }
         
         $userId = $this->session->get('user_id');
-        $this->mgmtService->requestLoan($userId, $data['amount']);
+        $response = $this->mgmtService->requestLoan($userId, $data['amount']);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -113,7 +128,13 @@ class AllianceFundingController extends BaseController
         $adminId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->approveLoan($adminId, $loanId);
+        $response = $this->mgmtService->approveLoan($adminId, $loanId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -140,7 +161,13 @@ class AllianceFundingController extends BaseController
         $adminId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->denyLoan($adminId, $loanId);
+        $response = $this->mgmtService->denyLoan($adminId, $loanId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -168,7 +195,13 @@ class AllianceFundingController extends BaseController
         $userId = $this->session->get('user_id');
         $loanId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->repayLoan($userId, $loanId, $data['amount']);
+        $response = $this->mgmtService->repayLoan($userId, $loanId, $data['amount']);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }

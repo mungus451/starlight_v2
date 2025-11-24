@@ -2,11 +2,13 @@
 
 namespace App\Models\Services;
 
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\NotificationRepository;
 
 /**
  * Handles the creation and retrieval of user notifications.
  * Acts as the bridge between game events and the notification database.
+ * * Refactored to return ServiceResponse for state-changing methods.
  */
 class NotificationService
 {
@@ -24,6 +26,7 @@ class NotificationService
 
     /**
      * Sends a notification to a user.
+     * Used internally by other services (Attack, Spy, etc).
      *
      * @param int $userId The recipient's ID
      * @param string $type The category ('attack', 'spy', 'alliance', 'system')
@@ -34,8 +37,7 @@ class NotificationService
      */
     public function sendNotification(int $userId, string $type, string $title, string $message, ?string $link = null): int
     {
-        // In the future, this method could also trigger real-time websockets or emails.
-        // For now, it persists to the database.
+        // Kept as returning int (ID) for internal utility usage
         return $this->notificationRepo->create($userId, $type, $title, $message, $link);
     }
 
@@ -67,21 +69,34 @@ class NotificationService
      *
      * @param int $notificationId
      * @param int $userId
-     * @return bool
+     * @return ServiceResponse
      */
-    public function markAsRead(int $notificationId, int $userId): bool
+    public function markAsRead(int $notificationId, int $userId): ServiceResponse
     {
-        return $this->notificationRepo->markAsRead($notificationId, $userId);
+        $success = $this->notificationRepo->markAsRead($notificationId, $userId);
+        
+        if ($success) {
+            return ServiceResponse::success('Notification marked as read.');
+        } else {
+            // Usually fails if ID not found or User doesn't own it
+            return ServiceResponse::error('Failed to mark notification as read.');
+        }
     }
 
     /**
      * Marks all notifications as read for a user.
      *
      * @param int $userId
-     * @return bool
+     * @return ServiceResponse
      */
-    public function markAllRead(int $userId): bool
+    public function markAllRead(int $userId): ServiceResponse
     {
-        return $this->notificationRepo->markAllRead($userId);
+        $success = $this->notificationRepo->markAllRead($userId);
+        
+        if ($success) {
+            return ServiceResponse::success('All notifications marked as read.');
+        } else {
+            return ServiceResponse::error('Failed to update notifications.');
+        }
     }
 }

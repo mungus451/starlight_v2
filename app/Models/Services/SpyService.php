@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
@@ -12,18 +12,18 @@ use App\Models\Repositories\SpyRepository;
 use App\Models\Services\ArmoryService; 
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
-use App\Models\Services\NotificationService; // --- NEW IMPORT ---
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
 /**
  * Handles all business logic for Espionage.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class SpyService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private UserRepository $userRepo;
@@ -35,13 +35,13 @@ class SpyService
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
-    private NotificationService $notificationService; // --- NEW PROPERTY ---
+    private NotificationService $notificationService;
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param UserRepository $userRepo
      * @param ResourceRepository $resourceRepo
@@ -51,11 +51,10 @@ class SpyService
      * @param ArmoryService $armoryService
      * @param PowerCalculatorService $powerCalculatorService
      * @param LevelUpService $levelUpService
-     * @param NotificationService $notificationService // --- NEW PARAM ---
+     * @param NotificationService $notificationService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         UserRepository $userRepo,
         ResourceRepository $resourceRepo,
@@ -65,10 +64,9 @@ class SpyService
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService,
-        NotificationService $notificationService // --- NEW INJECTION ---
+        NotificationService $notificationService
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         
         $this->userRepo = $userRepo;
@@ -80,7 +78,7 @@ class SpyService
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
-        $this->notificationService = $notificationService; // --- NEW ASSIGNMENT ---
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -140,29 +138,28 @@ class SpyService
 
     /**
      * Conducts an "all-in" espionage operation.
+     * 
+     * @return ServiceResponse
      */
-    public function conductOperation(int $attackerId, string $targetName): bool
+    public function conductOperation(int $attackerId, string $targetName): ServiceResponse
     {
         // --- 1. Validation (Target) ---
         if (empty(trim($targetName))) {
-            $this->session->setFlash('error', 'You must enter a target.');
-            return false;
+            return ServiceResponse::error('You must enter a target.');
         }
 
         $defender = $this->userRepo->findByCharacterName($targetName);
 
         if (!$defender) {
-            $this->session->setFlash('error', "Character '{$targetName}' not found.");
-            return false;
+            return ServiceResponse::error("Character '{$targetName}' not found.");
         }
 
         if ($defender->id === $attackerId) {
-            $this->session->setFlash('error', 'You cannot spy on yourself.');
-            return false;
+            return ServiceResponse::error('You cannot spy on yourself.');
         }
 
         // --- 2. Get All Data ---
-        $attacker = $this->userRepo->findById($attackerId); // Need Attacker Name for report/notification
+        $attacker = $this->userRepo->findById($attackerId);
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
         $attackerStructures = $this->structureRepo->findByUserId($attackerId);
@@ -178,16 +175,13 @@ class SpyService
         $turnCost = $config['attack_turn_cost'];
 
         if ($spiesSent <= 0) {
-            $this->session->setFlash('error', 'You have no spies to send.');
-            return false;
+            return ServiceResponse::error('You have no spies to send.');
         }
         if ($attackerResources->credits < $creditCost) {
-            $this->session->setFlash('error', 'You do not have enough credits to send all your spies.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits to send all your spies.');
         }
         if ($attackerStats->attack_turns < $turnCost) {
-            $this->session->setFlash('error', 'You do not have enough attack turns.');
-            return false;
+            return ServiceResponse::error('You do not have enough attack turns.');
         }
 
         // --- 4. Calculate Spy Roll ---
@@ -276,7 +270,6 @@ class SpyService
             }
 
             // 8c. Create Spy Report
-            // We capture the ID to link it in the notification
             $reportId = $this->spyRepo->createReport(
                 $attackerId, $defender->id, $operation_result, $spiesSent, $spiesLost, $sentriesLost,
                 $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
@@ -300,7 +293,6 @@ class SpyService
                     "/spy/report/{$reportId}"
                 );
             }
-            // -----------------------------------------
 
             $this->db->commit();
             
@@ -309,16 +301,15 @@ class SpyService
                 $this->db->rollBack();
             }
             error_log('Spy Operation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. The operation was cancelled.');
-            return false;
+            return ServiceResponse::error('A database error occurred. The operation was cancelled.');
         }
 
-        // --- 9. Set Flash Message ---
+        // --- 9. Construct Success Message ---
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
         if ($isCaught && $sentriesLost > 0) {
             $message .= " You destroyed {$sentriesLost} enemy sentries.";
         }
-        $this->session->setFlash('success', $message);
-        return true;
+        
+        return ServiceResponse::success($message);
     }
 }

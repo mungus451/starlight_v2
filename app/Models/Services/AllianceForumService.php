@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceForumTopicRepository;
@@ -14,11 +14,11 @@ use Throwable;
 /**
  * Handles all business logic for the Alliance Forum.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class AllianceForumService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private UserRepository $userRepo;
@@ -28,9 +28,9 @@ class AllianceForumService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param UserRepository $userRepo
      * @param AllianceRoleRepository $roleRepo
@@ -39,7 +39,6 @@ class AllianceForumService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         UserRepository $userRepo,
         AllianceRoleRepository $roleRepo,
@@ -47,7 +46,6 @@ class AllianceForumService
         AllianceForumPostRepository $postRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         
         $this->userRepo = $userRepo;
@@ -58,10 +56,6 @@ class AllianceForumService
 
     /**
      * Gets all data needed for the main forum index (list of topics).
-     *
-     * @param int $allianceId
-     * @param int $page
-     * @return array|null
      */
     public function getForumData(int $allianceId, int $page): ?array
     {
@@ -84,10 +78,7 @@ class AllianceForumService
 
     /**
      * Gets all data needed for viewing a single topic.
-     *
-     * @param int $topicId
-     * @param int $viewerAllianceId
-     * @return array|null
+     * Returns null if not found or unauthorized (Controller handles 404 logic).
      */
     public function getTopicData(int $topicId, int $viewerAllianceId): ?array
     {
@@ -95,7 +86,6 @@ class AllianceForumService
 
         // Security check: Ensure topic exists and viewer is in the same alliance
         if (!$topic || $topic->alliance_id !== $viewerAllianceId) {
-            $this->session->setFlash('error', 'Topic not found.');
             return null;
         }
 
@@ -114,18 +104,16 @@ class AllianceForumService
      * @param int $allianceId
      * @param string $title
      * @param string $content
-     * @return int|null The new topic ID on success, or null on failure
+     * @return ServiceResponse
      */
-    public function createTopic(int $userId, int $allianceId, string $title, string $content): ?int
+    public function createTopic(int $userId, int $allianceId, string $title, string $content): ServiceResponse
     {
         // 1. Validation
         if (empty(trim($title)) || mb_strlen($title) > 255) {
-            $this->session->setFlash('error', 'Title must be between 1 and 255 characters.');
-            return null;
+            return ServiceResponse::error('Title must be between 1 and 255 characters.');
         }
         if (empty(trim($content)) || mb_strlen($content) > 10000) {
-            $this->session->setFlash('error', 'Post content must be between 1 and 10,000 characters.');
-            return null;
+            return ServiceResponse::error('Post content must be between 1 and 10,000 characters.');
         }
 
         // 2. Transaction
@@ -140,14 +128,14 @@ class AllianceForumService
             // 2c. Commit
             $this->db->commit();
             
-            $this->session->setFlash('success', 'Topic created successfully.');
-            return $newTopicId;
+            return ServiceResponse::success('Topic created successfully.', ['topic_id' => $newTopicId]);
 
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Alliance Topic Creation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while creating the topic.');
-            return null;
+            return ServiceResponse::error('A database error occurred while creating the topic.');
         }
     }
 
@@ -157,27 +145,24 @@ class AllianceForumService
      * @param int $userId
      * @param int $topicId
      * @param string $content
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function createPost(int $userId, int $topicId, string $content): bool
+    public function createPost(int $userId, int $topicId, string $content): ServiceResponse
     {
         // 1. Get user and topic data
         $user = $this->userRepo->findById($userId);
         $topic = $this->topicRepo->findById($topicId);
 
         if (!$topic || !$user || $topic->alliance_id !== $user->alliance_id) {
-            $this->session->setFlash('error', 'Topic not found.');
-            return false;
+            return ServiceResponse::error('Topic not found.');
         }
 
         // 2. Validation
         if ($topic->is_locked) {
-            $this->session->setFlash('error', 'This topic is locked and cannot be replied to.');
-            return false;
+            return ServiceResponse::error('This topic is locked and cannot be replied to.');
         }
         if (empty(trim($content)) || mb_strlen($content) > 10000) {
-            $this->session->setFlash('error', 'Post content must be between 1 and 10,000 characters.');
-            return false;
+            return ServiceResponse::error('Post content must be between 1 and 10,000 characters.');
         }
 
         // 3. Transaction
@@ -191,106 +176,95 @@ class AllianceForumService
             
             $this->db->commit();
             
-            $this->session->setFlash('success', 'Reply posted successfully.');
-            return true;
+            return ServiceResponse::success('Reply posted successfully.');
 
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Alliance Post Creation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while posting the reply.');
-            return false;
+            return ServiceResponse::error('A database error occurred while posting the reply.');
         }
     }
 
     /**
      * Toggles the pin status of a topic.
-     *
-     * @param int $adminUserId
-     * @param int $topicId
-     * @return bool
      */
-    public function toggleTopicPin(int $adminUserId, int $topicId): bool
+    public function toggleTopicPin(int $adminUserId, int $topicId): ServiceResponse
     {
         $topic = $this->topicRepo->findById($topicId);
-        if (!$this->checkModerationPermission($adminUserId, $topic)) {
-            return false;
+        $check = $this->checkModerationPermission($adminUserId, $topic);
+        if (!$check['allowed']) {
+            return ServiceResponse::error($check['message']);
         }
 
         $newStatus = !$topic->is_pinned;
         $this->topicRepo->updateTopicStatus($topicId, 'is_pinned', $newStatus);
-        $this->session->setFlash('success', 'Topic has been ' . ($newStatus ? 'pinned.' : 'unpinned.'));
-        return true;
+        
+        $msg = 'Topic has been ' . ($newStatus ? 'pinned.' : 'unpinned.');
+        return ServiceResponse::success($msg);
     }
 
     /**
      * Toggles the lock status of a topic.
-     *
-     * @param int $adminUserId
-     * @param int $topicId
-     * @return bool
      */
-    public function toggleTopicLock(int $adminUserId, int $topicId): bool
+    public function toggleTopicLock(int $adminUserId, int $topicId): ServiceResponse
     {
         $topic = $this->topicRepo->findById($topicId);
-        if (!$this->checkModerationPermission($adminUserId, $topic)) {
-            return false;
+        $check = $this->checkModerationPermission($adminUserId, $topic);
+        if (!$check['allowed']) {
+            return ServiceResponse::error($check['message']);
         }
 
         $newStatus = !$topic->is_locked;
         $this->topicRepo->updateTopicStatus($topicId, 'is_locked', $newStatus);
-        $this->session->setFlash('success', 'Topic has been ' . ($newStatus ? 'locked.' : 'unlocked.'));
-        return true;
+        
+        $msg = 'Topic has been ' . ($newStatus ? 'locked.' : 'unlocked.');
+        return ServiceResponse::success($msg);
     }
 
     /**
      * Deletes a post. (Admin only)
-     *
-     * @param int $adminUserId
-     * @param int $postId
-     * @return bool
      */
-    public function deletePost(int $adminUserId, int $postId): bool
+    public function deletePost(int $adminUserId, int $postId): ServiceResponse
     {
         $post = $this->postRepo->findById($postId);
         if (!$post) {
-            $this->session->setFlash('error', 'Post not found.');
-            return false;
+            return ServiceResponse::error('Post not found.');
         }
         
         $topic = $this->topicRepo->findById($post->topic_id);
-        if (!$this->checkModerationPermission($adminUserId, $topic)) {
-            return false;
+        $check = $this->checkModerationPermission($adminUserId, $topic);
+        if (!$check['allowed']) {
+            return ServiceResponse::error($check['message']);
         }
 
         $this->postRepo->deletePost($postId);
-        $this->session->setFlash('success', 'Post deleted.');
-        return true;
+        return ServiceResponse::success('Post deleted.');
     }
 
     /**
      * Helper function to check permissions.
+     * Returns array [allowed => bool, message => string].
      */
-    private function checkModerationPermission(int $userId, ?\App\Models\Entities\AllianceForumTopic $topic): bool
+    private function checkModerationPermission(int $userId, ?\App\Models\Entities\AllianceForumTopic $topic): array
     {
         $user = $this->userRepo->findById($userId);
         
         if (!$user || $user->alliance_id === null) {
-            $this->session->setFlash('error', 'You are not in an alliance.');
-            return false;
+            return ['allowed' => false, 'message' => 'You are not in an alliance.'];
         }
         
         if (!$topic || $topic->alliance_id !== $user->alliance_id) {
-            $this->session->setFlash('error', 'You do not have permission for this topic.');
-            return false;
+            return ['allowed' => false, 'message' => 'You do not have permission for this topic.'];
         }
 
         $role = $this->roleRepo->findById($user->alliance_role_id);
         
         if ($role && $role->can_manage_forum) {
-            return true;
+            return ['allowed' => true, 'message' => ''];
         }
 
-        $this->session->setFlash('error', 'You do not have permission to manage the forum.');
-        return false;
+        return ['allowed' => false, 'message' => 'You do not have permission to manage the forum.'];
     }
 }

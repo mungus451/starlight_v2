@@ -14,7 +14,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance War page.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class WarController extends BaseController
 {
@@ -99,7 +99,7 @@ class WarController extends BaseController
             'canDeclareWar' => $viewerData['canDeclareWar'],
             'allianceId' => $viewerData['allianceId'],
             'otherAlliances' => $otherAlliances,
-            'activeWars' => [], // Placeholder until WarService implements getWarData
+            'activeWars' => [], // Placeholder until WarService implements getWarData (Read operations are safe)
             'historicalWars' => [] // Placeholder
         ]);
     }
@@ -130,7 +130,7 @@ class WarController extends BaseController
         }
         
         // 3. Execute Logic
-        $this->warService->declareWar(
+        $response = $this->warService->declareWar(
             $viewerData['user']->id,
             $data['target_alliance_id'],
             $data['war_name'],
@@ -138,6 +138,13 @@ class WarController extends BaseController
             $data['goal_key'],
             $data['goal_threshold']
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/war');
     }

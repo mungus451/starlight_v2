@@ -11,7 +11,8 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles notification displays and AJAX polling.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored for Strict Dependency Injection.
+ * * Decoupled: Consumes ServiceResponse objects for AJAX actions.
  */
 class NotificationController extends BaseController
 {
@@ -106,13 +107,12 @@ class NotificationController extends BaseController
         $userId = $this->session->get('user_id');
         $notifId = (int)($vars['id'] ?? 0);
 
-        // Note: We typically don't validate CSRF on this specific highly-frequent AJAX action
-        // in this specific architecture to keep the JS lightweight, but authentication is checked.
+        $response = $this->notificationService->markAsRead($notifId, $userId);
         
-        if ($this->notificationService->markAsRead($notifId, $userId)) {
+        if ($response->isSuccess()) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to update or unauthorized.']);
+            echo json_encode(['success' => false, 'error' => $response->message]);
         }
     }
 
@@ -144,10 +144,12 @@ class NotificationController extends BaseController
 
         $userId = $this->session->get('user_id');
         
-        if ($this->notificationService->markAllRead($userId)) {
+        $response = $this->notificationService->markAllRead($userId);
+        
+        if ($response->isSuccess()) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => 'Database error']);
+            echo json_encode(['success' => false, 'error' => $response->message]);
         }
     }
 }

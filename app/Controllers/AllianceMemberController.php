@@ -11,7 +11,8 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles membership management (Kick, Leave, Roles).
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
+ * * Handles Session state updates for leaving/kicking.
  */
 class AllianceMemberController extends BaseController
 {
@@ -58,10 +59,19 @@ class AllianceMemberController extends BaseController
 
         $userId = $this->session->get('user_id');
         
-        if ($this->mgmtService->leaveAlliance($userId)) {
+        // 3. Execute Service
+        $response = $this->mgmtService->leaveAlliance($userId);
+
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            // Critical: Update Session State
+            $this->session->set('alliance_id', null);
+            
+            $this->session->setFlash('success', $response->message);
             $this->redirect('/alliance/list');
         } else {
-            // Failed (e.g. leader trying to leave without disbanding)
+            $this->session->setFlash('error', $response->message);
+            // If failed (e.g., is leader), redirect to dashboard or profile
             $this->redirect('/dashboard');
         }
     }
@@ -88,7 +98,22 @@ class AllianceMemberController extends BaseController
         $adminId = $this->session->get('user_id');
         $targetUserId = (int)($vars['id'] ?? 0);
 
-        $this->mgmtService->kickMember($adminId, $targetUserId);
+        // 3. Execute Service
+        $response = $this->mgmtService->kickMember($adminId, $targetUserId);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+            
+            // Edge case: If admin kicked themselves (shouldn't happen via logic, but safety first)
+            if ($adminId === $targetUserId) {
+                $this->session->set('alliance_id', null);
+                $this->redirect('/alliance/list');
+                return;
+            }
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
@@ -115,7 +140,16 @@ class AllianceMemberController extends BaseController
         }
 
         $adminId = $this->session->get('user_id');
-        $this->mgmtService->changeMemberRole($adminId, $data['target_user_id'], $data['role_id']);
+        
+        // 3. Execute Service
+        $response = $this->mgmtService->changeMemberRole($adminId, $data['target_user_id'], $data['role_id']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }

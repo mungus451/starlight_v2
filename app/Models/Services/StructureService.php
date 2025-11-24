@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use PDO;
@@ -12,11 +12,11 @@ use Throwable;
 /**
  * Handles all business logic for Structures.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class StructureService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private StructureRepository $structureRepo;
@@ -24,22 +24,20 @@ class StructureService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param StructureRepository $structureRepo
      * @param ResourceRepository $resourceRepo
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         StructureRepository $structureRepo,
         ResourceRepository $resourceRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         
         $this->structureRepo = $structureRepo;
@@ -91,16 +89,15 @@ class StructureService
      *
      * @param int $userId
      * @param string $structureKey
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function upgradeStructure(int $userId, string $structureKey): bool
+    public function upgradeStructure(int $userId, string $structureKey): ServiceResponse
     {
         // 1. Validation: Get Formula
         $formula = $this->config->get('game_balance.structures.' . $structureKey);
 
         if (is_null($formula)) {
-            $this->session->setFlash('error', 'Invalid structure selected.');
-            return false;
+            return ServiceResponse::error('Invalid structure selected.');
         }
 
         // 2. Get Current Data
@@ -108,8 +105,7 @@ class StructureService
         $resources = $this->resourceRepo->findByUserId($userId);
 
         if (!$structures || !$resources) {
-            $this->session->setFlash('error', 'Could not find your user data.');
-            return false;
+            return ServiceResponse::error('Could not find your user data.');
         }
 
         // 3. Calculate Cost
@@ -120,8 +116,7 @@ class StructureService
 
         // 4. Validation: Check Cost
         if ($resources->credits < $cost) {
-            $this->session->setFlash('error', 'You do not have enough credits for this upgrade.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits for this upgrade.');
         }
 
         // 5. Execute Transaction
@@ -137,16 +132,14 @@ class StructureService
             $this->db->commit();
             
             $displayName = $formula['name'] ?? $structureKey;
-            $this->session->setFlash('success', "{$displayName} upgrade to Level {$nextLevel} complete!");
-            return true;
+            return ServiceResponse::success("{$displayName} upgrade to Level {$nextLevel} complete!");
 
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Structure Upgrade Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
 

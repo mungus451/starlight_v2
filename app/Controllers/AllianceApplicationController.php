@@ -11,7 +11,8 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles alliance recruitment (applications and invites).
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
+ * * Handles instant-join Session updates.
  */
 class AllianceApplicationController extends BaseController
 {
@@ -59,9 +60,26 @@ class AllianceApplicationController extends BaseController
         $userId = $this->session->get('user_id');
         $allianceId = (int)($vars['id'] ?? 0);
 
-        $this->mgmtService->applyToAlliance($userId, $allianceId);
+        // 3. Execute Service
+        $response = $this->mgmtService->applyToAlliance($userId, $allianceId);
         
-        $this->redirect('/alliance/profile/' . $allianceId);
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+            
+            // Check if instant join occurred (Open Recruitment)
+            if (isset($response->data['new_alliance_id'])) {
+                $this->session->set('alliance_id', $response->data['new_alliance_id']);
+                $this->redirect('/alliance/profile/' . $response->data['new_alliance_id']);
+                return;
+            }
+            
+            // Standard Application
+            $this->redirect('/alliance/profile/' . $allianceId);
+        } else {
+            $this->session->setFlash('error', $response->message);
+            $this->redirect('/alliance/list');
+        }
     }
 
     /**
@@ -84,7 +102,13 @@ class AllianceApplicationController extends BaseController
         $userId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
 
-        $this->mgmtService->cancelApplication($userId, $appId);
+        $response = $this->mgmtService->cancelApplication($userId, $appId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/list');
     }
@@ -99,19 +123,26 @@ class AllianceApplicationController extends BaseController
             'csrf_token' => 'required'
         ]);
 
+        $allianceId = $this->session->get('alliance_id');
+
         // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/list');
+            $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
 
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->acceptApplication($adminId, $appId);
+        $response = $this->mgmtService->acceptApplication($adminId, $appId);
         
-        $allianceId = $this->session->get('alliance_id');
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
 
@@ -125,19 +156,26 @@ class AllianceApplicationController extends BaseController
             'csrf_token' => 'required'
         ]);
 
+        $allianceId = $this->session->get('alliance_id');
+
         // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/list');
+            $this->redirect('/alliance/profile/' . $allianceId);
             return;
         }
 
         $adminId = $this->session->get('user_id');
         $appId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->rejectApplication($adminId, $appId);
+        $response = $this->mgmtService->rejectApplication($adminId, $appId);
         
-        $allianceId = $this->session->get('alliance_id');
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/profile/' . $allianceId);
     }
     
@@ -151,17 +189,24 @@ class AllianceApplicationController extends BaseController
             'csrf_token' => 'required'
         ]);
 
+        $targetUserId = (int)($vars['id'] ?? 0);
+
         // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/profile/' . ($vars['id'] ?? 0));
+            $this->redirect('/profile/' . $targetUserId);
             return;
         }
 
         $inviterId = $this->session->get('user_id');
-        $targetUserId = (int)($vars['id'] ?? 0);
         
-        $this->mgmtService->inviteUser($inviterId, $targetUserId);
+        $response = $this->mgmtService->inviteUser($inviterId, $targetUserId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/profile/' . $targetUserId);
     }

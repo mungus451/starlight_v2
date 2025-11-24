@@ -12,6 +12,7 @@ use App\Models\Repositories\StatsRepository;
 /**
  * Handles all HTTP requests for the Bank.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Decoupled: Consumes ServiceResponse for feedback.
  */
 class BankController extends BaseController
 {
@@ -74,7 +75,14 @@ class BankController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->bankService->deposit($userId, $data['amount']);
+        $response = $this->bankService->deposit($userId, $data['amount']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/bank');
     }
@@ -99,7 +107,14 @@ class BankController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->bankService->withdraw($userId, $data['amount']);
+        $response = $this->bankService->withdraw($userId, $data['amount']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/bank');
     }
@@ -125,7 +140,14 @@ class BankController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $this->bankService->transfer($userId, $data['recipient_name'], $data['amount']);
+        $response = $this->bankService->transfer($userId, $data['recipient_name'], $data['amount']);
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/bank');
     }

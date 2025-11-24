@@ -3,7 +3,6 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -12,16 +11,15 @@ use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
 use PDO;
-use Throwable;
 
 /**
  * Handles all "read" logic for Alliances.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Pure Data Retrieval.
  */
 class AllianceService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private AllianceRepository $allianceRepo;
@@ -34,9 +32,9 @@ class AllianceService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param AllianceRepository $allianceRepo
      * @param UserRepository $userRepo
@@ -48,7 +46,6 @@ class AllianceService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         AllianceRepository $allianceRepo,
         UserRepository $userRepo,
@@ -59,7 +56,6 @@ class AllianceService
         AllianceLoanRepository $loanRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         
         $this->allianceRepo = $allianceRepo;
@@ -157,92 +153,5 @@ class AllianceService
             'bankLogs' => $bankLogs,
             'loans' => $loans
         ];
-    }
-
-    /**
-     * Attempts to create a new alliance.
-     */
-    public function createAlliance(int $userId, string $name, string $tag): ?int
-    {
-        // 1. Validation
-        if (empty(trim($name)) || empty(trim($tag))) {
-            $this->session->setFlash('error', 'Alliance name and tag cannot be empty.');
-            return null;
-        }
-        if (mb_strlen($name) < 3 || mb_strlen($name) > 100) {
-            $this->session->setFlash('error', 'Alliance name must be between 3 and 100 characters.');
-            return null;
-        }
-        if (mb_strlen($tag) < 3 || mb_strlen($tag) > 5) {
-            $this->session->setFlash('error', 'Alliance tag must be between 3 and 5 characters.');
-            return null;
-        }
-
-        if ($this->allianceRepo->findByName($name)) {
-            $this->session->setFlash('error', 'An alliance with this name already exists.');
-            return null;
-        }
-        if ($this->allianceRepo->findByTag($tag)) {
-            $this->session->setFlash('error', 'An alliance with this tag already exists.');
-            return null;
-        }
-
-        $user = $this->userRepo->findById($userId);
-        if ($user->alliance_id !== null) {
-            $this->session->setFlash('error', 'You are already in an alliance.');
-            return null;
-        }
-
-        $cost = $this->config->get('game_balance.alliance.creation_cost', 50000000);
-        $resources = $this->resourceRepo->findByUserId($userId);
-
-        if ($resources->credits < $cost) {
-            $this->session->setFlash('error', 'You do not have enough credits to found an alliance.');
-            return null;
-        }
-
-        // 2. Transaction
-        $this->db->beginTransaction();
-        try {
-            // 2a. Create the alliance
-            $newAllianceId = $this->allianceRepo->create($name, $tag, $userId);
-
-            // 2b. Create the default roles
-            $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
-                'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
-                'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
-                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1,
-                'can_manage_diplomacy' => 1, 'can_declare_war' => 1
-            ]);
-            
-            $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
-            $this->roleRepo->create($newAllianceId, 'Member', 9, []); // No perms by default
-
-            // 2c. Deduct credits
-            $newCredits = $resources->credits - $cost;
-            $this->resourceRepo->updateCredits($userId, $newCredits);
-
-            // 2d. Update the user to be the leader
-            $this->userRepo->setAlliance($userId, $newAllianceId, $leaderRoleId);
-
-            // 2e. Commit
-            $this->db->commit();
-
-        } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            error_log('Alliance Creation Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred while creating the alliance.');
-            return null;
-        }
-
-        // 3. Success
-        $this->session->setFlash('success', 'You have successfully founded the alliance: ' . $name);
-        
-        // Update the creator's session
-        $this->session->set('alliance_id', $newAllianceId);
-        
-        return $newAllianceId;
     }
 }

@@ -3,30 +3,29 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\ResourceRepository;
 use PDO;
 
 /**
  * Handles all business logic for training units.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class TrainingService
 {
-    private Session $session;
     private Config $config;
     private ResourceRepository $resourceRepo;
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
-     * @param Session $session
      * @param Config $config
      * @param ResourceRepository $resourceRepo
      */
-    public function __construct(Session $session, Config $config, ResourceRepository $resourceRepo)
+    public function __construct(Config $config, ResourceRepository $resourceRepo)
     {
-        $this->session = $session;
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
     }
@@ -40,8 +39,6 @@ class TrainingService
     public function getTrainingData(int $userId): array
     {
         $resources = $this->resourceRepo->findByUserId($userId);
-        
-        // Get the 'training' section from the 'game_balance.php' config file
         $costs = $this->config->get('game_balance.training', []);
 
         return [
@@ -56,29 +53,26 @@ class TrainingService
      * @param int $userId
      * @param string $unitType The key of the unit (e.g., 'soldiers')
      * @param int $amount The number of units to train
-     * @return bool True on success, false on failure
+     * @return ServiceResponse
      */
-    public function trainUnits(int $userId, string $unitType, int $amount): bool
+    public function trainUnits(int $userId, string $unitType, int $amount): ServiceResponse
     {
         // 1. Validation 1: Amount
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Amount to train must be a positive number.');
-            return false;
+            return ServiceResponse::error('Amount to train must be a positive number.');
         }
 
         // 2. Validation 2: Unit Type & Costs
         $unitCost = $this->config->get('game_balance.training.' . $unitType);
         
         if (is_null($unitCost)) {
-            $this->session->setFlash('error', 'Invalid unit type selected.');
-            return false;
+            return ServiceResponse::error('Invalid unit type selected.');
         }
 
         // 3. Validation 3: Get User's Resources
         $resources = $this->resourceRepo->findByUserId($userId);
         if (!$resources) {
-            $this->session->setFlash('error', 'Could not find your resource data.');
-            return false;
+            return ServiceResponse::error('Could not find your resource data.');
         }
 
         // 4. Calculate Costs
@@ -87,12 +81,10 @@ class TrainingService
 
         // 5. Validation 4: Check Costs vs. Resources
         if ($resources->credits < $totalCreditCost) {
-            $this->session->setFlash('error', 'You do not have enough credits to train these units.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits to train these units.');
         }
         if ($resources->untrained_citizens < $totalCitizenCost) {
-            $this->session->setFlash('error', 'You do not have enough untrained citizens for this training.');
-            return false;
+            return ServiceResponse::error('You do not have enough untrained citizens for this training.');
         }
 
         // 6. Calculate New Totals
@@ -116,9 +108,7 @@ class TrainingService
             default    => null,
         };
 
-        // 7. Execute Update
-        // Note: This is a direct update. In a stricter system, we might wrap this in a transaction via a Service/Repo method that takes PDO.
-        // However, ResourceRepository::updateTrainedUnits is atomic (single query), so it's safe here.
+        // 7. Execute Update (Atomic)
         $success = $this->resourceRepo->updateTrainedUnits(
             $userId,
             $newCredits,
@@ -131,11 +121,10 @@ class TrainingService
         );
 
         if ($success) {
-            $this->session->setFlash('success', 'Training complete. ' . number_format($amount) . ' ' . $unitType . ' added to your forces.');
-            return true;
+            $msg = 'Training complete. ' . number_format($amount) . ' ' . ucfirst($unitType) . ' added to your forces.';
+            return ServiceResponse::success($msg);
         } else {
-            $this->session->setFlash('error', 'A database error occurred during training. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred during training. Please try again.');
         }
     }
 }

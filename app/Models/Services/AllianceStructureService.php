@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\ServiceResponse;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceStructureRepository;
@@ -16,11 +16,11 @@ use Throwable;
 /**
  * Handles all business logic for Alliance Structures.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class AllianceStructureService
 {
     private PDO $db;
-    private Session $session;
     
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
@@ -33,9 +33,9 @@ class AllianceStructureService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param AllianceRepository $allianceRepo
      * @param AllianceBankLogRepository $bankLogRepo
      * @param AllianceStructureRepository $allianceStructRepo
@@ -46,7 +46,6 @@ class AllianceStructureService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
         AllianceStructureRepository $allianceStructRepo,
@@ -56,7 +55,6 @@ class AllianceStructureService
         AlliancePolicyService $policyService
     ) {
         $this->db = $db;
-        $this->session = $session;
         
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
@@ -70,7 +68,6 @@ class AllianceStructureService
 
     /**
      * Gets all data needed for the Alliance Structures view.
-     * Calculates the cost for the *next* level of all structures.
      *
      * @param int $allianceId
      * @return array
@@ -104,34 +101,30 @@ class AllianceStructureService
 
     /**
      * Attempts to purchase or upgrade a single structure for an alliance.
-     * This is a transactional operation.
      *
      * @param int $adminUserId The user attempting the action
      * @param string $structureKey e.g., 'citadel_shield'
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function purchaseOrUpgradeStructure(int $adminUserId, string $structureKey): bool
+    public function purchaseOrUpgradeStructure(int $adminUserId, string $structureKey): ServiceResponse
     {
         // 1. Get User and Alliance data
         $adminUser = $this->userRepo->findById($adminUserId);
         if (!$adminUser || $adminUser->alliance_id === null) {
-            $this->session->setFlash('error', 'You are not in an alliance.');
-            return false;
+            return ServiceResponse::error('You are not in an alliance.');
         }
         $allianceId = $adminUser->alliance_id;
 
         // 2. Authorization Check
         $adminRole = $this->roleRepo->findById($adminUser->alliance_role_id);
         if (!$adminRole || !$adminRole->can_manage_structures) {
-            $this->session->setFlash('error', 'You do not have permission to manage structures.');
-            return false;
+            return ServiceResponse::error('You do not have permission to manage structures.');
         }
 
         // 3. Get Structure & Cost Data
         $definition = $this->structDefRepo->findByKey($structureKey);
         if (!$definition) {
-            $this->session->setFlash('error', 'Invalid structure selected.');
-            return false;
+            return ServiceResponse::error('Invalid structure selected.');
         }
         
         $alliance = $this->allianceRepo->findById($allianceId);
@@ -143,8 +136,7 @@ class AllianceStructureService
 
         // 4. Validation: Check Cost
         if ($alliance->bank_credits < $cost) {
-            $this->session->setFlash('error', 'The alliance does not have enough credits in its bank for this upgrade.');
-            return false;
+            return ServiceResponse::error('The alliance does not have enough credits in its bank for this upgrade.');
         }
 
         // 5. Execute Transaction
@@ -163,15 +155,13 @@ class AllianceStructureService
             // 5d. Commit
             $this->db->commit();
             
-            $this->session->setFlash('success', "{$definition->name} upgrade to Level {$nextLevel} complete!");
-            return true;
+            return ServiceResponse::success("{$definition->name} upgrade to Level {$nextLevel} complete!");
 
         } catch (Throwable $e) {
             // 5e. Rollback on failure
             $this->db->rollBack();
             error_log('Alliance Structure Upgrade Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
 

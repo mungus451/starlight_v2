@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
@@ -21,12 +21,12 @@ use Throwable;
 
 /**
  * Handles all business logic for PvP Attacks.
- * * Refactored to support nested transactions and EventDispatcher.
+ * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class AttackService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private UserRepository $userRepo;
@@ -42,9 +42,26 @@ class AttackService
     private LevelUpService $levelUpService;
     private EventDispatcher $dispatcher;
 
+    /**
+     * DI Constructor.
+     * REMOVED: Session dependency.
+     * 
+     * @param PDO $db
+     * @param Config $config
+     * @param UserRepository $userRepo
+     * @param ResourceRepository $resourceRepo
+     * @param StructureRepository $structureRepo
+     * @param StatsRepository $statsRepo
+     * @param BattleRepository $battleRepo
+     * @param AllianceRepository $allianceRepo
+     * @param AllianceBankLogRepository $bankLogRepo
+     * @param ArmoryService $armoryService
+     * @param PowerCalculatorService $powerCalculatorService
+     * @param LevelUpService $levelUpService
+     * @param EventDispatcher $dispatcher
+     */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         UserRepository $userRepo,
         ResourceRepository $resourceRepo,
@@ -59,7 +76,6 @@ class AttackService
         EventDispatcher $dispatcher
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
         
         $this->userRepo = $userRepo;
@@ -76,6 +92,9 @@ class AttackService
         $this->dispatcher = $dispatcher;
     }
 
+    /**
+     * Gets the data needed to render the Battle page.
+     */
     public function getAttackPageData(int $userId, int $page): array
     {
         $attackerResources = $this->resourceRepo->findByUserId($userId);
@@ -122,27 +141,28 @@ class AttackService
         return $this->battleRepo->findReportById($reportId, $viewerId);
     }
 
-    public function conductAttack(int $attackerId, string $targetName, string $attackType): bool
+    /**
+     * Conducts an attack operation.
+     * 
+     * @return ServiceResponse
+     */
+    public function conductAttack(int $attackerId, string $targetName, string $attackType): ServiceResponse
     {
         // --- 1. Validation (Input) ---
         if (empty(trim($targetName))) {
-            $this->session->setFlash('error', 'You must enter a target.');
-            return false;
+            return ServiceResponse::error('You must enter a target.');
         }
         if ($attackType !== 'plunder') {
-            $this->session->setFlash('error', 'Invalid attack type.');
-            return false;
+            return ServiceResponse::error('Invalid attack type.');
         }
 
         $defender = $this->userRepo->findByCharacterName($targetName);
 
         if (!$defender) {
-            $this->session->setFlash('error', "Character '{$targetName}' not found.");
-            return false;
+            return ServiceResponse::error("Character '{$targetName}' not found.");
         }
         if ($defender->id === $attackerId) {
-            $this->session->setFlash('error', 'You cannot attack yourself.');
-            return false;
+            return ServiceResponse::error('You cannot attack yourself.');
         }
 
         // --- 2. Get All Data ---
@@ -163,12 +183,10 @@ class AttackService
         $turnCost = $config['attack_turn_cost'];
 
         if ($soldiersSent <= 0) {
-            $this->session->setFlash('error', 'You have no soldiers to send.');
-            return false;
+            return ServiceResponse::error('You have no soldiers to send.');
         }
         if ($attackerStats->attack_turns < $turnCost) {
-            $this->session->setFlash('error', 'You do not have enough attack turns.');
-            return false;
+            return ServiceResponse::error('You do not have enough attack turns.');
         }
 
         // --- 4. Calculate Battle Power ---
@@ -248,7 +266,7 @@ class AttackService
         
         $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
-        // --- 8. Execute Transaction (Nested Safe) ---
+        // --- 8. Execute Transaction ---
         $transactionStartedByMe = false;
         if (!$this->db->inTransaction()) {
             $this->db->beginTransaction();
@@ -300,7 +318,7 @@ class AttackService
                 }
             }
             
-            // --- 8g. DISPATCH EVENT ---
+            // 8g. DISPATCH EVENT
             $event = new BattleConcludedEvent(
                 $battleReportId,
                 $attacker,
@@ -311,36 +329,30 @@ class AttackService
                 $creditsPlundered
             );
             $this->dispatcher->dispatch($event);
-            // --------------------------
 
-            // Commit only if we started the transaction
             if ($transactionStartedByMe) {
                 $this->db->commit();
             }
             
         } catch (Throwable $e) {
-            // Rollback only if we started the transaction
             if ($transactionStartedByMe && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Attack Operation Error: '. $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. The attack was cancelled.');
             
-            // If we didn't start it, we must re-throw so the parent can rollback
             if (!$transactionStartedByMe) {
                 throw $e; 
             }
-            return false;
+            return ServiceResponse::error('A database error occurred. The attack was cancelled.');
         }
 
-        // --- 9. Set Flash Message ---
+        // --- 9. Return Success ---
         $message = "Attack Complete: {$attackResult}!";
         if ($attackResult === 'victory') {
             $message .= " You plundered " . number_format($creditsPlundered) . " credits.";
         }
         $message .= " XP Gained: +{$attackerXpGain}.";
         
-        $this->session->setFlash('success', $message);
-        return true;
+        return ServiceResponse::success($message);
     }
 }

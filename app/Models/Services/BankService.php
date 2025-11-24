@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\Session;
+use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
@@ -14,11 +14,11 @@ use DateTime;
 /**
  * Handles all business logic for the Bank.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class BankService
 {
     private PDO $db;
-    private Session $session;
     private Config $config;
     
     private ResourceRepository $resourceRepo;
@@ -29,7 +29,6 @@ class BankService
      * DI Constructor.
      *
      * @param PDO $db
-     * @param Session $session
      * @param Config $config
      * @param ResourceRepository $resourceRepo
      * @param UserRepository $userRepo
@@ -37,16 +36,13 @@ class BankService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         Config $config,
         ResourceRepository $resourceRepo,
         UserRepository $userRepo,
         StatsRepository $statsRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->config = $config;
-        
         $this->resourceRepo = $resourceRepo;
         $this->userRepo = $userRepo;
         $this->statsRepo = $statsRepo;
@@ -81,7 +77,7 @@ class BankService
                 $chargesToAdd = min($chargesToRegen, $maxCharges - $currentCharges);
                 
                 if ($chargesToAdd > 0) {
-                    $this->statsRepo->regenerateDepositCharges($userId, $chargesToAdd);
+                    $this->statsRepo->regenerateDepositCharges($userId, (int)$chargesToAdd);
                     // Re-fetch stats to show the user the updated value
                     $stats = $this->statsRepo->findByUserId($userId);
                 }
@@ -100,13 +96,12 @@ class BankService
      *
      * @param int $userId
      * @param int $amount
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function deposit(int $userId, int $amount): bool
+    public function deposit(int $userId, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Amount to deposit must be a positive number.');
-            return false;
+            return ServiceResponse::error('Amount to deposit must be a positive number.');
         }
 
         $resources = $this->resourceRepo->findByUserId($userId);
@@ -116,24 +111,20 @@ class BankService
         // 1. Check 80% Limit
         $depositLimit = floor($resources->credits * $bankConfig['deposit_percent_limit']);
         if ($amount > $depositLimit && $depositLimit > 0) {
-            $this->session->setFlash('error', 'You can only deposit up to 80% (' . number_format($depositLimit) . ') of your on-hand credits at a time.');
-            return false;
+            return ServiceResponse::error('You can only deposit up to 80% (' . number_format($depositLimit) . ') of your on-hand credits at a time.');
         }
         if ($amount > 0 && $depositLimit <= 0 && $resources->credits > 0) {
-             $this->session->setFlash('error', 'Amount is too small to meet the 80% deposit rule.');
-            return false;
+             return ServiceResponse::error('Amount is too small to meet the 80% deposit rule.');
         }
 
         // 2. Check Deposit Charges
         if ($stats->deposit_charges <= 0) {
-            $this->session->setFlash('error', 'You have no deposit charges left. One regenerates every ' . $bankConfig['deposit_charge_regen_hours'] . ' hours.');
-            return false;
+            return ServiceResponse::error('You have no deposit charges left. One regenerates every ' . $bankConfig['deposit_charge_regen_hours'] . ' hours.');
         }
         
         // 3. Check balance
         if ($resources->credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough credits on hand to deposit.');
-            return false;
+            return ServiceResponse::error('You do not have enough credits on hand to deposit.');
         }
 
         $newCredits = $resources->credits - $amount;
@@ -149,16 +140,14 @@ class BankService
             
             $this->db->commit();
             
-            $this->session->setFlash('success', 'You successfully deposited ' . number_format($amount) . ' credits.');
-            return true;
+            return ServiceResponse::success('You successfully deposited ' . number_format($amount) . ' credits.');
 
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log("Bank Deposit Error: " . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
 
@@ -167,31 +156,27 @@ class BankService
      *
      * @param int $userId
      * @param int $amount
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function withdraw(int $userId, int $amount): bool
+    public function withdraw(int $userId, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Amount to withdraw must be a positive number.');
-            return false;
+            return ServiceResponse::error('Amount to withdraw must be a positive number.');
         }
 
         $resources = $this->resourceRepo->findByUserId($userId);
 
         if ($resources->banked_credits < $amount) {
-            $this->session->setFlash('error', 'You do not have enough banked credits to withdraw.');
-            return false;
+            return ServiceResponse::error('You do not have enough banked credits to withdraw.');
         }
 
         $newCredits = $resources->credits + $amount;
         $newBanked = $resources->banked_credits - $amount;
 
         if ($this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked)) {
-            $this->session->setFlash('success', 'You successfully withdrew ' . number_format($amount) . ' credits.');
-            return true;
+            return ServiceResponse::success('You successfully withdrew ' . number_format($amount) . ' credits.');
         } else {
-            $this->session->setFlash('error', 'A database error occurred. Please try again.');
-            return false;
+            return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
 
@@ -201,30 +186,26 @@ class BankService
      * @param int $senderId
      * @param string $recipientName
      * @param int $amount
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function transfer(int $senderId, string $recipientName, int $amount): bool
+    public function transfer(int $senderId, string $recipientName, int $amount): ServiceResponse
     {
         if ($amount <= 0) {
-            $this->session->setFlash('error', 'Amount to transfer must be a positive number.');
-            return false;
+            return ServiceResponse::error('Amount to transfer must be a positive number.');
         }
         
         if (empty(trim($recipientName))) {
-            $this->session->setFlash('error', 'You must enter a recipient.');
-            return false;
+            return ServiceResponse::error('You must enter a recipient.');
         }
 
         $recipient = $this->userRepo->findByCharacterName($recipientName);
 
         if (!$recipient) {
-            $this->session->setFlash('error', "Character '{$recipientName}' not found.");
-            return false;
+            return ServiceResponse::error("Character '{$recipientName}' not found.");
         }
 
         if ($recipient->id === $senderId) {
-            $this->session->setFlash('error', 'You cannot transfer credits to yourself.');
-            return false;
+            return ServiceResponse::error('You cannot transfer credits to yourself.');
         }
         
         $this->db->beginTransaction();
@@ -238,9 +219,8 @@ class BankService
             }
 
             if ($senderResources->credits < $amount) {
-                $this->session->setFlash('error', 'You do not have enough credits on hand to transfer.');
                 $this->db->rollBack();
-                return false;
+                return ServiceResponse::error('You do not have enough credits on hand to transfer.');
             }
 
             $senderNewCredits = $senderResources->credits - $amount;
@@ -250,16 +230,14 @@ class BankService
             $this->resourceRepo->updateCredits($recipient->id, $recipientNewCredits);
 
             $this->db->commit();
-            $this->session->setFlash('success', 'You successfully transferred ' . number_format($amount) . " credits to {$recipientName}.");
-            return true;
+            return ServiceResponse::success('You successfully transferred ' . number_format($amount) . " credits to {$recipientName}.");
 
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Transfer Error: ' . $e->getMessage());
-            $this->session->setFlash('error', 'A database error occurred during the transfer.');
-            return false;
+            return ServiceResponse::error('A database error occurred during the transfer.');
         }
     }
 }

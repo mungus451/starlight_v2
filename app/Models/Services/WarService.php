@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
@@ -15,11 +15,11 @@ use PDO;
 /**
  * Handles all business logic for Alliance Wars.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class WarService
 {
     private PDO $db;
-    private Session $session;
     
     private UserRepository $userRepo;
     private AllianceRepository $allianceRepo;
@@ -30,9 +30,9 @@ class WarService
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param UserRepository $userRepo
      * @param AllianceRepository $allianceRepo
      * @param AllianceRoleRepository $roleRepo
@@ -42,7 +42,6 @@ class WarService
      */
     public function __construct(
         PDO $db,
-        Session $session,
         UserRepository $userRepo,
         AllianceRepository $allianceRepo,
         AllianceRoleRepository $roleRepo,
@@ -51,7 +50,6 @@ class WarService
         WarHistoryRepository $warHistoryRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->userRepo = $userRepo;
         $this->allianceRepo = $allianceRepo;
         $this->roleRepo = $roleRepo;
@@ -69,7 +67,7 @@ class WarService
      * @param string $casusBelli
      * @param string $goalKey
      * @param int $goalThreshold
-     * @return bool
+     * @return ServiceResponse
      */
     public function declareWar(
         int $adminUserId,
@@ -78,51 +76,44 @@ class WarService
         string $casusBelli,
         string $goalKey,
         int $goalThreshold
-    ): bool {
+    ): ServiceResponse {
         $adminUser = $this->userRepo->findById($adminUserId);
         if (!$adminUser || $adminUser->alliance_id === null) {
-            $this->session->setFlash('error', 'You are not in an alliance.');
-            return false;
+            return ServiceResponse::error('You are not in an alliance.');
         }
         
         $declarerAllianceId = $adminUser->alliance_id;
 
         // 1. Permission Check
         if (!$this->checkPermission($adminUserId, $declarerAllianceId, 'can_declare_war')) {
-            $this->session->setFlash('error', 'You do not have permission to declare war.');
-            return false;
+            return ServiceResponse::error('You do not have permission to declare war.');
         }
 
         // 2. Validation
         if ($declarerAllianceId === $targetAllianceId) {
-            $this->session->setFlash('error', 'You cannot declare war on your own alliance.');
-            return false;
+            return ServiceResponse::error('You cannot declare war on your own alliance.');
         }
         if (empty(trim($name))) {
-            $this->session->setFlash('error', 'War name cannot be empty.');
-            return false;
+            return ServiceResponse::error('War name cannot be empty.');
         }
         if ($goalThreshold <= 0) {
-            $this->session->setFlash('error', 'Goal threshold must be a positive number.');
-            return false;
+            return ServiceResponse::error('Goal threshold must be a positive number.');
         }
         
         // 3. Check for existing active war
         $activeWar = $this->warRepo->findActiveWarBetween($declarerAllianceId, $targetAllianceId);
         if ($activeWar) {
-            $this->session->setFlash('error', 'There is already an active war between your alliances.');
-            return false;
+            return ServiceResponse::error('There is already an active war between your alliances.');
         }
         
         // 4. Create War
         $this->warRepo->createWar($name, $declarerAllianceId, $targetAllianceId, $casusBelli, $goalKey, $goalThreshold);
-        $this->session->setFlash('success', 'War has been successfully declared!');
-        return true;
+        return ServiceResponse::success('War has been successfully declared!');
     }
 
     /**
      * Logs a battle's results into the war system.
-     * This is called by AttackService *inside* its transaction.
+     * This is called by WarLoggerListener (Event System), so it returns void.
      *
      * @param int $battleReportId
      * @param User $attacker

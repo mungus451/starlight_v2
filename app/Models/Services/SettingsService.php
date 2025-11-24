@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\Session;
+use App\Core\ServiceResponse;
 use App\Models\Entities\User;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\SecurityRepository;
@@ -11,36 +11,33 @@ use PDO;
 /**
  * Handles all business logic for the Settings page.
  * * Refactored for Strict Dependency Injection.
+ * * Decoupled from Session: Returns ServiceResponse.
  */
 class SettingsService
 {
     private PDO $db;
-    private Session $session;
     private UserRepository $userRepo;
     private SecurityRepository $securityRepo;
     private string $storageRoot;
 
     /**
      * DI Constructor.
+     * REMOVED: Session dependency.
      *
      * @param PDO $db
-     * @param Session $session
      * @param UserRepository $userRepo
      * @param SecurityRepository $securityRepo
      */
     public function __construct(
         PDO $db,
-        Session $session,
         UserRepository $userRepo,
         SecurityRepository $securityRepo
     ) {
         $this->db = $db;
-        $this->session = $session;
         $this->userRepo = $userRepo;
         $this->securityRepo = $securityRepo;
 
         // Define storage root relative to this file
-        // __DIR__ is /app/Models/Services, so ../../../ is the project root
         $this->storageRoot = realpath(__DIR__ . '/../../../storage');
     }
 
@@ -62,28 +59,26 @@ class SettingsService
     }
 
     /**
-     * Updates user profile information, now handling file uploads.
+     * Updates user profile information, including file uploads.
      *
      * @param int $userId
      * @param string $bio
      * @param array $file The $_FILES['profile_picture'] array
      * @param string $phone
      * @param bool $removePhoto True if the "Remove Photo" checkbox was checked
-     * @return bool True on success
+     * @return ServiceResponse
      */
-    public function updateProfile(int $userId, string $bio, array $file, string $phone, bool $removePhoto): bool
+    public function updateProfile(int $userId, string $bio, array $file, string $phone, bool $removePhoto): ServiceResponse
     {
-        // Simple validation
+        // Validation
         if (mb_strlen($bio) > 500) {
-            $this->session->setFlash('error', 'Bio must be 500 characters or less.');
-            return false;
+            return ServiceResponse::error('Bio must be 500 characters or less.');
         }
 
-        // Get the current user data *before* making changes
+        // Get current user data
         $user = $this->userRepo->findById($userId);
         if (!$user) {
-            $this->session->setFlash('error', 'User not found.');
-            return false;
+            return ServiceResponse::error('User not found.');
         }
         
         $currentPfpFilename = $user->profile_picture_url;
@@ -94,75 +89,148 @@ class SettingsService
             $this->deleteAvatarFile($currentPfpFilename);
             $newPfpFilename = null;
         }
-        
         // Logic Branch 2: New File Uploaded
         elseif (isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
-            $validatedFilename = $this->processUploadedAvatar($file, $userId, $currentPfpFilename);
+            // Helper now returns array [success (bool), result (string|null)]
+            $uploadResult = $this->processUploadedAvatar($file, $userId, $currentPfpFilename);
             
-            if ($validatedFilename === null) {
-                return false; // processUploadedAvatar sets its own flash error
+            if (!$uploadResult['success']) {
+                return ServiceResponse::error($uploadResult['message']);
             }
-            $newPfpFilename = $validatedFilename;
+            $newPfpFilename = $uploadResult['filename'];
+        }
+        // Check for upload errors other than "no file"
+        elseif (isset($file['error']) && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+            return ServiceResponse::error('An error occurred during file upload. Code: ' . $file['error']);
         }
 
         // Update DB
         if ($this->userRepo->updateProfile($userId, $bio, $newPfpFilename, $phone)) {
-            $this->session->setFlash('success', 'Profile updated successfully.');
-            return true;
+            return ServiceResponse::success('Profile updated successfully.');
         }
 
-        $this->session->setFlash('error', 'A database error occurred.');
-        return false;
+        return ServiceResponse::error('A database error occurred.');
     }
 
     /**
-     * Validates and saves a new avatar, and deletes the old one.
+     * Updates a user's email after verifying their password.
      */
-    private function processUploadedAvatar(array $file, int $userId, ?string $currentPfpFilename): ?string
+    public function updateEmail(int $userId, string $newEmail, string $password): ServiceResponse
     {
-        // 1. Validate Upload Error
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $this->session->setFlash('error', 'An error occurred during file upload. Code: ' . $file['error']);
-            return null;
+        $verification = $this->verifyPassword($userId, $password);
+        if (!$verification['success']) {
+            return ServiceResponse::error($verification['message']);
         }
 
-        // 2. Validate Size (2MB limit)
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            return ServiceResponse::error('Invalid email format.');
+        }
+
+        $existing = $this->userRepo->findByEmail($newEmail);
+        if ($existing && $existing->id !== $userId) {
+            return ServiceResponse::error('That email address is already in use.');
+        }
+
+        if ($this->userRepo->updateEmail($userId, $newEmail)) {
+            return ServiceResponse::success('Email updated successfully.');
+        }
+
+        return ServiceResponse::error('A database error occurred.');
+    }
+
+    /**
+     * Updates a user's password after verifying their old one.
+     */
+    public function updatePassword(int $userId, string $oldPass, string $newPass, string $confirmPass): ServiceResponse
+    {
+        $verification = $this->verifyPassword($userId, $oldPass);
+        if (!$verification['success']) {
+            return ServiceResponse::error($verification['message']);
+        }
+
+        if (strlen($newPass) < 3) {
+            return ServiceResponse::error('New password must be at least 3 characters long.');
+        }
+
+        if ($newPass !== $confirmPass) {
+            return ServiceResponse::error('New passwords do not match.');
+        }
+
+        $newPasswordHash = password_hash($newPass, PASSWORD_DEFAULT);
+
+        if ($this->userRepo->updatePassword($userId, $newPasswordHash)) {
+            return ServiceResponse::success('Password updated successfully.');
+        }
+
+        return ServiceResponse::error('A database error occurred.');
+    }
+
+    /**
+     * Updates a user's security questions after verifying their password.
+     */
+    public function updateSecurityQuestions(int $userId, string $q1, string $a1, string $q2, string $a2, string $password): ServiceResponse
+    {
+        $verification = $this->verifyPassword($userId, $password);
+        if (!$verification['success']) {
+            return ServiceResponse::error($verification['message']);
+        }
+
+        if (empty($q1) || empty($a1) || empty($q2) || empty($a2)) {
+            return ServiceResponse::error('All questions and answers must be filled out.');
+        }
+
+        $a1_hash = password_hash($a1, PASSWORD_DEFAULT);
+        $a2_hash = password_hash($a2, PASSWORD_DEFAULT);
+
+        if ($this->securityRepo->createOrUpdate($userId, $q1, $a1_hash, $q2, $a2_hash)) {
+            return ServiceResponse::success('Security questions updated successfully.');
+        }
+
+        return ServiceResponse::error('A database error occurred.');
+    }
+
+    // --- Helpers ---
+
+    /**
+     * Validates and saves a new avatar, and deletes the old one.
+     * Returns an array structure to indicate status without Session side-effects.
+     * @return array{success: bool, message: string|null, filename: string|null}
+     */
+    private function processUploadedAvatar(array $file, int $userId, ?string $currentPfpFilename): array
+    {
+        // 1. Validate Size (2MB limit)
         if ($file['size'] > 2 * 1024 * 1024) {
-            $this->session->setFlash('error', 'File is too large. Maximum size is 2MB.');
-            return null;
+            return ['success' => false, 'message' => 'File is too large. Maximum size is 2MB.', 'filename' => null];
         }
 
-        // 3. Validate Type
+        // 2. Validate Type
         $imageInfo = @getimagesize($file['tmp_name']);
         if ($imageInfo === false) {
-            $this->session->setFlash('error', 'Uploaded file is not a valid image.');
-            return null;
+            return ['success' => false, 'message' => 'Uploaded file is not a valid image.', 'filename' => null];
         }
 
         $mime = $imageInfo['mime'];
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
         if (!in_array($mime, $allowedMimes)) {
-            $this->session->setFlash('error', 'Invalid file type. Allowed types: JPEG, PNG, GIF, WebP, AVIF.');
-            return null;
+            return ['success' => false, 'message' => 'Invalid file type. Allowed types: JPEG, PNG, GIF, WebP, AVIF.', 'filename' => null];
         }
         
-        // 4. Generate New Path
+        // 3. Generate New Path
         $extension = image_type_to_extension($imageInfo[2]);
         $filename = "user_{$userId}_" . time() . $extension;
         
         $uploadDir = $this->storageRoot . '/avatars/';
         $filePath = $uploadDir . $filename;
 
-        // 5. Move File
+        // 4. Move File
         if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-            $this->session->setFlash('error', 'Failed to save uploaded file. Check server permissions.');
-            return null;
+            return ['success' => false, 'message' => 'Failed to save uploaded file. Check server permissions.', 'filename' => null];
         }
         
-        // 6. Delete old file
+        // 5. Delete old file
         $this->deleteAvatarFile($currentPfpFilename);
 
-        return $filename;
+        return ['success' => true, 'message' => null, 'filename' => $filename];
     }
 
     /**
@@ -182,110 +250,21 @@ class SettingsService
     }
 
     /**
-     * Updates a user's email after verifying their password.
-     */
-    public function updateEmail(int $userId, string $newEmail, string $password): bool
-    {
-        $user = $this->verifyPassword($userId, $password);
-        if (is_null($user)) {
-            return false;
-        }
-
-        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-            $this->session->setFlash('error', 'Invalid email format.');
-            return false;
-        }
-
-        $existing = $this->userRepo->findByEmail($newEmail);
-        if ($existing && $existing->id !== $userId) {
-            $this->session->setFlash('error', 'That email address is already in use.');
-            return false;
-        }
-
-        if ($this->userRepo->updateEmail($userId, $newEmail)) {
-            $this->session->setFlash('success', 'Email updated successfully.');
-            return true;
-        }
-
-        $this->session->setFlash('error', 'A database error occurred.');
-        return false;
-    }
-
-    /**
-     * Updates a user's password after verifying their old one.
-     */
-    public function updatePassword(int $userId, string $oldPass, string $newPass, string $confirmPass): bool
-    {
-        $user = $this->verifyPassword($userId, $oldPass);
-        if (is_null($user)) {
-            return false;
-        }
-
-        if (strlen($newPass) < 3) {
-            $this->session->setFlash('error', 'New password must be at least 3 characters long.');
-            return false;
-        }
-
-        if ($newPass !== $confirmPass) {
-            $this->session->setFlash('error', 'New passwords do not match.');
-            return false;
-        }
-
-        $newPasswordHash = password_hash($newPass, PASSWORD_DEFAULT);
-
-        if ($this->userRepo->updatePassword($userId, $newPasswordHash)) {
-            $this->session->setFlash('success', 'Password updated successfully.');
-            return true;
-        }
-
-        $this->session->setFlash('error', 'A database error occurred.');
-        return false;
-    }
-
-    /**
-     * Updates a user's security questions after verifying their password.
-     */
-    public function updateSecurityQuestions(int $userId, string $q1, string $a1, string $q2, string $a2, string $password): bool
-    {
-        $user = $this->verifyPassword($userId, $password);
-        if (is_null($user)) {
-            return false;
-        }
-
-        if (empty($q1) || empty($a1) || empty($q2) || empty($a2)) {
-            $this->session->setFlash('error', 'All questions and answers must be filled out.');
-            return false;
-        }
-
-        $a1_hash = password_hash($a1, PASSWORD_DEFAULT);
-        $a2_hash = password_hash($a2, PASSWORD_DEFAULT);
-
-        if ($this->securityRepo->createOrUpdate($userId, $q1, $a1_hash, $q2, $a2_hash)) {
-            $this->session->setFlash('success', 'Security questions updated successfully.');
-            return true;
-        }
-
-        $this->session->setFlash('error', 'A database error occurred.');
-        return false;
-    }
-
-    /**
      * Security Gate: Verifies a user's password.
+     * @return array{success: bool, message: string|null, user: User|null}
      */
-    private function verifyPassword(int $userId, string $password): ?User
+    private function verifyPassword(int $userId, string $password): array
     {
         if (empty($password)) {
-            $this->session->setFlash('error', 'Please enter your current password to make this change.');
-            return null;
+            return ['success' => false, 'message' => 'Please enter your current password to make this change.', 'user' => null];
         }
 
         $user = $this->userRepo->findById($userId);
 
         if (!$user || !password_verify($password, $user->passwordHash)) {
-            $this->session->setFlash('error', 'Incorrect current password.');
-            return null;
+            return ['success' => false, 'message' => 'Incorrect current password.', 'user' => null];
         }
 
-        return $user;
+        return ['success' => true, 'message' => null, 'user' => $user];
     }
 }

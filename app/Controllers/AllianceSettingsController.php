@@ -11,7 +11,7 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles alliance settings and profile configuration.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class AllianceSettingsController extends BaseController
 {
@@ -66,13 +66,21 @@ class AllianceSettingsController extends BaseController
         // Convert checkbox state to boolean
         $isJoinable = isset($data['is_joinable']) && $data['is_joinable'] == '1';
 
-        $this->mgmtService->updateProfile(
+        // 3. Execute Service
+        $response = $this->mgmtService->updateProfile(
             $adminId, 
             $allianceId, 
             $data['description'] ?? '', 
             $data['profile_picture_url'] ?? '', 
             $isJoinable
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }

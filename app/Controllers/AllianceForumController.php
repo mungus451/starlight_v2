@@ -13,7 +13,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance Forum.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class AllianceForumController extends BaseController
 {
@@ -52,7 +52,6 @@ class AllianceForumController extends BaseController
     /**
      * Gets the viewer's user and alliance role.
      * Redirects if the user is not in an alliance.
-     * @return array|null [user, role, allianceId] or null on failure
      */
     private function getViewerData(): ?array
     {
@@ -86,7 +85,7 @@ class AllianceForumController extends BaseController
         $data = $this->forumService->getForumData($viewerData['allianceId'], $page);
 
         $data['layoutMode'] = 'full';
-        $data['allianceId'] = $viewerData['allianceId']; // Pass for "Back" button
+        $data['allianceId'] = $viewerData['allianceId'];
         $data['canManageForum'] = $viewerData['role'] && $viewerData['role']->can_manage_forum;
 
         $this->render('alliance/forum_index.php', $data + ['title' => 'Alliance Forum']);
@@ -104,7 +103,9 @@ class AllianceForumController extends BaseController
         $data = $this->forumService->getTopicData($topicId, $viewerData['allianceId']);
 
         if ($data === null) {
-            $this->redirect('/alliance/forum'); // Service sets flash error
+            // Service returns null if not found/unauthorized
+            $this->session->setFlash('error', 'Topic not found or access denied.');
+            $this->redirect('/alliance/forum');
             return;
         }
 
@@ -153,17 +154,19 @@ class AllianceForumController extends BaseController
         }
 
         // 3. Execute Logic
-        $newTopicId = $this->forumService->createTopic(
+        $response = $this->forumService->createTopic(
             $viewerData['user']->id, 
             $viewerData['allianceId'], 
             $data['title'], 
             $data['content']
         );
 
-        if ($newTopicId !== null) {
-            $this->redirect('/alliance/forum/topic/' . $newTopicId);
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->redirect('/alliance/forum/topic/' . $response->data['topic_id']);
         } else {
-            $this->redirect('/alliance/forum/create'); // Service sets flash error
+            $this->session->setFlash('error', $response->message);
+            $this->redirect('/alliance/forum/create');
         }
     }
 
@@ -191,9 +194,15 @@ class AllianceForumController extends BaseController
         }
 
         // 3. Execute Logic
-        $this->forumService->createPost($viewerData['user']->id, $topicId, $data['content']);
+        $response = $this->forumService->createPost($viewerData['user']->id, $topicId, $data['content']);
         
-        // Redirect back to the topic
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/forum/topic/' . $topicId);
     }
 
@@ -206,20 +215,22 @@ class AllianceForumController extends BaseController
         if ($viewerData === null) return;
 
         $topicId = (int)($vars['id'] ?? 0);
+        $data = $this->validate($_POST, ['csrf_token' => 'required']);
         
-        // 1. Validate Input (CSRF)
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required'
-        ]);
-        
-        // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/forum/topic/' . $topicId);
             return;
         }
 
-        $this->forumService->toggleTopicPin($viewerData['user']->id, $topicId);
+        $response = $this->forumService->toggleTopicPin($viewerData['user']->id, $topicId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/forum/topic/' . $topicId);
     }
 
@@ -232,20 +243,22 @@ class AllianceForumController extends BaseController
         if ($viewerData === null) return;
 
         $topicId = (int)($vars['id'] ?? 0);
+        $data = $this->validate($_POST, ['csrf_token' => 'required']);
         
-        // 1. Validate Input (CSRF)
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required'
-        ]);
-        
-        // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/forum/topic/' . $topicId);
             return;
         }
 
-        $this->forumService->toggleTopicLock($viewerData['user']->id, $topicId);
+        $response = $this->forumService->toggleTopicLock($viewerData['user']->id, $topicId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/forum/topic/' . $topicId);
     }
 }

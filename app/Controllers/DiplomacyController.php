@@ -13,7 +13,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 
 /**
  * Handles all HTTP requests for the Alliance Diplomacy page.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored to consume ServiceResponse objects.
  */
 class DiplomacyController extends BaseController
 {
@@ -116,12 +116,19 @@ class DiplomacyController extends BaseController
         }
 
         // 3. Execute Logic
-        $this->diplomacyService->proposeTreaty(
+        $response = $this->diplomacyService->proposeTreaty(
             $viewerData['user']->id, 
             $data['target_alliance_id'], 
             $data['treaty_type'], 
             $data['terms'] ?? ''
         );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
         
         $this->redirect('/alliance/diplomacy');
     }
@@ -147,7 +154,14 @@ class DiplomacyController extends BaseController
         }
 
         $treatyId = (int)($vars['id'] ?? 0);
-        $this->diplomacyService->acceptTreaty($viewerData['user']->id, $treatyId);
+        $response = $this->diplomacyService->acceptTreaty($viewerData['user']->id, $treatyId);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/diplomacy');
     }
 
@@ -159,12 +173,7 @@ class DiplomacyController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
 
-        // 1. Validate Input
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required'
-        ]);
-
-        // 2. Validate CSRF
+        $data = $this->validate($_POST, ['csrf_token' => 'required']);
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/diplomacy');
@@ -172,7 +181,14 @@ class DiplomacyController extends BaseController
         }
 
         $treatyId = (int)($vars['id'] ?? 0);
-        $this->diplomacyService->endTreaty($viewerData['user']->id, $treatyId, 'decline');
+        $response = $this->diplomacyService->endTreaty($viewerData['user']->id, $treatyId, 'decline');
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/diplomacy');
     }
 
@@ -184,12 +200,7 @@ class DiplomacyController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
 
-        // 1. Validate Input
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required'
-        ]);
-
-        // 2. Validate CSRF
+        $data = $this->validate($_POST, ['csrf_token' => 'required']);
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/diplomacy');
@@ -197,7 +208,14 @@ class DiplomacyController extends BaseController
         }
 
         $treatyId = (int)($vars['id'] ?? 0);
-        $this->diplomacyService->endTreaty($viewerData['user']->id, $treatyId, 'break');
+        $response = $this->diplomacyService->endTreaty($viewerData['user']->id, $treatyId, 'break');
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/diplomacy');
     }
 
@@ -209,20 +227,25 @@ class DiplomacyController extends BaseController
         $viewerData = $this->getViewerData();
         if ($viewerData === null) return;
 
-        // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'target_alliance_id' => 'required|int'
         ]);
 
-        // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/diplomacy');
             return;
         }
 
-        $this->diplomacyService->declareRivalry($viewerData['user']->id, $data['target_alliance_id']);
+        $response = $this->diplomacyService->declareRivalry($viewerData['user']->id, $data['target_alliance_id']);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
         $this->redirect('/alliance/diplomacy');
     }
 }

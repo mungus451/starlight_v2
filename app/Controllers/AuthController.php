@@ -11,7 +11,9 @@ use App\Models\Repositories\StatsRepository;
 
 /**
  * Handles Authentication (Login, Register, Logout).
- * * Refactored for Strict Dependency Injection & Centralized Validation.
+ * * Refactored for Strict Dependency Injection.
+ * * Decoupled: Consumes ServiceResponse.
+ * * RESPONSIBILITY SHIFT: This controller now manages Session persistence.
  */
 class AuthController extends BaseController
 {
@@ -44,7 +46,8 @@ class AuthController extends BaseController
      */
     public function showLogin(): void
     {
-        if ($this->authService->isLoggedIn()) {
+        // Direct Session Check (Service no longer handles state)
+        if ($this->session->has('user_id')) {
             $this->redirect('/dashboard');
             return;
         }
@@ -58,24 +61,36 @@ class AuthController extends BaseController
     public function handleLogin(): void
     {
         // 1. Validate Input
-        // This automatically handles errors and redirects if validation fails
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'email' => 'required|email',
             'password' => 'required'
         ]);
 
-        // 2. Validate CSRF (Manual check required until Middleware handles it)
+        // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token. Please try again.');
             $this->redirect('/login');
             return;
         }
 
-        // 3. Execute Logic
-        if ($this->authService->login($data['email'], $data['password'])) {
+        // 3. Execute Service Logic
+        $response = $this->authService->login($data['email'], $data['password']);
+
+        // 4. Handle Response & Manage State
+        if ($response->isSuccess()) {
+            $user = $response->data['user'];
+
+            // Security: Prevent Session Fixation
+            session_regenerate_id(true);
+            
+            // Set Authentication State
+            $this->session->set('user_id', $user->id);
+            $this->session->set('alliance_id', $user->alliance_id);
+
             $this->redirect('/dashboard');
         } else {
+            $this->session->setFlash('error', $response->message);
             $this->redirect('/login');
         }
     }
@@ -85,7 +100,7 @@ class AuthController extends BaseController
      */
     public function showRegister(): void
     {
-        if ($this->authService->isLoggedIn()) {
+        if ($this->session->has('user_id')) {
             $this->redirect('/dashboard');
             return;
         }
@@ -114,15 +129,28 @@ class AuthController extends BaseController
             return;
         }
 
-        // 3. Execute Logic
-        if ($this->authService->register(
+        // 3. Execute Service Logic
+        $response = $this->authService->register(
             $data['email'], 
             $data['character_name'], 
             $data['password'], 
             $data['confirm_password']
-        )) {
+        );
+
+        // 4. Handle Response & Manage State
+        if ($response->isSuccess()) {
+            $newUserId = $response->data['user_id'];
+
+            // Security: Prevent Session Fixation
+            session_regenerate_id(true);
+
+            // Set Authentication State (New users have no alliance)
+            $this->session->set('user_id', $newUserId);
+            $this->session->set('alliance_id', null);
+
             $this->redirect('/dashboard');
         } else {
+            $this->session->setFlash('error', $response->message);
             $this->redirect('/register');
         }
     }
@@ -132,8 +160,15 @@ class AuthController extends BaseController
      */
     public function handleLogout(): void
     {
-        $this->authService->logout();
-        $this->session->setFlash('success', 'You have been logged out.');
+        // Directly destroy the session
+        $this->session->destroy();
+        
+        // Rotate CSRF token on logout for safety
+        $this->csrfService->rotateToken();
+        
+        // Note: We can't set a flash message here because the session was just destroyed.
+        // If a message is required, we'd need to start a fresh session immediately.
+        // For now, clean redirect.
         $this->redirect('/login');
     }
 }
