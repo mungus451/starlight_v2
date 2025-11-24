@@ -16,6 +16,6 @@
         }
     },
     "scripts": {
-        "phinx": "vendor/bin/phinx --configuration=config/phinx.php"
+        "phinx": "vendor/bin/phinx"
     }
 }
