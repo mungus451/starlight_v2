@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\ArmoryRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
@@ -13,8 +13,8 @@ use Throwable;
 
 /**
  * Handles all business logic for the Armory (Manufacturing & Equipping).
- * * Refactored to remove Session dependency.
- * * Now returns ServiceResponse objects.
+ * * REFACTORED PHASE 2: Controller Integrity.
+ * * Methods now return data payloads to prevent Controllers from re-querying Repositories.
  */
 class ArmoryService
 {
@@ -28,17 +28,6 @@ class ArmoryService
     
     private array $armoryConfig;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     * 
-     * @param PDO $db
-     * @param Config $config
-     * @param ArmoryRepository $armoryRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     */
     public function __construct(
         PDO $db,
         Config $config,
@@ -60,11 +49,6 @@ class ArmoryService
 
     /**
      * Gets all data needed to render the full Armory UI.
-     * This method remains largely unchanged as it is a Read operation,
-     * but we ensure it is purely data fetching.
-     *
-     * @param int $userId
-     * @return array
      */
     public function getArmoryData(int $userId): array
     {
@@ -129,11 +113,12 @@ class ArmoryService
 
     /**
      * Attempts to manufacture (or upgrade) a specific quantity of an item.
+     * Returns updated resource and inventory state for immediate UI update.
      *
      * @param int $userId
      * @param string $itemKey
      * @param int $quantity
-     * @return ServiceResponse
+     * @return ServiceResponse Data: ['new_credits', 'new_owned', 'item_key']
      */
     public function manufactureItem(int $userId, string $itemKey, int $quantity): ServiceResponse
     {
@@ -185,9 +170,13 @@ class ArmoryService
         
         // 4. Execute Transaction
         $this->db->beginTransaction();
+        $newCredits = 0;
+        $newOwned = 0;
+
         try {
             // Deduct Credits
-            $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
+            $newCredits = $userResources->credits - $totalCost;
+            $this->resourceRepo->updateCredits($userId, $newCredits);
 
             // Deduct Prerequisite Item
             if ($prereqKey) {
@@ -196,8 +185,14 @@ class ArmoryService
 
             // Add New Item
             $this->armoryRepo->updateItemQuantity($userId, $itemKey, +$quantity);
-
+            
+            // Commit
             $this->db->commit();
+            
+            // Calculate new owned count locally to save a query
+            $currentOwned = $inventory[$itemKey] ?? 0;
+            $newOwned = $currentOwned + $quantity;
+
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
@@ -213,17 +208,15 @@ class ArmoryService
             $msg .= " (Charisma saved you " . number_format($saved) . " credits)";
         }
 
-        return ServiceResponse::success($msg);
+        return ServiceResponse::success($msg, [
+            'new_credits' => $newCredits,
+            'new_owned' => $newOwned,
+            'item_key' => $itemKey
+        ]);
     }
 
     /**
      * Equips an item to a unit's loadout slot.
-     *
-     * @param int $userId
-     * @param string $unitKey
-     * @param string $categoryKey
-     * @param string $itemKey
-     * @return ServiceResponse
      */
     public function equipItem(int $userId, string $unitKey, string $categoryKey, string $itemKey): ServiceResponse
     {
@@ -254,7 +247,7 @@ class ArmoryService
         return ServiceResponse::success("{$item['name']} is now the standard issue for all {$title}.");
     }
 
-    // --- Helpers (unchanged) ---
+    // --- Helpers (Logic only) ---
 
     public function getAggregateBonus(int $userId, string $unitKey, string $statType, int $unitCount): int
     {
