@@ -1,101 +1,136 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Models\Services;
 
-use App\Core\Session;
-use App\Core\CSRFService;
-use App\Core\Validator;
-use App\Models\Services\StructureService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
-use App\Presenters\StructurePresenter;
+use App\Core\Config;
+use App\Core\ServiceResponse;
+use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository;
+use PDO;
+use Throwable;
 
 /**
- * Handles all HTTP requests for the Structures page.
- * * Refactored to use StructurePresenter for View Logic.
+ * Handles business logic for Personal Structures (Upgrades & Costs).
+ * * Fixes Fatal Error: Corrects class name and namespace.
+ * * Implements logic previously mixed in Controller/View.
  */
-class StructureController extends BaseController
+class StructureService
 {
-    private StructureService $structureService;
-    private StructurePresenter $presenter;
+    private PDO $db;
+    private Config $config;
+    private ResourceRepository $resourceRepo;
+    private StructureRepository $structureRepo;
 
-    /**
-     * DI Constructor.
-     *
-     * @param StructureService $structureService
-     * @param StructurePresenter $presenter
-     * @param Session $session
-     * @param CSRFService $csrfService
-     * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
-     */
     public function __construct(
-        StructureService $structureService,
-        StructurePresenter $presenter,
-        Session $session,
-        CSRFService $csrfService,
-        Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        PDO $db,
+        Config $config,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
-        $this->structureService = $structureService;
-        $this->presenter = $presenter;
+        $this->db = $db;
+        $this->config = $config;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
     }
 
     /**
-     * Displays the main structures page.
+     * Retrieves raw data for the Structures page.
+     *
+     * @param int $userId
+     * @return array
      */
-    public function show(): void
+    public function getStructureData(int $userId): array
     {
-        $userId = $this->session->get('user_id');
+        $resources = $this->resourceRepo->findByUserId($userId);
+        $structures = $this->structureRepo->findByUserId($userId);
         
-        // 1. Get raw data from Service
-        $rawData = $this->structureService->getStructureData($userId);
+        // Load Configurations for calculations
+        $structureConfig = $this->config->get('game_balance.structures', []);
+        
+        // Calculate Costs for Next Levels
+        $costs = [];
+        foreach ($structureConfig as $key => $data) {
+            $currentLevel = $structures->{$key . '_level'} ?? 0;
+            $costs[$key] = $this->calculateCost($data['base_cost'], $data['multiplier'], $currentLevel);
+        }
 
-        // 2. Pass raw data to Presenter to get View-Ready data
-        $groupedStructures = $this->presenter->present($rawData);
-
-        // 3. Render View
-        // We pass 'resources' separately as it's needed for the header stats
-        $this->render('structures/show.php', [
-            'title' => 'Structures',
-            'layoutMode' => 'full',
-            'resources' => $rawData['resources'], 
-            'groupedStructures' => $groupedStructures
-        ]);
+        return [
+            'resources' => $resources,
+            'structures' => $structures,
+            'costs' => $costs,
+            'structureFormulas' => $structureConfig,
+            // Pass configs needed for Presenter text generation
+            'turnConfig' => $this->config->get('game_balance.turn_processor', []),
+            'attackConfig' => $this->config->get('game_balance.attack', []),
+            'spyConfig' => $this->config->get('game_balance.spy', [])
+        ];
     }
 
     /**
-     * Handles the structure upgrade form submission.
+     * Process a structure upgrade.
+     *
+     * @param int $userId
+     * @param string $structureKey
+     * @return ServiceResponse
      */
-    public function handleUpgrade(): void
+    public function upgradeStructure(int $userId, string $structureKey): ServiceResponse
     {
-        // 1. Validate Input
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required',
-            'structure_key' => 'required|string'
-        ]);
+        // 1. Validate Structure Existence
+        $structureConfig = $this->config->get('game_balance.structures.' . $structureKey);
+        if (!$structureConfig) {
+            return ServiceResponse::error('Invalid structure type.');
+        }
 
-        // 2. Validate CSRF
-        if (!$this->csrfService->validateToken($data['csrf_token'])) {
-            $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/structures');
-            return;
+        // 2. Get User Data
+        $resources = $this->resourceRepo->findByUserId($userId);
+        $structures = $this->structureRepo->findByUserId($userId);
+
+        // 3. Calculate Cost
+        // Column names in DB are typically "{key}_level" (e.g., fortification_level)
+        $dbColumn = $structureKey . '_level';
+        $currentLevel = $structures->{$dbColumn} ?? 0;
+        $nextLevel = $currentLevel + 1;
+        
+        $cost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
+
+        // 4. Check Affordability
+        if ($resources->credits < $cost) {
+            return ServiceResponse::error('Insufficient credits for upgrade.');
         }
-        
-        // 3. Execute Logic
-        $userId = $this->session->get('user_id');
-        $response = $this->structureService->upgradeStructure($userId, $data['structure_key']);
-        
-        // 4. Handle Response
-        if ($response->isSuccess()) {
-            $this->session->setFlash('success', $response->message);
-        } else {
-            $this->session->setFlash('error', $response->message);
+
+        // 5. Transaction
+        $this->db->beginTransaction();
+        try {
+            // Deduct Credits
+            $this->resourceRepo->updateCredits($userId, $resources->credits - $cost);
+            
+            // Update Structure Level
+            $this->structureRepo->updateStructureLevel($userId, $dbColumn, $nextLevel);
+
+            $this->db->commit();
+            
+            return ServiceResponse::success(
+                "{$structureConfig['name']} upgraded to Level {$nextLevel}!",
+                ['new_level' => $nextLevel, 'cost' => $cost]
+            );
+
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log('Structure Upgrade Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred.');
         }
-        
-        $this->redirect('/structures');
+    }
+
+    /**
+     * Calculate upgrade cost: Base * (Multiplier ^ CurrentLevel)
+     */
+    private function calculateCost(int $base, float $multiplier, int $currentLevel): int
+    {
+        if ($currentLevel === 0) {
+            return $base;
+        }
+        return (int)floor($base * pow($multiplier, $currentLevel));
     }
 }

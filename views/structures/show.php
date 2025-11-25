@@ -3,12 +3,16 @@
  * @var array $groupedStructures Formatted ViewModel from StructurePresenter.
  * @var \App\Models\Entities\UserResource $resources User's current resources.
  * @var string $csrf_token CSRF token for forms.
- * @var bool $canManage Whether the user has permission to upgrade (for Alliance view).
  */
-
-// If $canManage isn't set (Personal Structures), default to true.
-$canManage = $canManage ?? true;
 ?>
+
+<style>
+    /* Local override for structure specific cards if needed, otherwise inherits global */
+    .structure-card.max-level { 
+        border-color: var(--accent-2); 
+        box-shadow: var(--shadow), 0 0 15px rgba(249, 199, 79, 0.2); 
+    }
+</style>
 
 <div class="container-full">
     <h1>Strategic Structures</h1>
@@ -34,48 +38,52 @@ $canManage = $canManage ?? true;
 
     <!-- Structures Grid -->
     <div class="structures-grid">
-        <?php foreach ($groupedStructures as $categoryName => $structures): ?>
-
-            <div class="structure-category">
-                <h2><?= htmlspecialchars($categoryName) ?></h2>
+        <?php if (empty($groupedStructures)): ?>
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--muted);">
+                Configuration error: No structures found.
             </div>
+        <?php else: ?>
+            <?php foreach ($groupedStructures as $categoryName => $structures): ?>
 
-            <?php foreach ($structures as $struct): ?>
-                <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
-                    
-                    <!-- Card Header -->
-                    <div class="card-header-main">
-                        <span class="card-icon"><?= $struct['icon'] ?></span>
-                        <div class="card-title-group">
-                            <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
-                            <p class="card-level">Level: <?= $struct['current_level'] ?></p>
-                        </div>
-                    </div>
+                <div class="structure-category">
+                    <h2><?= htmlspecialchars($categoryName) ?></h2>
+                </div>
 
-                    <!-- Card Body -->
-                    <div class="card-body-main">
-                        <p class="card-description"><?= htmlspecialchars($struct['description']) ?></p>
+                <?php foreach ($structures as $struct): ?>
+                    <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
                         
-                        <?php if (!empty($struct['benefit_text'])): ?>
-                            <div class="card-benefit">
-                                <span class="icon">✨</span>
-                                <?= htmlspecialchars($struct['benefit_text']) ?>
+                        <!-- Card Header -->
+                        <div class="card-header-main">
+                            <span class="card-icon"><?= $struct['icon'] ?></span>
+                            <div class="card-title-group">
+                                <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
+                                <p class="card-level">Level: <?= $struct['current_level'] ?></p>
                             </div>
-                        <?php endif; ?>
+                        </div>
 
-                        <?php if (!$struct['is_max_level']): ?>
-                            <div class="card-costs-next">
-                                <div class="cost-item <?= !$struct['can_afford'] ? 'insufficient' : '' ?>">
-                                    <span class="icon">◎</span>
-                                    <span class="value"><?= $struct['cost_formatted'] ?></span>
-                                    <span>Credits</span>
+                        <!-- Card Body -->
+                        <div class="card-body-main">
+                            <p class="card-description"><?= htmlspecialchars($struct['description']) ?></p>
+                            
+                            <?php if (!empty($struct['benefit_text'])): ?>
+                                <div class="card-benefit">
+                                    <span class="icon">✨</span>
+                                    <?= htmlspecialchars($struct['benefit_text']) ?>
                                 </div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                            <?php endif; ?>
 
-                    <!-- Card Footer (Actions) -->
-                    <?php if ($canManage): ?>
+                            <?php if (!$struct['is_max_level']): ?>
+                                <div class="card-costs-next">
+                                    <div class="cost-item <?= !$struct['can_afford'] ? 'insufficient' : '' ?>">
+                                        <span class="icon">◎</span>
+                                        <span class="value"><?= $struct['cost_formatted'] ?></span>
+                                        <span>Credits</span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Card Footer (Actions) -->
                         <div class="card-footer-actions">
                             <?php if ($struct['is_max_level']): ?>
                                 <div class="max-level-badge">Max Level Achieved!</div>
@@ -90,10 +98,10 @@ $canManage = $canManage ?? true;
                                 </form>
                             <?php endif; ?>
                         </div>
-                    <?php endif; ?>
-                    
-                </div>
+                        
+                    </div>
+                <?php endforeach; ?>
             <?php endforeach; ?>
-        <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>

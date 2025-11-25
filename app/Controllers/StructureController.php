@@ -8,20 +8,22 @@ use App\Core\Validator;
 use App\Models\Services\StructureService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Presenters\StructurePresenter;
 
 /**
- * Handles all HTTP requests for the Structures page.
- * * Refactored for Strict Dependency Injection & Centralized Validation.
- * * Decoupled: Consumes ServiceResponse.
+ * Handles all HTTP requests for the Personal Structures page.
+ * * Refactored Phase 2.5: Integrates StructurePresenter to fix View variables.
  */
 class StructureController extends BaseController
 {
     private StructureService $structureService;
+    private StructurePresenter $presenter;
 
     /**
      * DI Constructor.
      *
      * @param StructureService $structureService
+     * @param StructurePresenter $presenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -30,6 +32,7 @@ class StructureController extends BaseController
      */
     public function __construct(
         StructureService $structureService,
+        StructurePresenter $presenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -38,6 +41,7 @@ class StructureController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
         $this->structureService = $structureService;
+        $this->presenter = $presenter;
     }
 
     /**
@@ -47,11 +51,20 @@ class StructureController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        $data = $this->structureService->getStructureData($userId);
+        // 1. Get raw data from Service
+        $rawData = $this->structureService->getStructureData($userId);
 
-        $data['layoutMode'] = 'full';
+        // 2. Pass raw data to Presenter to get View-Ready data ($groupedStructures)
+        $groupedStructures = $this->presenter->present($rawData);
 
-        $this->render('structures/show.php', $data + ['title' => 'Structures']);
+        // 3. Render View
+        // We pass 'resources' explicitly as it's used in the header stats card
+        $this->render('structures/show.php', [
+            'title' => 'Structures',
+            'layoutMode' => 'full',
+            'resources' => $rawData['resources'], 
+            'groupedStructures' => $groupedStructures
+        ]);
     }
 
     /**
@@ -59,24 +72,20 @@ class StructureController extends BaseController
      */
     public function handleUpgrade(): void
     {
-        // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'structure_key' => 'required|string'
         ]);
 
-        // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/structures');
             return;
         }
         
-        // 3. Execute Logic
         $userId = $this->session->get('user_id');
         $response = $this->structureService->upgradeStructure($userId, $data['structure_key']);
         
-        // 4. Handle Response
         if ($response->isSuccess()) {
             $this->session->setFlash('success', $response->message);
         } else {

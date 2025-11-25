@@ -43,7 +43,6 @@ class StructurePresenter
             $upgradeCost = $costs[$key] ?? 0;
             // If cost is 0 or missing in costs array, we assume max level logic depending on game rules,
             // but usually cost > 0 check is sufficient for "next level exists".
-            // Here we assume if it exists in formulas but cost is 0, it might be maxed.
             $isMaxLevel = ($upgradeCost === 0); 
             $canAfford = ($resources->credits >= $upgradeCost);
 
