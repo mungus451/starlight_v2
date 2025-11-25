@@ -23,10 +23,14 @@ StarlightDominion V2 is a browser-based space strategy MMO built with strict MVC
 Services in `/app/Models/Services/` contain ALL business logic:
 ```php
 // Services inject repositories and handle transactions
-public function __construct() {
-    $this->db = Database::getInstance();
-    $this->userRepository = new UserRepository($this->db);
-    $this->resourceRepository = new ResourceRepository($this->db);
+public function __construct(
+    PDO $db,
+    UserRepository $userRepository,
+    ResourceRepository $resourceRepository
+) {
+    $this->db = $db;
+    $this->userRepository = $userRepository;
+    $this->resourceRepository = $resourceRepository;
 }
 
 // Always wrap multi-table operations in transactions
