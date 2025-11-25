@@ -19,6 +19,9 @@ class PowerCalculatorService
     private ArmoryService $armoryService;
     private AllianceStructureRepository $allianceStructRepo;
     private AllianceStructureDefinitionRepository $structDefRepo;
+    
+    /** @var array|null Cached structure definitions keyed by structure_key */
+    private ?array $structureDefinitionsCache = null;
 
     /**
      * DI Constructor.
@@ -293,12 +296,8 @@ class PowerCalculatorService
             return 0;
         }
         
-        // Get all structure definitions to parse bonuses
-        $definitions = $this->structDefRepo->getAllDefinitions();
-        $defByKey = [];
-        foreach ($definitions as $def) {
-            $defByKey[$def->structure_key] = $def;
-        }
+        // Get cached structure definitions (keyed by structure_key)
+        $defByKey = $this->getStructureDefinitions();
         
         $citizenBonus = 0;
         $allBonusMultiplier = 0;
@@ -332,5 +331,25 @@ class PowerCalculatorService
         }
         
         return $citizenBonus;
+    }
+    
+    /**
+     * Gets structure definitions with service-level caching.
+     * Definitions are static data that rarely changes, so caching avoids
+     * redundant database queries during batch processing.
+     *
+     * @return array Structure definitions keyed by structure_key
+     */
+    private function getStructureDefinitions(): array
+    {
+        if ($this->structureDefinitionsCache === null) {
+            $definitions = $this->structDefRepo->getAllDefinitions();
+            $this->structureDefinitionsCache = [];
+            foreach ($definitions as $def) {
+                $this->structureDefinitionsCache[$def->structure_key] = $def;
+            }
+        }
+        
+        return $this->structureDefinitionsCache;
     }
 }
