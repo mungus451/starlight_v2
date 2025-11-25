@@ -63,7 +63,8 @@ class DashboardService
             $userId,
             $resources,
             $stats,
-            $structures
+            $structures,
+            $user->alliance_id  // Pass alliance ID for bonus calculations
         );
         
         $offenseBreakdown = $this->powerCalculator->calculateOffensePower(
