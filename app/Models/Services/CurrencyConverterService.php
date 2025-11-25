@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Entities\HouseFinance;
@@ -11,13 +11,15 @@ use Exception;
 
 /**
  * Handles the Black Market currency exchange logic.
- * * Refactored for Strict Dependency Injection.
- * * Standardized to return ServiceResponse.
+ * * Refactored Phase 3: Removed repository magic numbers.
  */
 class CurrencyConverterService
 {
     private const CONVERSION_RATE = 100.0; // 1 Naquadah Crystal = 100 Credits
     private const FEE_PERCENTAGE = 0.10;   // 10% conversion fee
+    
+    // Business Rule: The main system wallet is always ID 1
+    private const HOUSE_WALLET_ID = 1;
 
     private ResourceRepository $resourceRepository;
     private HouseFinanceRepository $houseFinanceRepository;
@@ -64,6 +66,7 @@ class CurrencyConverterService
             );
 
             $houseUpdateSuccess = $this->houseFinanceRepository->updateFinances(
+                self::HOUSE_WALLET_ID, // Explicit ID passed here
                 creditsAmount: $fee,
                 crystalsAmount: 0.0
             );
@@ -119,6 +122,7 @@ class CurrencyConverterService
             );
 
             $houseUpdateSuccess = $this->houseFinanceRepository->updateFinances(
+                self::HOUSE_WALLET_ID, // Explicit ID passed here
                 creditsAmount: 0.0,
                 crystalsAmount: $fee
             );
@@ -149,7 +153,9 @@ class CurrencyConverterService
     public function getConverterPageData(int $userId): array
     {
         $userResources = $this->resourceRepository->findByUserId($userId);
-        $houseFinances = $this->houseFinanceRepository->getHouseFinances();
+        
+        // Pass the specific wallet ID we want to view
+        $houseFinances = $this->houseFinanceRepository->getHouseFinances(self::HOUSE_WALLET_ID);
 
         if (!$houseFinances) {
             // Fallback DTO if missing

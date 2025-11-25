@@ -15,19 +15,18 @@ class HouseFinanceRepository
     }
 
     /**
-     * Retrieves the single HouseFinance record.
-     * Assumes there's always a record with ID 1.
+     * Retrieves a specific HouseFinance record by ID.
      *
-     * @return HouseFinance|null The HouseFinance entity or null if not found (should not happen).
+     * @param int $id The ID of the house wallet (usually 1).
+     * @return HouseFinance|null
      */
-    public function getHouseFinances(): ?HouseFinance
+    public function getHouseFinances(int $id): ?HouseFinance
     {
-        $stmt = $this->db->prepare("SELECT id, credits_taxed, crystals_taxed FROM house_finances WHERE id = 1");
-        $stmt->execute();
+        $stmt = $this->db->prepare("SELECT id, credits_taxed, crystals_taxed FROM house_finances WHERE id = ?");
+        $stmt->execute([$id]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$data) {
-            // This case should ideally not happen if the migration correctly inserted the initial row.
             return null;
         }
 
@@ -39,29 +38,29 @@ class HouseFinanceRepository
     }
 
     /**
-     * Updates the house finances by adding (or subtracting) the specified amounts to the existing totals.
-     * This method is designed to be called within a transaction if multiple updates are needed.
+     * Updates a specific house finance record.
      *
-     * @param float $creditsAmount The amount of credits to add (can be negative to subtract).
-     * @param float $crystalsAmount The amount of crystals to add (can be negative to subtract).
-     * @return bool True on success, false on failure.
+     * @param int $id The ID of the house wallet to update.
+     * @param float $creditsAmount Amount to add (positive) or subtract (negative).
+     * @param float $crystalsAmount Amount to add (positive) or subtract (negative).
+     * @return bool True on success.
      */
-    public function updateFinances(float $creditsAmount, float $crystalsAmount): bool
+    public function updateFinances(int $id, float $creditsAmount, float $crystalsAmount): bool
     {
         $stmt = $this->db->prepare("
             UPDATE house_finances
             SET
                 credits_taxed = credits_taxed + :credits_amount,
                 crystals_taxed = crystals_taxed + :crystals_amount
-            WHERE id = 1
+            WHERE id = :id
         ");
 
         $success = $stmt->execute([
             ':credits_amount' => $creditsAmount,
-            ':crystals_amount' => $crystalsAmount
+            ':crystals_amount' => $crystalsAmount,
+            ':id' => $id
         ]);
 
-        // Ensure the update was successful AND that a row was actually changed.
         return $success && $stmt->rowCount() > 0;
     }
 }
