@@ -18,11 +18,11 @@ docker compose logs -f
 docker compose down
 ```
 
-The application will be available at: http://localhost:8000
+The application will be available at: http://localhost:8080
 
 ## Services
 
-- **app**: PHP 8.3 + Apache web server (port 8000)
+- **app**: PHP 8.3 + Apache web server (port 8080)
 - **db**: MariaDB 11 database (port 3307)
 - **cron**: Background process for turn processing (runs every 5 minutes)
 
