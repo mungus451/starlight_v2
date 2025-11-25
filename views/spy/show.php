@@ -6,10 +6,7 @@
 /* @var array $targets */
 /* @var array $pagination */
 /* @var int $perPage */
-
-$spies_to_send = $resources->spies;
-$credit_cost = $costs['cost_per_spy'] * $spies_to_send;
-$turn_cost = $costs['attack_turn_cost'];
+/* @var array $operation  -- PRE-CALCULATED DATA -- */
 ?>
 
 <div class="container-full">
@@ -26,7 +23,9 @@ $turn_cost = $costs['attack_turn_cost'];
         </div>
         <div class="header-stat">
             <span>Operation Cost</span>
-            <strong><?= number_format($credit_cost) ?> C / <?= $turn_cost ?> Turn</strong>
+            <strong>
+                <?= number_format($operation['total_credit_cost']) ?> C / <?= $operation['turn_cost'] ?> Turn
+            </strong>
         </div>
         <div class="header-stat">
             <span>
@@ -124,15 +123,15 @@ $turn_cost = $costs['attack_turn_cost'];
                 <br>
                 <strong id="modal-target-name-display" style="font-size: 1.2rem; color: var(--accent-2); display: block; margin: 0.5rem 0;"></strong>
                 
-                Sends <strong><?= number_format($spies_to_send) ?> spies</strong>.
+                Sends <strong><?= number_format($operation['spies_to_send']) ?> spies</strong>.
                 <br>
-                Cost: <strong><?= number_format($credit_cost) ?> Credits</strong>.
+                Cost: <strong><?= number_format($operation['total_credit_cost']) ?> Credits</strong>.
             </div>
 
             <div style="display: flex; gap: 1rem;">
                 <button type="button" class="btn-submit" id="modal-cancel-btn" style="background: transparent; border: 1px solid var(--border);">Cancel</button>
-                <button type="submit" class="btn-submit btn-accent" style="flex-grow: 1;" <?= $spies_to_send <= 0 ? 'disabled' : '' ?>>
-                    <?= $spies_to_send <= 0 ? 'No Spies Available' : 'Launch' ?>
+                <button type="submit" class="btn-submit btn-accent" style="flex-grow: 1;" <?= $operation['spies_to_send'] <= 0 ? 'disabled' : '' ?>>
+                    <?= $operation['spies_to_send'] <= 0 ? 'No Spies Available' : 'Launch' ?>
                 </button>
             </div>
         </form>

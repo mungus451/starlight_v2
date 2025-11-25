@@ -1,31 +1,12 @@
 <?php
 // --- Helper variables from the controller ---
-/* @var \App\Models\Entities\Treaty[] $treaties */
+/* @var \App\Models\Entities\Treaty[] $pendingTreaties  (Proposed TO us) */
+/* @var \App\Models\Entities\Treaty[] $activeTreaties   (Currently active) */
 /* @var \App\Models\Entities\Rivalry[] $rivalries */
 /* @var \App\Models\Entities\Alliance[] $otherAlliances */
 /* @var \App\Models\Entities\User $viewer */
 /* @var bool $canManage */
 /* @var int $allianceId */
-
-// --- Filter treaties for display ---
-$proposed_to_us = [];
-$proposed_by_us = [];
-$active = [];
-$historical = [];
-
-foreach ($treaties as $treaty) {
-    if ($treaty->status === 'proposed') {
-        if ($treaty->alliance2_id === $allianceId) {
-            $proposed_to_us[] = $treaty;
-        } else {
-            $proposed_by_us[] = $treaty;
-        }
-    } elseif ($treaty->status === 'active') {
-        $active[] = $treaty;
-    } else {
-        $historical[] = $treaty;
-    }
-}
 ?>
 
 <div class="container-full">
@@ -88,12 +69,12 @@ foreach ($treaties as $treaty) {
         <div class="item-card grid-col-span-2">
             <h4>Diplomatic Relations</h4>
             
-            <h5 class="text-status-proposed" style="margin: 0.5rem 0;">Pending Proposals (<?= count($proposed_to_us) ?>)</h5>
+            <h5 class="text-status-proposed" style="margin: 0.5rem 0;">Pending Proposals (<?= count($pendingTreaties) ?>)</h5>
             <ul class="data-list">
-                <?php if (empty($proposed_to_us)): ?>
+                <?php if (empty($pendingTreaties)): ?>
                     <li class="data-item" style="color: var(--muted); justify-content: center;">No pending proposals received.</li>
                 <?php endif; ?>
-                <?php foreach ($proposed_to_us as $treaty): ?>
+                <?php foreach ($pendingTreaties as $treaty): ?>
                     <li class="data-item">
                         <div class="item-info">
                             <span class="role"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $treaty->treaty_type))) ?></span>
@@ -115,15 +96,17 @@ foreach ($treaties as $treaty) {
                 <?php endforeach; ?>
             </ul>
 
-            <h5 class="text-status-active" style="margin: 1.5rem 0 0.5rem 0;">Active Treaties (<?= count($active) ?>)</h5>
+            <h5 class="text-status-active" style="margin: 1.5rem 0 0.5rem 0;">Active Treaties (<?= count($activeTreaties) ?>)</h5>
             <ul class="data-list">
-                <?php if (empty($active)): ?>
+                <?php if (empty($activeTreaties)): ?>
                     <li class="data-item" style="color: var(--muted); justify-content: center;">No active treaties.</li>
                 <?php endif; ?>
-                <?php foreach ($active as $treaty): ?>
+                <?php foreach ($activeTreaties as $treaty): ?>
                     <li class="data-item">
                         <div class="item-info">
                             <span class="role"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $treaty->treaty_type))) ?></span>
+                            <!-- We need to show the NAME of the OTHER alliance. 
+                                 Since we are viewing allianceId, if alliance1_id is us, show alliance2_name. -->
                             <span class="name">With <?= htmlspecialchars($treaty->alliance1_id === $allianceId ? $treaty->alliance2_name : $treaty->alliance1_name) ?></span>
                         </div>
                         <?php if ($canManage): ?>

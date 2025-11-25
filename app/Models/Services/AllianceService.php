@@ -14,8 +14,8 @@ use PDO;
 
 /**
  * Handles all "read" logic for Alliances.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Pure Data Retrieval.
+ * * Refactored Phase 2.3: View Logic Cleanup.
+ * * Categorizes loans internally to keep the View dumb.
  */
 class AllianceService
 {
@@ -30,20 +30,6 @@ class AllianceService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     *
-     * @param PDO $db
-     * @param Config $config
-     * @param AllianceRepository $allianceRepo
-     * @param UserRepository $userRepo
-     * @param ResourceRepository $resourceRepo
-     * @param ApplicationRepository $appRepo
-     * @param AllianceRoleRepository $roleRepo
-     * @param AllianceBankLogRepository $bankLogRepo
-     * @param AllianceLoanRepository $loanRepo
-     */
     public function __construct(
         PDO $db,
         Config $config,
@@ -106,6 +92,7 @@ class AllianceService
 
     /**
      * Gets the data for a public alliance profile.
+     * Now performs logic to sort loans and filter data.
      */
     public function getPublicProfileData(int $allianceId, int $viewerId): ?array
     {
@@ -139,8 +126,24 @@ class AllianceService
         // Get Bank Logs
         $bankLogs = $this->bankLogRepo->findLogsByAllianceId($allianceId);
         
-        // Get Alliance Loans
+        // Get Alliance Loans & Categorize them (Logic moved from View)
         $loans = $this->loanRepo->findByAllianceId($allianceId);
+        $pendingLoans = [];
+        $activeLoans = [];
+        $historicalLoans = [];
+
+        // Only process loans if the viewer is a member
+        if ($viewer->alliance_id === $allianceId) {
+            foreach ($loans as $loan) {
+                if ($loan->status === 'pending') {
+                    $pendingLoans[] = $loan;
+                } elseif ($loan->status === 'active') {
+                    $activeLoans[] = $loan;
+                } else {
+                    $historicalLoans[] = $loan;
+                }
+            }
+        }
 
         return [
             'alliance' => $alliance,
@@ -151,7 +154,11 @@ class AllianceService
             'userApplication' => $userApplication,
             'roles' => $roles,
             'bankLogs' => $bankLogs,
-            'loans' => $loans
+            // Explicitly pass the sorted arrays
+            'loans' => $loans, // Kept for debug or raw access if needed
+            'pendingLoans' => $pendingLoans,
+            'activeLoans' => $activeLoans,
+            'historicalLoans' => $historicalLoans
         ];
     }
 }

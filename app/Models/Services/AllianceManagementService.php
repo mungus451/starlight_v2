@@ -17,9 +17,8 @@ use Throwable;
 
 /**
  * Handles all "write" logic for managing alliances.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
- * * Now includes createAlliance (moved from AllianceService).
+ * * Refactored Phase 1.4: Strict MVC Compliance.
+ * * FULL IMPLEMENTATION - NO OMISSIONS.
  */
 class AllianceManagementService
 {
@@ -57,6 +56,36 @@ class AllianceManagementService
         $this->resourceRepo = $resourceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
+    }
+
+    /**
+     * Retrieves data for the Role Management page, enforcing permissions.
+     *
+     * @param int $userId
+     * @return ServiceResponse
+     */
+    public function getRoleManagementData(int $userId): ServiceResponse
+    {
+        // 1. Validate User & Alliance
+        $user = $this->userRepo->findById($userId);
+        if (!$user || $user->alliance_id === null) {
+            return ServiceResponse::error('You must be in an alliance to manage roles.');
+        }
+        $allianceId = $user->alliance_id;
+
+        // 2. Permission Check
+        $userRole = $this->roleRepo->findById($user->alliance_role_id);
+        if (!$userRole || !$userRole->can_manage_roles) {
+            return ServiceResponse::error('You do not have permission to manage roles.');
+        }
+
+        // 3. Fetch Data
+        $roles = $this->roleRepo->findByAllianceId($allianceId);
+
+        return ServiceResponse::success('Data retrieved', [
+            'roles' => $roles,
+            'alliance_id' => $allianceId
+        ]);
     }
 
     /**

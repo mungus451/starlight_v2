@@ -3,7 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
@@ -18,8 +18,8 @@ use Throwable;
 
 /**
  * Handles all business logic for Espionage.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
+ * * Refactored Phase 2.1: View Logic cleanup.
+ * * Calculates costs internally before sending to view.
  */
 class SpyService
 {
@@ -37,22 +37,6 @@ class SpyService
     private LevelUpService $levelUpService;
     private NotificationService $notificationService;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     *
-     * @param PDO $db
-     * @param Config $config
-     * @param UserRepository $userRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     * @param SpyRepository $spyRepo
-     * @param ArmoryService $armoryService
-     * @param PowerCalculatorService $powerCalculatorService
-     * @param LevelUpService $levelUpService
-     * @param NotificationService $notificationService
-     */
     public function __construct(
         PDO $db,
         Config $config,
@@ -83,12 +67,23 @@ class SpyService
 
     /**
      * Gets all data needed to render the main spy page.
+     * Calculates operation costs based on current spy count.
+     *
+     * @param int $userId
+     * @param int $page
+     * @return array
      */
     public function getSpyData(int $userId, int $page): array
     {
         $resources = $this->resourceRepo->findByUserId($userId);
         $stats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.spy', []);
+
+        // --- LOGIC MOVED FROM VIEW TO SERVICE ---
+        $spiesToSend = $resources->spies;
+        $totalCreditCost = $costs['cost_per_spy'] * $spiesToSend;
+        $turnCost = $costs['attack_turn_cost'];
+        // ----------------------------------------
 
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
@@ -107,7 +102,13 @@ class SpyService
                 'currentPage' => $page,
                 'totalPages' => $totalPages
             ],
-            'perPage' => $perPage
+            'perPage' => $perPage,
+            // Pre-calculated values for the view
+            'operation' => [
+                'spies_to_send' => $spiesToSend,
+                'total_credit_cost' => $totalCreditCost,
+                'turn_cost' => $turnCost
+            ]
         ];
     }
 
@@ -138,12 +139,10 @@ class SpyService
 
     /**
      * Conducts an "all-in" espionage operation.
-     * 
-     * @return ServiceResponse
      */
     public function conductOperation(int $attackerId, string $targetName): ServiceResponse
     {
-        // --- 1. Validation (Target) ---
+        // 1. Validation (Target)
         if (empty(trim($targetName))) {
             return ServiceResponse::error('You must enter a target.');
         }
@@ -158,7 +157,7 @@ class SpyService
             return ServiceResponse::error('You cannot spy on yourself.');
         }
 
-        // --- 2. Get All Data ---
+        // 2. Get All Data
         $attacker = $this->userRepo->findById($attackerId);
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
@@ -169,7 +168,7 @@ class SpyService
         $config = $this->config->get('game_balance.spy');
         $xpConfig = $this->config->get('game_balance.xp.rewards');
 
-        // --- 3. Check Costs & Availability ---
+        // 3. Check Costs & Availability
         $spiesSent = $attackerResources->spies;
         $creditCost = $config['cost_per_spy'] * $spiesSent;
         $turnCost = $config['attack_turn_cost'];
@@ -184,7 +183,7 @@ class SpyService
             return ServiceResponse::error('You do not have enough attack turns.');
         }
 
-        // --- 4. Calculate Spy Roll ---
+        // 4. Calculate Spy Roll
         $offenseBreakdown = $this->powerCalculatorService->calculateSpyPower(
             $attackerId,
             $attackerResources,
@@ -205,16 +204,15 @@ class SpyService
         $successChance = max(min($successChance, $config['base_success_chance_cap']), $config['base_success_chance_floor']);
         $isSuccess = (mt_rand(1, 1000) / 1000) <= $successChance;
 
-        // --- 5. Calculate Counter-Spy (Caught/Not Caught) ---
+        // 5. Calculate Counter-Spy (Caught/Not Caught)
         $counterChance = $totalPower > 0 ? ($defense / $totalPower) * $config['base_counter_spy_multiplier'] : 0;
         $counterChance = min($counterChance, $config['base_counter_spy_chance_cap']);
         $isCaught = (mt_rand(1, 1000) / 1000) <= $counterChance;
 
-        // --- 6. Calculate Losses & XP ---
+        // 6. Calculate Losses & XP
         $spiesLost = $isCaught ? (int)mt_rand($spiesSent * $config['spies_lost_percent_min'], $spiesSent * $config['spies_lost_percent_max']) : 0;
         $sentriesLost = $isCaught ? (int)mt_rand($defenderResources->sentries * $config['sentries_lost_percent_min'], $defenderResources->sentries * $config['sentries_lost_percent_max']) : 0;
 
-        // XP Calculation
         $attackerXp = 0;
         $defenderXp = 0;
         
@@ -228,7 +226,7 @@ class SpyService
             $defenderXp = $xpConfig['defense_caught_spy'] ?? 75;
         }
 
-        // --- 7. Gather Intel & Determine Result ---
+        // 7. Gather Intel & Determine Result
         $operation_result = $isSuccess ? 'success' : 'failure';
         
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
@@ -247,7 +245,7 @@ class SpyService
         $intel_popLevel = $isSuccess ? $defenderStructures->population_level : null;
         $intel_armoryLevel = $isSuccess ? $defenderStructures->armory_level : null;
 
-        // --- 8. Execute Transaction ---
+        // 8. Execute Transaction
         $this->db->beginTransaction();
         try {
             // 8a. Update Attacker
@@ -276,7 +274,7 @@ class SpyService
                 $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
             );
 
-            // --- 8d. SEND NOTIFICATION (If Caught) ---
+            // 8d. Send Notification (If Caught)
             if ($isCaught) {
                 $notifTitle = "Security Alert: Spy Neutralized";
                 $notifMsg = "An enemy spy from {$attacker->characterName} was intercepted by your sentries.";
@@ -304,7 +302,7 @@ class SpyService
             return ServiceResponse::error('A database error occurred. The operation was cancelled.');
         }
 
-        // --- 9. Construct Success Message ---
+        // 9. Construct Success Message
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
         if ($isCaught && $sentriesLost > 0) {
             $message .= " You destroyed {$sentriesLost} enemy sentries.";

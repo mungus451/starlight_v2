@@ -2,7 +2,7 @@
 
 namespace App\Models\Services;
 
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
@@ -14,8 +14,8 @@ use PDO;
 
 /**
  * Handles all business logic for Alliance Wars.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
+ * * Refactored Phase 1.3: Strict MVC Compliance.
+ * * Handles authorization and data aggregation internally.
  */
 class WarService
 {
@@ -28,18 +28,6 @@ class WarService
     private WarBattleLogRepository $warLogRepo;
     private WarHistoryRepository $warHistoryRepo;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     *
-     * @param PDO $db
-     * @param UserRepository $userRepo
-     * @param AllianceRepository $allianceRepo
-     * @param AllianceRoleRepository $roleRepo
-     * @param WarRepository $warRepo
-     * @param WarBattleLogRepository $warLogRepo
-     * @param WarHistoryRepository $warHistoryRepo
-     */
     public function __construct(
         PDO $db,
         UserRepository $userRepo,
@@ -59,15 +47,50 @@ class WarService
     }
 
     /**
-     * Declares a new war against another alliance.
+     * Retrieves all data required for the War Room view.
+     * Handles permissions internally.
      *
-     * @param int $adminUserId
-     * @param int $targetAllianceId
-     * @param string $name
-     * @param string $casusBelli
-     * @param string $goalKey
-     * @param int $goalThreshold
+     * @param int $userId
      * @return ServiceResponse
+     */
+    public function getWarPageData(int $userId): ServiceResponse
+    {
+        // 1. Validate User & Alliance
+        $user = $this->userRepo->findById($userId);
+        if (!$user || $user->alliance_id === null) {
+            return ServiceResponse::error('You must be in an alliance to access the War Room.');
+        }
+        $allianceId = $user->alliance_id;
+
+        // 2. Check Permissions
+        $role = $this->roleRepo->findById($user->alliance_role_id);
+        $canDeclareWar = ($role && $role->can_declare_war);
+
+        // 3. Fetch Data
+        // Fetch alliances for the "Declare War" dropdown (excluding own)
+        $allAlliances = $this->allianceRepo->getAllAlliances();
+        $otherAlliances = array_filter($allAlliances, function($alliance) use ($allianceId) {
+            return $alliance->id !== $allianceId;
+        });
+
+        // In a real app, we'd filter these by alliance_id, but for now we return placeholders/global lists
+        // as per the original Controller implementation structure.
+        // TODO: Add repository methods to fetch specific wars for this alliance if needed.
+        $activeWars = []; // Placeholder: $this->warRepo->findActiveWarsByAlliance($allianceId);
+        $historicalWars = []; // Placeholder: $this->warHistoryRepo->findByAlliance($allianceId);
+
+        return ServiceResponse::success('Data retrieved', [
+            'viewer' => $user,
+            'canDeclareWar' => $canDeclareWar,
+            'allianceId' => $allianceId,
+            'otherAlliances' => $otherAlliances,
+            'activeWars' => $activeWars,
+            'historicalWars' => $historicalWars
+        ]);
+    }
+
+    /**
+     * Declares a new war against another alliance.
      */
     public function declareWar(
         int $adminUserId,
@@ -113,15 +136,6 @@ class WarService
 
     /**
      * Logs a battle's results into the war system.
-     * This is called by WarLoggerListener (Event System), so it returns void.
-     *
-     * @param int $battleReportId
-     * @param User $attacker
-     * @param User $defender
-     * @param string $attackResult ('victory', 'defeat', 'stalemate')
-     * @param int $prestigeGained
-     * @param int $unitsKilled (Defender guards lost)
-     * @param int $creditsPlundered
      */
     public function logBattle(
         int $battleReportId,
@@ -132,18 +146,15 @@ class WarService
         int $unitsKilled,
         int $creditsPlundered
     ): void {
-        // 1. Check if both parties are in alliances
         if ($attacker->alliance_id === null || $defender->alliance_id === null) {
             return;
         }
 
-        // 2. Find the active war
         $war = $this->warRepo->findActiveWarBetween($attacker->alliance_id, $defender->alliance_id);
         if ($war === null) {
-            return; // No active war, do nothing
+            return;
         }
 
-        // 3. Determine scoring
         $scoringAllianceId = null;
         $scoreGained = 0;
         $isDeclarer = false;
@@ -160,7 +171,6 @@ class WarService
             $isDeclarer = ($scoringAllianceId === $war->declarer_alliance_id);
         }
 
-        // 4. Create the battle log
         $this->warLogRepo->createLog(
             $war->id,
             $battleReportId,
@@ -171,7 +181,6 @@ class WarService
             $creditsPlundered
         );
         
-        // 5. Update the war score if a goal was progressed
         if ($scoreGained > 0 && $scoringAllianceId !== null) {
             $this->warRepo->updateWarScore($war->id, $isDeclarer, $scoreGained);
         }

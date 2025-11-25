@@ -15,8 +15,8 @@ use Throwable;
 
 /**
  * Handles all business logic for Alliance Structures.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
+ * * Refactored Phase 1.3.2: Strict MVC Compliance.
+ * * Handles authorization and cost calculations internally.
  */
 class AllianceStructureService
 {
@@ -31,19 +31,6 @@ class AllianceStructureService
     
     private AlliancePolicyService $policyService;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     *
-     * @param PDO $db
-     * @param AllianceRepository $allianceRepo
-     * @param AllianceBankLogRepository $bankLogRepo
-     * @param AllianceStructureRepository $allianceStructRepo
-     * @param AllianceStructureDefinitionRepository $structDefRepo
-     * @param UserRepository $userRepo
-     * @param AllianceRoleRepository $roleRepo
-     * @param AlliancePolicyService $policyService
-     */
     public function __construct(
         PDO $db,
         AllianceRepository $allianceRepo,
@@ -67,13 +54,25 @@ class AllianceStructureService
     }
 
     /**
-     * Gets all data needed for the Alliance Structures view.
+     * Gets all data needed for the Alliance Structures view, checking permissions.
      *
-     * @param int $allianceId
-     * @return array
+     * @param int $userId
+     * @return ServiceResponse
      */
-    public function getStructureData(int $allianceId): array
+    public function getStructurePageData(int $userId): ServiceResponse
     {
+        // 1. Validate User & Alliance
+        $user = $this->userRepo->findById($userId);
+        if (!$user || $user->alliance_id === null) {
+            return ServiceResponse::error('You must be in an alliance to view this page.');
+        }
+        $allianceId = $user->alliance_id;
+
+        // 2. Check Permissions
+        $role = $this->roleRepo->findById($user->alliance_role_id);
+        $canManage = ($role && $role->can_manage_structures);
+
+        // 3. Fetch Data
         $alliance = $this->allianceRepo->findById($allianceId);
         $definitions = $this->structDefRepo->getAllDefinitions();
         $ownedStructures = $this->allianceStructRepo->findByAllianceId($allianceId);
@@ -81,6 +80,7 @@ class AllianceStructureService
         $costs = [];
         $currentLevels = [];
         
+        // 4. Calculate Costs
         foreach ($definitions as $def) {
             $key = $def->structure_key;
             $currentLevel = $ownedStructures[$key]->level ?? 0;
@@ -91,20 +91,17 @@ class AllianceStructureService
             $currentLevels[$key] = $currentLevel;
         }
 
-        return [
+        return ServiceResponse::success('Data retrieved', [
             'alliance' => $alliance,
             'definitions' => $definitions,
             'costs' => $costs,
             'currentLevels' => $currentLevels,
-        ];
+            'canManage' => $canManage
+        ]);
     }
 
     /**
      * Attempts to purchase or upgrade a single structure for an alliance.
-     *
-     * @param int $adminUserId The user attempting the action
-     * @param string $structureKey e.g., 'citadel_shield'
-     * @return ServiceResponse
      */
     public function purchaseOrUpgradeStructure(int $adminUserId, string $structureKey): ServiceResponse
     {

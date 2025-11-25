@@ -8,27 +8,13 @@
 /* @var \App\Models\Entities\AllianceApplication|null $userApplication */
 /* @var \App\Models\Entities\AllianceRole[] $roles */
 /* @var \App\Models\Entities\AllianceBankLog[] $bankLogs */
-/* @var \App\Models\Entities\AllianceLoan[] $loans */
+/* @var \App\Models\Entities\AllianceLoan[] $pendingLoans */
+/* @var \App\Models\Entities\AllianceLoan[] $activeLoans */
+/* @var \App\Models\Entities\AllianceLoan[] $historicalLoans */
 
 // --- Checks ---
 $isMember = ($viewer->alliance_id === $alliance->id);
 $canManageBank = ($viewerRole && $viewerRole->can_manage_bank);
-
-// --- Filter loans for display ---
-$pendingLoans = [];
-$activeLoans = [];
-$historicalLoans = [];
-if ($isMember && isset($loans)) {
-    foreach ($loans as $loan) {
-        if ($loan->status === 'pending') {
-            $pendingLoans[] = $loan;
-        } elseif ($loan->status === 'active') {
-            $activeLoans[] = $loan;
-        } else {
-            $historicalLoans[] = $loan;
-        }
-    }
-}
 ?>
 
 <div class="container-full">
@@ -230,7 +216,7 @@ if ($isMember && isset($loans)) {
                         </form>
                     </div>
 
-                    <!-- Lists -->
+                    <!-- Pending Lists -->
                     <?php if (!empty($pendingLoans)): ?>
                         <h5 style="color: var(--muted); margin: 1rem 0 0.5rem;">Pending</h5>
                         <ul class="scrollable-list" style="max-height: 200px;">
@@ -260,6 +246,7 @@ if ($isMember && isset($loans)) {
                         </ul>
                     <?php endif; ?>
                     
+                    <!-- Active Lists -->
                     <?php if (!empty($activeLoans)): ?>
                         <h5 style="color: var(--accent-blue); margin: 1rem 0 0.5rem;">Active</h5>
                         <ul class="scrollable-list" style="max-height: 250px;">
