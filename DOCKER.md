@@ -40,7 +40,7 @@ The `database.sql` file contains incremental ALTER statements documenting the mi
 mysql -h 127.0.0.1 -P 3307 -u sd_admin -pstarlight starlightDB
 
 # From inside container
-docker-compose exec db mysql -u sd_admin -pstarlight starlightDB
+docker compose exec db mysql -u sd_admin -pstarlight starlightDB
 ```
 
 ## Development Workflow
