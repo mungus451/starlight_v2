@@ -5,10 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: starlight_app
     ports:
-      - "8000:80"
+      - "8080:80"
     volumes:
       - .:/var/www/html
-      - ./logs:/var/www/html/logs
     environment:
       - APP_ENV=development
     depends_on:
