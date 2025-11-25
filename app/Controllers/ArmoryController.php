@@ -5,50 +5,37 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-use App\Core\ServiceResponse;
+// use App\Core\ServiceResponse; // Implicitly used via return types
 use App\Models\Services\ArmoryService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
-use App\Models\Repositories\ResourceRepository;
-use App\Models\Repositories\ArmoryRepository;
+use App\Models\Services\ViewContextService; // --- REPLACES LevelCalculator/StatsRepo ---
 
 /**
  * Handles all HTTP requests for the Armory.
- * * Refactored to support ServiceResponse DTOs.
- * * Handles both AJAX (JSON) and Standard (Redirect) flows.
+ * * Refactored Phase 2: Full Decoupling.
+ * * No longer depends on Repositories directly. Uses Service Data Payloads.
  */
 class ArmoryController extends BaseController
 {
     private ArmoryService $armoryService;
-    private ResourceRepository $resourceRepo;
-    private ArmoryRepository $armoryRepo;
 
     /**
      * DI Constructor.
      *
      * @param ArmoryService $armoryService
-     * @param ResourceRepository $resourceRepo
-     * @param ArmoryRepository $armoryRepo
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         ArmoryService $armoryService,
-        ResourceRepository $resourceRepo,
-        ArmoryRepository $armoryRepo,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->armoryService = $armoryService;
-        $this->resourceRepo = $resourceRepo;
-        $this->armoryRepo = $armoryRepo;
     }
 
     /**
@@ -106,20 +93,15 @@ class ArmoryController extends BaseController
         // 3. Response Handling
         if ($isJson) {
             if ($response->isSuccess()) {
-                // For AJAX, we usually need updated numbers immediately
-                $resources = $this->resourceRepo->findByUserId($userId);
-                $inventory = $this->armoryRepo->getInventory($userId);
-                $ownedCount = $inventory[$data['item_key']] ?? 0;
-
-                // Set flash anyway in case of subsequent reload
+                // REFACTOR: Data comes directly from Service payload. No extra queries.
                 $this->session->setFlash('success', $response->message);
 
                 $this->jsonResponse([
                     'success' => true,
                     'message' => $response->message,
-                    'new_credits' => $resources->credits,
-                    'new_owned' => $ownedCount,
-                    'item_key' => $data['item_key']
+                    'new_credits' => $response->data['new_credits'],
+                    'new_owned' => $response->data['new_owned'],
+                    'item_key' => $response->data['item_key']
                 ]);
             } else {
                 $this->jsonResponse(['success' => false, 'error' => $response->message]);

@@ -5,44 +5,40 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * BaseController
  * * Acts as the parent for all HTTP controllers.
  * * STRICT DEPENDENCY INJECTION IMPLEMENTATION.
+ * * Refactored Phase 2: Decoupled from Domain Logic (Level/Stats).
  */
 class BaseController
 {
     protected Session $session;
     protected CSRFService $csrfService;
     protected Validator $validator;
-    protected LevelCalculatorService $levelCalculator;
-    protected StatsRepository $statsRepo;
+    protected ViewContextService $viewContextService; // --- REPLACES Domain Services ---
 
     /**
      * Strict Constructor.
-     * All dependencies must be injected. No manual instantiation allowed.
+     * All dependencies must be injected.
      *
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
         $this->session = $session;
         $this->csrfService = $csrfService;
         $this->validator = $validator;
-        $this->levelCalculator = $levelCalculator;
-        $this->statsRepo = $statsRepo;
+        $this->viewContextService = $viewContextService;
     }
 
     /**
@@ -97,16 +93,15 @@ class BaseController
         $data['flashError'] = $this->session->getFlash('error');
         $data['flashSuccess'] = $this->session->getFlash('success');
 
-        // 4. Global: XP / Navbar Stats (Only if logged in)
+        // 4. Global: View Context (XP, Level, etc.) - REFACTORED
         if ($data['isLoggedIn']) {
             $userId = $this->session->get('user_id');
-            $stats = $this->statsRepo->findByUserId($userId);
             
-            if ($stats) {
-                $xpData = $this->levelCalculator->getLevelProgress($stats->experience, $stats->level);
-                $data['global_xp_data'] = $xpData;
-                $data['global_user_level'] = $stats->level;
-            }
+            // Delegate to service, keep Controller clean
+            $globalContext = $this->viewContextService->getGlobalLayoutData($userId);
+            
+            // Merge context into data
+            $data = array_merge($data, $globalContext);
         }
         
         // Extract the data array into local variables for the view
