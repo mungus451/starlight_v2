@@ -140,7 +140,7 @@ The cron system (`/cron/process_turn.php`) runs every 5 minutes:
 - All forms use CSRF protection
 - Sensitive operations require password confirmation
 - Database uses prepared statements throughout
-- Session handling via custom Session class
+- Session handling via Redis (`RedisSessionHandler`)
 
 ## Testing/Debugging
 - Set `APP_ENV=development` in `.env` for error display
