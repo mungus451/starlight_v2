@@ -1,7 +1,7 @@
 # StarlightDominion V2 - AI Agent Instructions
 
 ## Project Overview
-StarlightDominion V2 is a browser-based space strategy MMO built with strict MVC architecture using PHP 8.3, MariaDB, and minimal dependencies (nikic/fast-route, vlucas/phpdotenv). The game features turn-based mechanics, alliances, combat, espionage, and resource management.
+StarlightDominion V2 is a browser-based space strategy MMO built with strict MVC architecture using PHP 8.4+, MariaDB, and minimal dependencies (nikic/fast-route, vlucas/phpdotenv). The game features turn-based mechanics, alliances, combat, espionage, and resource management.
 
 ## Architecture Principles
 
