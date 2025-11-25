@@ -6,13 +6,13 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\SpyService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
 use App\Presenters\SpyReportPresenter;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Espionage feature.
  * * Refactored to use SpyReportPresenter for View Logic.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class SpyController extends BaseController
 {
@@ -27,8 +27,7 @@ class SpyController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         SpyService $spyService,
@@ -36,10 +35,9 @@ class SpyController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->spyService = $spyService;
         $this->presenter = $presenter;
     }

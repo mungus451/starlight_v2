@@ -6,13 +6,12 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\TrainingService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Training page.
  * * Refactored for Strict Dependency Injection & Centralized Validation.
- * * Decoupled: Consumes ServiceResponse.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class TrainingController extends BaseController
 {
@@ -25,19 +24,17 @@ class TrainingController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         TrainingService $trainingService,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
         // Pass mandatory base dependencies to the parent
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->trainingService = $trainingService;
     }
 

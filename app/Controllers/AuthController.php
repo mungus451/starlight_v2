@@ -6,14 +6,13 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AuthService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles Authentication (Login, Register, Logout).
  * * Refactored for Strict Dependency Injection.
  * * Decoupled: Consumes ServiceResponse.
- * * RESPONSIBILITY SHIFT: This controller now manages Session persistence.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class AuthController extends BaseController
 {
@@ -26,18 +25,16 @@ class AuthController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         AuthService $authService,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->authService = $authService;
     }
 

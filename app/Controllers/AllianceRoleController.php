@@ -6,13 +6,12 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceManagementService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all requests for creating, editing, and deleting alliance roles.
  * * Refactored Phase 1.4: Removed direct Repository dependencies.
- * * Now consumes ServiceResponse objects exclusively.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class AllianceRoleController extends BaseController
 {
@@ -23,10 +22,9 @@ class AllianceRoleController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->mgmtService = $mgmtService;
     }
 

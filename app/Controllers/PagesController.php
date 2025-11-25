@@ -5,12 +5,12 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all public-facing static pages like Home and Contact.
  * * Refactored for Strict Dependency Injection.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class PagesController extends BaseController
 {
@@ -20,17 +20,15 @@ class PagesController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
     }
 
     /**

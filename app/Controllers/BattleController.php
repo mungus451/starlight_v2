@@ -6,13 +6,13 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AttackService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
 use App\Presenters\BattleReportPresenter;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Battle feature.
  * * Refactored to use BattleReportPresenter for View Logic.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class BattleController extends BaseController
 {
@@ -27,8 +27,7 @@ class BattleController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         AttackService $attackService,
@@ -36,10 +35,9 @@ class BattleController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->attackService = $attackService;
         $this->presenter = $presenter;
     }

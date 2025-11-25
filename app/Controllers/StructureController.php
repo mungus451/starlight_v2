@@ -6,13 +6,13 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\StructureService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
 use App\Presenters\StructurePresenter;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Personal Structures page.
  * * Refactored Phase 2.5: Integrates StructurePresenter to fix View variables.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class StructureController extends BaseController
 {
@@ -27,8 +27,7 @@ class StructureController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
+     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         StructureService $structureService,
@@ -36,10 +35,9 @@ class StructureController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->structureService = $structureService;
         $this->presenter = $presenter;
     }

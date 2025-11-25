@@ -6,13 +6,12 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceForumService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Alliance Forum.
  * * Refactored Phase 1.1: Removed direct Repository dependencies.
- * * Now purely consumes AllianceForumService for data and auth checks.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class AllianceForumController extends BaseController
 {
@@ -23,10 +22,9 @@ class AllianceForumController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->forumService = $forumService;
     }
 
@@ -116,7 +114,6 @@ class AllianceForumController extends BaseController
 
         $userId = $this->session->get('user_id');
         
-        // Note: We don't pass allianceId anymore; Service looks it up securely
         $response = $this->forumService->createTopic(
             $userId, 
             $data['title'], 

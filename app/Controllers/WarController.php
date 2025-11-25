@@ -6,13 +6,12 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\WarService;
-use App\Models\Services\LevelCalculatorService;
-use App\Models\Repositories\StatsRepository;
+use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Alliance War page.
  * * Refactored Phase 1.3: Strict MVC Compliance.
- * * Consumes WarService exclusively for logic and data.
+ * * Fixed: Updated parent constructor call to use ViewContextService.
  */
 class WarController extends BaseController
 {
@@ -23,10 +22,9 @@ class WarController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
+        ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
     ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+        parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->warService = $warService;
     }
 
