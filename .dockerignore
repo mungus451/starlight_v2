@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.env.example
+logs/*
+!logs/.gitkeep
+vendor
+README.md
+.gitignore
+docker-compose.yml
+Dockerfile
+.dockerignore
