@@ -36,12 +36,14 @@ The `database.sql` file contains incremental ALTER statements documenting the mi
 ### Access MariaDB
 
 ```bash
-# From host machine
+# From host machine (substitute values from your .env file)
 mysql -h 127.0.0.1 -P 3307 -u sd_admin -pstarlight starlightDB
 
 # From inside container
 docker compose exec db mysql -u sd_admin -pstarlight starlightDB
 ```
+
+**Note:** Database credentials are configured via environment variables in your `.env` file. Replace the values above with your actual credentials from the `MYSQL_USER`, `MYSQL_PASSWORD`, and `MYSQL_DATABASE` variables.
 
 ## Development Workflow
 
