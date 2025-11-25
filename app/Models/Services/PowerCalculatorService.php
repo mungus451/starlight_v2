@@ -6,6 +6,8 @@ use App\Core\Config;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
 use App\Models\Entities\UserStructure;
+use App\Models\Repositories\AllianceStructureRepository;
+use App\Models\Repositories\AllianceStructureDefinitionRepository;
 
 /**
  * Handles all complex game logic calculations for power, income, etc.
@@ -15,17 +17,27 @@ class PowerCalculatorService
 {
     private Config $config;
     private ArmoryService $armoryService;
+    private AllianceStructureRepository $allianceStructRepo;
+    private AllianceStructureDefinitionRepository $structDefRepo;
 
     /**
      * DI Constructor.
      *
      * @param Config $config
      * @param ArmoryService $armoryService
+     * @param AllianceStructureRepository $allianceStructRepo
+     * @param AllianceStructureDefinitionRepository $structDefRepo
      */
-    public function __construct(Config $config, ArmoryService $armoryService)
-    {
+    public function __construct(
+        Config $config,
+        ArmoryService $armoryService,
+        AllianceStructureRepository $allianceStructRepo,
+        AllianceStructureDefinitionRepository $structDefRepo
+    ) {
         $this->config = $config;
         $this->armoryService = $armoryService;
+        $this->allianceStructRepo = $allianceStructRepo;
+        $this->structDefRepo = $structDefRepo;
     }
 
     /**
@@ -201,12 +213,20 @@ class PowerCalculatorService
 
     /**
      * Calculates a user's total income per turn.
+     *
+     * @param int $userId
+     * @param UserResource $resources
+     * @param UserStats $stats
+     * @param UserStructure $structures
+     * @param int|null $allianceId Optional alliance ID for bonus calculations
+     * @return array
      */
     public function calculateIncomePerTurn(
         int $userId,
         UserResource $resources,
         UserStats $stats,
-        UserStructure $structures
+        UserStructure $structures,
+        ?int $allianceId = null
     ): array {
         $config = $this->config->get('game_balance.turn_processor');
         
@@ -227,13 +247,21 @@ class PowerCalculatorService
         // 5. Interest Income (for Banked Credits)
         $interestIncome = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
         
-        // 6. Citizen Income
-        $citizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
+        // 6. Citizen Income (base from personal structures)
+        $baseCitizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
+        
+        // 7. Alliance Structure Bonuses for citizen growth
+        $allianceCitizenBonus = 0;
+        if ($allianceId !== null) {
+            $allianceCitizenBonus = $this->calculateAllianceCitizenBonus($allianceId);
+        }
+        
+        $totalCitizenIncome = $baseCitizenIncome + $allianceCitizenBonus;
 
         return [
             'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
-            'total_citizens' => $citizenIncome,
+            'total_citizens' => $totalCitizenIncome,
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -244,7 +272,65 @@ class PowerCalculatorService
             'worker_count' => $resources->workers,
             'wealth_points' => $stats->wealth_points,
             'banked_credits' => $resources->banked_credits,
-            'interest_rate_pct' => $config['bank_interest_rate']
+            'interest_rate_pct' => $config['bank_interest_rate'],
+            'base_citizen_income' => $baseCitizenIncome,
+            'alliance_citizen_bonus' => $allianceCitizenBonus
         ];
+    }
+
+    /**
+     * Calculates the citizen growth bonus from alliance structures.
+     *
+     * @param int $allianceId
+     * @return int The flat citizen bonus per turn
+     */
+    private function calculateAllianceCitizenBonus(int $allianceId): int
+    {
+        // Get all structures owned by this alliance
+        $ownedStructures = $this->allianceStructRepo->findByAllianceId($allianceId);
+        
+        if (empty($ownedStructures)) {
+            return 0;
+        }
+        
+        // Get all structure definitions to parse bonuses
+        $definitions = $this->structDefRepo->getAllDefinitions();
+        $defByKey = [];
+        foreach ($definitions as $def) {
+            $defByKey[$def->structure_key] = $def;
+        }
+        
+        $citizenBonus = 0;
+        $allBonusMultiplier = 0;
+        
+        // First pass: calculate base bonuses and find any all_bonus_multiplier
+        foreach ($ownedStructures as $key => $structure) {
+            if (!isset($defByKey[$key])) {
+                continue;
+            }
+            
+            $def = $defByKey[$key];
+            $bonuses = $def->getBonuses();
+            
+            foreach ($bonuses as $bonus) {
+                $bonusType = $bonus['type'] ?? '';
+                $bonusValue = $bonus['value'] ?? 0;
+                
+                if ($bonusType === 'citizen_growth_flat') {
+                    // Multiply by structure level for scaling
+                    $citizenBonus += $bonusValue * $structure->level;
+                } elseif ($bonusType === 'all_bonus_multiplier') {
+                    // Accumulate all bonus multipliers (from Warlord's Throne, etc.)
+                    $allBonusMultiplier += $bonusValue * $structure->level;
+                }
+            }
+        }
+        
+        // Apply the all_bonus_multiplier to citizen bonus if present
+        if ($allBonusMultiplier > 0) {
+            $citizenBonus = (int)floor($citizenBonus * (1 + $allBonusMultiplier));
+        }
+        
+        return $citizenBonus;
     }
 }

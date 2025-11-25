@@ -113,22 +113,24 @@ class TurnProcessorService
         $this->db->beginTransaction();
         try {
             // 1. Get all required data
+            $user = $this->userRepo->findById($userId);
             $resources = $this->resourceRepo->findByUserId($userId);
             $structures = $this->structureRepo->findByUserId($userId);
             $stats = $this->statsRepo->findByUserId($userId);
 
-            if (!$resources || !$structures || !$stats) {
+            if (!$user || !$resources || !$structures || !$stats) {
                 // User might be new or data is missing, skip them.
                 $this->db->rollBack(); // Ensure rollback if we skipped
                 return false;
             }
 
-            // 2. Calculate all income
+            // 2. Calculate all income (including alliance structure bonuses)
             $incomeBreakdown = $this->powerCalculatorService->calculateIncomePerTurn(
                 $userId,
                 $resources,
                 $stats,
-                $structures
+                $structures,
+                $user->alliance_id  // Pass alliance ID for bonus calculations
             );
             
             $creditsGained = $incomeBreakdown['total_credit_income'];
