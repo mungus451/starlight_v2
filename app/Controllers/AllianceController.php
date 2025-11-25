@@ -6,144 +6,150 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceService;
-use App\Models\Services\AllianceManagementService; // --- NEW IMPORT ---
+use App\Models\Services\AllianceManagementService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Repositories\StatsRepository;
+use App\Presenters\AllianceProfilePresenter; // --- NEW IMPORT ---
 
 /**
- * Handles all "read" GET requests for the Alliance feature.
- * * Refactored for Strict Dependency Injection.
- * * Now uses AllianceManagementService for creation logic.
- */
+* Handles all "read" GET requests for the Alliance feature.
+* * Refactored Phase 1: View Logic Decoupling.
+* * Now uses AllianceProfilePresenter for the profile view.
+*/
 class AllianceController extends BaseController
 {
-    private AllianceService $allianceService;
-    private AllianceManagementService $mgmtService; // --- NEW PROP ---
+private AllianceService $allianceService;
+private AllianceManagementService $mgmtService;
+private AllianceProfilePresenter $profilePresenter; // --- NEW PROP ---
 
-    /**
-     * DI Constructor.
-     *
-     * @param AllianceService $allianceService
-     * @param AllianceManagementService $mgmtService // --- NEW PARAM ---
-     * @param Session $session
-     * @param CSRFService $csrfService
-     * @param Validator $validator
-     * @param LevelCalculatorService $levelCalculator
-     * @param StatsRepository $statsRepo
-     */
-    public function __construct(
-        AllianceService $allianceService,
-        AllianceManagementService $mgmtService, // --- NEW INJECTION ---
-        Session $session,
-        CSRFService $csrfService,
-        Validator $validator,
-        LevelCalculatorService $levelCalculator,
-        StatsRepository $statsRepo
-    ) {
-        parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
-        $this->allianceService = $allianceService;
-        $this->mgmtService = $mgmtService;
-    }
+/**
+* DI Constructor.
+*
+* @param AllianceService $allianceService
+* @param AllianceManagementService $mgmtService
+* @param AllianceProfilePresenter $profilePresenter // --- NEW PARAM ---
+* @param Session $session
+* @param CSRFService $csrfService
+* @param Validator $validator
+* @param LevelCalculatorService $levelCalculator
+* @param StatsRepository $statsRepo
+*/
+public function __construct(
+AllianceService $allianceService,
+AllianceManagementService $mgmtService,
+AllianceProfilePresenter $profilePresenter, // --- NEW INJECTION ---
+Session $session,
+CSRFService $csrfService,
+Validator $validator,
+LevelCalculatorService $levelCalculator,
+StatsRepository $statsRepo
+) {
+parent::__construct($session, $csrfService, $validator, $levelCalculator, $statsRepo);
+$this->allianceService = $allianceService;
+$this->mgmtService = $mgmtService;
+$this->profilePresenter = $profilePresenter;
+}
 
-    /**
-     * Displays the paginated list of all alliances.
-     */
-    public function showList(array $vars): void
-    {
-        $page = (int)($vars['page'] ?? 1);
-        $data = $this->allianceService->getAlliancePageData($page);
+/**
+* Displays the paginated list of all alliances.
+*/
+public function showList(array $vars): void
+{
+$page = (int)($vars['page'] ?? 1);
+$data = $this->allianceService->getAlliancePageData($page);
 
-        $data['layoutMode'] = 'full';
+$data['layoutMode'] = 'full';
 
-        $this->render('alliance/list.php', $data + ['title' => 'Alliances']);
-    }
+$this->render('alliance/list.php', $data + ['title' => 'Alliances']);
+}
 
-    /**
-     * Displays the public profile for a single alliance.
-     */
-    public function showProfile(array $vars): void
-    {
-        $allianceId = (int)($vars['id'] ?? 0);
-        $viewerId = $this->session->get('user_id');
-        
-        $data = $this->allianceService->getPublicProfileData($allianceId, $viewerId);
+/**
+* Displays the public profile for a single alliance.
+* REFACTORED: Uses Presenter to prepare ViewModel.
+*/
+public function showProfile(array $vars): void
+{
+$allianceId = (int)($vars['id'] ?? 0);
+$viewerId = $this->session->get('user_id');
 
-        if (is_null($data)) {
-            $this->session->setFlash('error', 'That alliance does not exist.');
-            $this->redirect('/alliance/list');
-            return;
-        }
+// 1. Get Raw Data (Service Layer)
+$rawData = $this->allianceService->getPublicProfileData($allianceId, $viewerId);
 
-        $data['layoutMode'] = 'full';
+if (is_null($rawData)) {
+$this->session->setFlash('error', 'That alliance does not exist.');
+$this->redirect('/alliance/list');
+return;
+}
 
-        $this->render('alliance/profile.php', $data + ['title' => $data['alliance']->name]);
-    }
+// 2. Format Data (Presentation Layer)
+$viewModel = $this->profilePresenter->present($rawData);
 
-    /**
-     * Displays the form to create a new alliance.
-     */
-    public function showCreateForm(): void
-    {
-        $userId = $this->session->get('user_id');
-        $data = $this->allianceService->getCreateAllianceData($userId);
+// 3. Render View
+$this->render('alliance/profile.php', $viewModel);
+}
 
-        // If user is already in an alliance, redirect them
-        if ($data['user'] && $data['user']->alliance_id !== null) {
-            $this->session->setFlash('error', 'You are already in an alliance.');
-            $this->redirect('/alliance/profile/'. $data['user']->alliance_id);
-            return;
-        }
+/**
+* Displays the form to create a new alliance.
+*/
+public function showCreateForm(): void
+{
+$userId = $this->session->get('user_id');
+$data = $this->allianceService->getCreateAllianceData($userId);
 
-        $data['layoutMode'] = 'full';
+// If user is already in an alliance, redirect them
+if ($data['user'] && $data['user']->alliance_id !== null) {
+$this->session->setFlash('error', 'You are already in an alliance.');
+$this->redirect('/alliance/profile/'. $data['user']->alliance_id);
+return;
+}
 
-        $this->render('alliance/create.php', $data + ['title' => 'Create Alliance']);
-    }
+$data['layoutMode'] = 'full';
 
-    /**
-     * Handles the submission of the "Create Alliance" form.
-     */
-    public function handleCreate(): void
-    {
-        // 1. Validate Input
-        $data = $this->validate($_POST, [
-            'csrf_token' => 'required',
-            'alliance_name' => 'required|string|min:3|max:100',
-            'alliance_tag' => 'required|string|min:3|max:5'
-        ]);
+$this->render('alliance/create.php', $data + ['title' => 'Create Alliance']);
+}
 
-        // 2. Validate CSRF
-        if (!$this->csrfService->validateToken($data['csrf_token'])) {
-            $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/alliance/create');
-            return;
-        }
+/**
+* Handles the submission of the "Create Alliance" form.
+*/
+public function handleCreate(): void
+{
+// 1. Validate Input
+$data = $this->validate($_POST, [
+'csrf_token' => 'required',
+'alliance_name' => 'required|string|min:3|max:100',
+'alliance_tag' => 'required|string|min:3|max:5'
+]);
 
-        // 3. Call the service
-        $userId = $this->session->get('user_id');
-        
-        // Use the Write Service
-        $response = $this->mgmtService->createAlliance(
-            $userId, 
-            $data['alliance_name'], 
-            $data['alliance_tag']
-        );
+// 2. Validate CSRF
+if (!$this->csrfService->validateToken($data['csrf_token'])) {
+$this->session->setFlash('error', 'Invalid security token.');
+$this->redirect('/alliance/create');
+return;
+}
 
-        if ($response->isSuccess()) {
-            // 4a. Success: Update Session & Redirect
-            $this->session->setFlash('success', $response->message);
-            
-            // Important: Update session to reflect new alliance
-            if (isset($response->data['alliance_id'])) {
-                $this->session->set('alliance_id', $response->data['alliance_id']);
-                $this->redirect('/alliance/profile/' . $response->data['alliance_id']);
-            } else {
-                // Fallback if ID missing (shouldn't happen)
-                $this->redirect('/dashboard');
-            }
-        } else {
-            // 4b. Failure: Flash Error & Back
-            $this->session->setFlash('error', $response->message);
-            $this->redirect('/alliance/create');
-        }
-    }
+// 3. Call the service
+$userId = $this->session->get('user_id');
+
+$response = $this->mgmtService->createAlliance(
+$userId,
+$data['alliance_name'],
+$data['alliance_tag']
+);
+
+if ($response->isSuccess()) {
+// 4a. Success: Update Session & Redirect
+$this->session->setFlash('success', $response->message);
+
+if (isset($response->data['alliance_id'])) {
+$this->session->set('alliance_id', $response->data['alliance_id']);
+$this->redirect('/alliance/profile/' . $response->data['alliance_id']);
+} else {
+$this->redirect('/dashboard');
+}
+} else {
+// 4b. Failure: Flash Error & Back
+$this->session->setFlash('error', $response->message);
+$this->redirect('/alliance/create');
+}
+}
 }
