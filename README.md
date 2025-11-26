@@ -104,7 +104,7 @@ docker exec starlight_app composer phinx migrate
 docker exec starlight_app composer phinx status
 ```
 
-The application will be available at http://localhost:8000
+The application will be available at http://localhost:8080
 
 ### Manual Setup (Local MySQL/MariaDB)
 Log in to MariaDB/MySQL:
