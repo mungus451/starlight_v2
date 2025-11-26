@@ -5,8 +5,11 @@
 ### Build and Run with Docker Compose
 
 ```bash
-# Copy the Docker environment file
-cp .env.docker .env
+# Copy the example environment file
+cp .env.example .env
+
+# (Optional) Customize Docker ports by uncommenting and modifying:
+# DOCKER_APP_PORT, DOCKER_DB_PORT, DOCKER_REDIS_PORT in .env
 
 # Build and start all services
 docker compose up -d --build
@@ -22,10 +25,12 @@ The application will be available at: http://localhost:8080
 
 ## Services
 
-- **app**: PHP 8.3 + Apache web server (port 8080)
-- **db**: MariaDB 11 database (port 3307)
-- **redis**: Redis in-memory data store (port 6379) — required for sessions, CSRF protection, and rate limiting
+- **app**: PHP 8.3 + Apache web server (default port 8080)
+- **db**: MariaDB 11 database (default port 3307)
+- **redis**: Redis in-memory data store (default port 6379) — required for sessions, CSRF protection, and rate limiting
 - **cron**: Background process for turn processing (runs every 5 minutes)
+
+**Note:** External ports can be customized by setting `DOCKER_APP_PORT`, `DOCKER_DB_PORT`, and `DOCKER_REDIS_PORT` in your `.env` file. If not set, the defaults listed above will be used.
 
 ## Database
 
@@ -115,7 +120,7 @@ The `-v` flag removes volumes, including the database data.
 For production deployment:
 
 1. Update `.env` with production values
-2. Change `APP_ENV=production` in docker compose configuration
+2. Set `APP_ENV=production` in your `.env` file
 3. Use proper secrets management (not hardcoded passwords)
 4. Consider using Docker secrets or environment variables
 5. Set up proper backup strategy for `db_data` volume

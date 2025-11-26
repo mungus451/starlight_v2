@@ -5,15 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: starlight_app
     ports:
-      - "8080:80"
+      - "${DOCKER_APP_PORT:-8080}:80"
     volumes:
       - .:/var/www/html
     depends_on:
       - db
       - redis
     environment:
-      - APP_ENV=development
-      - REDIS_HOST=redis
+      - APP_ENV=${APP_ENV:-development}
     networks:
       - starlight_network
 
@@ -21,7 +20,7 @@ services:
     image: mariadb:11
     container_name: starlight_db
     ports:
-      - "3307:3306"
+      - "${DOCKER_DB_PORT:-3307}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -36,7 +35,7 @@ services:
     image: redis:7-alpine
     container_name: starlight_redis
     ports:
-      - "6379:6379"
+      - "${DOCKER_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -58,8 +57,6 @@ services:
     depends_on:
       - db
       - redis
-    environment:
-      - REDIS_HOST=redis
     networks:
       - starlight_network
 
