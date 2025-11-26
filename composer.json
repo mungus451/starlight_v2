@@ -9,6 +9,8 @@
         "robmorgan/phinx": "^0.16.10"
     },
     "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "mockery/mockery": "^1.6"
     },
     "autoload": {
         "psr-4": {
@@ -17,5 +19,10 @@
     },
     "scripts": {
         "phinx": "vendor/bin/phinx --configuration=config/phinx.php"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
     }
 }

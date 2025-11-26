@@ -16,3 +16,6 @@
 /public/uploads/avatars/*
 /storage/avatars/*
 /storage/alliance_avatars/*
+
+# Cache files
+.phpunit.cache/
