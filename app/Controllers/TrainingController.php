@@ -85,4 +85,4 @@ class TrainingController extends BaseController
         
         $this->redirect('/training');
     }
-}
+} /* test commit */
