@@ -368,7 +368,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 Create a new Phinx migration:
 
 ```bash
-php vendor/bin/phinx create CreateItemRepairsTable
+composer phinx create CreateItemRepairsTable
 ```
 
 Edit `database/migrations/YYYYMMDDHHMMSS_create_item_repairs_table.php`:
