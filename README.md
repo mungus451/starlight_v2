@@ -1,6 +1,6 @@
 #StarlightDominion V2: Modular Space Strategy Engine
 
-StarlightDominion V2 is a complete rewrite of a classic browser-based space strategy game, built on a robust, scalable Model-View-Controller-Service (MVC-S) architecture using modern PHP 8.3 standards.
+StarlightDominion V2 is a complete rewrite of a classic browser-based space strategy game, built on a robust, scalable Model-View-Controller-Service (MVC-S) architecture using modern PHP 8.4 standards.
 
 The primary goal of this architecture is strict separation of concerns and transactional integrity.
 
@@ -31,7 +31,7 @@ Role
 
 Backend
 
-PHP 8.3 (or newer)
+PHP 8.4 (or newer)
 
 Server-side logic and processing.
 
@@ -142,7 +142,7 @@ Define the Route (Router): Update public/index.php to map the new URI (/repair) 
 
 🛠️ Installation & Setup (Ubuntu/MariaDB)
 
-This guide assumes a Ubuntu server environment running Apache2 and PHP 8.3.
+This guide assumes a Ubuntu server environment running Apache2 and PHP 8.4.
 
 1. Prerequisites (Ubuntu)
 
@@ -150,7 +150,7 @@ Ensure the necessary components are installed and running:
 
 # Install PHP and extensions required by Composer (e.g., mbstring)
 sudo apt update
-sudo apt install php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-zip php8.3-curl composer
+sudo apt install php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-zip php8.4-curl composer
 
 # Install MariaDB
 sudo apt install mariadb-server
@@ -207,4 +207,4 @@ crontab -e
 
 Add this line to run every 5 minutes:
 
-*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.3 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1

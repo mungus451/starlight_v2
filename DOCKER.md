@@ -25,7 +25,7 @@ The application will be available at: http://localhost:8080
 
 ## Services
 
-- **app**: PHP 8.3 + Apache web server (default port 8080)
+- **app**: PHP 8.4 + Apache web server (default port 8080)
 - **db**: MariaDB 11 database (default port 3307)
 - **redis**: Redis in-memory data store (default port 6379) — required for sessions, CSRF protection, and rate limiting
 - **cron**: Background process for turn processing (runs every 5 minutes)
