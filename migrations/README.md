@@ -1,34 +1,54 @@
-# Migrations & Utilities
+# Legacy Migrations
 
-This directory contains scripts for database schema updates and administrative utilities.
+⚠️ **DEPRECATED**: This directory contains legacy one-time migration scripts.
 
-**Do not run these unless instructed to by the plan.**
+**New migrations should use Phinx** in the `database/migrations/` directory.
 
-## How to Run Scripts
+## Migration System Update
 
-Run scripts from the project root directory:
+This project now uses **Phinx** for database migrations. All new schema changes should be managed through Phinx migrations.
 
-`php migrations/SCRIPT_NAME.php`
+### For Legacy Scripts
+
+The script `13.1_migrate_roles.php` has been converted to a Phinx migration:
+- Location: `database/migrations/20251115120000_migrate_alliance_roles_to_role_system.php`
+- Run via: `composer phinx migrate`
+
+### Migration Workflow
+
+See `database/README.md` for the new migration workflow and best practices.
+
+Common commands:
+```bash
+# Check status
+composer phinx status
+
+# Run migrations
+composer phinx migrate
+
+# Create new migration
+composer phinx create MyMigrationName
+```
+
+### Baseline Existing Databases
+
+If you have an existing database and want to adopt Phinx:
+
+```bash
+php scripts/phinx_baseline.php
+```
+
+This marks all migrations as applied without executing them, perfect for production databases that already have the schema.
 
 ---
 
-## Available Scripts
+## Legacy Script (For Reference Only)
 
-### 1. Schema Migrations
+### 13.1_migrate_roles.php
 
-* **`13.1_migrate_roles.php`**
-    * **Purpose:** Migrates old static roles to the new RBAC system.
-    * **Usage:** `php migrations/13.1_migrate_roles.php`
-    * **Status:** Run once after deploying Phase 13 code.
+**Status**: Converted to Phinx migration  
+**Phinx Version**: `20251115120000_migrate_alliance_roles_to_role_system.php`
 
-* **`14.1_populate_alliance_structures.php`**
-    * **Purpose:** Populates the `alliance_structures_definitions` table with base data.
-    * **Usage:** `php migrations/14.1_populate_alliance_structures.php`
-    * **Status:** Run once after deploying Phase 14 code.
+This script created default alliance roles (Leader, Member, Recruit) for existing alliances.
 
-### 2. Admin Utilities
-
-* **`reset_all_stats.php`**
-    * **Purpose:** **GLOBAL RESPEC.** Loops through every user, resets all spent attribute points (Strength, Wealth, etc.) to 0, and sets their available Skill Points exactly equal to their Level.
-    * **Usage:** `php migrations/reset_all_stats.php`
-    * **Note:** This is destructive. It wipes all player builds.
+**Do not run this script directly** - use `composer phinx migrate` instead.
