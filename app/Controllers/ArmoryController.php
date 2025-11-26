@@ -5,23 +5,25 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-// use App\Core\ServiceResponse; // Implicitly used via return types
 use App\Models\Services\ArmoryService;
-use App\Models\Services\ViewContextService; // --- REPLACES LevelCalculator/StatsRepo ---
+use App\Models\Services\ViewContextService;
+use App\Presenters\ArmoryPresenter;
 
 /**
  * Handles all HTTP requests for the Armory.
- * * Refactored Phase 2: Full Decoupling.
- * * No longer depends on Repositories directly. Uses Service Data Payloads.
+ * * Refactored Phase 3: Full MVC Compliance via Presenter.
+ * * Decoupled View Logic (CSS/Text) from Service.
  */
 class ArmoryController extends BaseController
 {
     private ArmoryService $armoryService;
+    private ArmoryPresenter $presenter;
 
     /**
      * DI Constructor.
      *
      * @param ArmoryService $armoryService
+     * @param ArmoryPresenter $presenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
@@ -29,6 +31,7 @@ class ArmoryController extends BaseController
      */
     public function __construct(
         ArmoryService $armoryService,
+        ArmoryPresenter $presenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -36,6 +39,7 @@ class ArmoryController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->armoryService = $armoryService;
+        $this->presenter = $presenter;
     }
 
     /**
@@ -44,12 +48,20 @@ class ArmoryController extends BaseController
     public function show(): void
     {
         $userId = $this->session->get('user_id');
-        $data = $this->armoryService->getArmoryData($userId);
         
-        $data['title'] = 'Armory';
-        $data['layoutMode'] = 'full';
+        // 1. Get Raw Business Data (Service Layer)
+        // Service no longer returns CSS classes or button labels.
+        $rawData = $this->armoryService->getArmoryData($userId);
+        
+        // 2. Transform to View Model (Presentation Layer)
+        // Presenter adds 'level_status_class', 'manufacture_btn_text', etc.
+        $viewModel = $this->presenter->present($rawData);
+        
+        $viewModel['title'] = 'Armory';
+        $viewModel['layoutMode'] = 'full';
 
-        $this->render('armory/show.php', $data);
+        // 3. Render
+        $this->render('armory/show.php', $viewModel);
     }
 
     /**
@@ -93,7 +105,6 @@ class ArmoryController extends BaseController
         // 3. Response Handling
         if ($isJson) {
             if ($response->isSuccess()) {
-                // REFACTOR: Data comes directly from Service payload. No extra queries.
                 $this->session->setFlash('success', $response->message);
 
                 $this->jsonResponse([

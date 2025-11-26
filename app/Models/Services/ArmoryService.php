@@ -13,8 +13,8 @@ use Throwable;
 
 /**
  * Handles all business logic for the Armory (Manufacturing & Equipping).
- * * REFACTORED PHASE 2: Controller Integrity.
- * * Methods now return data payloads to prevent Controllers from re-querying Repositories.
+ * * REFACTORED Phase 3: Strict MVC Compliance.
+ * * Presentation logic removed (CSS classes, button text). Now returns raw state.
  */
 class ArmoryService
 {
@@ -76,7 +76,7 @@ class ArmoryService
             }
         }
 
-        // 4. Prepare Tiered Manufacturing Data
+        // 4. Prepare Tiered Manufacturing Data (Raw State)
         $manufacturingData = [];
         foreach ($this->armoryConfig as $unitKey => $unitData) {
             $tieredRaw = $this->organizeByTier($unitData);
@@ -279,6 +279,10 @@ class ArmoryService
         return $totalBonus;
     }
 
+    /**
+     * Enriches item data with state (e.g., has_level, costs).
+     * VISUAL LOGIC REMOVED.
+     */
     private function enrichItemData(array $item, array $inventory, int $armoryLevel, float $discountPercent, array $lookup): array
     {
         $itemKey = $item['item_key'];
@@ -296,6 +300,7 @@ class ArmoryService
         $hasPrereq = $isTier1 || $prereqOwned > 0;
         $canManufacture = $hasLevel && $hasPrereq;
         
+        // Pass pure data to Controller/Presenter
         $item['is_tier_1'] = $isTier1;
         $item['prereq_key'] = $prereqKey;
         $item['prereq_name'] = $prereqName;
@@ -304,16 +309,10 @@ class ArmoryService
         $item['base_cost'] = $baseCost;
         $item['effective_cost'] = $effectiveCost;
         $item['armory_level_req'] = $reqLevel;
+        $item['has_level'] = $hasLevel; // Replaces 'level_status_class' logic
         $item['can_manufacture'] = $canManufacture;
-        $item['level_status_class'] = $hasLevel ? 'status-ok' : 'status-bad';
-        $item['manufacture_btn_text'] = $isTier1 ? 'Manufacture' : 'Upgrade';
         
-        $badges = [];
-        if (isset($item['attack'])) $badges[] = ['type' => 'attack', 'label' => "+{$item['attack']} Atk"];
-        if (isset($item['defense'])) $badges[] = ['type' => 'defense', 'label' => "+{$item['defense']} Def"];
-        if (isset($item['credit_bonus'])) $badges[] = ['type' => 'defense', 'label' => "+{$item['credit_bonus']} Cr"]; 
-        $item['stat_badges'] = $badges;
-
+        // Stats are preserved, but formatting is removed
         return $item;
     }
 
