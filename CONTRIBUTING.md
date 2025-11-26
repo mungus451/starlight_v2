@@ -397,7 +397,7 @@ class CreateItemRepairsTable extends AbstractMigration
 Run the migration:
 
 ```bash
-php vendor/bin/phinx migrate
+composer phinx migrate
 ```
 
 ### Step 8: Add Game Balance Configuration
