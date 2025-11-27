@@ -23,49 +23,49 @@ return [
         'fortification' => [
             'name' => 'Fortification',
             'base_cost' => 100000,
-            'multiplier' => 1.8,
+            'multiplier' => 2.8,
             'category' => 'Defense',
             'description' => 'Increases the base power of your Guards and overall structural integrity.'
         ],
         'offense_upgrade' => [
             'name' => 'Offense Upgrade',
             'base_cost' => 50000,
-            'multiplier' => 2.0,
+            'multiplier' => 4.0,
             'category' => 'Offense',
             'description' => 'Increases the base power of your Soldiers in offensive operations.'
         ],
         'defense_upgrade' => [
             'name' => 'Defense Upgrade',
             'base_cost' => 50000,
-            'multiplier' => 2.0,
+            'multiplier' => 4.0,
             'category' => 'Defense',
             'description' => 'Increases the effectiveness of your Guards and Fortifications on defense.'
         ],
         'spy_upgrade' => [
             'name' => 'Spy Upgrade',
             'base_cost' => 75000,
-            'multiplier' => 1.9,
+            'multiplier' => 2.9,
             'category' => 'Intel',
             'description' => 'Improves spy success rates and counter-espionage capabilities.'
         ],
         'economy_upgrade' => [
             'name' => 'Economy Upgrade',
             'base_cost' => 200000,
-            'multiplier' => 1.7,
+            'multiplier' => 2.7,
             'category' => 'Economy',
             'description' => 'Increases your passive credit income generated each turn.'
         ],
         'population' => [
             'name' => 'Population',
             'base_cost' => 150000,
-            'multiplier' => 1.6,
+            'multiplier' => 2.6,
             'category' => 'Economy',
             'description' => 'Increases the number of untrained citizens that arrive each turn.'
         ],
         'armory' => [
             'name' => 'Armory',
             'base_cost' => 120000,
-            'multiplier' => 2.1,
+            'multiplier' => 4.1,
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
