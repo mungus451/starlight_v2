@@ -1,0 +1,126 @@
+name: Tests & Architecture Audits
+
+on:
+  push:
+    branches: [ master, develop, github_actions ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  tests:
+    name: PHPUnit Tests & Architecture Verification
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: rootpass
+          MARIADB_DATABASE: starlightDB
+          MARIADB_USER: sd_admin
+          MARIADB_PASSWORD: starlight
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, redis
+          coverage: xdebug
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Setup environment file
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_HOST=db/DB_HOST=127.0.0.1/' .env
+          sed -i 's/REDIS_HOST=redis/REDIS_HOST=127.0.0.1/' .env
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MySQL is ready"
+              break
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+      - name: Create test database
+        run: |
+          mysql -h 127.0.0.1 -u root -prootpass -e "CREATE DATABASE IF NOT EXISTS starlightDB_test;"
+          mysql -h 127.0.0.1 -u root -prootpass -e "GRANT ALL PRIVILEGES ON starlightDB_test.* TO 'sd_admin'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Run MVC Compliance Audit
+        run: php tests/verify_mvc_compliance.php
+
+      - name: Run Session Decoupling Audit
+        run: php tests/VerifySessionDecoupling.php
+
+      - name: Run DI Resolution Verification
+        run: php tests/verify_di_resolution.php
+
+      - name: Run PHPUnit Tests with Coverage
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --colors=never
+
+      - name: Check Coverage Threshold
+        run: |
+          COVERAGE=$(php -r "
+            \$xml = simplexml_load_file('coverage.xml');
+            \$metrics = \$xml->project->metrics;
+            \$lines = (int)\$metrics['coveredstatements'];
+            \$total = (int)\$metrics['statements'];
+            if (\$total > 0) {
+              echo round((\$lines / \$total) * 100, 2);
+            } else {
+              echo '0';
+            }
+          ")
+          echo "Code Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 85" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below required 85%"
+            exit 1
+          else
+            echo "✅ Coverage ${COVERAGE}% meets threshold"
+          fi
+
+      - name: Upload coverage to Codecov (optional)
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+        continue-on-error: true
