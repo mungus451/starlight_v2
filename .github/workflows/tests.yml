@@ -118,10 +118,9 @@ jobs:
             echo "✅ Coverage ${COVERAGE}% meets ${THRESHOLD}% threshold"
           fi
 
-      - name: Upload coverage to Codecov (optional)
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-        continue-on-error: true
+          name: coverage-report
+          path: coverage.xml
