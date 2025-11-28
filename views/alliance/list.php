@@ -3,17 +3,26 @@
 /* @var \App\Models\Entities\Alliance[] $alliances */
 /* @var array $pagination */
 /* @var int $perPage */
+/* @var int|null $currentUserAllianceId (Globally injected by BaseController) */
 ?>
 
 <div class="container-full">
     <h1>Alliances</h1>
 
     <div class="data-table-container">
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-            <a href="/alliance/create" class="btn-submit btn-accent">
-                Found a New Alliance
-            </a>
-        </div>
+        
+        <!-- Only show the Create button if the user is NOT in an alliance -->
+        <?php if ($currentUserAllianceId === null): ?>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                <a href="/alliance/create" class="btn-submit btn-accent">
+                    Found a New Alliance
+                </a>
+            </div>
+        <?php else: ?>
+            <p style="text-align: right; color: var(--muted); margin-bottom: 1rem; font-size: 0.9rem;">
+                You are currently a member of an alliance.
+            </p>
+        <?php endif; ?>
 
         <table class="data-table">
             <thead>
@@ -21,11 +30,12 @@
                     <th>Tag</th>
                     <th>Name</th>
                     <th>Net Worth</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($alliances)): ?>
-                    <tr><td colspan="3" style="text-align: center; color: var(--muted); padding: 2rem;">There are no alliances... yet.</td></tr>
+                    <tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 2rem;">There are no alliances... yet.</td></tr>
                 <?php else: ?>
                     <?php foreach ($alliances as $alliance): ?>
                         <tr>
@@ -38,8 +48,18 @@
                                 <a href="/alliance/profile/<?= $alliance->id ?>">
                                     <?= htmlspecialchars($alliance->name) ?>
                                 </a>
+                                <?php if ($alliance->id === $currentUserAllianceId): ?>
+                                    <span class="data-badge" style="margin-left: 0.5rem; font-size: 0.7rem; background: rgba(45, 209, 209, 0.2); color: var(--accent);">YOUR ALLIANCE</span>
+                                <?php endif; ?>
                             </td>
                             <td data-label="Net Worth"><?= number_format($alliance->net_worth) ?></td>
+                            <td data-label="Status">
+                                <?php if ($alliance->is_joinable): ?>
+                                    <span style="color: var(--accent-green); font-size: 0.85rem;">Open</span>
+                                <?php else: ?>
+                                    <span style="color: var(--muted); font-size: 0.85rem;">Application</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

@@ -37,14 +37,15 @@
             <a href="/battle">Battle</a>
             <a href="/level-up">Level Up</a>
             
+            <!-- NEW: Global Alliance List Link -->
+            <a href="/alliance/list">Alliances</a>
+            
             <?php if ($currentUserAllianceId !== null): ?>
                 <a href="/alliance/profile/<?= $currentUserAllianceId ?>">My Alliance</a>
                 <a href="/alliance/forum">Forum</a>
                 <a href="/alliance/structures">A. Structures</a>
                 <a href="/alliance/diplomacy">Diplomacy</a>
                 <a href="/alliance/war">War Room</a>
-            <?php else: ?>
-                <a href="/alliance/list">Alliances</a>
             <?php endif; ?>
             
             <a href="/settings">Settings</a>

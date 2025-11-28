@@ -104,6 +104,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
+    // NEW: Alliance Avatar Route
+    $r->addRoute('GET', '/serve/alliance_avatar/{filename}', [FileController::class, 'showAllianceAvatar']);
 
     // --- Economy ---
     $r->addRoute('GET', '/bank', [BankController::class, 'show']);
@@ -178,7 +180,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // Refactored: Settings -> AllianceSettingsController
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
     
-    // Roles (Fixed routing: mapped DELETE to AllianceRoleController instead of old ManagementController)
+    // Roles
     $r->addRoute('GET', '/alliance/roles', [AllianceRoleController::class, 'showAll']);
     $r->addRoute('POST', '/alliance/roles/create', [AllianceRoleController::class, 'handleCreate']);
     $r->addRoute('POST', '/alliance/roles/update/{id:\d+}', [AllianceRoleController::class, 'handleUpdate']);
@@ -247,7 +249,7 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/notifications', '/black-market'
+                '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market'
             ];
             
             $isProtected = false;

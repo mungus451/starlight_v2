@@ -18,7 +18,7 @@ use Throwable;
 /**
  * Handles all "write" logic for managing alliances.
  * * Refactored Phase 1.4: Strict MVC Compliance.
- * * FULL IMPLEMENTATION - NO OMISSIONS.
+ * * Updated Phase 16: Added Alliance Profile Picture Upload support.
  */
 class AllianceManagementService
 {
@@ -33,6 +33,8 @@ class AllianceManagementService
     private ResourceRepository $resourceRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
+
+    private string $storageRoot;
 
     public function __construct(
         PDO $db,
@@ -56,30 +58,136 @@ class AllianceManagementService
         $this->resourceRepo = $resourceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
+
+        // Define storage root relative to this file
+        $this->storageRoot = realpath(__DIR__ . '/../../../storage');
     }
 
     /**
-     * Retrieves data for the Role Management page, enforcing permissions.
-     *
-     * @param int $userId
+     * Updates public profile with file upload support.
+     * 
+     * @param int $adminId
+     * @param int $allianceId
+     * @param string $description
+     * @param array $file $_FILES array for the image
+     * @param bool $removePhoto Checkbox state
+     * @param bool $isJoinable Recruitment state
      * @return ServiceResponse
      */
+    public function updateProfile(int $adminId, int $allianceId, string $description, array $file, bool $removePhoto, bool $isJoinable): ServiceResponse
+    {
+        if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
+            return ServiceResponse::error('You do not have permission to edit the profile.');
+        }
+
+        // Get current alliance data to handle file cleanup
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if (!$alliance) {
+            return ServiceResponse::error('Alliance not found.');
+        }
+
+        $currentPfpFilename = $alliance->profile_picture_url;
+        $newPfpFilename = $currentPfpFilename; // Keep existing by default
+
+        // Logic Branch 1: Remove Photo
+        if ($removePhoto) {
+            $this->deleteAvatarFile($currentPfpFilename);
+            $newPfpFilename = null;
+        }
+        // Logic Branch 2: New File Uploaded
+        elseif (isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
+            $uploadResult = $this->processUploadedAvatar($file, $allianceId, $currentPfpFilename);
+            
+            if (!$uploadResult['success']) {
+                return ServiceResponse::error($uploadResult['message']);
+            }
+            $newPfpFilename = $uploadResult['filename'];
+        }
+        // Check for upload errors other than "no file"
+        elseif (isset($file['error']) && $file['error'] !== UPLOAD_ERR_NO_FILE) {
+            return ServiceResponse::error('An error occurred during file upload. Code: ' . $file['error']);
+        }
+
+        $this->allianceRepo->updateProfile($allianceId, $description, $newPfpFilename ?? '', $isJoinable);
+        return ServiceResponse::success('Alliance profile updated.');
+    }
+
+    // --- File Handling Helpers ---
+
+    /**
+     * Validates and saves a new alliance avatar.
+     */
+    private function processUploadedAvatar(array $file, int $allianceId, ?string $currentPfpFilename): array
+    {
+        // 1. Validate Size (2MB limit)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return ['success' => false, 'message' => 'File is too large. Maximum size is 2MB.', 'filename' => null];
+        }
+
+        // 2. Validate Type
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            return ['success' => false, 'message' => 'Uploaded file is not a valid image.', 'filename' => null];
+        }
+
+        $mime = $imageInfo['mime'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        if (!in_array($mime, $allowedMimes)) {
+            return ['success' => false, 'message' => 'Invalid file type. Allowed types: JPEG, PNG, GIF, WebP, AVIF.', 'filename' => null];
+        }
+        
+        // 3. Ensure Directory Exists
+        $uploadDir = $this->storageRoot . '/alliance_avatars/';
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0755, true)) {
+                return ['success' => false, 'message' => 'Server configuration error: Cannot create storage directory.', 'filename' => null];
+            }
+        }
+
+        // 4. Generate New Path
+        $extension = image_type_to_extension($imageInfo[2]);
+        $filename = "alliance_{$allianceId}_" . time() . $extension;
+        $filePath = $uploadDir . $filename;
+
+        // 5. Move File
+        if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+            return ['success' => false, 'message' => 'Failed to save uploaded file. Check server permissions.', 'filename' => null];
+        }
+        
+        // 6. Delete old file to save space
+        $this->deleteAvatarFile($currentPfpFilename);
+
+        return ['success' => true, 'message' => null, 'filename' => $filename];
+    }
+
+    private function deleteAvatarFile(?string $filename): void
+    {
+        if (empty($filename)) return;
+        
+        // Check if it's a local file (doesn't start with http)
+        if (str_starts_with($filename, 'http')) return; 
+
+        $filePath = $this->storageRoot . '/alliance_avatars/' . $filename;
+        if (file_exists($filePath) && is_writable($filePath)) {
+            @unlink($filePath);
+        }
+    }
+
+    // --- Existing Service Methods ---
+
     public function getRoleManagementData(int $userId): ServiceResponse
     {
-        // 1. Validate User & Alliance
         $user = $this->userRepo->findById($userId);
         if (!$user || $user->alliance_id === null) {
             return ServiceResponse::error('You must be in an alliance to manage roles.');
         }
         $allianceId = $user->alliance_id;
 
-        // 2. Permission Check
         $userRole = $this->roleRepo->findById($user->alliance_role_id);
         if (!$userRole || !$userRole->can_manage_roles) {
             return ServiceResponse::error('You do not have permission to manage roles.');
         }
 
-        // 3. Fetch Data
         $roles = $this->roleRepo->findByAllianceId($allianceId);
 
         return ServiceResponse::success('Data retrieved', [
@@ -88,17 +196,8 @@ class AllianceManagementService
         ]);
     }
 
-    /**
-     * Attempts to create a new alliance.
-     * 
-     * @param int $userId
-     * @param string $name
-     * @param string $tag
-     * @return ServiceResponse
-     */
     public function createAlliance(int $userId, string $name, string $tag): ServiceResponse
     {
-        // 1. Validation
         if (empty(trim($name)) || empty(trim($tag))) {
             return ServiceResponse::error('Alliance name and tag cannot be empty.');
         }
@@ -128,13 +227,10 @@ class AllianceManagementService
             return ServiceResponse::error('You do not have enough credits to found an alliance.');
         }
 
-        // 2. Transaction
         $this->db->beginTransaction();
         try {
-            // 2a. Create the alliance
             $newAllianceId = $this->allianceRepo->create($name, $tag, $userId);
 
-            // 2b. Create the default roles
             $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
                 'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
                 'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
@@ -145,11 +241,9 @@ class AllianceManagementService
             $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
             $this->roleRepo->create($newAllianceId, 'Member', 9, []);
 
-            // 2c. Deduct credits
             $newCredits = $resources->credits - $cost;
             $this->resourceRepo->updateCredits($userId, $newCredits);
 
-            // 2d. Update the user to be the leader
             $this->userRepo->setAlliance($userId, $newAllianceId, $leaderRoleId);
 
             $this->db->commit();
@@ -168,9 +262,6 @@ class AllianceManagementService
         }
     }
 
-    /**
-     * A user applies to join an alliance.
-     */
     public function applyToAlliance(int $userId, int $allianceId): ServiceResponse
     {
         $user = $this->userRepo->findById($userId);
@@ -184,7 +275,6 @@ class AllianceManagementService
         
         $alliance = $this->allianceRepo->findById($allianceId);
         if ($alliance && $alliance->is_joinable) {
-            // Recursively accept self if open recruitment
             return $this->acceptApplication($userId, null, $userId, $allianceId);
         }
 
@@ -195,9 +285,6 @@ class AllianceManagementService
         return ServiceResponse::error('A database error occurred.');
     }
 
-    /**
-     * A user cancels their own application.
-     */
     public function cancelApplication(int $userId, int $appId): ServiceResponse
     {
         $app = $this->appRepo->findById($appId);
@@ -210,9 +297,6 @@ class AllianceManagementService
         return ServiceResponse::success('Application cancelled.');
     }
 
-    /**
-     * A user leaves their current alliance.
-     */
     public function leaveAlliance(int $userId): ServiceResponse
     {
         $user = $this->userRepo->findById($userId);
@@ -231,16 +315,12 @@ class AllianceManagementService
         return ServiceResponse::success('You have left the alliance.');
     }
 
-    /**
-     * An alliance admin accepts a pending application.
-     */
     public function acceptApplication(int $adminId, ?int $appId, ?int $targetUserId = null, ?int $targetAllianceId = null): ServiceResponse
     {
         $targetAllianceId = $targetAllianceId ?? 0;
         $targetUserId = $targetUserId ?? 0;
 
         if ($appId !== null) {
-            // Standard flow
             $app = $this->appRepo->findById($appId);
             if (!$app) {
                 return ServiceResponse::error('Application not found.');
@@ -252,7 +332,6 @@ class AllianceManagementService
                 return ServiceResponse::error('You do not have permission to do this.');
             }
         } else {
-            // 'is_joinable' flow (Self-join)
             if ($adminId !== $targetUserId) {
                 return ServiceResponse::error('Invalid join operation.');
             }
@@ -283,9 +362,6 @@ class AllianceManagementService
         return ServiceResponse::success('Member accepted!', ['new_alliance_id' => $targetAllianceId]);
     }
 
-    /**
-     * An alliance admin rejects a pending application.
-     */
     public function rejectApplication(int $adminId, int $appId): ServiceResponse
     {
         $app = $this->appRepo->findById($appId);
@@ -301,9 +377,6 @@ class AllianceManagementService
         return ServiceResponse::success('Application rejected.');
     }
 
-    /**
-     * An alliance member with invite perms invites a user.
-     */
     public function inviteUser(int $inviterId, int $targetUserId): ServiceResponse
     {
         $inviterUser = $this->userRepo->findById($inviterId);
@@ -342,26 +415,6 @@ class AllianceManagementService
         return ServiceResponse::success("{$targetUser->characterName} has accepted your invite!");
     }
 
-    /**
-     * Updates public profile.
-     */
-    public function updateProfile(int $adminId, int $allianceId, string $description, string $pfpUrl, bool $isJoinable): ServiceResponse
-    {
-        if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
-            return ServiceResponse::error('You do not have permission to edit the profile.');
-        }
-        
-        if (!empty($pfpUrl) && !filter_var($pfpUrl, FILTER_VALIDATE_URL)) {
-            return ServiceResponse::error('Profile picture must be a valid URL.');
-        }
-
-        $this->allianceRepo->updateProfile($allianceId, $description, $pfpUrl, $isJoinable);
-        return ServiceResponse::success('Alliance profile updated.');
-    }
-
-    /**
-     * Kicks a member.
-     */
     public function kickMember(int $adminId, int $targetUserId): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminId);
@@ -387,9 +440,6 @@ class AllianceManagementService
         return ServiceResponse::success("{$targetUser->characterName} has been kicked from the alliance.");
     }
 
-    /**
-     * Changes a member's role.
-     */
     public function changeMemberRole(int $adminId, int $targetUserId, int $newRoleId): ServiceResponse
     {
         $adminUser = $this->userRepo->findById($adminId);
@@ -418,8 +468,6 @@ class AllianceManagementService
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
         return ServiceResponse::success("{$targetUser->characterName}'s role has been updated to {$newRole->name}.");
     }
-
-    // --- Role Management ---
 
     public function createRole(int $adminId, int $allianceId, string $name, array $permissions): ServiceResponse
     {
@@ -483,8 +531,6 @@ class AllianceManagementService
 
         return ServiceResponse::success("Role '{$role->name}' deleted. Members reassigned to Recruit.");
     }
-
-    // --- Funding ---
 
     public function donateToAlliance(int $donatorUserId, int $amount): ServiceResponse
     {

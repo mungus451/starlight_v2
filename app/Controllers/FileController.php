@@ -5,12 +5,12 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
 
 /**
  * Handles securely serving private files from the 'storage' directory.
  * * Refactored for Strict Dependency Injection.
- * * Fixed: Updated parent constructor call to use ViewContextService.
+ * * Updated Phase 16: Added Alliance Avatar serving.
  */
 class FileController extends BaseController
 {
@@ -22,7 +22,7 @@ class FileController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         Session $session,
@@ -33,20 +33,34 @@ class FileController extends BaseController
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         
         // Define the storage root relative to this file
-        // __DIR__ is /app/Controllers, so ../../ is the project root
         $this->storageRoot = realpath(__DIR__ . '/../../storage');
     }
 
     /**
      * Serves a user's avatar.
-     * This route is protected by AuthMiddleware in index.php.
      *
      * @param array $vars ['filename' => string]
      */
     public function showAvatar(array $vars): void
     {
-        $filename = $vars['filename'] ?? '';
+        $this->serveFile($vars['filename'] ?? '', 'avatars');
+    }
+    
+    /**
+     * Serves an alliance's avatar.
+     *
+     * @param array $vars ['filename' => string]
+     */
+    public function showAllianceAvatar(array $vars): void
+    {
+        $this->serveFile($vars['filename'] ?? '', 'alliance_avatars');
+    }
 
+    /**
+     * Internal helper to serve files securely.
+     */
+    private function serveFile(string $filename, string $subDir): void
+    {
         // 1. Basic validation to prevent directory traversal
         if (empty($filename) || str_contains($filename, '..') || str_contains($filename, '/')) {
             http_response_code(404);
@@ -54,7 +68,7 @@ class FileController extends BaseController
             return;
         }
 
-        $filePath = $this->storageRoot . '/avatars/' . $filename;
+        $filePath = $this->storageRoot . '/' . $subDir . '/' . $filename;
 
         // 2. Check if file exists and is readable
         if (!file_exists($filePath) || !is_readable($filePath)) {
@@ -78,45 +92,7 @@ class FileController extends BaseController
         // 5. Stream the file
         header('Content-Type: ' . $mimeType);
         header('Content-Length: ' . filesize($filePath));
-        readfile($filePath);
-        exit;
-    }
-    
-    /**
-     * Serves an alliance's avatar.
-     *
-     * @param array $vars ['filename' => string]
-     */
-    public function showAllianceAvatar(array $vars): void
-    {
-        $filename = $vars['filename'] ?? '';
-
-        if (empty($filename) || str_contains($filename, '..') || str_contains($filename, '/')) {
-            http_response_code(404);
-            echo '404 - Not Found';
-            return;
-        }
-
-        $filePath = $this->storageRoot . '/alliance_avatars/' . $filename;
-        
-        if (!file_exists($filePath) || !is_readable($filePath)) {
-            http_response_code(404);
-            echo '404 - Not Found';
-            return;
-        }
-
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($filePath);
-
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-        if (!in_array($mimeType, $allowedMimes)) {
-            http_response_code(404);
-            echo '404 - Not a valid image';
-            return;
-        }
-
-        header('Content-Type: ' . $mimeType);
-        header('Content-Length: ' . filesize($filePath));
+        header('Cache-Control: public, max-age=86400'); // Cache for 1 day
         readfile($filePath);
         exit;
     }

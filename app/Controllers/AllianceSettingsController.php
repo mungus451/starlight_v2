@@ -6,12 +6,13 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceManagementService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
 
 /**
  * Handles alliance settings and profile configuration.
  * * Refactored to consume ServiceResponse objects.
- * * Fixed: Updated parent constructor call to use ViewContextService.
+ * * Updated Phase 16: File Upload support.
+ * * FIX: Added null check for alliance_id to prevent Type Errors.
  */
 class AllianceSettingsController extends BaseController
 {
@@ -24,7 +25,7 @@ class AllianceSettingsController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         AllianceManagementService $mgmtService,
@@ -46,13 +47,20 @@ class AllianceSettingsController extends BaseController
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'description' => 'nullable|string|max:1000',
-            'profile_picture_url' => 'nullable|url',
-            'is_joinable' => 'nullable' // Checkbox (present = "1", missing = null)
+            'is_joinable' => 'nullable', // Checkbox
+            'remove_picture' => 'nullable' // Checkbox
         ]);
 
+        // 2. Validate Session State (CRITICAL FIX)
         $allianceId = $this->session->get('alliance_id');
+        if (empty($allianceId)) {
+            $this->session->setFlash('error', 'Session error: You are not currently in an alliance.');
+            $this->redirect('/dashboard');
+            return;
+        }
+        $allianceId = (int)$allianceId;
 
-        // 2. Validate CSRF
+        // 3. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/alliance/profile/' . $allianceId);
@@ -63,17 +71,21 @@ class AllianceSettingsController extends BaseController
         
         // Convert checkbox state to boolean
         $isJoinable = isset($data['is_joinable']) && $data['is_joinable'] == '1';
+        $removePhoto = isset($data['remove_picture']) && $data['remove_picture'] == '1';
+        
+        $file = $_FILES['profile_picture'] ?? ['error' => UPLOAD_ERR_NO_FILE];
 
-        // 3. Execute Service
+        // 4. Execute Service
         $response = $this->mgmtService->updateProfile(
             $adminId, 
             $allianceId, 
             $data['description'] ?? '', 
-            $data['profile_picture_url'] ?? '', 
+            $file,
+            $removePhoto,
             $isJoinable
         );
         
-        // 4. Handle Response
+        // 5. Handle Response
         if ($response->isSuccess()) {
             $this->session->setFlash('success', $response->message);
         } else {

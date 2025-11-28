@@ -2,11 +2,6 @@
 
 // tests/AllianceStructureBonusTest.php
 
-/**
- * TEST: Verify that alliance structure bonuses (specifically citizen_growth_flat)
- * are properly applied during turn processing.
- */
-
 if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
@@ -32,141 +27,158 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 
 echo "\n" . str_repeat("=", 60) . "\n";
-echo "   ALLIANCE STRUCTURE BONUS TEST: citizen_growth_flat\n";
+echo "   ALLIANCE STRUCTURE WIRING TEST (ALL STRUCTURES)\n";
 echo str_repeat("=", 60) . "\n";
 
 try {
-    // 1. Build Container
-    echo "[1/8] Booting Container... ";
+    // 1. Build Container & Services
     $container = ContainerFactory::createContainer();
     $db = $container->get(PDO::class);
-    echo "OK\n";
-
-    // 2. Resolve Dependencies
-    echo "[2/8] Resolving Services... ";
-    $powerCalcService = $container->get(PowerCalculatorService::class);
+    
+    $powerCalc = $container->get(PowerCalculatorService::class);
     $userRepo = $container->get(UserRepository::class);
-    $resourceRepo = $container->get(ResourceRepository::class);
+    $resRepo = $container->get(ResourceRepository::class);
     $statsRepo = $container->get(StatsRepository::class);
     $structRepo = $container->get(StructureRepository::class);
     $allianceRepo = $container->get(AllianceRepository::class);
     $roleRepo = $container->get(AllianceRoleRepository::class);
-    $allianceStructRepo = $container->get(AllianceStructureRepository::class);
-    $structDefRepo = $container->get(AllianceStructureDefinitionRepository::class);
-    echo "OK\n";
-
-    // 3. Setup Test Data (in transaction for rollback)
-    echo "[3/8] Seeding Test Scenario...\n";
+    $allyStructRepo = $container->get(AllianceStructureRepository::class);
+    
+    // 2. Start Transaction
     $db->beginTransaction();
 
-    // Create a test user
-    $testUserId = $userRepo->createUser(
-        'alliance_bonus_test_' . time() . '@example.com',
-        'AllianceBonusTest_' . time(),
-        'hash'
-    );
-    echo "      - Test User Created (ID: $testUserId)\n";
-
-    // Create test user data
-    $resourceRepo->createDefaults($testUserId);
-    $statsRepo->createDefaults($testUserId);
-    $structRepo->createDefaults($testUserId);
-
-    // Create an alliance
-    $allianceId = $allianceRepo->create('TestAlliance_' . time(), 'TA' . substr(time(), -2), $testUserId);
-    echo "      - Alliance Created (ID: $allianceId)\n";
-
-    // Create a role and assign user to alliance
-    $roleId = $roleRepo->create($allianceId, 'Leader', 0, []);
-    $userRepo->setAlliance($testUserId, $allianceId, $roleId);
-    echo "      - User assigned to alliance with role\n";
-
-    // 4. Test without alliance structure
-    echo "[4/8] Testing income WITHOUT alliance structure...\n";
-    $resources = $resourceRepo->findByUserId($testUserId);
-    $stats = $statsRepo->findByUserId($testUserId);
-    $structures = $structRepo->findByUserId($testUserId);
-
-    $incomeWithoutBonus = $powerCalcService->calculateIncomePerTurn(
-        $testUserId,
-        $resources,
-        $stats,
-        $structures,
-        $allianceId
-    );
-    echo "      - Base citizen income: {$incomeWithoutBonus['base_citizen_income']}\n";
-    echo "      - Alliance citizen bonus: {$incomeWithoutBonus['alliance_citizen_bonus']}\n";
-    echo "      - Total citizens/turn: {$incomeWithoutBonus['total_citizens']}\n";
-
-    // 5. Add population_habitat structure at level 1
-    echo "[5/8] Adding Population Habitat structure (Level 1)...\n";
-    $allianceStructRepo->createOrUpgrade($allianceId, 'population_habitat', 1);
-    echo "      - population_habitat added at level 1\n";
-
-    // 6. Test WITH alliance structure (level 1)
-    echo "[6/8] Testing income WITH alliance structure (Level 1)...\n";
-    $incomeWithBonus = $powerCalcService->calculateIncomePerTurn(
-        $testUserId,
-        $resources,
-        $stats,
-        $structures,
-        $allianceId
-    );
-    echo "      - Base citizen income: {$incomeWithBonus['base_citizen_income']}\n";
-    echo "      - Alliance citizen bonus: {$incomeWithBonus['alliance_citizen_bonus']}\n";
-    echo "      - Total citizens/turn: {$incomeWithBonus['total_citizens']}\n";
-
-    // 7. Upgrade structure to level 2 and test scaling
-    echo "[7/8] Testing with structure at Level 2...\n";
-    $allianceStructRepo->createOrUpgrade($allianceId, 'population_habitat', 2);
+    // 3. Create Unique Test Entities
+    // Use microtime to ensure uniqueness even if run multiple times quickly
+    $seed = str_replace('.', '', (string)microtime(true));
+    $uniqueTag = substr(str_shuffle("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, 5);
     
-    $incomeLevel2 = $powerCalcService->calculateIncomePerTurn(
-        $testUserId,
-        $resources,
-        $stats,
-        $structures,
-        $allianceId
-    );
-    echo "      - Base citizen income: {$incomeLevel2['base_citizen_income']}\n";
-    echo "      - Alliance citizen bonus: {$incomeLevel2['alliance_citizen_bonus']}\n";
-    echo "      - Total citizens/turn: {$incomeLevel2['total_citizens']}\n";
+    $userId = $userRepo->createUser("test_{$seed}@example.com", "Cmdr_{$seed}", 'hash');
+    $resRepo->createDefaults($userId);
+    $statsRepo->createDefaults($userId);
+    $structRepo->createDefaults($userId);
+    
+    // Give user basic income capability (1 worker) and offense/defense (1 unit)
+    $resRepo->updateTrainedUnits($userId, 1000000, 0, 1, 1, 1, 0, 0); 
 
-    // 8. Verify results
-    echo "[8/8] Verifying Results...\n";
+    // Create Alliance with Unique Tag
+    $allianceId = $allianceRepo->create("Ally_{$seed}", $uniqueTag, $userId);
+    $roleId = $roleRepo->create($allianceId, 'Leader', 1, []);
+    $userRepo->setAlliance($userId, $allianceId, $roleId);
 
-    // Check: Alliance bonus should be 0 before structure
-    if ($incomeWithoutBonus['alliance_citizen_bonus'] !== 0) {
-        throw new Exception("FAILED: Alliance bonus should be 0 without structure, got: {$incomeWithoutBonus['alliance_citizen_bonus']}");
+    echo "✅ Setup Complete (User ID: $userId, Alliance: [$uniqueTag] $allianceId)\n\n";
+
+    // --- Helpers ---
+    $refresh = function() use ($userId, $resRepo, $statsRepo, $structRepo) {
+        return [
+            $resRepo->findByUserId($userId),
+            $statsRepo->findByUserId($userId),
+            $structRepo->findByUserId($userId)
+        ];
+    };
+
+    // --- TEST 1: BASELINE (No Alliance Structures) ---
+    $powerCalc->clearCache();
+    [$r, $st, $str] = $refresh();
+    
+    $baselineInc = $powerCalc->calculateIncomePerTurn($userId, $r, $st, $str, $allianceId);
+    $baselineOff = $powerCalc->calculateOffensePower($userId, $r, $st, $str, $allianceId);
+    $baselineDef = $powerCalc->calculateDefensePower($userId, $r, $st, $str, $allianceId);
+
+    echo "1. Baseline Check:\n";
+    echo "   - Citizens: {$baselineInc['alliance_citizen_bonus']}\n";
+    echo "   - Income Bonus %: {$baselineInc['alliance_credit_bonus_pct']}\n";
+    echo "   - Offense Bonus %: {$baselineOff['alliance_bonus_pct']}\n";
+    echo "   - Defense Bonus %: {$baselineDef['alliance_bonus_pct']}\n";
+    
+    if ($baselineInc['alliance_citizen_bonus'] !== 0 || $baselineInc['alliance_credit_bonus_pct'] > 0) {
+        throw new Exception("Baseline failed: Bonuses detected where none should exist.");
     }
-    echo "      - [PASS] Alliance bonus is 0 without structure\n";
+    echo "   -> PASS\n\n";
 
-    // Check: Alliance bonus should be 5 with level 1 structure (5 * 1 = 5)
-    if ($incomeWithBonus['alliance_citizen_bonus'] !== 5) {
-        throw new Exception("FAILED: Alliance bonus should be 5 with level 1 structure, got: {$incomeWithBonus['alliance_citizen_bonus']}");
-    }
-    echo "      - [PASS] Alliance bonus is 5 with level 1 structure\n";
+    // --- TEST 2: POPULATION HABITAT (Citizens) ---
+    // Bonus: +5 Flat per level
+    $allyStructRepo->createOrUpgrade($allianceId, 'population_habitat', 1);
+    $powerCalc->clearCache();
+    $inc = $powerCalc->calculateIncomePerTurn($userId, $r, $st, $str, $allianceId);
+    
+    echo "2. Population Habitat (Lvl 1):\n";
+    echo "   - Expected: 5 | Actual: {$inc['alliance_citizen_bonus']}\n";
+    if ($inc['alliance_citizen_bonus'] !== 5) throw new Exception("Population Habitat failed.");
+    echo "   -> PASS\n\n";
 
-    // Check: Alliance bonus should be 10 with level 2 structure (5 * 2 = 10)
-    if ($incomeLevel2['alliance_citizen_bonus'] !== 10) {
-        throw new Exception("FAILED: Alliance bonus should be 10 with level 2 structure, got: {$incomeLevel2['alliance_citizen_bonus']}");
-    }
-    echo "      - [PASS] Alliance bonus is 10 with level 2 structure\n";
+    // --- TEST 3: COMMAND NEXUS (Income %) ---
+    // Bonus: +0.05 (5%) per level
+    $allyStructRepo->createOrUpgrade($allianceId, 'command_nexus', 1);
+    $powerCalc->clearCache();
+    $inc = $powerCalc->calculateIncomePerTurn($userId, $r, $st, $str, $allianceId);
+    
+    echo "3. Command Nexus (Lvl 1):\n";
+    echo "   - Expected: 0.05 | Actual: {$inc['alliance_credit_bonus_pct']}\n";
+    if (abs($inc['alliance_credit_bonus_pct'] - 0.05) > 0.001) throw new Exception("Command Nexus failed.");
+    echo "   -> PASS\n\n";
 
-    // Check: Total citizens should include the alliance bonus
-    $expectedTotal = $incomeLevel2['base_citizen_income'] + $incomeLevel2['alliance_citizen_bonus'];
-    if ($incomeLevel2['total_citizens'] !== $expectedTotal) {
-        throw new Exception("FAILED: Total citizens should be $expectedTotal, got: {$incomeLevel2['total_citizens']}");
-    }
-    echo "      - [PASS] Total citizens includes alliance bonus correctly\n";
+    // --- TEST 4: GALACTIC RESEARCH HUB (Resources %) ---
+    // Bonus: +0.10 (10%) per level (additive with Nexus)
+    $allyStructRepo->createOrUpgrade($allianceId, 'galactic_research_hub', 1);
+    $powerCalc->clearCache();
+    $inc = $powerCalc->calculateIncomePerTurn($userId, $r, $st, $str, $allianceId);
+    
+    echo "4. Galactic Research Hub (Lvl 1 + Nexus Lvl 1):\n";
+    // 0.05 (Nexus) + 0.10 (Hub) = 0.15
+    echo "   - Expected: 0.15 | Actual: {$inc['alliance_credit_bonus_pct']}\n";
+    if (abs($inc['alliance_credit_bonus_pct'] - 0.15) > 0.001) throw new Exception("Research Hub failed.");
+    echo "   -> PASS\n\n";
 
-    // Rollback test data
+    // --- TEST 5: ORBITAL TRAINING GROUNDS (Offense %) ---
+    // Bonus: +0.05 (5%) per level
+    $allyStructRepo->createOrUpgrade($allianceId, 'orbital_training_grounds', 1);
+    $powerCalc->clearCache();
+    $off = $powerCalc->calculateOffensePower($userId, $r, $st, $str, $allianceId);
+    
+    echo "5. Orbital Training Grounds (Lvl 1):\n";
+    echo "   - Expected: 0.05 | Actual: {$off['alliance_bonus_pct']}\n";
+    if (abs($off['alliance_bonus_pct'] - 0.05) > 0.001) throw new Exception("Training Grounds failed.");
+    echo "   -> PASS\n\n";
+
+    // --- TEST 6: CITADEL SHIELD (Defense %) ---
+    // Bonus: +0.10 (10%) per level
+    $allyStructRepo->createOrUpgrade($allianceId, 'citadel_shield', 1);
+    $powerCalc->clearCache();
+    $def = $powerCalc->calculateDefensePower($userId, $r, $st, $str, $allianceId);
+    
+    echo "6. Citadel Shield (Lvl 1):\n";
+    echo "   - Expected: 0.10 | Actual: {$def['alliance_bonus_pct']}\n";
+    if (abs($def['alliance_bonus_pct'] - 0.10) > 0.001) throw new Exception("Citadel Shield failed.");
+    echo "   -> PASS\n\n";
+
+    // --- TEST 7: WARLORD'S THRONE (Synergy) ---
+    // Bonus: +0.15 (15%) multiplier to ALL bonuses
+    // Lvl 4 Throne = +60% bonus (0.60).
+    //
+    // Population (5 base) -> 5 * 1.6 = 8
+    // Offense (0.05 base) -> 0.05 * 1.6 = 0.08
+    
+    $allyStructRepo->createOrUpgrade($allianceId, 'warlords_throne', 4);
+    $powerCalc->clearCache();
+    
+    $inc = $powerCalc->calculateIncomePerTurn($userId, $r, $st, $str, $allianceId);
+    $off = $powerCalc->calculateOffensePower($userId, $r, $st, $str, $allianceId);
+    
+    echo "7. Warlord's Throne (Lvl 4 = +60% Boost):\n";
+    
+    // Check Population
+    echo "   - Population: Expected 8 | Actual {$inc['alliance_citizen_bonus']}\n";
+    if ($inc['alliance_citizen_bonus'] !== 8) throw new Exception("Throne failed on Citizens.");
+    
+    // Check Offense
+    echo "   - Offense %: Expected 0.08 | Actual {$off['alliance_bonus_pct']}\n";
+    if (abs($off['alliance_bonus_pct'] - 0.08) > 0.001) throw new Exception("Throne failed on Offense.");
+    
+    echo "   -> PASS\n";
+
+    // Cleanup
     $db->rollBack();
-    echo "\n      - DB Transaction Rolled Back\n";
-
-    echo "\n" . str_repeat("=", 60) . "\n";
-    echo "   ✅ SUCCESS: Alliance structure bonuses are working correctly\n";
-    echo str_repeat("=", 60) . "\n";
-    exit(0);
+    echo "\n✅ SUCCESS: All 6 Alliance Structures are wired correctly.\n";
 
 } catch (Throwable $e) {
     if (isset($db) && $db->inTransaction()) {

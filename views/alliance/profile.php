@@ -16,7 +16,8 @@
     <!-- Header Banner -->
     <div class="player-header" style="justify-content: center; flex-direction: column; text-align: center;">
         <?php if ($alliance['profile_picture_url']): ?>
-            <img src="<?= htmlspecialchars($alliance['profile_picture_url']) ?>" alt="Avatar" class="player-avatar" style="width: 120px; height: 120px;">
+            <!-- Updated to use the new file route -->
+            <img src="/serve/alliance_avatar/<?= htmlspecialchars($alliance['profile_picture_url']) ?>" alt="Alliance Logo" class="player-avatar" style="width: 120px; height: 120px;">
         <?php else: ?>
             <svg class="player-avatar player-avatar-svg" style="width: 120px; height: 120px;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
@@ -135,7 +136,8 @@
             <?php if ($perms['can_edit_profile']): ?>
                 <div class="item-card">
                     <h4>Edit Profile</h4>
-                    <form action="/alliance/profile/edit" method="POST">
+                    <!-- Added enctype -->
+                    <form action="/alliance/profile/edit" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                         
                         <div class="form-group">
@@ -143,15 +145,35 @@
                             <textarea name="description" id="description" style="min-height: 80px;"><?= htmlspecialchars($alliance['description'] ?? '') ?></textarea>
                         </div>
                         
+                        <!-- NEW: File Upload Section -->
                         <div class="form-group">
-                            <label for="profile_picture_url">Image URL</label>
-                            <input type="text" name="profile_picture_url" id="profile_picture_url" value="<?= htmlspecialchars($alliance['profile_picture_url'] ?? '') ?>">
+                            <label>Alliance Logo (Max 2MB)</label>
+                            <div class="pfp-preview-container">
+                                <?php if ($alliance['profile_picture_url']): ?>
+                                    <img src="/serve/alliance_avatar/<?= htmlspecialchars($alliance['profile_picture_url']) ?>" alt="Logo Preview" class="pfp-preview">
+                                <?php else: ?>
+                                    <svg class="pfp-preview" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="padding: 1.25rem; color: #a8afd4;">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                <?php endif; ?>
+                                
+                                <div class="pfp-upload-group">
+                                    <input type="file" name="profile_picture" id="profile_picture" accept="image/jpeg,image/png,image/gif,image/webp,image/avif">
+                                    
+                                    <?php if ($alliance['profile_picture_url']): ?>
+                                    <div class="remove-pfp-group">
+                                        <input type="checkbox" name="remove_picture" id="remove_picture" value="1">
+                                        <label for="remove_picture">Remove current logo</label>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="remove-pfp-group">
+                        <div class="remove-pfp-group" style="margin-top: 1rem;">
                             <input type="hidden" name="is_joinable" value="0">
                             <input type="checkbox" name="is_joinable" id="is_joinable" value="1" <?= $alliance['is_joinable'] ? 'checked' : '' ?>>
-                            <label for="is_joinable">Open Recruitment</label>
+                            <label for="is_joinable">Open Recruitment (Anyone can join instantly)</label>
                         </div>
                         
                         <button type="submit" class="btn-submit">Save Changes</button>
