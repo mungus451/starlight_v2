@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'alliance_roles' table.
  */
-class AllianceRole
+readonly class AllianceRole
 {
     /**
      * @param int $id

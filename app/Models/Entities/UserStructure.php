@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'user_structures' table.
  */
-class UserStructure
+readonly class UserStructure
 {
     /**
      * @param int $user_id

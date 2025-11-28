@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents a single row from the 'alliance_structures' table.
  * This is a "dumb" data object for a structure an alliance owns.
  */
-class AllianceStructure
+readonly class AllianceStructure
 {
     /**
      * @param int $id

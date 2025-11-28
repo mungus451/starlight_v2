@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents a single row from the 'alliance_structures_definitions' table.
  * This is a "dumb" data object defining a purchasable structure.
  */
-class AllianceStructureDefinition
+readonly class AllianceStructureDefinition
 {
     /**
      * @param string $structure_key (e.g., 'citadel_shield')

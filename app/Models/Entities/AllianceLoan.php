@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'alliance_loans' table.
  */
-class AllianceLoan
+readonly class AllianceLoan
 {
     /**
      * @param int $id

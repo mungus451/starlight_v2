@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'alliance_forum_posts' table.
  */
-class AllianceForumPost
+readonly class AllianceForumPost
 {
     /**
      * @param int $id

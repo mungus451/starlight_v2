@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'user_stats' table.
  */
-class UserStats
+readonly class UserStats
 {
     /**
      * @param int $user_id

@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'treaties' table.
  */
-class Treaty
+readonly class Treaty
 {
     /**
      * @param int $id

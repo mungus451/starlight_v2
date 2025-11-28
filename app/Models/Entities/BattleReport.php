@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'battle_reports' table.
  */
-class BattleReport
+readonly class BattleReport
 {
     /**
      * @param int $id

@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents a single row from the 'war_history' table.
  * This is a snapshot of a concluded war.
  */
-class WarHistory
+readonly class WarHistory
 {
     /**
      * @param int $id

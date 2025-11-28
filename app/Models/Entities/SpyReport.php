@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'spy_reports' table.
  */
-class SpyReport
+readonly class SpyReport
 {
     /**
      * @param int $id

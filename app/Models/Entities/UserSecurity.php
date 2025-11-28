@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'user_security' table.
  */
-class UserSecurity
+readonly class UserSecurity
 {
     /**
      * @param int $user_id

@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents the single row from the 'house_finances' table.
  * This entity tracks the total fees collected by the house.
  */
-class HouseFinance
+readonly class HouseFinance
 {
     public function __construct(
         public readonly int $id,

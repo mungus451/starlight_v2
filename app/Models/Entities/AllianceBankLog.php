@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'alliance_bank_logs' table.
  */
-class AllianceBankLog
+readonly  class AllianceBankLog
 {
     /**
      * @param int $id

@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents a single user row from the database.
  * This is a "dumb" data object.
  */
-class User
+readonly class User
 {
     /**
      * @param int $id

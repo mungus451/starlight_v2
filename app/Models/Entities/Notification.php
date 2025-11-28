@@ -6,7 +6,7 @@ namespace App\Models\Entities;
  * Represents a single row from the 'notifications' table.
  * Immutable DTO for passing notification data between layers.
  */
-class Notification
+readonly class Notification
 {
     /**
      * @param int $id

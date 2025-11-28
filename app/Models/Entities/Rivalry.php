@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'rivalries' table.
  */
-class Rivalry
+readonly class Rivalry
 {
     /**
      * @param int $id

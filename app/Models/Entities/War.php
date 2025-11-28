@@ -5,7 +5,7 @@ namespace App\Models\Entities;
 /**
  * Represents a single row from the 'wars' table.
  */
-class War
+readonly class War
 {
     /**
      * @param int $id
