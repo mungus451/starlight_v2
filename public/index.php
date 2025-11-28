@@ -39,6 +39,7 @@ use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
+use App\Controllers\LeaderboardController; // --- NEW IMPORT ---
 use App\Middleware\AuthMiddleware;
 
 // 1. Autoloader
@@ -104,7 +105,6 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
-    // NEW: Alliance Avatar Route
     $r->addRoute('GET', '/serve/alliance_avatar/{filename}', [FileController::class, 'showAllianceAvatar']);
 
     // --- Economy ---
@@ -150,6 +150,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
+
+    // --- Leaderboard (NEW) ---
+    $r->addRoute('GET', '/leaderboard', [LeaderboardController::class, 'show']);
+    $r->addRoute('GET', '/leaderboard/{type:players|alliances}', [LeaderboardController::class, 'show']);
+    $r->addRoute('GET', '/leaderboard/{type:players|alliances}/{page:\d+}', [LeaderboardController::class, 'show']);
 
     // --- Alliance System ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
@@ -249,7 +254,8 @@ try {
             $protectedPrefixes = [
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market'
+                '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
+                '/leaderboard' // --- NEW ---
             ];
             
             $isProtected = false;

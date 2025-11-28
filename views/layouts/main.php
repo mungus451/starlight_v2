@@ -35,6 +35,7 @@
             <a href="/armory">Armory</a>
             <a href="/spy">Spy</a>
             <a href="/battle">Battle</a>
+            <a href="/leaderboard">Leaderboard</a>
             <a href="/level-up">Level Up</a>
             
             <!-- NEW: Global Alliance List Link -->

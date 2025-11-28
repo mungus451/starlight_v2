@@ -90,8 +90,7 @@ class StatsRepository
     }
 
     /**
-     * --- Updates XP, Level, and Points ---
-     * Used when granting experience and processing level ups.
+     * Updates XP, Level, and Points.
      *
      * @param int $userId
      * @param int $newExperience
@@ -136,6 +135,7 @@ class StatsRepository
 
     /**
      * Gets a paginated list of players, ranked by net worth.
+     * Used for the general player list.
      *
      * @param int $limit
      * @param int $offset
@@ -156,6 +156,42 @@ class StatsRepository
         $stmt->bindParam(2, $offset, PDO::PARAM_INT);
         $stmt->execute();
         
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * --- NEW: Detailed Player Leaderboard ---
+     * Fetches rank, profile data, and alliance info in one go.
+     *
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    public function getLeaderboardPlayers(int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT 
+                u.id,
+                u.character_name,
+                u.profile_picture_url,
+                s.level,
+                s.net_worth,
+                s.war_prestige,
+                a.id as alliance_id,
+                a.name as alliance_name,
+                a.tag as alliance_tag
+            FROM user_stats s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN alliances a ON u.alliance_id = a.id
+            ORDER BY s.net_worth DESC, s.war_prestige DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->bindParam(2, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     

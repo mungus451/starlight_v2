@@ -75,6 +75,7 @@ class AllianceRepository
 
     /**
      * Gets a paginated list of alliances, ranked by net worth.
+     * Used for the general alliance list view.
      */
     public function getPaginatedAlliances(int $limit, int $offset): array
     {
@@ -97,12 +98,44 @@ class AllianceRepository
     }
 
     /**
+     * --- NEW: Alliance Leaderboard ---
+     * Gets a rich array of alliance data including member counts.
+     * Returns an array of associative arrays, not Entities, for display.
+     *
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     */
+    public function getLeaderboardAlliances(int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT 
+                a.id, 
+                a.name, 
+                a.tag, 
+                a.net_worth, 
+                a.profile_picture_url,
+                (SELECT COUNT(*) FROM users u WHERE u.alliance_id = a.id) as member_count
+            FROM alliances a
+            ORDER BY a.net_worth DESC, id ASC
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->bindParam(2, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Updates an alliance's public profile.
      *
      * @param int $allianceId
      * @param string $description
      * @param string $pfpUrl
-     * @param bool $isJoinable // --- NEW ---
+     * @param bool $isJoinable
      * @return bool
      */
     public function updateProfile(int $allianceId, string $description, string $pfpUrl, bool $isJoinable): bool
