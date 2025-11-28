@@ -6,12 +6,12 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\NotificationService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
 
 /**
  * Handles notification displays and AJAX polling.
  * * Refactored to delegate polling logic to Service.
- * * Fixed: Updated parent constructor call to use ViewContextService.
+ * * Refactored Phase 4: Uses BaseController::jsonResponse.
  */
 class NotificationController extends BaseController
 {
@@ -24,7 +24,7 @@ class NotificationController extends BaseController
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         NotificationService $notificationService,
@@ -60,20 +60,17 @@ class NotificationController extends BaseController
      */
     public function check(): void
     {
-        // Ensure JSON response header
-        header('Content-Type: application/json');
-
         $userId = $this->session->get('user_id');
         
         if (!$userId) {
-            echo json_encode(['unread' => 0, 'latest' => null]);
+            $this->jsonResponse(['unread' => 0, 'latest' => null]);
             return;
         }
 
         // Delegate logic to service
         $data = $this->notificationService->getPollingData($userId);
 
-        echo json_encode($data);
+        $this->jsonResponse($data);
     }
 
     /**
@@ -82,17 +79,15 @@ class NotificationController extends BaseController
      */
     public function handleMarkRead(array $vars): void
     {
-        header('Content-Type: application/json');
-        
         $userId = $this->session->get('user_id');
         $notifId = (int)($vars['id'] ?? 0);
 
         $response = $this->notificationService->markAsRead($notifId, $userId);
         
         if ($response->isSuccess()) {
-            echo json_encode(['success' => true]);
+            $this->jsonResponse(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => $response->message]);
+            $this->jsonResponse(['success' => false, 'error' => $response->message]);
         }
     }
 
@@ -102,15 +97,13 @@ class NotificationController extends BaseController
      */
     public function handleMarkAllRead(): void
     {
-        header('Content-Type: application/json');
-
         // 1. Manual Validation (to return JSON instead of Redirect)
         $val = $this->validator->make($_POST, [
             'csrf_token' => 'required'
         ]);
 
         if ($val->fails()) {
-            echo json_encode(['success' => false, 'error' => 'Invalid input data']);
+            $this->jsonResponse(['success' => false, 'error' => 'Invalid input data']);
             return;
         }
         
@@ -118,7 +111,7 @@ class NotificationController extends BaseController
 
         // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
-            echo json_encode(['success' => false, 'error' => 'Invalid Token']);
+            $this->jsonResponse(['success' => false, 'error' => 'Invalid Token']);
             return;
         }
 
@@ -127,9 +120,9 @@ class NotificationController extends BaseController
         $response = $this->notificationService->markAllRead($userId);
         
         if ($response->isSuccess()) {
-            echo json_encode(['success' => true]);
+            $this->jsonResponse(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'error' => $response->message]);
+            $this->jsonResponse(['success' => false, 'error' => $response->message]);
         }
     }
 }

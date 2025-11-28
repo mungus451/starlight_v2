@@ -5,20 +5,21 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
 
 /**
  * BaseController
  * * Acts as the parent for all HTTP controllers.
  * * STRICT DEPENDENCY INJECTION IMPLEMENTATION.
  * * Refactored Phase 2: Decoupled from Domain Logic (Level/Stats).
+ * * Refactored Phase 4: Added standardized JSON Response helper.
  */
 class BaseController
 {
     protected Session $session;
     protected CSRFService $csrfService;
     protected Validator $validator;
-    protected ViewContextService $viewContextService; // --- REPLACES Domain Services ---
+    protected ViewContextService $viewContextService;
 
     /**
      * Strict Constructor.
@@ -93,7 +94,7 @@ class BaseController
         $data['flashError'] = $this->session->getFlash('error');
         $data['flashSuccess'] = $this->session->getFlash('success');
 
-        // 4. Global: View Context (XP, Level, etc.) - REFACTORED
+        // 4. Global: View Context (XP, Level, etc.)
         if ($data['isLoggedIn']) {
             $userId = $this->session->get('user_id');
             
@@ -128,6 +129,21 @@ class BaseController
     protected function redirect(string $path): void
     {
         header("Location: $path");
+        exit;
+    }
+
+    /**
+     * Sends a standardized JSON response and exits execution.
+     * Used for AJAX endpoints.
+     *
+     * @param array $data The data to encode
+     * @param int $statusCode HTTP status code (default 200)
+     */
+    protected function jsonResponse(array $data, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data);
         exit;
     }
 }
