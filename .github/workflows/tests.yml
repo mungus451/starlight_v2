@@ -68,6 +68,7 @@ jobs:
           sed -i 's/DB_HOST=db/DB_HOST=127.0.0.1/' .env
           sed -i 's/REDIS_HOST=redis/REDIS_HOST=127.0.0.1/' .env
           sed -i 's/APP_ENV=development/APP_ENV=testing/' .env
+          sed -i 's/# DB_DATABASE_TEST=starlightDB_test/DB_DATABASE_TEST=starlightDB_test/' .env
 
       - name: Wait for MySQL
         run: |
@@ -84,6 +85,9 @@ jobs:
         run: |
           MYSQL_PWD=rootpass mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS starlightDB_test;"
           MYSQL_PWD=rootpass mysql -h 127.0.0.1 -u root -e "GRANT ALL PRIVILEGES ON starlightDB_test.* TO 'sd_admin'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Run Phinx migrations for test database
+        run: vendor/bin/phinx migrate -e testing --configuration=config/phinx.php
 
       - name: Run MVC Compliance Audit
         run: php tests/verify_mvc_compliance.php
