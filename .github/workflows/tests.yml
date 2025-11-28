@@ -111,7 +111,7 @@ jobs:
           ")
           echo "Code Coverage: ${COVERAGE}%"
           THRESHOLD=10
-          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+          if (( $(php -r "echo ($COVERAGE < $THRESHOLD) ? 1 : 0;") )); then
             echo "❌ Coverage ${COVERAGE}% is below required ${THRESHOLD}%"
             exit 1
           else
