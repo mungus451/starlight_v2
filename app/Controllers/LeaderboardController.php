@@ -29,22 +29,28 @@ class LeaderboardController extends BaseController
     /**
      * Displays the leaderboard.
      * Route: /leaderboard[/{type}[/{page}]]
+     * query param: ?sort=army
      *
      * @param array $vars
      */
     public function show(array $vars): void
     {
-        // 1. Parse Input
+        // 1. Parse Path Variables
         $type = $vars['type'] ?? 'players';
         $page = (int)($vars['page'] ?? 1);
+
+        // 2. Parse Query Parameters (Sorting)
+        // We use $_GET directly here as the Validator class is built for POST payloads
+        // and simple string extraction is safe for whitelisting in Service.
+        $sort = $_GET['sort'] ?? 'net_worth';
 
         // Sanitize type
         if (!in_array($type, ['players', 'alliances'])) {
             $type = 'players';
         }
 
-        // 2. Call Service
-        $response = $this->leaderboardService->getLeaderboardData($type, $page);
+        // 3. Call Service
+        $response = $this->leaderboardService->getLeaderboardData($type, $page, $sort);
 
         if (!$response->isSuccess()) {
             $this->session->setFlash('error', $response->message);
@@ -52,7 +58,7 @@ class LeaderboardController extends BaseController
             return;
         }
 
-        // 3. Render View
+        // 4. Render View
         $viewData = $response->data;
         $viewData['layoutMode'] = 'full';
         $viewData['title'] = 'Leaderboard - ' . ucfirst($type);

@@ -9,6 +9,7 @@ use App\Models\Repositories\AllianceRepository;
 
 /**
  * Handles logic for retrieving and paginating leaderboard data.
+ * Updated to support dynamic sorting.
  */
 class LeaderboardService
 {
@@ -27,13 +28,14 @@ class LeaderboardService
     }
 
     /**
-     * Retrieves paginated leaderboard data for either players or alliances.
+     * Retrieves paginated leaderboard data.
      *
      * @param string $type 'players' or 'alliances'
      * @param int $page Current page number
+     * @param string $sortKey The column to sort by (e.g., 'net_worth', 'army', 'battles_won')
      * @return ServiceResponse
      */
-    public function getLeaderboardData(string $type, int $page): ServiceResponse
+    public function getLeaderboardData(string $type, int $page, string $sortKey = 'net_worth'): ServiceResponse
     {
         // 1. Configuration
         $perPage = $this->config->get('app.leaderboard.per_page', 25);
@@ -45,34 +47,42 @@ class LeaderboardService
 
         // 2. Fetch Data based on Type
         if ($type === 'alliances') {
+            // Alliances currently only sort by Net Worth (default)
             $totalItems = $this->allianceRepo->getTotalCount();
             $data = $this->allianceRepo->getLeaderboardAlliances($perPage, $offset);
         } else {
-            // Default to players
-            $type = 'players'; 
+            // Players support dynamic sorting
+            $type = 'players';
+            
+            // Whitelist sort keys to prevent SQL errors/injection issues
+            $allowedSorts = [
+                'net_worth', 'prestige', 'army', 'population', 
+                'battles_won', 'battles_lost', 'spy_success', 'spy_fail'
+            ];
+            
+            if (!in_array($sortKey, $allowedSorts)) {
+                $sortKey = 'net_worth';
+            }
+
             $totalItems = $this->statsRepo->getTotalPlayerCount();
-            $data = $this->statsRepo->getLeaderboardPlayers($perPage, $offset);
+            $data = $this->statsRepo->getLeaderboardPlayers($sortKey, $perPage, $offset);
         }
 
         // 3. Calculate Pagination Metadata
         $totalPages = (int)ceil($totalItems / $perPage);
-        // Ensure page doesn't exceed max (unless total is 0)
         if ($totalPages > 0 && $page > $totalPages) {
             $page = $totalPages;
-            // Recalculate offset if page changed, though technically we already fetched data 
-            // for the requested page. For strict correctness in a redirect scenario 
-            // we might return an error, but here we just cap the pagination metadata.
         }
 
         // 4. Enrich Data with Rank
-        // We calculate the rank based on offset + index + 1
         foreach ($data as $index => &$row) {
             $row['rank'] = $offset + $index + 1;
         }
-        unset($row); // Break reference
+        unset($row);
 
         return ServiceResponse::success('Leaderboard retrieved', [
             'type' => $type,
+            'currentSort' => $sortKey,
             'data' => $data,
             'pagination' => [
                 'currentPage' => $page,

@@ -2,8 +2,9 @@
 
 namespace App\Models\Services;
 
+// ... imports remain the same
 use App\Core\Config;
-use App\Core\ServiceResponse; // --- NEW IMPORT ---
+use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
@@ -19,16 +20,11 @@ use App\Events\BattleConcludedEvent;
 use PDO;
 use Throwable;
 
-/**
- * Handles all business logic for PvP Attacks.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
- */
 class AttackService
 {
+    // ... Constructor and dependencies remain the same ...
     private PDO $db;
     private Config $config;
-    
     private UserRepository $userRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
@@ -36,30 +32,11 @@ class AttackService
     private BattleRepository $battleRepo;
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
-    
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
     private EventDispatcher $dispatcher;
 
-    /**
-     * DI Constructor.
-     * REMOVED: Session dependency.
-     * 
-     * @param PDO $db
-     * @param Config $config
-     * @param UserRepository $userRepo
-     * @param ResourceRepository $resourceRepo
-     * @param StructureRepository $structureRepo
-     * @param StatsRepository $statsRepo
-     * @param BattleRepository $battleRepo
-     * @param AllianceRepository $allianceRepo
-     * @param AllianceBankLogRepository $bankLogRepo
-     * @param ArmoryService $armoryService
-     * @param PowerCalculatorService $powerCalculatorService
-     * @param LevelUpService $levelUpService
-     * @param EventDispatcher $dispatcher
-     */
     public function __construct(
         PDO $db,
         Config $config,
@@ -77,7 +54,6 @@ class AttackService
     ) {
         $this->db = $db;
         $this->config = $config;
-        
         $this->userRepo = $userRepo;
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
@@ -85,18 +61,15 @@ class AttackService
         $this->battleRepo = $battleRepo;
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
-        
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
         $this->dispatcher = $dispatcher;
     }
 
-    /**
-     * Gets the data needed to render the Battle page.
-     */
-    public function getAttackPageData(int $userId, int $page): array
-    {
+    // ... getAttackPageData, getBattleReports, getBattleReport methods remain unchanged ...
+    public function getAttackPageData(int $userId, int $page): array { 
+        // ... (keep existing implementation)
         $attackerResources = $this->resourceRepo->findByUserId($userId);
         $attackerStats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.attack', []);
@@ -121,9 +94,8 @@ class AttackService
             'perPage' => $perPage
         ];
     }
-
-    public function getBattleReports(int $userId): array
-    {
+    
+    public function getBattleReports(int $userId): array {
         $offensiveReports = $this->battleRepo->findReportsByAttackerId($userId);
         $defensiveReports = $this->battleRepo->findReportsByDefenderId($userId);
         
@@ -136,36 +108,20 @@ class AttackService
         return $allReports;
     }
 
-    public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport
-    {
+    public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport {
         return $this->battleRepo->findReportById($reportId, $viewerId);
     }
 
-    /**
-     * Conducts an attack operation.
-     * 
-     * @return ServiceResponse
-     */
     public function conductAttack(int $attackerId, string $targetName, string $attackType): ServiceResponse
     {
-        // --- 1. Validation (Input) ---
-        if (empty(trim($targetName))) {
-            return ServiceResponse::error('You must enter a target.');
-        }
-        if ($attackType !== 'plunder') {
-            return ServiceResponse::error('Invalid attack type.');
-        }
+        // ... Validation & Setup (Identical to previous) ...
+        if (empty(trim($targetName))) return ServiceResponse::error('You must enter a target.');
+        if ($attackType !== 'plunder') return ServiceResponse::error('Invalid attack type.');
 
         $defender = $this->userRepo->findByCharacterName($targetName);
+        if (!$defender) return ServiceResponse::error("Character '{$targetName}' not found.");
+        if ($defender->id === $attackerId) return ServiceResponse::error('You cannot attack yourself.');
 
-        if (!$defender) {
-            return ServiceResponse::error("Character '{$targetName}' not found.");
-        }
-        if ($defender->id === $attackerId) {
-            return ServiceResponse::error('You cannot attack yourself.');
-        }
-
-        // --- 2. Get All Data ---
         $attacker = $this->userRepo->findById($attackerId);
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
@@ -178,37 +134,25 @@ class AttackService
         $treasuryConfig = $this->config->get('game_balance.alliance_treasury');
         $xpConfig = $this->config->get('game_balance.xp.rewards');
 
-        // --- 3. Check Costs & Availability ---
         $soldiersSent = $attackerResources->soldiers;
         $turnCost = $config['attack_turn_cost'];
 
-        if ($soldiersSent <= 0) {
-            return ServiceResponse::error('You have no soldiers to send.');
-        }
-        if ($attackerStats->attack_turns < $turnCost) {
-            return ServiceResponse::error('You do not have enough attack turns.');
-        }
+        if ($soldiersSent <= 0) return ServiceResponse::error('You have no soldiers to send.');
+        if ($attackerStats->attack_turns < $turnCost) return ServiceResponse::error('You do not have enough attack turns.');
 
-        // --- 4. Calculate Battle Power ---
-        $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
-            $attackerId, $attackerResources, $attackerStats, $attackerStructures
-        );
+        // Power Calc
+        $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower($attackerId, $attackerResources, $attackerStats, $attackerStructures, $attacker->alliance_id);
         $offensePower = $offensePowerBreakdown['total'];
         
-        $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
-            $defender->id, $defenderResources, $defenderStats, $defenderStructures
-        );
+        $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower($defender->id, $defenderResources, $defenderStats, $defenderStructures, $defender->alliance_id);
         $defensePower = $defensePowerBreakdown['total'];
 
-        // --- 5. Determine Outcome ---
+        // Outcome
         $attackResult = 'defeat';
-        if ($offensePower > $defensePower) {
-            $attackResult = 'victory';
-        } elseif ($offensePower == $defensePower) {
-            $attackResult = 'stalemate';
-        }
+        if ($offensePower > $defensePower) $attackResult = 'victory';
+        elseif ($offensePower == $defensePower) $attackResult = 'stalemate';
 
-        // --- 6. Calculate Losses & XP ---
+        // ... Casualties & Gains Calculation (Identical to previous) ...
         $attackerSoldiersLost = 0;
         $defenderGuardsLost = 0;
         $attackerXpGain = 0;
@@ -219,21 +163,16 @@ class AttackService
         if ($attackResult === 'victory') {
             $attackerSoldiersLost = (int)mt_rand((int)($soldiersSent * $config['winner_loss_percent_min']), (int)($soldiersSent * $config['winner_loss_percent_max']));
             $defenderGuardsLost = (int)mt_rand((int)($defenderResources->guards * $config['loser_loss_percent_min']), (int)($defenderResources->guards * $config['loser_loss_percent_max']));
-            
             $attackerXpGain = $xpConfig['battle_win'] ?? 250;
             $defenderXpGain = $xpConfig['battle_defense_loss'] ?? 25;
-            
         } elseif ($attackResult === 'defeat') {
             $attackerSoldiersLost = (int)mt_rand((int)($soldiersSent * $config['loser_loss_percent_min']), (int)($soldiersSent * $config['loser_loss_percent_max']));
             $defenderGuardsLost = (int)mt_rand((int)($defenderResources->guards * $config['winner_loss_percent_min']), (int)($defenderResources->guards * $config['winner_loss_percent_max']));
-            
             $attackerXpGain = $xpConfig['battle_loss'] ?? 50;
             $defenderXpGain = $xpConfig['battle_defense_win'] ?? 150;
-
-        } else { // Stalemate
+        } else {
             $attackerSoldiersLost = (int)mt_rand((int)($soldiersSent * $config['winner_loss_percent_min']), (int)($soldiersSent * $config['loser_loss_percent_max']));
             $defenderGuardsLost = (int)mt_rand((int)($defenderResources->guards * $config['winner_loss_percent_min']), (int)($defenderResources->guards * $config['loser_loss_percent_max']));
-            
             $attackerXpGain = $xpConfig['battle_stalemate'] ?? 100;
             $defenderXpGain = $xpConfig['battle_defense_win'] ?? 100;
         }
@@ -244,7 +183,6 @@ class AttackService
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
-        // --- 7. Calculate Gains (if 'victory') ---
         $creditsPlundered = 0;
         $netWorthStolen = 0;
         $warPrestigeGained = 0;
@@ -266,7 +204,7 @@ class AttackService
         
         $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
-        // --- 8. Execute Transaction ---
+        // Transaction
         $transactionStartedByMe = false;
         if (!$this->db->inTransaction()) {
             $this->db->beginTransaction();
@@ -274,30 +212,22 @@ class AttackService
         }
 
         try {
-            // 8a. Update Attacker Resources
-            $attackerNewCredits = $attackerResources->credits + $attackerCreditGain;
-            $attackerNewSoldiers = $attackerResources->soldiers - $attackerSoldiersLost;
-            $this->resourceRepo->updateBattleAttacker($attackerId, $attackerNewCredits, $attackerNewSoldiers);
-
-            // 8b. Update Attacker Stats
+            $this->resourceRepo->updateBattleAttacker($attackerId, $attackerResources->credits + $attackerCreditGain, $attackerResources->soldiers - $attackerSoldiersLost);
             $this->levelUpService->grantExperience($attackerId, $attackerXpGain);
-            $attackerNewAttackTurns = $attackerStats->attack_turns - $turnCost;
-            $attackerNewNetWorth = $attackerStats->net_worth + $netWorthStolen;
-            $attackerNewPrestige = $attackerStats->war_prestige + $warPrestigeGained;
-            $attackerNewExperience = $attackerStats->experience + $attackerXpGain;
-            $this->statsRepo->updateBattleAttackerStats($attackerId, $attackerNewAttackTurns, $attackerNewNetWorth, $attackerNewExperience, $attackerNewPrestige);
+            $this->statsRepo->updateBattleAttackerStats($attackerId, $attackerStats->attack_turns - $turnCost, $attackerStats->net_worth + $netWorthStolen, $attackerStats->experience + $attackerXpGain, $attackerStats->war_prestige + $warPrestigeGained);
+            
+            // --- NEW: Increment Battle Stats ---
+            if ($attackResult === 'victory') {
+                $this->statsRepo->incrementBattleStats($attackerId, true);
+            } elseif ($attackResult === 'defeat') {
+                $this->statsRepo->incrementBattleStats($attackerId, false);
+            }
+            // -----------------------------------
 
-            // 8c. Update Defender Resources
-            $defenderNewCredits = max(0, $defenderResources->credits - $creditsPlundered);
-            $defenderNewGuards = max(0, $defenderResources->guards - $defenderGuardsLost);
-            $this->resourceRepo->updateBattleDefender($defender->id, $defenderNewCredits, $defenderNewGuards);
-
-            // 8d. Update Defender Stats
+            $this->resourceRepo->updateBattleDefender($defender->id, max(0, $defenderResources->credits - $creditsPlundered), max(0, $defenderResources->guards - $defenderGuardsLost));
             $this->levelUpService->grantExperience($defender->id, $defenderXpGain);
-            $defenderNewNetWorth = max(0, $defenderStats->net_worth - $netWorthStolen);
-            $this->statsRepo->updateBattleDefenderStats($defender->id, $defenderNewNetWorth);
+            $this->statsRepo->updateBattleDefenderStats($defender->id, max(0, $defenderStats->net_worth - $netWorthStolen));
 
-            // 8e. Create Battle Report
             $battleReportId = $this->battleRepo->createReport(
                 $attackerId, $defender->id, $attackType, $attackResult, $soldiersSent,
                 $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
@@ -305,52 +235,26 @@ class AttackService
                 (int)$offensePower, (int)$defensePower
             );
             
-            // 8f. Update Alliance Bank
             if ($totalTaxAmount > 0 && $attacker->alliance_id !== null) {
                 $this->allianceRepo->updateBankCreditsRelative($attacker->alliance_id, $totalTaxAmount);
-                if ($battleTaxAmount > 0) {
-                    $taxMsg = "Battle tax (" . ($treasuryConfig['battle_tax_rate'] * 100) . "%) from victory against " . $defender->characterName;
-                    $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'battle_tax', $battleTaxAmount, $taxMsg);
-                }
-                if ($tributeTaxAmount > 0) {
-                    $tribMsg = "Tribute (" . ($treasuryConfig['tribute_tax_rate'] * 100) . "%) from victory against " . $defender->characterName;
-                    $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'tribute_tax', $tributeTaxAmount, $tribMsg);
-                }
+                if ($battleTaxAmount > 0) $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'battle_tax', $battleTaxAmount, "Battle tax from victory vs " . $defender->characterName);
+                if ($tributeTaxAmount > 0) $this->bankLogRepo->createLog($attacker->alliance_id, $attackerId, 'tribute_tax', $tributeTaxAmount, "Tribute from victory vs " . $defender->characterName);
             }
             
-            // 8g. DISPATCH EVENT
-            $event = new BattleConcludedEvent(
-                $battleReportId,
-                $attacker,
-                $defender,
-                $attackResult,
-                $warPrestigeGained,
-                $defenderGuardsLost,
-                $creditsPlundered
-            );
+            $event = new BattleConcludedEvent($battleReportId, $attacker, $defender, $attackResult, $warPrestigeGained, $defenderGuardsLost, $creditsPlundered);
             $this->dispatcher->dispatch($event);
 
-            if ($transactionStartedByMe) {
-                $this->db->commit();
-            }
+            if ($transactionStartedByMe) $this->db->commit();
             
         } catch (Throwable $e) {
-            if ($transactionStartedByMe && $this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
+            if ($transactionStartedByMe && $this->db->inTransaction()) $this->db->rollBack();
             error_log('Attack Operation Error: '. $e->getMessage());
-            
-            if (!$transactionStartedByMe) {
-                throw $e; 
-            }
+            if (!$transactionStartedByMe) throw $e; 
             return ServiceResponse::error('A database error occurred. The attack was cancelled.');
         }
 
-        // --- 9. Return Success ---
         $message = "Attack Complete: {$attackResult}!";
-        if ($attackResult === 'victory') {
-            $message .= " You plundered " . number_format($creditsPlundered) . " credits.";
-        }
+        if ($attackResult === 'victory') $message .= " You plundered " . number_format($creditsPlundered) . " credits.";
         $message .= " XP Gained: +{$attackerXpGain}.";
         
         return ServiceResponse::success($message);
