@@ -7,11 +7,11 @@
 
 return [
 'costs' => [
-'stat_respec' => 50.0, // Crystals
-'turn_refill' => 10.0, // Crystals
-'citizen_package' => 25.0, // Crystals
-'void_container' => 100.0, // Crystals
-'shadow_contract' => 500.0, // Crystals
+'stat_respec' => 50000000.0, // Crystals
+'turn_refill' => 10000.0, // Crystals
+'citizen_package' => 250000.0, // Crystals
+'void_container' => 10000.0, // Crystals
+'shadow_contract' => 5000000.0, // Crystals
 ],
 
 'quantities' => [
