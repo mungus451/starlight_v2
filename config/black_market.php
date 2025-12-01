@@ -10,7 +10,7 @@ return [
 'stat_respec' => 250000.0, // Crystals
 'turn_refill' => 10000.0, // Crystals
 'citizen_package' => 250000.0, // Crystals
-'void_container' => 10000.0, // Crystals
+'void_container' => 1.0, // Crystals
 'shadow_contract' => 5000000.0, // Crystals
 ],
 
@@ -19,17 +19,19 @@ return [
 'citizen_package_amount' => 500, // Citizens added
 ],
 
-// Loot Box Probabilities (Weights should sum to roughly 100)
+// Loot Box Probabilities (Weights determine rarity relative to total sum)
+// Current Total Weight: 100
 'void_container_loot' => [
+// --- GOOD OUTCOMES (81%) ---
 'credits_medium' => [
-'weight' => 50,
+'weight' => 35,
 'type' => 'credits',
 'min' => 1000000,
 'max' => 5000000,
 'label' => 'Cache of Credits'
 ],
 'credits_high' => [
-'weight' => 25,
+'weight' => 20,
 'type' => 'credits',
 'min' => 10000000,
 'max' => 25000000,
@@ -44,7 +46,7 @@ return [
 'label' => 'Mercenary Platoon'
 ],
 'spies' => [
-'weight' => 9,
+'weight' => 10,
 'type' => 'unit',
 'unit' => 'spies',
 'min' => 50,
@@ -56,7 +58,40 @@ return [
 'type' => 'crystals',
 'min' => 500,
 'max' => 1000,
-'label' => 'Jackpot! Naquadah Cache'
+'label' => 'JACKPOT! Naquadah Cache'
+],
+
+// --- NEUTRAL OUTCOMES (15%) ---
+'space_dust' => [
+'weight' => 10,
+'type' => 'neutral',
+'label' => 'Space Dust',
+'text' => 'You open the container... it contains nothing but cosmic dust.'
+],
+'scrap_metal' => [
+'weight' => 5,
+'type' => 'neutral',
+'label' => 'Rusted Scrap',
+'text' => 'The container is filled with useless rusted metal shards.'
+],
+
+// --- BAD OUTCOMES (4%) ---
+'trap_credits' => [
+'weight' => 2,
+'type' => 'credits_loss',
+'min' => 500000,
+'max' => 2000000,
+'label' => 'Credit Siphon Trap',
+'text' => 'IT\'S A TRAP! A hacking algorithm drains your account.'
+],
+'ambush_soldiers' => [
+'weight' => 2,
+'type' => 'unit_loss',
+'unit' => 'soldiers',
+'min' => 50,
+'max' => 200,
+'label' => 'Void Ambush',
+'text' => 'The container was rigged with explosives! Casualties sustained.'
 ]
 ]
 ];

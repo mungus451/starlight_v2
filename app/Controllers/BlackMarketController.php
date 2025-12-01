@@ -94,7 +94,10 @@ return;
 }
 
 if ($response->isSuccess()) {
-$this->session->setFlash('success', $response->message);
+// Check for specific outcome type (e.g., 'negative' from a bad lootbox roll)
+// 'negative' maps to 'error' flash to make it RED
+$flashType = ($response->data['outcome_type'] ?? 'success') === 'negative' ? 'error' : 'success';
+$this->session->setFlash($flashType, $response->message);
 } else {
 $this->session->setFlash('error', $response->message);
 }

@@ -113,35 +113,87 @@ break;
 }
 }
 
-// Generate exact amount
+// Determine Quantity (if applicable)
+$qty = 0;
+if (isset($selected['min']) && isset($selected['max'])) {
 $qty = mt_rand($selected['min'], $selected['max']);
-$msg = "You opened the container and found: {$selected['label']} ({$qty})";
-
-// Grant Reward
-if ($selected['type'] === 'credits') {
-$r = $this->resourceRepo->findByUserId($userId);
-$this->resourceRepo->updateCredits($userId, $r->credits + $qty);
-$msg = "You found " . number_format($qty) . " Credits!";
-} elseif ($selected['type'] === 'unit') {
-$r = $this->resourceRepo->findByUserId($userId);
-$this->resourceRepo->updateTrainedUnits(
-$userId,
-$r->credits,
-$r->untrained_citizens, // Do not consume citizens
-$r->workers,
-$selected['unit'] === 'soldiers' ? $r->soldiers + $qty : $r->soldiers,
-$r->guards,
-$selected['unit'] === 'spies' ? $r->spies + $qty : $r->spies,
-$r->sentries
-);
-$msg = "Reinforcements arrived: " . number_format($qty) . " " . ucfirst($selected['unit']);
-} elseif ($selected['type'] === 'crystals') {
-// Refund + Jackpot
-$this->resourceRepo->updateResources($userId, 0, $qty);
-$msg = "JACKPOT! You found " . number_format($qty) . " Naquadah Crystals!";
 }
 
-return $msg;
+$msg = "";
+$outcomeType = 'success'; // Default to success (Green)
+$resources = $this->resourceRepo->findByUserId($userId);
+
+// --- Outcome Handling ---
+switch ($selected['type']) {
+case 'credits':
+$this->resourceRepo->updateCredits($userId, $resources->credits + $qty);
+$msg = "You found: " . number_format($qty) . " Credits!";
+break;
+
+case 'unit':
+$u = $selected['unit']; // 'soldiers' or 'spies'
+$this->resourceRepo->updateTrainedUnits(
+$userId,
+$resources->credits, // No credit change
+$resources->untrained_citizens, // Do not consume citizens
+$resources->workers,
+$u === 'soldiers' ? $resources->soldiers + $qty : $resources->soldiers,
+$resources->guards,
+$u === 'spies' ? $resources->spies + $qty : $resources->spies,
+$resources->sentries
+);
+$msg = "Reinforcements: " . number_format($qty) . " " . ucfirst($u);
+break;
+
+case 'crystals':
+// Refund cost + jackpot amount
+$this->resourceRepo->updateResources($userId, 0, $qty);
+$msg = "JACKPOT! " . number_format($qty) . " Naquadah Crystals!";
+break;
+
+case 'neutral':
+$msg = $selected['text'] ?? "The container was empty.";
+// Neutral stays green (success), just disappointing text
+break;
+
+case 'credits_loss':
+$newCredits = max(0, $resources->credits - $qty);
+$this->resourceRepo->updateCredits($userId, $newCredits);
+$loss = number_format($resources->credits - $newCredits);
+$msg = ($selected['text'] ?? "Trap triggered!") . " Lost {$loss} Credits.";
+$outcomeType = 'negative'; // Will trigger Red flash
+break;
+
+case 'unit_loss':
+$u = $selected['unit'];
+$currentUnits = $resources->{$u};
+$newUnits = max(0, $currentUnits - $qty);
+$loss = $currentUnits - $newUnits;
+
+$this->resourceRepo->updateTrainedUnits(
+$userId,
+$resources->credits,
+$resources->untrained_citizens,
+$resources->workers,
+$u === 'soldiers' ? $newUnits : $resources->soldiers,
+$resources->guards,
+$u === 'spies' ? $newUnits : $resources->spies,
+$resources->sentries
+);
+$msg = ($selected['text'] ?? "Ambush!") . " Lost {$loss} " . ucfirst($u) . ".";
+$outcomeType = 'negative'; // Will trigger Red flash
+break;
+
+default:
+$msg = "The container dissolves into nothingness.";
+break;
+}
+
+// Return complex result for processPurchase to handle
+return [
+'message' => $msg,
+'status' => $outcomeType
+];
 });
 }
 
@@ -194,13 +246,13 @@ return ServiceResponse::success("Shadow Contract Fulfilled. " . $attackResponse-
 
 } catch (Throwable $e) {
 $this->db->rollBack();
-// error_log handled in catch if needed, mainly return user error
 return ServiceResponse::error($e->getMessage());
 }
 }
 
 /**
 * Helper to handle the "Check funds -> Deduct -> Execute -> Commit" flow.
+* Updated to handle array return types from closures for metadata passing.
 */
 private function processPurchase(int $userId, float $cost, callable $action): ServiceResponse
 {
@@ -216,10 +268,16 @@ try {
 $this->resourceRepo->updateResources($userId, 0, -$cost);
 
 // Execute Logic
-$resultMessage = $action();
+$result = $action();
+
+// Handle both simple string returns and complex array returns
+$message = is_array($result) ? ($result['message'] ?? 'Operation successful') : $result;
+$status = is_array($result) ? ($result['status'] ?? 'success') : 'success';
 
 $this->db->commit();
-return ServiceResponse::success($resultMessage);
+
+// Pass the outcome type in data payload
+return ServiceResponse::success($message, ['outcome_type' => $status]);
 
 } catch (Throwable $e) {
 $this->db->rollBack();
