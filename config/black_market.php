@@ -63,7 +63,7 @@ return [
 
 // --- NEUTRAL OUTCOMES (15%) ---
 'space_dust' => [
-'weight' => 10,
+'weight' => 8,
 'type' => 'neutral',
 'label' => 'Space Dust',
 'text' => 'You open the container... it contains nothing but cosmic dust.'
@@ -77,19 +77,19 @@ return [
 
 // --- BAD OUTCOMES (4%) ---
 'trap_credits' => [
-'weight' => 2,
+'weight' => 3,
 'type' => 'credits_loss',
 'min' => 500000,
-'max' => 2000000,
+'max' => 20000000,
 'label' => 'Credit Siphon Trap',
 'text' => 'IT\'S A TRAP! A hacking algorithm drains your account.'
 ],
 'ambush_soldiers' => [
-'weight' => 2,
+'weight' => 3,
 'type' => 'unit_loss',
 'unit' => 'soldiers',
 'min' => 50,
-'max' => 200,
+'max' => 2000,
 'label' => 'Void Ambush',
 'text' => 'The container was rigged with explosives! Casualties sustained.'
 ]
