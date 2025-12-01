@@ -39,7 +39,8 @@ use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
-use App\Controllers\LeaderboardController; // --- NEW IMPORT ---
+use App\Controllers\LeaderboardController;
+use App\Controllers\BlackMarketController;
 use App\Middleware\AuthMiddleware;
 
 // 1. Autoloader
@@ -113,9 +114,15 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/bank/withdraw', [BankController::class, 'handleWithdraw']);
     $r->addRoute('POST', '/bank/transfer', [BankController::class, 'handleTransfer']);
 
-    // --- Black Market ---
-    $r->addRoute('GET', '/black-market/converter', [CurrencyConverterController::class, 'show']);
+    // --- Black Market (Refactored) ---
+    // The Exchange (Crystal Converter)
+    $r->addRoute('GET', '/black-market/converter', [BlackMarketController::class, 'showExchange']);
     $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
+    // The Undermarket (Actions)
+    $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
+    $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
+    $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
 
     // --- Military ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
@@ -151,7 +158,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
-    // --- Leaderboard (NEW) ---
+    // --- Leaderboard ---
     $r->addRoute('GET', '/leaderboard', [LeaderboardController::class, 'show']);
     $r->addRoute('GET', '/leaderboard/{type:players|alliances}', [LeaderboardController::class, 'show']);
     $r->addRoute('GET', '/leaderboard/{type:players|alliances}/{page:\d+}', [LeaderboardController::class, 'show']);
@@ -255,7 +262,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard' // --- NEW ---
+                '/leaderboard'
             ];
             
             $isProtected = false;
