@@ -42,7 +42,7 @@ return [
 'type' => 'unit',
 'unit' => 'soldiers',
 'min' => 500,
-'max' => 4000,
+'max' => 1000,
 'label' => 'Mercenary Platoon'
 ],
 'spies' => [
