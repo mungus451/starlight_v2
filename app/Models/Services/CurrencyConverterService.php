@@ -5,13 +5,14 @@ namespace App\Models\Services;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\HouseFinanceRepository;
+use App\Models\Repositories\BlackMarketLogRepository; // --- NEW ---
 use App\Models\Entities\HouseFinance;
 use PDO;
 use Exception;
 
 /**
  * Handles the Black Market currency exchange logic.
- * * Refactored Phase 3: Removed repository magic numbers.
+ * * Refactored Phase 3: Added BlackMarketLogRepository.
  */
 class CurrencyConverterService
 {
@@ -23,16 +24,19 @@ class CurrencyConverterService
 
     private ResourceRepository $resourceRepository;
     private HouseFinanceRepository $houseFinanceRepository;
+    private BlackMarketLogRepository $logRepo; // --- NEW ---
     private PDO $db;
 
     public function __construct(
         ResourceRepository $resourceRepository,
         HouseFinanceRepository $houseFinanceRepository,
-        PDO $db
+        PDO $db,
+        BlackMarketLogRepository $logRepo // --- NEW ---
     ) {
         $this->resourceRepository = $resourceRepository;
         $this->houseFinanceRepository = $houseFinanceRepository;
         $this->db = $db;
+        $this->logRepo = $logRepo;
     }
 
     /**
@@ -66,7 +70,7 @@ class CurrencyConverterService
             );
 
             $houseUpdateSuccess = $this->houseFinanceRepository->updateFinances(
-                self::HOUSE_WALLET_ID, // Explicit ID passed here
+                self::HOUSE_WALLET_ID,
                 creditsAmount: $fee,
                 crystalsAmount: 0.0
             );
@@ -74,6 +78,13 @@ class CurrencyConverterService
             if (!$userUpdateSuccess || !$houseUpdateSuccess) {
                 throw new Exception("Failed to update one or more balances during transaction.");
             }
+            
+            // Log Transaction
+            $this->logRepo->log($userId, 'conversion', 'credits', $creditAmount, null, [
+                'direction' => 'credits_to_crystals',
+                'fee' => $fee,
+                'received' => $crystalsReceived
+            ]);
 
             $this->db->commit();
             
@@ -122,7 +133,7 @@ class CurrencyConverterService
             );
 
             $houseUpdateSuccess = $this->houseFinanceRepository->updateFinances(
-                self::HOUSE_WALLET_ID, // Explicit ID passed here
+                self::HOUSE_WALLET_ID,
                 creditsAmount: 0.0,
                 crystalsAmount: $fee
             );
@@ -130,6 +141,13 @@ class CurrencyConverterService
             if (!$userUpdateSuccess || !$houseUpdateSuccess) {
                 throw new Exception("Failed to update one or more balances during transaction.");
             }
+            
+            // Log Transaction
+            $this->logRepo->log($userId, 'conversion', 'crystals', $crystalAmount, null, [
+                'direction' => 'crystals_to_credits',
+                'fee' => $fee,
+                'received' => $creditsReceived
+            ]);
 
             $this->db->commit();
             
@@ -153,12 +171,9 @@ class CurrencyConverterService
     public function getConverterPageData(int $userId): array
     {
         $userResources = $this->resourceRepository->findByUserId($userId);
-        
-        // Pass the specific wallet ID we want to view
         $houseFinances = $this->houseFinanceRepository->getHouseFinances(self::HOUSE_WALLET_ID);
 
         if (!$houseFinances) {
-            // Fallback DTO if missing
             $houseFinances = new HouseFinance(id: 1, credits_taxed: 0.0, crystals_taxed: 0.0);
         }
 

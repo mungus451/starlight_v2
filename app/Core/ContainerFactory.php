@@ -34,7 +34,8 @@ use App\Models\Repositories\SpyRepository;
 use App\Models\Repositories\NotificationRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\SecurityRepository;
-use App\Models\Repositories\BountyRepository; // Phase 18
+use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\BlackMarketLogRepository; // --- NEW ---
 
 // Services
 use App\Models\Services\AuthService;
@@ -59,8 +60,8 @@ use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Services\NotificationService;
 use App\Models\Services\CurrencyConverterService;
-use App\Models\Services\LeaderboardService; // Phase 17
-use App\Models\Services\BlackMarketService; // Phase 18
+use App\Models\Services\LeaderboardService;
+use App\Models\Services\BlackMarketService;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
 
@@ -73,188 +74,191 @@ use App\Core\Validator;
 use App\Core\Logger;
 
 /**
- * ContainerFactory
- * * Responsible for building and configuring the Dependency Injection Container.
- */
+* ContainerFactory
+* * Responsible for building and configuring the Dependency Injection Container.
+*/
 class ContainerFactory
 {
-    /**
-     * Builds the container with application definitions.
-     *
-     * @return Container
-     */
-    public static function createContainer(): Container
-    {
-        $builder = new ContainerBuilder();
-        
-        // Enable attributes for Injection (e.g. #[Inject('NpcLogger')])
-        $builder->useAttributes(true);
+/**
+* Builds the container with application definitions.
+*
+* @return Container
+*/
+public static function createContainer(): Container
+{
+$builder = new ContainerBuilder();
 
-        // Configure the container definitions
-        $builder->addDefinitions([
-            
-            // 1. Configuration Loader
-            Config::class => function (ContainerInterface $c) {
-                return new Config();
-            },
+// Enable attributes for Injection (e.g. #[Inject('NpcLogger')])
+$builder->useAttributes(true);
 
-            // 2. Database Connection (PDO)
-            PDO::class => function (ContainerInterface $c) {
-                return Database::getInstance();
-            },
+// Configure the container definitions
+$builder->addDefinitions([
 
-            // 3. Redis Connection
-            Redis::class => function (ContainerInterface $c) {
-                $config = $c->get(Config::class);
-                $redisConfig = $config->get('redis');
+// 1. Configuration Loader
+Config::class => function (ContainerInterface $c) {
+return new Config();
+},
 
-                $redis = new Redis();
-                
-                if (!@$redis->connect($redisConfig['host'], $redisConfig['port'])) {
-                    throw new Exception("Could not connect to Redis at {$redisConfig['host']}:{$redisConfig['port']}");
-                }
+// 2. Database Connection (PDO)
+PDO::class => function (ContainerInterface $c) {
+return Database::getInstance();
+},
 
-                if (!empty($redisConfig['password'])) {
-                    if (!$redis->auth($redisConfig['password'])) {
-                        throw new Exception("Redis authentication failed.");
-                    }
-                }
+// 3. Redis Connection
+Redis::class => function (ContainerInterface $c) {
+$config = $c->get(Config::class);
+$redisConfig = $config->get('redis');
 
-                if (isset($redisConfig['database'])) {
-                    $redis->select($redisConfig['database']);
-                }
+$redis = new Redis();
 
-                if (!empty($redisConfig['prefix'])) {
-                    $redis->setOption(Redis::OPT_PREFIX, $redisConfig['prefix']);
-                }
+if (!@$redis->connect($redisConfig['host'], $redisConfig['port'])) {
+throw new Exception("Could not connect to Redis at {$redisConfig['host']}:{$redisConfig['port']}");
+}
 
-                return $redis;
-            },
+if (!empty($redisConfig['password'])) {
+if (!$redis->auth($redisConfig['password'])) {
+throw new Exception("Redis authentication failed.");
+}
+}
 
-            // 4. Session
-            Session::class => function (ContainerInterface $c) {
-                return new Session();
-            },
+if (isset($redisConfig['database'])) {
+$redis->select($redisConfig['database']);
+}
 
-            // 5. CSRF Service
-            CSRFService::class => function (ContainerInterface $c) {
-                return new CSRFService(
-                    $c->get(Redis::class),
-                    $c->get(Session::class)
-                );
-            },
+if (!empty($redisConfig['prefix'])) {
+$redis->setOption(Redis::OPT_PREFIX, $redisConfig['prefix']);
+}
 
-            // --- REPOSITORIES (Manual registration to ensure PDO injection) ---
-            UserRepository::class => function (ContainerInterface $c) { return new UserRepository($c->get(PDO::class)); },
-            ResourceRepository::class => function (ContainerInterface $c) { return new ResourceRepository($c->get(PDO::class)); },
-            StatsRepository::class => function (ContainerInterface $c) { return new StatsRepository($c->get(PDO::class)); },
-            StructureRepository::class => function (ContainerInterface $c) { return new StructureRepository($c->get(PDO::class)); },
-            ArmoryRepository::class => function (ContainerInterface $c) { return new ArmoryRepository($c->get(PDO::class)); },
-            AllianceRepository::class => function (ContainerInterface $c) { return new AllianceRepository($c->get(PDO::class)); },
-            AllianceRoleRepository::class => function (ContainerInterface $c) { return new AllianceRoleRepository($c->get(PDO::class)); },
-            ApplicationRepository::class => function (ContainerInterface $c) { return new ApplicationRepository($c->get(PDO::class)); },
-            AllianceBankLogRepository::class => function (ContainerInterface $c) { return new AllianceBankLogRepository($c->get(PDO::class)); },
-            AllianceLoanRepository::class => function (ContainerInterface $c) { return new AllianceLoanRepository($c->get(PDO::class)); },
-            AllianceStructureRepository::class => function (ContainerInterface $c) { return new AllianceStructureRepository($c->get(PDO::class)); },
-            AllianceStructureDefinitionRepository::class => function (ContainerInterface $c) { return new AllianceStructureDefinitionRepository($c->get(PDO::class)); },
-            AllianceForumTopicRepository::class => function (ContainerInterface $c) { return new AllianceForumTopicRepository($c->get(PDO::class)); },
-            AllianceForumPostRepository::class => function (ContainerInterface $c) { return new AllianceForumPostRepository($c->get(PDO::class)); },
-            TreatyRepository::class => function (ContainerInterface $c) { return new TreatyRepository($c->get(PDO::class)); },
-            RivalryRepository::class => function (ContainerInterface $c) { return new RivalryRepository($c->get(PDO::class)); },
-            WarRepository::class => function (ContainerInterface $c) { return new WarRepository($c->get(PDO::class)); },
-            WarBattleLogRepository::class => function (ContainerInterface $c) { return new WarBattleLogRepository($c->get(PDO::class)); },
-            WarHistoryRepository::class => function (ContainerInterface $c) { return new WarHistoryRepository($c->get(PDO::class)); },
-            BattleRepository::class => function (ContainerInterface $c) { return new BattleRepository($c->get(PDO::class)); },
-            SpyRepository::class => function (ContainerInterface $c) { return new SpyRepository($c->get(PDO::class)); },
-            NotificationRepository::class => function (ContainerInterface $c) { return new NotificationRepository($c->get(PDO::class)); },
-            HouseFinanceRepository::class => function (ContainerInterface $c) { return new HouseFinanceRepository($c->get(PDO::class)); },
-            SecurityRepository::class => function (ContainerInterface $c) { return new SecurityRepository($c->get(PDO::class)); },
-            BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); }, // Phase 18
+return $redis;
+},
 
-            // --- SERVICES ---
-            
-            // Attack Service (Updated Phase 19)
-            AttackService::class => function (ContainerInterface $c) {
-                return new AttackService(
-                    $c->get(PDO::class),
-                    $c->get(Config::class),
-                    $c->get(UserRepository::class),
-                    $c->get(ResourceRepository::class),
-                    $c->get(StructureRepository::class),
-                    $c->get(StatsRepository::class),
-                    $c->get(BattleRepository::class),
-                    $c->get(AllianceRepository::class),
-                    $c->get(AllianceBankLogRepository::class),
-                    $c->get(BountyRepository::class), // Added Phase 19
-                    $c->get(ArmoryService::class),
-                    $c->get(PowerCalculatorService::class),
-                    $c->get(LevelUpService::class),
-                    $c->get(EventDispatcher::class)
-                );
-            },
+// 4. Session
+Session::class => function (ContainerInterface $c) {
+return new Session();
+},
 
-            // Black Market Service (Updated Phase 19)
-            BlackMarketService::class => function (ContainerInterface $c) {
-                return new BlackMarketService(
-                    $c->get(PDO::class),
-                    $c->get(Config::class),
-                    $c->get(ResourceRepository::class),
-                    $c->get(StatsRepository::class),
-                    $c->get(UserRepository::class),
-                    $c->get(BountyRepository::class),
-                    $c->get(AttackService::class) // Added Phase 19 (for Shadow Contracts)
-                );
-            },
+// 5. CSRF Service
+CSRFService::class => function (ContainerInterface $c) {
+return new CSRFService(
+$c->get(Redis::class),
+$c->get(Session::class)
+);
+},
 
-            // Currency Converter
-            CurrencyConverterService::class => function (ContainerInterface $c) {
-                return new CurrencyConverterService(
-                    $c->get(ResourceRepository::class),
-                    $c->get(HouseFinanceRepository::class),
-                    $c->get(PDO::class)
-                );
-            },
+// --- REPOSITORIES (Manual registration to ensure PDO injection) ---
+UserRepository::class => function (ContainerInterface $c) { return new UserRepository($c->get(PDO::class)); },
+ResourceRepository::class => function (ContainerInterface $c) { return new ResourceRepository($c->get(PDO::class)); },
+StatsRepository::class => function (ContainerInterface $c) { return new StatsRepository($c->get(PDO::class)); },
+StructureRepository::class => function (ContainerInterface $c) { return new StructureRepository($c->get(PDO::class)); },
+ArmoryRepository::class => function (ContainerInterface $c) { return new ArmoryRepository($c->get(PDO::class)); },
+AllianceRepository::class => function (ContainerInterface $c) { return new AllianceRepository($c->get(PDO::class)); },
+AllianceRoleRepository::class => function (ContainerInterface $c) { return new AllianceRoleRepository($c->get(PDO::class)); },
+ApplicationRepository::class => function (ContainerInterface $c) { return new ApplicationRepository($c->get(PDO::class)); },
+AllianceBankLogRepository::class => function (ContainerInterface $c) { return new AllianceBankLogRepository($c->get(PDO::class)); },
+AllianceLoanRepository::class => function (ContainerInterface $c) { return new AllianceLoanRepository($c->get(PDO::class)); },
+AllianceStructureRepository::class => function (ContainerInterface $c) { return new AllianceStructureRepository($c->get(PDO::class)); },
+AllianceStructureDefinitionRepository::class => function (ContainerInterface $c) { return new AllianceStructureDefinitionRepository($c->get(PDO::class)); },
+AllianceForumTopicRepository::class => function (ContainerInterface $c) { return new AllianceForumTopicRepository($c->get(PDO::class)); },
+AllianceForumPostRepository::class => function (ContainerInterface $c) { return new AllianceForumPostRepository($c->get(PDO::class)); },
+TreatyRepository::class => function (ContainerInterface $c) { return new TreatyRepository($c->get(PDO::class)); },
+RivalryRepository::class => function (ContainerInterface $c) { return new RivalryRepository($c->get(PDO::class)); },
+WarRepository::class => function (ContainerInterface $c) { return new WarRepository($c->get(PDO::class)); },
+WarBattleLogRepository::class => function (ContainerInterface $c) { return new WarBattleLogRepository($c->get(PDO::class)); },
+WarHistoryRepository::class => function (ContainerInterface $c) { return new WarHistoryRepository($c->get(PDO::class)); },
+BattleRepository::class => function (ContainerInterface $c) { return new BattleRepository($c->get(PDO::class)); },
+SpyRepository::class => function (ContainerInterface $c) { return new SpyRepository($c->get(PDO::class)); },
+NotificationRepository::class => function (ContainerInterface $c) { return new NotificationRepository($c->get(PDO::class)); },
+HouseFinanceRepository::class => function (ContainerInterface $c) { return new HouseFinanceRepository($c->get(PDO::class)); },
+SecurityRepository::class => function (ContainerInterface $c) { return new SecurityRepository($c->get(PDO::class)); },
+BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
+BlackMarketLogRepository::class => function (ContainerInterface $c) { return new BlackMarketLogRepository($c->get(PDO::class)); }, // --- NEW ---
 
-            // Notifications
-            NotificationService::class => function (ContainerInterface $c) {
-                return new NotificationService($c->get(NotificationRepository::class));
-            },
+// --- SERVICES ---
 
-            // Event Dispatcher (The Hub)
-            EventDispatcher::class => function (ContainerInterface $c) {
-                $dispatcher = new EventDispatcher();
+// Attack Service (Updated Phase 19)
+AttackService::class => function (ContainerInterface $c) {
+return new AttackService(
+$c->get(PDO::class),
+$c->get(Config::class),
+$c->get(UserRepository::class),
+$c->get(ResourceRepository::class),
+$c->get(StructureRepository::class),
+$c->get(StatsRepository::class),
+$c->get(BattleRepository::class),
+$c->get(AllianceRepository::class),
+$c->get(AllianceBankLogRepository::class),
+$c->get(BountyRepository::class),
+$c->get(ArmoryService::class),
+$c->get(PowerCalculatorService::class),
+$c->get(LevelUpService::class),
+$c->get(EventDispatcher::class)
+);
+},
 
-                $dispatcher->addListener(
-                    BattleConcludedEvent::class,
-                    $c->get(BattleNotificationListener::class)
-                );
+// Black Market Service (Needs Logging Update Phase 20)
+BlackMarketService::class => function (ContainerInterface $c) {
+return new BlackMarketService(
+$c->get(PDO::class),
+$c->get(Config::class),
+$c->get(ResourceRepository::class),
+$c->get(StatsRepository::class),
+$c->get(UserRepository::class),
+$c->get(BountyRepository::class),
+$c->get(AttackService::class),
+$c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
+);
+},
 
-                $dispatcher->addListener(
-                    BattleConcludedEvent::class,
-                    $c->get(WarLoggerListener::class)
-                );
+// Currency Converter (Needs Logging Update Phase 20)
+CurrencyConverterService::class => function (ContainerInterface $c) {
+return new CurrencyConverterService(
+$c->get(ResourceRepository::class),
+$c->get(HouseFinanceRepository::class),
+$c->get(PDO::class),
+$c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
+);
+},
 
-                return $dispatcher;
-            },
+// Notifications
+NotificationService::class => function (ContainerInterface $c) {
+return new NotificationService($c->get(NotificationRepository::class));
+},
 
-            // Input Validator
-            Validator::class => function (ContainerInterface $c) {
-                return new Validator();
-            },
+// Event Dispatcher (The Hub)
+EventDispatcher::class => function (ContainerInterface $c) {
+$dispatcher = new EventDispatcher();
 
-            // Default System Logger
-            Logger::class => function (ContainerInterface $c) {
-                $logPath = __DIR__ . '/../../logs/app.log';
-                return new Logger($logPath, false);
-            },
+$dispatcher->addListener(
+BattleConcludedEvent::class,
+$c->get(BattleNotificationListener::class)
+);
 
-            // Specific NPC Logger (Writes to npc_actions.log AND stdout for CLI)
-            'NpcLogger' => function (ContainerInterface $c) {
-                $logPath = __DIR__ . '/../../logs/npc_actions.log';
-                return new Logger($logPath, true); // True = Echo to Stdout (CLI)
-            },
-        ]);
+$dispatcher->addListener(
+BattleConcludedEvent::class,
+$c->get(WarLoggerListener::class)
+);
 
-        return $builder->build();
-    }
+return $dispatcher;
+},
+
+// Input Validator
+Validator::class => function (ContainerInterface $c) {
+return new Validator();
+},
+
+// Default System Logger
+Logger::class => function (ContainerInterface $c) {
+$logPath = __DIR__ . '/../../logs/app.log';
+return new Logger($logPath, false);
+},
+
+// Specific NPC Logger (Writes to npc_actions.log AND stdout for CLI)
+'NpcLogger' => function (ContainerInterface $c) {
+$logPath = __DIR__ . '/../../logs/npc_actions.log';
+return new Logger($logPath, true); // True = Echo to Stdout (CLI)
+},
+]);
+
+return $builder->build();
+}
 }

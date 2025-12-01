@@ -10,7 +10,7 @@ return [
 'stat_respec' => 250000.0, // Crystals
 'turn_refill' => 10000.0, // Crystals
 'citizen_package' => 250000.0, // Crystals
-'void_container' => 10000.0, // Crystals
+'void_container' => 1.0, // Crystals
 'shadow_contract' => 5000000.0, // Crystals
 ],
 
