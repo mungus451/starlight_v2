@@ -10,17 +10,20 @@ use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
 use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\UserRepository;
 
 class BlackMarketController extends BaseController
 {
 private BlackMarketService $bmService;
 private CurrencyConverterService $converterService;
 private BountyRepository $bountyRepo;
+private UserRepository $userRepo;
 
 public function __construct(
 BlackMarketService $bmService,
 CurrencyConverterService $converterService,
 BountyRepository $bountyRepo,
+UserRepository $userRepo,
 Session $session,
 CSRFService $csrfService,
 Validator $validator,
@@ -30,6 +33,7 @@ parent::__construct($session, $csrfService, $validator, $viewContextService);
 $this->bmService = $bmService;
 $this->converterService = $converterService;
 $this->bountyRepo = $bountyRepo;
+$this->userRepo = $userRepo;
 }
 
 // --- Tab 1: The Exchange ---
@@ -46,6 +50,7 @@ public function showActions(): void
 {
 $userId = $this->session->get('user_id');
 $bounties = $this->bountyRepo->getActiveBounties(10);
+$targets = $this->userRepo->findAllNonNpcs();
 
 // Load costs config to pass to view
 $bmConfig = require __DIR__ . '/../../config/black_market.php';
@@ -54,6 +59,7 @@ $this->render('black_market/actions.php', [
 'title' => 'Black Market - Actions',
 'active_tab' => 'actions',
 'bounties' => $bounties,
+'targets' => $targets,
 'costs' => $bmConfig['costs'], // Pass costs array
 'layoutMode' => 'full'
 ]);
@@ -95,7 +101,6 @@ return;
 
 if ($response->isSuccess()) {
 // Check for specific outcome type (e.g., 'negative' from a bad lootbox roll)
-// 'negative' maps to 'error' flash to make it RED
 $flashType = ($response->data['outcome_type'] ?? 'success') === 'negative' ? 'error' : 'success';
 $this->session->setFlash($flashType, $response->message);
 } else {

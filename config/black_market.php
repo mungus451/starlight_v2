@@ -24,17 +24,17 @@ return [
 'void_container_loot' => [
 // --- GOOD OUTCOMES (81%) ---
 'credits_medium' => [
-'weight' => 35,
+'weight' => 25,
 'type' => 'credits',
-'min' => 1000000,
-'max' => 5000000,
+'min' => 10000,
+'max' => 500000,
 'label' => 'Cache of Credits'
 ],
 'credits_high' => [
 'weight' => 20,
 'type' => 'credits',
-'min' => 10000000,
-'max' => 25000000,
+'min' => 100000,
+'max' => 2500000,
 'label' => 'Vault of Credits'
 ],
 'soldiers' => [
@@ -42,22 +42,22 @@ return [
 'type' => 'unit',
 'unit' => 'soldiers',
 'min' => 500,
-'max' => 1000,
+'max' => 4000,
 'label' => 'Mercenary Platoon'
 ],
 'spies' => [
-'weight' => 10,
+'weight' => 20,
 'type' => 'unit',
 'unit' => 'spies',
 'min' => 50,
-'max' => 150,
+'max' => 1500,
 'label' => 'Covert Operatives'
 ],
 'jackpot' => [
 'weight' => 1,
 'type' => 'crystals',
-'min' => 500,
-'max' => 1000,
+'min' => 50000,
+'max' => 1000000,
 'label' => 'JACKPOT! Naquadah Cache'
 ],
 
