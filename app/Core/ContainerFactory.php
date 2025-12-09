@@ -219,19 +219,19 @@ EffectService::class => function (ContainerInterface $c) {
 },
 
 // Spy Service (Manual definition required now)
-\App\Models\Services\SpyService::class => function (ContainerInterface $c) {
-    return new \App\Models\Services\SpyService(
+SpyService::class => function (ContainerInterface $c) {
+    return new SpyService(
         $c->get(PDO::class),
         $c->get(Config::class),
         $c->get(UserRepository::class),
         $c->get(ResourceRepository::class),
         $c->get(StructureRepository::class),
         $c->get(StatsRepository::class),
-        $c->get(App\Models\Repositories\SpyRepository::class),
-        $c->get(App\Models\Services\ArmoryService::class),
+        $c->get(SpyRepository::class),
+        $c->get(ArmoryService::class),
         $c->get(PowerCalculatorService::class),
         $c->get(LevelUpService::class),
-        $c->get(App\Models\Services\NotificationService::class),
+        $c->get(NotificationService::class),
         $c->get(EffectService::class)
     );
 },

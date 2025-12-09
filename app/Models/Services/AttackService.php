@@ -157,14 +157,6 @@ if ($this->effectService->hasActiveEffect($defender->id, 'peace_shield')) {
 
 // 2. Attacker Shield (Break it)
 if ($this->effectService->hasActiveEffect($attackerId, 'peace_shield')) {
-    $this->effectService->removeEffect($attackerId, 'peace_shield'); // Assume removeEffect exists in Service (I need to add it or use Repo directly? I added removeEffect to Repo, Service needs it exposed).
-    // I need to update EffectService to expose removeEffect. 
-    // Or I can ignore it for now and let it stay (exploit?). No, pitch says "breaks instantly".
-    // I'll assume I can add it to EffectService later or it exists. 
-    // Wait, I only added apply/has/get to Service. I missed remove.
-    // I will use $this->effectService->getEffectRepo()->removeEffect? No, better to add method to Service.
-    // Since I can't edit Service in this call, I will skip the "Break" logic for this precise moment 
-    // or assume I will fix Service next. I will add the call and then fix Service.
     $this->effectService->breakEffect($attackerId, 'peace_shield'); 
 }
 // ----------------------------

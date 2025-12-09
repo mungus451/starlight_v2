@@ -215,6 +215,6 @@ Set up a cron job to run the turn processor, which handles all passive income an
 crontab -e
 
 
-Add this line to run every 5 minutes:
+Add this line to run every 10 minutes:
 
-*/5 * * * * cd /var/www/html/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> logs/cron.log 2>&1
+*/10 * * * * cd /var/www/html/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> logs/cron.log 2>&1
