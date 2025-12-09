@@ -256,30 +256,56 @@ a:hover {
 @media (max-width: 980px) {
     .main-nav {
         flex-wrap: wrap;
-        height: auto;
-        padding: 0.5rem 1rem 2.5rem 1rem;
+        height: 60px; /* Collapsed height */
+        padding: 0 1rem;
+        overflow: hidden; /* Hide menu items */
+        transition: height 0.3s ease-out;
+        align-content: flex-start; /* Ensure header stays at top */
+    }
+    
+    .main-nav.mobile-open {
+        height: auto; /* Expand */
+        overflow-y: auto;
+        max-height: 80vh;
+        padding-bottom: 1rem;
+    }
+    
+    .mobile-menu-btn {
+        display: block !important;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 1.2rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        position: absolute;
+        top: 10px;
+        right: 15px;
     }
     
     .nav-list {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
         width: 100%;
         gap: 0;
+        align-items: flex-start;
+        margin-top: 0.5rem;
     }
 
     .nav-item {
+        width: 100%;
         height: auto;
+        flex-wrap: wrap; /* Allow submenu to wrap to next line */
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
     .nav-link {
-        font-size: 0.85rem;
-        padding: 0.6rem 0.8rem;
+        width: 100%;
+        font-size: 1rem;
+        padding: 1rem 0.5rem;
+        justify-content: space-between; /* Push caret to right */
     }
     
-    /* Disable hover dropdowns on mobile, require click (JS needed later?) 
-       For now, just stack them or keep hover if device supports it. 
-       Simplest fallback: Hover still works on touch for most browsers (first tap opens).
-    */
     .nav-submenu {
         position: static;
         box-shadow: none;
@@ -292,14 +318,28 @@ a:hover {
         min-width: unset;
         border-radius: 4px;
         margin-bottom: 0.5rem;
+        padding-left: 1rem; /* Indent submenu */
+        border: none;
     }
     
-    /* Show submenu if parent has .active class (toggled by JS) */
-    .nav-item.mobile-active .nav-submenu {
+    /* Toggle class for JS */
+    .nav-item.active .nav-submenu {
         display: block;
     }
     
-    .nav-brand { display: none; } /* Save space */
+    .nav-brand { 
+        width: auto; /* Allow brand to sit left of button */
+        border-bottom: none;
+        margin-bottom: 0;
+        height: 60px; /* Match navbar height */
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Rotate caret when active */
+    .nav-item.active .nav-link .fa-caret-down {
+        transform: rotate(180deg);
+    }
 }
 
 @keyframes badgePulse {

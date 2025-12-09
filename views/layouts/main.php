@@ -146,5 +146,44 @@
     <?php if ($isLoggedIn): ?>
         <script src="/js/notifications.js"></script>
     <?php endif; ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mobile Menu Toggle
+            const nav = document.querySelector('.main-nav');
+            // Create toggle button dynamically to avoid layout issues on desktop
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'mobile-menu-btn';
+            toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            toggleBtn.style.display = 'none'; // Hidden by default (desktop)
+            
+            const brand = nav.querySelector('.nav-brand');
+            if (brand) {
+                brand.parentNode.insertBefore(toggleBtn, brand.nextSibling);
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                nav.classList.toggle('mobile-open');
+            });
+
+            // Mobile Dropdown Toggles
+            const dropdowns = document.querySelectorAll('.nav-item');
+            dropdowns.forEach(item => {
+                const link = item.querySelector('.nav-link');
+                const submenu = item.querySelector('.nav-submenu');
+                
+                if (submenu && link) {
+                    link.addEventListener('click', (e) => {
+                        // Only prevent default if we are in mobile view
+                        if (window.innerWidth <= 980) {
+                            if (e.target.closest('.nav-submenu')) return; // Allow clicking links inside
+                            e.preventDefault();
+                            item.classList.toggle('active');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
