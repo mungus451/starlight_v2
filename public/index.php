@@ -121,6 +121,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // The Undermarket (Actions)
     $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
     $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
+    $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
     $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
     $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
 

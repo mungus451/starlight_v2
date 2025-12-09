@@ -6,6 +6,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Services\PowerCalculatorService;
 
 /**
@@ -19,6 +20,7 @@ private UserRepository $userRepository;
 private ResourceRepository $resourceRepository;
 private StatsRepository $statsRepository;
 private StructureRepository $structureRepository;
+private EffectRepository $effectRepo; // --- NEW ---
 private PowerCalculatorService $powerCalculator;
 
 /**
@@ -35,12 +37,14 @@ UserRepository $userRepository,
 ResourceRepository $resourceRepository,
 StatsRepository $statsRepository,
 StructureRepository $structureRepository,
+EffectRepository $effectRepo, // --- NEW ---
 PowerCalculatorService $powerCalculator
 ) {
 $this->userRepository = $userRepository;
 $this->resourceRepository = $resourceRepository;
 $this->statsRepository = $statsRepository;
 $this->structureRepository = $structureRepository;
+$this->effectRepo = $effectRepo;
 $this->powerCalculator = $powerCalculator;
 }
 
@@ -58,6 +62,8 @@ $user = $this->userRepository->findById($userId);
 $resources = $this->resourceRepository->findByUserId($userId);
 $stats = $this->statsRepository->findByUserId($userId);
 $structures = $this->structureRepository->findByUserId($userId);
+        
+$activeEffects = $this->effectRepo->getAllActiveEffects($userId); // --- NEW ---
 
 // 2. Get all calculation breakdowns from the injected service
 // Pass alliance_id to ALL calculators to ensure structure bonuses apply
@@ -104,6 +110,7 @@ return [
 'resources' => $resources,
 'stats' => $stats,
 'structures' => $structures,
+'activeEffects' => $activeEffects, // --- NEW ---
 'incomeBreakdown' => $incomeBreakdown,
 'offenseBreakdown' => $offenseBreakdown,
 'defenseBreakdown' => $defenseBreakdown,

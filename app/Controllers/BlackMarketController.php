@@ -93,6 +93,12 @@ break;
 case 'lootbox':
 $response = $this->bmService->openVoidContainer($userId);
 break;
+case 'radar_jamming':
+$response = $this->bmService->purchaseRadarJamming($userId);
+break;
+case 'safehouse':
+$response = $this->bmService->purchaseSafehouse($userId);
+break;
 default:
 $this->session->setFlash('error', 'Invalid action.');
 $this->redirect('/black-market/actions');
@@ -107,6 +113,56 @@ $this->session->setFlash($flashType, $response->message);
 $this->session->setFlash('error', $response->message);
 }
 $this->redirect('/black-market/actions');
+}
+
+// --- Launder Credits ---
+public function handleLaunder(): void
+{
+$data = $this->validate($_POST, [
+    'csrf_token' => 'required',
+    'amount' => 'required|int|min:1'
+]);
+
+if (!$this->csrfService->validateToken($data['csrf_token'])) {
+    $this->session->setFlash('error', 'Invalid token.');
+    $this->redirect('/black-market/actions');
+    return;
+}
+
+$userId = $this->session->get('user_id');
+$response = $this->bmService->launderCredits($userId, $data['amount']);
+
+if ($response->isSuccess()) {
+    $this->session->setFlash('success', $response->message);
+} else {
+    $this->session->setFlash('error', $response->message);
+}
+$this->redirect('/black-market/actions');
+}
+
+// --- Withdraw Untraceable Chips ---
+public function handleWithdrawChips(): void
+{
+    $data = $this->validate($_POST, [
+        'csrf_token' => 'required',
+        'amount' => 'required|int|min:1'
+    ]);
+
+    if (!$this->csrfService->validateToken($data['csrf_token'])) {
+        $this->session->setFlash('error', 'Invalid token.');
+        $this->redirect('/dashboard'); // Redirect to dashboard after withdrawal
+        return;
+    }
+
+    $userId = $this->session->get('user_id');
+    $response = $this->bmService->withdrawChips($userId, $data['amount']);
+
+    if ($response->isSuccess()) {
+        $this->session->setFlash('success', $response->message);
+    } else {
+        $this->session->setFlash('error', $response->message);
+    }
+    $this->redirect('/dashboard'); // Redirect to dashboard after withdrawal
 }
 
 // --- Place Bounty ---

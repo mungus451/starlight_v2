@@ -35,7 +35,9 @@ use App\Models\Repositories\NotificationRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\SecurityRepository;
 use App\Models\Repositories\BountyRepository;
-use App\Models\Repositories\BlackMarketLogRepository; // --- NEW ---
+use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Repositories\EffectRepository; // --- NEW ---
+use App\Models\Repositories\IntelRepository;   // --- NEW ---
 
 // Services
 use App\Models\Services\AuthService;
@@ -64,6 +66,7 @@ use App\Models\Services\LeaderboardService;
 use App\Models\Services\BlackMarketService;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
+use App\Models\Services\EffectService; // --- NEW ---
 
 // Core & Events
 use App\Core\Events\EventDispatcher;
@@ -165,7 +168,9 @@ NotificationRepository::class => function (ContainerInterface $c) { return new N
 HouseFinanceRepository::class => function (ContainerInterface $c) { return new HouseFinanceRepository($c->get(PDO::class)); },
 SecurityRepository::class => function (ContainerInterface $c) { return new SecurityRepository($c->get(PDO::class)); },
 BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
-BlackMarketLogRepository::class => function (ContainerInterface $c) { return new BlackMarketLogRepository($c->get(PDO::class)); }, // --- NEW ---
+BlackMarketLogRepository::class => function (ContainerInterface $c) { return new BlackMarketLogRepository($c->get(PDO::class)); },
+EffectRepository::class => function (ContainerInterface $c) { return new EffectRepository($c->get(PDO::class)); }, // --- NEW ---
+IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },   // --- NEW ---
 
 // --- SERVICES ---
 
@@ -185,7 +190,8 @@ $c->get(BountyRepository::class),
 $c->get(ArmoryService::class),
 $c->get(PowerCalculatorService::class),
 $c->get(LevelUpService::class),
-$c->get(EventDispatcher::class)
+$c->get(EventDispatcher::class),
+$c->get(EffectService::class) // --- NEW ---
 );
 },
 
@@ -199,8 +205,35 @@ $c->get(StatsRepository::class),
 $c->get(UserRepository::class),
 $c->get(BountyRepository::class),
 $c->get(AttackService::class),
-$c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
+$c->get(BlackMarketLogRepository::class),
+$c->get(EffectService::class) // --- NEW ---
 );
+},
+
+// Effect Service
+EffectService::class => function (ContainerInterface $c) {
+    return new EffectService(
+        $c->get(EffectRepository::class),
+        $c->get(UserRepository::class)
+    );
+},
+
+// Spy Service (Manual definition required now)
+\App\Models\Services\SpyService::class => function (ContainerInterface $c) {
+    return new \App\Models\Services\SpyService(
+        $c->get(PDO::class),
+        $c->get(Config::class),
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StructureRepository::class),
+        $c->get(StatsRepository::class),
+        $c->get(App\Models\Repositories\SpyRepository::class),
+        $c->get(App\Models\Services\ArmoryService::class),
+        $c->get(PowerCalculatorService::class),
+        $c->get(LevelUpService::class),
+        $c->get(App\Models\Services\NotificationService::class),
+        $c->get(EffectService::class)
+    );
 },
 
 // Currency Converter (Needs Logging Update Phase 20)

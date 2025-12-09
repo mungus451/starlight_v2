@@ -223,6 +223,79 @@
     </ul>
 </div>
 
+<!-- NEW: Active Effects Box -->
+<?php if (!empty($activeEffects) || $resources->untraceable_chips > 0): ?>
+<div class="data-card grid-col-span-2">
+    <div class="card-header">
+        <h3 style="color: var(--accent);">Active Effects & Assets</h3>
+    </div>
+    
+    <?php if ($resources->untraceable_chips > 0): ?>
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);">
+        <div class="flex-between mb-1">
+            <h4 style="margin: 0; color: #fff;"><i class="fas fa-dice text-accent"></i> Untraceable Chips</h4>
+            <strong class="text-accent-2" style="font-size: 1.2rem;"><?= number_format($resources->untraceable_chips) ?></strong>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">These chips can be converted back to Credits. They are immune to plunder.</p>
+        <form action="/black-market/withdraw-chips" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <div class="form-group amount-input-group">
+                <input type="hidden" name="amount" id="withdraw-chips-hidden" value="0">
+                <input type="text" id="withdraw-chips-display" placeholder="Chips to Withdraw" required min="1">
+                <button type="submit" class="btn-submit btn-accent" style="width: auto;">Withdraw</button>
+            </div>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($activeEffects)): ?>
+    <h4 style="margin: 0 0 1rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Active Buffs/Debuffs</h4>
+    <ul class="data-list" style="margin-top: 0.5rem;">
+        <?php foreach ($activeEffects as $effect): ?>
+            <?php 
+                $expires = new DateTime($effect['expires_at']);
+                $now = new DateTime();
+                if ($expires <= $now) continue;
+                $interval = $now->diff($expires);
+                $timeLeft = $interval->format('%h hrs %i mins');
+                
+                $icon = 'fa-bolt';
+                $label = 'Unknown Effect';
+                $color = 'text-accent';
+                
+                switch ($effect['effect_type']) {
+                    case 'jamming':
+                        $icon = 'fa-satellite-dish';
+                        $label = 'Radar Jamming';
+                        $color = 'text-accent'; // Teal
+                        break;
+                    case 'peace_shield':
+                        $icon = 'fa-shield-alt';
+                        $label = 'Peace Shield';
+                        $color = 'text-success'; // Green
+                        break;
+                    case 'wounded':
+                        $icon = 'fa-user-injured';
+                        $label = 'Wounded';
+                        $color = 'text-danger'; // Red
+                        break;
+                }
+            ?>
+            <li class="data-item" style="justify-content: space-between; padding: 0.75rem 1rem;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <i class="fas <?= $icon ?> <?= $color ?>" style="font-size: 1.2rem; width: 25px; text-align: center;"></i>
+                    <span style="font-weight: 600; color: #fff;"><?= $label ?></span>
+                </div>
+                <span style="font-family: monospace; font-size: 1rem; color: var(--muted);">
+                    <i class="far fa-clock" style="margin-right: 5px;"></i> <?= $timeLeft ?>
+                </span>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
 <div class="data-card grid-col-span-1">
     <div class="card-header">
         <h3>Structures</h3>
@@ -239,4 +312,14 @@
     </ul>
 </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const withdrawChipsDisplay = document.getElementById('withdraw-chips-display');
+        const withdrawChipsHidden = document.getElementById('withdraw-chips-hidden');
+        if (withdrawChipsDisplay && withdrawChipsHidden) {
+            StarlightUtils.setupInputMask(withdrawChipsDisplay, withdrawChipsHidden);
+        }
+    });
+</script>
 <script src="/js/dashboard.js"></script>

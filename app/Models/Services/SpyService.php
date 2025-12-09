@@ -14,6 +14,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\NotificationService;
+use App\Models\Services\EffectService; // --- NEW ---
 use PDO;
 use Throwable;
 
@@ -31,12 +32,14 @@ class SpyService
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
     private NotificationService $notificationService;
+    private EffectService $effectService; // --- NEW ---
 
     public function __construct(
         PDO $db, Config $config, UserRepository $userRepo, ResourceRepository $resourceRepo,
         StructureRepository $structureRepo, StatsRepository $statsRepo, SpyRepository $spyRepo,
         ArmoryService $armoryService, PowerCalculatorService $powerCalculatorService,
-        LevelUpService $levelUpService, NotificationService $notificationService
+        LevelUpService $levelUpService, NotificationService $notificationService,
+        EffectService $effectService // --- NEW ---
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -49,8 +52,9 @@ class SpyService
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
         $this->notificationService = $notificationService;
+        $this->effectService = $effectService;
     }
-
+    
     // ... getSpyData, getSpyReports, getSpyReport same ...
     public function getSpyData(int $userId, int $page): array {
         // ... (keep existing implementation)
@@ -115,6 +119,21 @@ class SpyService
         if ($spiesSent <= 0) return ServiceResponse::error('You have no spies to send.');
         if ($attackerResources->credits < $creditCost) return ServiceResponse::error('You do not have enough credits.');
         if ($attackerStats->attack_turns < $turnCost) return ServiceResponse::error('You do not have enough attack turns.');
+
+        // --- Check for Radar Jamming ---
+        if ($this->effectService->hasActiveEffect($defender->id, 'jamming')) {
+            // Deduct costs (The price of failure)
+            $this->db->beginTransaction();
+            try {
+                $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $attackerResources->spies); // No spies lost, just cost
+                $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
+                $this->db->commit();
+            } catch (Throwable $e) {
+                $this->db->rollBack();
+            }
+            return ServiceResponse::success("CRITICAL FAILURE: Target signal is jammed. Operation failed, resources consumed.");
+        }
+        // -------------------------------
 
         // Rolls
         $offenseBreakdown = $this->powerCalculatorService->calculateSpyPower($attackerId, $attackerResources, $attackerStructures);

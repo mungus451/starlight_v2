@@ -140,23 +140,24 @@ Define the Frontend (View): Create views/item_repair/show.php for the UI.
 
 Define the Route (Router): Update public/index.php to map the new URI (/repair) to ItemRepairController::show.
 
-🛠️ Installation & Setup (Ubuntu/MariaDB)
+🛠️ Installation & Setup (Ubuntu/MariaDB/Redis)
 
-This guide assumes a Ubuntu server environment running Apache2 and PHP 8.4.
+This guide assumes a Ubuntu server environment running Apache2, PHP 8.4, MariaDB, and Redis.
 
 1. Prerequisites (Ubuntu)
 
 Ensure the necessary components are installed and running:
 
-# Install PHP and extensions required by Composer (e.g., mbstring)
+# Install PHP and extensions required by Composer (e.g., mbstring, xml, redis)
 sudo apt update
 sudo apt install php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-zip php8.4-curl composer
 
-# Install MariaDB
-sudo apt install mariadb-server
+# Install Database & Cache Servers
+sudo apt install mariadb-server redis-server
 
 # Start the services (usually automatic after install)
 sudo systemctl start mariadb
+sudo systemctl start redis-server
 sudo systemctl start apache2
 
 
@@ -174,28 +175,37 @@ FLUSH PRIVILEGES;
 EXIT;
 
 
-Next, import the schema and seed data using your local SQL files.
-
 3. Application Setup
 
-Place Files: Place the project files in the web root, e.g., /usr/local/var/www/starlight_v2.
+Place Files: Place the project files in the web root, e.g., `/var/www/html/starlight_v2`.
 
 Install Dependencies:
+This installs core libraries including `predis/predis` (for Redis) and `robmorgan/phinx` (for migrations).
 
-cd /usr/local/var/www/starlight_v2
+cd /var/www/html/starlight_v2
 composer install
 
 
-Configure .env: Copy the .env.example file to .env and set your database credentials.
+Configure .env: Copy the `.env.example` file to `.env` and set your database and Redis credentials.
 
-Set Directory Permissions: Crucially, grant the Apache user (www-data) write access to the uploaded files directory:
+cp .env.example .env
+nano .env
+# Set DB_HOST, DB_NAME, DB_USER, DB_PASS
+# Set REDIS_HOST, REDIS_PORT (Defaults to 127.0.0.1:6379)
 
-# Grant ownership of the storage folders to the web server user (www-data)
-sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/storage
-sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/public/uploads
+
+Run Database Migrations:
+Use Phinx to build the database schema and apply all recent changes.
+
+vendor/bin/phinx migrate --configuration=config/phinx.php
+
+
+Set Directory Permissions: Crucially, grant the Apache user (`www-data`) write access to storage and log directories:
+
+# Grant ownership of storage and logs to the web server user
+sudo chown -R www-data:www-data storage/ logs/ public/uploads/
 # Set correct directory permissions (rwxr-xr-x)
-sudo chmod -R 755 /usr/local/var/www/starlight_v2/storage
-sudo chmod -R 755 /usr/local/var/www/starlight_v2/public/uploads
+sudo chmod -R 755 storage/ logs/ public/uploads/
 
 
 4. Running the Game Loop (Cron)
@@ -207,4 +217,4 @@ crontab -e
 
 Add this line to run every 5 minutes:
 
-*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/5 * * * * cd /var/www/html/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> logs/cron.log 2>&1

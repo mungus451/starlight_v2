@@ -8,7 +8,8 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
-use App\Models\Repositories\BlackMarketLogRepository; // --- NEW ---
+use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Services\EffectService; // --- NEW ---
 use PDO;
 use Throwable;
 
@@ -26,7 +27,8 @@ class BlackMarketService
     private UserRepository $userRepo;
     private BountyRepository $bountyRepo;
     private AttackService $attackService;
-    private BlackMarketLogRepository $logRepo; // --- NEW ---
+    private BlackMarketLogRepository $logRepo;
+    private EffectService $effectService; // --- NEW ---
 
     public function __construct(
         PDO $db,
@@ -36,7 +38,8 @@ class BlackMarketService
         UserRepository $userRepo,
         BountyRepository $bountyRepo,
         AttackService $attackService,
-        BlackMarketLogRepository $logRepo // --- NEW ---
+        BlackMarketLogRepository $logRepo,
+        EffectService $effectService // --- NEW ---
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -46,6 +49,7 @@ class BlackMarketService
         $this->bountyRepo = $bountyRepo;
         $this->attackService = $attackService;
         $this->logRepo = $logRepo;
+        $this->effectService = $effectService;
     }
 
     // --- Option 1: Stat Respec ---
@@ -219,6 +223,102 @@ class BlackMarketService
                 'status' => $outcomeType
             ];
         });
+    }
+
+    // --- Option: Radar Jamming ---
+    public function purchaseRadarJamming(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.radar_jamming', 50000);
+        $duration = 240; // 4 Hours
+
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $duration) {
+            $this->effectService->applyEffect($userId, 'jamming', $duration);
+            
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'radar_jamming');
+            
+            return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
+        });
+    }
+
+    // --- Option: Safehouse (Peace Shield) ---
+    public function purchaseSafehouse(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.safehouse', 100000);
+        $duration = 360; // 6 Hours
+
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $duration) {
+            $this->effectService->applyEffect($userId, 'peace_shield', $duration);
+            
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'safehouse');
+            
+            return "You have vanished from the grid. You are safe for 6 hours.";
+        });
+    }
+
+    // --- Option: Resource Laundering ---
+    public function launderCredits(int $userId, int $amount): ServiceResponse
+    {
+        if ($amount <= 0) return ServiceResponse::error("Invalid amount.");
+        
+        $rate = $this->config->get('black_market.rates.laundering', 1.15); // 1.15 Credits per 1 Chip
+        $chipAmount = (int)floor($amount / $rate);
+        
+        if ($chipAmount <= 0) return ServiceResponse::error("Amount too low to launder.");
+
+        // Custom process because we deduct credits, not crystals
+        $resources = $this->resourceRepo->findByUserId($userId);
+        if ($resources->credits < $amount) {
+            return ServiceResponse::error("Insufficient Credits.");
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Deduct Credits
+            $this->resourceRepo->updateCredits($userId, $resources->credits - $amount);
+            
+            // Add Chips
+            $this->resourceRepo->updateChips($userId, $resources->untraceable_chips + $chipAmount);
+            
+            // Log
+            $this->logRepo->log($userId, 'launder', 'credits', $amount, null, ['chips_gained' => $chipAmount]);
+            
+            $this->db->commit();
+            return ServiceResponse::success("Laundered " . number_format($amount) . " Credits into " . number_format($chipAmount) . " Untraceable Chips.");
+            
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            return ServiceResponse::error($e->getMessage());
+        }
+    }
+
+    // --- Withdraw Untraceable Chips ---
+    public function withdrawChips(int $userId, int $amount): ServiceResponse
+    {
+        if ($amount <= 0) return ServiceResponse::error("Invalid amount.");
+
+        $resources = $this->resourceRepo->findByUserId($userId);
+        if ($resources->untraceable_chips < $amount) {
+            return ServiceResponse::error("Insufficient Untraceable Chips.");
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Deduct Chips
+            $this->resourceRepo->updateChips($userId, $resources->untraceable_chips - $amount);
+            
+            // Add Credits (no fee on withdrawal, fee was paid on deposit)
+            $this->resourceRepo->updateCredits($userId, $resources->credits + $amount);
+            
+            // Log
+            $this->logRepo->log($userId, 'withdraw', 'chips', $amount, null, ['credits_gained' => $amount]);
+            
+            $this->db->commit();
+            return ServiceResponse::success("Withdrew " . number_format($amount) . " Untraceable Chips for " . number_format($amount) . " Credits.");
+            
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            return ServiceResponse::error($e->getMessage());
+        }
     }
 
     // --- Option 10: Place Bounty ---
