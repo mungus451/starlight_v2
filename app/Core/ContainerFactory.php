@@ -6,7 +6,7 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use PDO;
-use Redis;
+use Predis\Client;
 use Exception;
 
 // Repositories
@@ -104,47 +104,41 @@ PDO::class => function (ContainerInterface $c) {
 return Database::getInstance();
 },
 
-// 3. Redis Connection
-Redis::class => function (ContainerInterface $c) {
-$config = $c->get(Config::class);
-$redisConfig = $config->get('redis');
+    // 3. Redis Connection (via Predis)
+    Client::class => function (ContainerInterface $c) {
+        $config = $c->get(Config::class);
+        $redisConfig = $config->get('redis');
 
-$redis = new Redis();
+        // Predis Connection Parameters
+        $params = [
+            'scheme'   => 'tcp',
+            'host'     => $redisConfig['host'],
+            'port'     => $redisConfig['port'],
+            'password' => $redisConfig['password'] ?? null,
+            'database' => $redisConfig['database'] ?? 0,
+        ];
 
-if (!@$redis->connect($redisConfig['host'], $redisConfig['port'])) {
-throw new Exception("Could not connect to Redis at {$redisConfig['host']}:{$redisConfig['port']}");
-}
+        // Predis Client Options
+        $options = [
+            'prefix' => $redisConfig['prefix'] ?? 'starlight_v2:',
+            'exceptions' => true,
+        ];
 
-if (!empty($redisConfig['password'])) {
-if (!$redis->auth($redisConfig['password'])) {
-throw new Exception("Redis authentication failed.");
-}
-}
+        return new Client($params, $options);
+    },
 
-if (isset($redisConfig['database'])) {
-$redis->select($redisConfig['database']);
-}
+    // 4. Session
+    Session::class => function (ContainerInterface $c) {
+        return new Session();
+    },
 
-if (!empty($redisConfig['prefix'])) {
-$redis->setOption(Redis::OPT_PREFIX, $redisConfig['prefix']);
-}
-
-return $redis;
-},
-
-// 4. Session
-Session::class => function (ContainerInterface $c) {
-return new Session();
-},
-
-// 5. CSRF Service
-CSRFService::class => function (ContainerInterface $c) {
-return new CSRFService(
-$c->get(Redis::class),
-$c->get(Session::class)
-);
-},
-
+    // 5. CSRF Service
+    CSRFService::class => function (ContainerInterface $c) {
+        return new CSRFService(
+            $c->get(Client::class),
+            $c->get(Session::class)
+        );
+    },
 // --- REPOSITORIES (Manual registration to ensure PDO injection) ---
 UserRepository::class => function (ContainerInterface $c) { return new UserRepository($c->get(PDO::class)); },
 ResourceRepository::class => function (ContainerInterface $c) { return new ResourceRepository($c->get(PDO::class)); },

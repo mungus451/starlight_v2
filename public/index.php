@@ -76,7 +76,7 @@ try {
 
 // 5. Setup Redis Session Handler
 try {
-    $redis = $container->get(Redis::class);
+    $redis = $container->get(Predis\Client::class);
     $handler = new RedisSessionHandler($redis);
     
     // Register the custom handler

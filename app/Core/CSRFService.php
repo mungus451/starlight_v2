@@ -2,18 +2,20 @@
 
 namespace App\Core;
 
-use Redis;
+use Predis\Client;
 
 /**
- * Handles Cross-Site Request Forgery (CSRF) protection using Redis.
+ * Handles Cross-Site Request Forgery (CSRF) protection.
  * * Strategy: Persistent Per-Session Token
+ * * Storage: Redis (Strict)
+ * 
  * Instead of single-use tokens (which break multi-tab browsing), we generate
- * one secure token per session and store it in Redis. It remains valid
- * until the session expires or the user logs out.
+ * one secure token per session. It remains valid until the session expires 
+ * or the user logs out.
  */
 class CSRFService
 {
-    private Redis $redis;
+    private Client $redis;
     private Session $session;
     
     // Prefix for Redis keys to avoid collisions
@@ -24,11 +26,11 @@ class CSRFService
 
     /**
      * DI Constructor.
-     * The container automatically injects the configured Redis instance.
-     * * @param Redis $redis
+     * 
+     * @param Client $redis
      * @param Session $session
      */
-    public function __construct(Redis $redis, Session $session)
+    public function __construct(Client $redis, Session $session)
     {
         $this->redis = $redis;
         $this->session = $session;
@@ -47,26 +49,26 @@ class CSRFService
             return '';
         }
 
+        // Predis Client handles prefixing automatically if configured, 
+        // but we add our own specific key segment here.
+        // Note: If 'starlight_v2:' is the global prefix, and we add 'csrf_token:', 
+        // the actual key in Redis is 'starlight_v2:csrf_token:sess_id'.
         $key = self::KEY_PREFIX . $sessionId;
         
-        // 1. Check if we already have a token for this session
         $existingToken = $this->redis->get($key);
         
         if ($existingToken) {
             return $existingToken;
         }
 
-        // 2. Generate a new cryptographically secure token
         $newToken = bin2hex(random_bytes(32));
-        
-        // 3. Store in Redis with expiration
         $this->redis->setex($key, self::TTL, $newToken);
         
         return $newToken;
     }
 
     /**
-     * Validates a submitted token against the one stored in Redis.
+     * Validates a submitted token against the stored one.
      *
      * @param string $submittedToken The token from $_POST
      * @return bool True if valid
@@ -101,8 +103,7 @@ class CSRFService
     {
         $sessionId = session_id();
         if (!empty($sessionId)) {
-            $this->redis->del(self::KEY_PREFIX . $sessionId);
+            $this->redis->del([self::KEY_PREFIX . $sessionId]);
         }
-        // A new one will be generated on next call to generateToken()
     }
 }

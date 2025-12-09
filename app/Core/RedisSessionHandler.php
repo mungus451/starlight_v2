@@ -3,7 +3,7 @@
 namespace App\Core;
 
 use SessionHandlerInterface;
-use Redis;
+use Predis\Client;
 
 /**
  * RedisSessionHandler
@@ -12,16 +12,16 @@ use Redis;
  */
 class RedisSessionHandler implements SessionHandlerInterface
 {
-    private Redis $redis;
+    private Client $redis;
     private int $lifetime;
     private string $prefix;
 
     /**
-     * @param Redis $redis Connected Redis instance
+     * @param Client $redis Connected Redis instance
      * @param int $lifetime Session duration in seconds (default 24 hours)
      * @param string $prefix Key prefix for session entries
      */
-    public function __construct(Redis $redis, int $lifetime = 86400, string $prefix = 'session:')
+    public function __construct(Client $redis, int $lifetime = 86400, string $prefix = 'session:')
     {
         $this->redis = $redis;
         $this->lifetime = $lifetime;
@@ -55,7 +55,7 @@ class RedisSessionHandler implements SessionHandlerInterface
         $key = $this->prefix . $id;
         $data = $this->redis->get($key);
         
-        return $data !== false ? $data : '';
+        return $data !== null ? $data : '';
     }
 
     /**
@@ -69,7 +69,8 @@ class RedisSessionHandler implements SessionHandlerInterface
         $key = $this->prefix . $id;
         
         // SETEX: Set key, value, and expiration in one atomic command
-        return $this->redis->setex($key, $this->lifetime, $data);
+        $this->redis->setex($key, $this->lifetime, $data);
+        return true;
     }
 
     /**
@@ -80,7 +81,7 @@ class RedisSessionHandler implements SessionHandlerInterface
     public function destroy(string $id): bool
     {
         $key = $this->prefix . $id;
-        $this->redis->del($key);
+        $this->redis->del([$key]);
         
         return true;
     }
