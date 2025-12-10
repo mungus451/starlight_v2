@@ -6,6 +6,7 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
+use App\Core\Exceptions\TerminateException;
 
 /**
  * Handles securely serving private files from the 'storage' directory.
@@ -94,6 +95,6 @@ class FileController extends BaseController
         header('Content-Length: ' . filesize($filePath));
         header('Cache-Control: public, max-age=86400'); // Cache for 1 day
         readfile($filePath);
-        exit;
+        throw new TerminateException();
     }
 }

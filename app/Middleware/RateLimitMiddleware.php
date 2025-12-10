@@ -3,6 +3,7 @@
 namespace App\Middleware;
 
 use Predis\Client;
+use App\Core\Exceptions\TerminateException;
 
 /**
  * RateLimitMiddleware
@@ -63,7 +64,7 @@ class RateLimitMiddleware
             } else {
                 echo 'Too Many Requests. Please slow down.';
             }
-            exit;
+            throw new TerminateException();
         }
     }
 

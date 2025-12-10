@@ -68,9 +68,9 @@ class Database
                 // For development, it's useful to see the error.
                 // In production (APP_ENV=production), show a generic message.
                 if (($_ENV['APP_ENV'] ?? 'development') === 'production') {
-                    die('Could not connect to the database. Please try again later.');
+                    throw new \Exception('Could not connect to the database. Please try again later.');
                 } else {
-                    die('Database Connection Error: ' . $e->getMessage());
+                    throw new \Exception('Database Connection Error: ' . $e->getMessage());
                 }
             }
         }
