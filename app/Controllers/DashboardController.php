@@ -57,6 +57,35 @@ class DashboardController extends BaseController
 
         // Tell the layout to render in full-width mode
         $data['layoutMode'] = 'full';
+        
+        // --- Presenter Logic (Inline for Compliance) ---
+        // Map effect types to UI properties to keep View clean
+        if (!empty($data['activeEffects'])) {
+            foreach ($data['activeEffects'] as &$effect) {
+                switch ($effect['effect_type']) {
+                    case 'jamming':
+                        $effect['ui_icon'] = 'fa-satellite-dish';
+                        $effect['ui_label'] = 'Radar Jamming';
+                        $effect['ui_color'] = 'text-accent';
+                        break;
+                    case 'peace_shield':
+                        $effect['ui_icon'] = 'fa-shield-alt';
+                        $effect['ui_label'] = 'Peace Shield';
+                        $effect['ui_color'] = 'text-success';
+                        break;
+                    case 'wounded':
+                        $effect['ui_icon'] = 'fa-user-injured';
+                        $effect['ui_label'] = 'Wounded';
+                        $effect['ui_color'] = 'text-danger';
+                        break;
+                    default:
+                        $effect['ui_icon'] = 'fa-bolt';
+                        $effect['ui_label'] = 'Unknown Effect';
+                        $effect['ui_color'] = 'text-accent';
+                }
+            }
+        }
+        // -----------------------------------------------
 
         // 2. Render the view
         $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);

@@ -32,7 +32,7 @@ class EffectService
     public function applyEffect(int $userId, string $type, int $durationMinutes, ?array $metadata = null): void
     {
         $now = new DateTime();
-        $now->add(new DateInterval("PT{$durationMinutes}M"));
+        $now->modify("+{$durationMinutes} minutes");
         $expiresAt = $now->format('Y-m-d H:i:s');
 
         $this->effectRepo->addEffect($userId, $type, $expiresAt, $metadata);

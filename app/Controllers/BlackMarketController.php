@@ -9,21 +9,15 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
-use App\Models\Repositories\BountyRepository;
-use App\Models\Repositories\UserRepository;
 
 class BlackMarketController extends BaseController
 {
 private BlackMarketService $bmService;
 private CurrencyConverterService $converterService;
-private BountyRepository $bountyRepo;
-private UserRepository $userRepo;
 
 public function __construct(
 BlackMarketService $bmService,
 CurrencyConverterService $converterService,
-BountyRepository $bountyRepo,
-UserRepository $userRepo,
 Session $session,
 CSRFService $csrfService,
 Validator $validator,
@@ -32,8 +26,6 @@ ViewContextService $viewContextService
 parent::__construct($session, $csrfService, $validator, $viewContextService);
 $this->bmService = $bmService;
 $this->converterService = $converterService;
-$this->bountyRepo = $bountyRepo;
-$this->userRepo = $userRepo;
 }
 
 // --- Tab 1: The Exchange ---
@@ -49,8 +41,9 @@ $this->render('black_market/exchange.php', $data + ['title' => 'Black Market - E
 public function showActions(): void
 {
 $userId = $this->session->get('user_id');
-$bounties = $this->bountyRepo->getActiveBounties(10);
-$targets = $this->userRepo->findAllNonNpcs();
+
+// Use Service to get data, keeping Controller thin
+$data = $this->bmService->getUndermarketPageData($userId);
 
 // Load costs config to pass to view
 $bmConfig = require __DIR__ . '/../../config/black_market.php';
@@ -58,8 +51,8 @@ $bmConfig = require __DIR__ . '/../../config/black_market.php';
 $this->render('black_market/actions.php', [
 'title' => 'Black Market - Actions',
 'active_tab' => 'actions',
-'bounties' => $bounties,
-'targets' => $targets,
+'bounties' => $data['bounties'],
+'targets' => $data['targets'],
 'costs' => $bmConfig['costs'], // Pass costs array
 'layoutMode' => 'full'
 ]);

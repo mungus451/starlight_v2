@@ -52,6 +52,21 @@ class BlackMarketService
         $this->effectService = $effectService;
     }
 
+    /**
+     * Retrieves data required for the Undermarket (Actions) tab.
+     * Encapsulates repository access for the controller.
+     * 
+     * @param int $userId
+     * @return array
+     */
+    public function getUndermarketPageData(int $userId): array
+    {
+        return [
+            'bounties' => $this->bountyRepo->getActiveBounties(10),
+            'targets' => $this->userRepo->findAllNonNpcs()
+        ];
+    }
+
     // --- Option 1: Stat Respec ---
     public function purchaseStatRespec(int $userId): ServiceResponse
     {

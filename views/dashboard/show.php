@@ -259,27 +259,10 @@
                 $interval = $now->diff($expires);
                 $timeLeft = $interval->format('%h hrs %i mins');
                 
-                $icon = 'fa-bolt';
-                $label = 'Unknown Effect';
-                $color = 'text-accent';
-                
-                switch ($effect['effect_type']) {
-                    case 'jamming':
-                        $icon = 'fa-satellite-dish';
-                        $label = 'Radar Jamming';
-                        $color = 'text-accent'; // Teal
-                        break;
-                    case 'peace_shield':
-                        $icon = 'fa-shield-alt';
-                        $label = 'Peace Shield';
-                        $color = 'text-success'; // Green
-                        break;
-                    case 'wounded':
-                        $icon = 'fa-user-injured';
-                        $label = 'Wounded';
-                        $color = 'text-danger'; // Red
-                        break;
-                }
+                // Uses pre-calculated UI properties from Controller (MVC Compliance)
+                $icon = $effect['ui_icon'] ?? 'fa-bolt';
+                $label = $effect['ui_label'] ?? 'Unknown Effect';
+                $color = $effect['ui_color'] ?? 'text-accent';
             ?>
             <li class="data-item" style="justify-content: space-between; padding: 0.75rem 1rem;">
                 <div style="display: flex; gap: 1rem; align-items: center;">
