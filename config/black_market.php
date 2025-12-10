@@ -12,6 +12,12 @@ return [
 'citizen_package' => 250000.0, // Crystals
 'void_container' => 10000.0, // Crystals
 'shadow_contract' => 5000000.0, // Crystals
+'radar_jamming' => 50000.0, // Crystals
+'safehouse' => 100000.0, // Crystals
+],
+
+'rates' => [
+    'laundering' => 1.15, // 1.15 Credits per 1 Chip
 ],
 
 'quantities' => [
@@ -22,46 +28,46 @@ return [
 // Loot Box Probabilities (Weights determine rarity relative to total sum)
 // Current Total Weight: 100
 'void_container_loot' => [
-// --- GOOD OUTCOMES (81%) ---
+// --- GOOD OUTCOMES (74%) ---
 'credits_medium' => [
-'weight' => 25,
+'weight' => 20,
 'type' => 'credits',
 'min' => 10000,
 'max' => 500000,
 'label' => 'Cache of Credits'
 ],
 'credits_high' => [
-'weight' => 20,
+'weight' => 23,
 'type' => 'credits',
-'min' => 100000,
-'max' => 2500000,
+'min' => 500000,
+'max' => 7500000,
 'label' => 'Vault of Credits'
 ],
 'soldiers' => [
-'weight' => 15,
+'weight' => 17,
 'type' => 'unit',
 'unit' => 'soldiers',
 'min' => 500,
-'max' => 1000,
+'max' => 2000,
 'label' => 'Mercenary Platoon'
 ],
 'spies' => [
-'weight' => 20,
+'weight' => 13,
 'type' => 'unit',
 'unit' => 'spies',
-'min' => 50,
+'min' => 10,
 'max' => 1500,
 'label' => 'Covert Operatives'
 ],
 'jackpot' => [
 'weight' => 1,
 'type' => 'crystals',
-'min' => 50000,
-'max' => 1000000,
+'min' => 500000,
+'max' => 100000000,
 'label' => 'JACKPOT! Naquadah Cache'
 ],
 
-// --- NEUTRAL OUTCOMES (15%) ---
+// --- NEUTRAL OUTCOMES (13%) ---
 'space_dust' => [
 'weight' => 8,
 'type' => 'neutral',
@@ -75,21 +81,30 @@ return [
 'text' => 'The container is filled with useless rusted metal shards.'
 ],
 
-// --- BAD OUTCOMES (4%) ---
+// --- BAD OUTCOMES (13%) ---
 'trap_credits' => [
-'weight' => 3,
+'weight' => 4,
 'type' => 'credits_loss',
-'min' => 500000,
-'max' => 20000000,
+'min' => 50000,
+'max' => 200000000,
 'label' => 'Credit Siphon Trap',
 'text' => 'IT\'S A TRAP! A hacking algorithm drains your account.'
 ],
+'ambush_spies' => [
+'weight' => 7,
+'type' => 'unit_loss',
+'unit' => 'spies',
+'min' => 10,
+'max' => 2000,
+'label' => 'The Double Cross',
+'text' => 'IT\'S A TRAP! A traitor turned you into their sentries. Casualties sustained.'
+],
 'ambush_soldiers' => [
-'weight' => 3,
+'weight' => 2,
 'type' => 'unit_loss',
 'unit' => 'soldiers',
-'min' => 50,
-'max' => 2000,
+'min' => 10,
+'max' => 1000,
 'label' => 'Void Ambush',
 'text' => 'The container was rigged with explosives! Casualties sustained.'
 ]

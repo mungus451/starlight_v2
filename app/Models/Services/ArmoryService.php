@@ -13,8 +13,7 @@ use Throwable;
 
 /**
  * Handles all business logic for the Armory (Manufacturing & Equipping).
- * * REFACTORED Phase 3: Strict MVC Compliance.
- * * Presentation logic removed (CSS classes, button text). Now returns raw state.
+ * * Fixed: Added nested transaction support to prevent test failures.
  */
 class ArmoryService
 {
@@ -168,8 +167,13 @@ class ArmoryService
             }
         }
         
-        // 4. Execute Transaction
-        $this->db->beginTransaction();
+        // 4. Execute Transaction (Smart Handling for Tests)
+        $transactionStartedByMe = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStartedByMe = true;
+        }
+
         $newCredits = 0;
         $newOwned = 0;
 
@@ -186,17 +190,22 @@ class ArmoryService
             // Add New Item
             $this->armoryRepo->updateItemQuantity($userId, $itemKey, +$quantity);
             
-            // Commit
-            $this->db->commit();
+            // Commit only if we started it
+            if ($transactionStartedByMe) {
+                $this->db->commit();
+            }
             
             // Calculate new owned count locally to save a query
             $currentOwned = $inventory[$itemKey] ?? 0;
             $newOwned = $currentOwned + $quantity;
 
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            // Rollback only if we started it
+            if ($transactionStartedByMe && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
+            // If caller started it, we re-throw or handle gracefully.
+            // For logic consistency, we return error here, caller will decide what to do with their transaction.
             error_log('Armory Manufacture Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred during manufacturing.');
         }
@@ -279,10 +288,6 @@ class ArmoryService
         return $totalBonus;
     }
 
-    /**
-     * Enriches item data with state (e.g., has_level, costs).
-     * VISUAL LOGIC REMOVED.
-     */
     private function enrichItemData(array $item, array $inventory, int $armoryLevel, float $discountPercent, array $lookup): array
     {
         $itemKey = $item['item_key'];
@@ -309,10 +314,9 @@ class ArmoryService
         $item['base_cost'] = $baseCost;
         $item['effective_cost'] = $effectiveCost;
         $item['armory_level_req'] = $reqLevel;
-        $item['has_level'] = $hasLevel; // Replaces 'level_status_class' logic
+        $item['has_level'] = $hasLevel;
         $item['can_manufacture'] = $canManufacture;
         
-        // Stats are preserved, but formatting is removed
         return $item;
     }
 

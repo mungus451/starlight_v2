@@ -13,8 +13,7 @@ use DateTime;
 
 /**
  * Handles all business logic for the Bank.
- * * Refactored for Strict Dependency Injection.
- * * Decoupled from Session: Returns ServiceResponse.
+ * * Refactored: Implements Transaction Owner Pattern for atomic testing.
  */
 class BankService
 {
@@ -25,15 +24,6 @@ class BankService
     private UserRepository $userRepo;
     private StatsRepository $statsRepo;
 
-    /**
-     * DI Constructor.
-     *
-     * @param PDO $db
-     * @param Config $config
-     * @param ResourceRepository $resourceRepo
-     * @param UserRepository $userRepo
-     * @param StatsRepository $statsRepo
-     */
     public function __construct(
         PDO $db,
         Config $config,
@@ -51,9 +41,6 @@ class BankService
     /**
      * Gets the resource and stats data needed for the Bank view.
      * Handles deposit charge regeneration.
-     *
-     * @param int $userId
-     * @return array
      */
     public function getBankData(int $userId): array
     {
@@ -67,18 +54,21 @@ class BankService
         if ($currentCharges < $maxCharges && $stats->last_deposit_at !== null) {
             $lastDepositTime = new DateTime($stats->last_deposit_at);
             $now = new DateTime();
-            $hoursPassed = ($now->getTimestamp() - $lastDepositTime->getTimestamp()) / 3600;
+            
+            // Calculate difference in seconds for precision, then convert to hours
+            $diffSeconds = $now->getTimestamp() - $lastDepositTime->getTimestamp();
+            $hoursPassed = $diffSeconds / 3600;
             
             $regenHours = $bankConfig['deposit_charge_regen_hours'];
-            $chargesToRegen = floor($hoursPassed / $regenHours);
+            
+            // Floor to get full cycles passed
+            $chargesToRegen = (int)floor($hoursPassed / $regenHours);
 
             if ($chargesToRegen > 0) {
-                // Calculate how many charges we can *actually* add
                 $chargesToAdd = min($chargesToRegen, $maxCharges - $currentCharges);
                 
                 if ($chargesToAdd > 0) {
-                    $this->statsRepo->regenerateDepositCharges($userId, (int)$chargesToAdd);
-                    // Re-fetch stats to show the user the updated value
+                    $this->statsRepo->regenerateDepositCharges($userId, $chargesToAdd);
                     $stats = $this->statsRepo->findByUserId($userId);
                 }
             }
@@ -93,10 +83,6 @@ class BankService
 
     /**
      * Handles depositing credits from hand into the bank.
-     *
-     * @param int $userId
-     * @param int $amount
-     * @return ServiceResponse
      */
     public function deposit(int $userId, int $amount): ServiceResponse
     {
@@ -111,39 +97,44 @@ class BankService
         // 1. Check 80% Limit
         $depositLimit = floor($resources->credits * $bankConfig['deposit_percent_limit']);
         if ($amount > $depositLimit && $depositLimit > 0) {
-            return ServiceResponse::error('You can only deposit up to 80% (' . number_format($depositLimit) . ') of your on-hand credits at a time.');
-        }
-        if ($amount > 0 && $depositLimit <= 0 && $resources->credits > 0) {
-             return ServiceResponse::error('Amount is too small to meet the 80% deposit rule.');
+            return ServiceResponse::error('You can only deposit up to ' . ($bankConfig['deposit_percent_limit'] * 100) . '% (' . number_format($depositLimit) . ') of your credits.');
         }
 
         // 2. Check Deposit Charges
         if ($stats->deposit_charges <= 0) {
-            return ServiceResponse::error('You have no deposit charges left. One regenerates every ' . $bankConfig['deposit_charge_regen_hours'] . ' hours.');
+            return ServiceResponse::error('You have no deposit charges left.');
         }
         
         // 3. Check balance
         if ($resources->credits < $amount) {
-            return ServiceResponse::error('You do not have enough credits on hand to deposit.');
+            return ServiceResponse::error('You do not have enough credits on hand.');
         }
 
         $newCredits = $resources->credits - $amount;
         $newBanked = $resources->banked_credits + $amount;
         
-        $this->db->beginTransaction();
+        // Transaction Owner Pattern
+        $transactionStartedByMe = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStartedByMe = true;
+        }
+
         try {
             // 1. Update resources
             $this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked);
             
-            // 2. Update stats (charges)
+            // 2. Update stats (deduct 1 charge, update timestamp)
             $this->statsRepo->updateDepositCharges($userId, $stats->deposit_charges - 1);
             
-            $this->db->commit();
+            if ($transactionStartedByMe) {
+                $this->db->commit();
+            }
             
             return ServiceResponse::success('You successfully deposited ' . number_format($amount) . ' credits.');
 
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            if ($transactionStartedByMe && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log("Bank Deposit Error: " . $e->getMessage());
@@ -153,10 +144,6 @@ class BankService
 
     /**
      * Handles withdrawing credits from the bank to hand.
-     *
-     * @param int $userId
-     * @param int $amount
-     * @return ServiceResponse
      */
     public function withdraw(int $userId, int $amount): ServiceResponse
     {
@@ -173,6 +160,7 @@ class BankService
         $newCredits = $resources->credits + $amount;
         $newBanked = $resources->banked_credits - $amount;
 
+        // Simple atomic update, no complex multi-table transaction needed unless logging is added
         if ($this->resourceRepo->updateBankingCredits($userId, $newCredits, $newBanked)) {
             return ServiceResponse::success('You successfully withdrew ' . number_format($amount) . ' credits.');
         } else {
@@ -182,11 +170,6 @@ class BankService
 
     /**
      * Handles transferring credits from one user to another.
-     *
-     * @param int $senderId
-     * @param string $recipientName
-     * @param int $amount
-     * @return ServiceResponse
      */
     public function transfer(int $senderId, string $recipientName, int $amount): ServiceResponse
     {
@@ -208,18 +191,20 @@ class BankService
             return ServiceResponse::error('You cannot transfer credits to yourself.');
         }
         
-        $this->db->beginTransaction();
+        // Transaction Owner Pattern
+        $transactionStartedByMe = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStartedByMe = true;
+        }
         
         try {
+            // Re-fetch within transaction to lock/ensure fresh data (in a real app, use FOR UPDATE)
             $senderResources = $this->resourceRepo->findByUserId($senderId);
             $recipientResources = $this->resourceRepo->findByUserId($recipient->id);
 
-            if (!$senderResources || !$recipientResources) {
-                throw new \Exception('Resource records not found.');
-            }
-
             if ($senderResources->credits < $amount) {
-                $this->db->rollBack();
+                // We don't rollback here because we haven't written anything yet, just return error
                 return ServiceResponse::error('You do not have enough credits on hand to transfer.');
             }
 
@@ -229,11 +214,13 @@ class BankService
             $this->resourceRepo->updateCredits($senderId, $senderNewCredits);
             $this->resourceRepo->updateCredits($recipient->id, $recipientNewCredits);
 
-            $this->db->commit();
+            if ($transactionStartedByMe) {
+                $this->db->commit();
+            }
             return ServiceResponse::success('You successfully transferred ' . number_format($amount) . " credits to {$recipientName}.");
 
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            if ($transactionStartedByMe && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Transfer Error: ' . $e->getMessage());

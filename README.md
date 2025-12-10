@@ -157,16 +157,16 @@ For Ubuntu server environments running Apache2 and PHP 8.4:
 
 #### Prerequisites
 
-```bash
-# Install PHP and extensions
+# Install PHP and extensions required by Composer (e.g., mbstring, xml, redis)
 sudo apt update
 sudo apt install php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-zip php8.4-curl composer
 
-# Install MariaDB
-sudo apt install mariadb-server
+# Install Database & Cache Servers
+sudo apt install mariadb-server redis-server
 
 # Start services
 sudo systemctl start mariadb
+sudo systemctl start redis-server
 sudo systemctl start apache2
 ```
 
@@ -208,6 +208,26 @@ The game's economy (income, interest) is run by a cron job.
 ```bash
 php cron/process_turn.php
 ```
+Configure .env: Copy the `.env.example` file to `.env` and set your database and Redis credentials.
+
+cp .env.example .env
+nano .env
+# Set DB_HOST, DB_NAME, DB_USER, DB_PASS
+# Set REDIS_HOST, REDIS_PORT (Defaults to 127.0.0.1:6379)
+
+
+Run Database Migrations:
+Use Phinx to build the database schema and apply all recent changes.
+
+vendor/bin/phinx migrate --configuration=config/phinx.php
+
+
+Set Directory Permissions: Crucially, grant the Apache user (`www-data`) write access to storage and log directories:
+
+# Grant ownership of storage and logs to the web server user
+sudo chown -R www-data:www-data storage/ logs/ public/uploads/
+# Set correct directory permissions (rwxr-xr-x)
+sudo chmod -R 755 storage/ logs/ public/uploads/
 
 #### Automated Setup (macOS)
 
@@ -222,7 +242,7 @@ Edit your crontab:
 crontab -e
 ```
 
-Add this line to run every 5 minutes:
+Add this line to run every 10 minutes:
 
 ```cron
 */5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1

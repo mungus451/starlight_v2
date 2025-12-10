@@ -6,6 +6,9 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
+use App\Core\JsonResponse; // --- NEW IMPORT ---
+use App\Core\Exceptions\RedirectException;
+use App\Core\Exceptions\TerminateException;
 
 /**
  * BaseController
@@ -66,8 +69,7 @@ class BaseController
             
             // Redirect back to the form
             $referer = $_SERVER['HTTP_REFERER'] ?? '/dashboard';
-            header("Location: $referer");
-            exit; // Stop execution immediately
+            throw new RedirectException($referer);
         }
 
         // Return only the safe, sanitized data
@@ -128,8 +130,7 @@ class BaseController
      */
     protected function redirect(string $path): void
     {
-        header("Location: $path");
-        exit;
+        throw new RedirectException($path);
     }
 
     /**
@@ -141,9 +142,6 @@ class BaseController
      */
     protected function jsonResponse(array $data, int $statusCode = 200): void
     {
-        http_response_code($statusCode);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
+        JsonResponse::send($data, $statusCode);
     }
 }

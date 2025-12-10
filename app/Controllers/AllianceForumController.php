@@ -6,7 +6,8 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\AllianceForumService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
+use App\Presenters\AllianceForumPresenter;
 
 /**
  * Handles all HTTP requests for the Alliance Forum.
@@ -16,16 +17,19 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 class AllianceForumController extends BaseController
 {
     private AllianceForumService $forumService;
+    private AllianceForumPresenter $forumPresenter;
 
     public function __construct(
         AllianceForumService $forumService,
+        AllianceForumPresenter $forumPresenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+        ViewContextService $viewContextService
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->forumService = $forumService;
+        $this->forumPresenter = $forumPresenter;
     }
 
     /**
@@ -45,7 +49,7 @@ class AllianceForumController extends BaseController
             return;
         }
 
-        $data = $response->data;
+        $data = $this->forumPresenter->presentIndex($response->data);
         $data['layoutMode'] = 'full';
 
         $this->render('alliance/forum_index.php', $data + ['title' => 'Alliance Forum']);
@@ -67,7 +71,7 @@ class AllianceForumController extends BaseController
             return;
         }
 
-        $data = $response->data;
+        $data = $this->forumPresenter->presentTopic($response->data);
         $data['layoutMode'] = 'full';
 
         $this->render('alliance/forum_topic.php', $data + ['title' => $data['topic']->title]);

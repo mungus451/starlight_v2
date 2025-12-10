@@ -1,19 +1,24 @@
+--- START OF FILE tests/verify_refactor.php ---
+
 <?php
 
-// tests/verify_refactor.php
+/**
+ * INTEGRATION TEST: ATTACK & WAR FLOW
+ * Verifies the full chain: Controller Input -> Service -> Repository -> DB -> Events.
+ * Ensuring DTOs are handled correctly throughout the lifecycle.
+ */
 
 if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-// 1. Bootstrap
 require __DIR__ . '/../vendor/autoload.php';
 
 try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
     $dotenv->load();
-} catch (\Dotenv\Exception\InvalidPathException $e) {
-    die("Error: Could not find .env file.\n");
+} catch (\Exception $e) {
+    // .env optional for tests if env vars set
 }
 
 use App\Core\ContainerFactory;
@@ -26,19 +31,12 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\WarRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 
-echo "\n" . str_repeat("=", 50) . "\n";
-echo "   STARLIGHT DOMINION: REFACTOR VERIFICATION (v3 - DTO)\n";
-echo str_repeat("=", 50) . "\n";
-
 try {
-    // 2. Build Container
-    echo "[1/6] Booting Container... ";
+    // 1. Setup Container
     $container = ContainerFactory::createContainer();
     $db = $container->get(PDO::class);
-    echo "OK\n";
-
-    // 3. Resolve Dependencies
-    echo "[2/6] Resolving Services... ";
+    
+    // Resolve Services
     $attackService = $container->get(AttackService::class);
     $userRepo = $container->get(UserRepository::class);
     $resRepo = $container->get(ResourceRepository::class);
@@ -47,100 +45,80 @@ try {
     $allianceRepo = $container->get(AllianceRepository::class);
     $warRepo = $container->get(WarRepository::class);
     $roleRepo = $container->get(AllianceRoleRepository::class);
-    echo "OK\n";
 
-    // 4. Setup Test Data
-    echo "[3/6] Seeding Test Scenario...\n";
+    // 2. Begin Transaction (Test Isolation)
     $db->beginTransaction(); 
 
+    // 3. Seed Data
+    $seed = bin2hex(random_bytes(2)); // 4 chars
+    
     // Create Users
-    $attackerId = $userRepo->createUser('test_attacker_v3@example.com', 'AttackerV3_' . time(), 'hash');
-    $defenderId = $userRepo->createUser('test_defender_v3@example.com', 'DefenderV3_' . time(), 'hash');
-    echo "      - Users Created (Attacker: $attackerId, Defender: $defenderId)\n";
+    $attackerId = $userRepo->createUser("atk_{$seed}@test.com", "Atk_{$seed}", 'hash');
+    $defenderId = $userRepo->createUser("def_{$seed}@test.com", "Def_{$seed}", 'hash');
+    
+    // Init User State
+    foreach ([$attackerId, $defenderId] as $uid) {
+        $resRepo->createDefaults($uid);
+        $statsRepo->createDefaults($uid);
+        $structRepo->createDefaults($uid);
+    }
 
     // Create Alliances
-    $allyA = $allianceRepo->create('EmpireV3_A', 'E3A', $attackerId);
-    $allyB = $allianceRepo->create('EmpireV3_B', 'E3B', $defenderId);
-    echo "      - Alliances Created (A: $allyA, B: $allyB)\n";
+    $allyA = $allianceRepo->create("EmpireA_{$seed}", "A{$seed}", $attackerId);
+    $allyB = $allianceRepo->create("EmpireB_{$seed}", "B{$seed}", $defenderId);
     
-    // Create Roles
+    // Assign Roles
     $roleA = $roleRepo->create($allyA, 'Member', 1, []);
     $roleB = $roleRepo->create($allyB, 'Member', 1, []);
-
-    // Declare War
-    $warId = $warRepo->createWar('Refactor War', $allyA, $allyB, 'Testing DTOs', 'units_killed', 1000);
-    echo "      - War Created (ID: $warId)\n";
-
-    // Link Users
     $userRepo->setAlliance($attackerId, $allyA, $roleA);
     $userRepo->setAlliance($defenderId, $allyB, $roleB);
 
-    // Setup Resources
-    $resRepo->createDefaults($attackerId);
-    $resRepo->createDefaults($defenderId);
-    $statsRepo->createDefaults($attackerId);
-    $statsRepo->createDefaults($defenderId);
-    $structRepo->createDefaults($attackerId);
-    $structRepo->createDefaults($defenderId);
+    // Declare War (Unit Goal)
+    $warId = $warRepo->createWar("War_{$seed}", $allyA, $allyB, 'Testing', 'units_killed', 1000);
 
-    // Arm Attacker
-    $resRepo->updateBattleAttacker($attackerId, 100000, 500); 
+    // Arm Attacker (Overwhelming Force)
+    $resRepo->updateBattleAttacker($attackerId, 1000000, 1000); 
     $statsRepo->updateAttackTurns($attackerId, 10);
 
-    // Arm Defender
-    $resRepo->updateBattleDefender($defenderId, 100000, 100);
-    
-    // 5. Execute Attack
-    echo "[4/6] Executing AttackService...\n";
-    
+    // Arm Defender (Weak)
+    $resRepo->updateBattleDefender($defenderId, 1000000, 50);
+
+    // 4. Execute Logic
+    echo "   [EXEC] Launching Attack (Attacker: $attackerId vs Defender: $defenderId)...\n";
     $targetUser = $userRepo->findById($defenderId);
-    
-    // ** UPDATE: Handle ServiceResponse Object **
     $response = $attackService->conductAttack($attackerId, $targetUser->characterName, 'plunder');
-    
+
+    // 5. Assertions
     if (!$response->isSuccess()) {
-        throw new Exception("AttackService Failed: " . $response->message);
+        throw new Exception("Attack Failed unexpectedly: " . $response->message);
     }
-    
-    echo "      - Attack Executed Successfully.\n";
-    echo "      - Message: \"{$response->message}\"\n";
 
-    // 6. Verify Results
-    echo "[5/6] Verifying Event Listeners...\n";
-
-    // Check A: Battle Report
-    $stmt = $db->prepare("SELECT id FROM battle_reports WHERE attacker_id = ? AND defender_id = ? ORDER BY id DESC LIMIT 1");
+    // Check Battle Report Generation
+    $stmt = $db->prepare("SELECT id, attack_result FROM battle_reports WHERE attacker_id = ? AND defender_id = ? ORDER BY id DESC LIMIT 1");
     $stmt->execute([$attackerId, $defenderId]);
     $report = $stmt->fetch();
-    if (!$report) throw new Exception("FAILED: No Battle Report generated.");
-    echo "      - [PASS] Battle Report ID: " . $report['id'] . "\n";
 
-    // Check B: Notification
-    $stmt = $db->prepare("SELECT id, title FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+    if (!$report) throw new Exception("FAIL: Battle Report not created.");
+    if ($report['attack_result'] !== 'victory') throw new Exception("FAIL: Expected victory, got {$report['attack_result']}");
+
+    // Check Notification Dispatch (Event Listener)
+    $stmt = $db->prepare("SELECT id FROM notifications WHERE user_id = ?");
     $stmt->execute([$defenderId]);
-    $notif = $stmt->fetch();
-    if (!$notif) throw new Exception("FAILED: No Notification found for defender.");
-    echo "      - [PASS] Notification dispatched (ID: {$notif['id']})\n";
+    if (!$stmt->fetch()) throw new Exception("FAIL: Defender notification not dispatched.");
 
-    // Check C: War Log
+    // Check War Log (Event Listener)
     $stmt = $db->prepare("SELECT id FROM war_battle_logs WHERE war_id = ? AND battle_report_id = ?");
     $stmt->execute([$warId, $report['id']]);
-    $log = $stmt->fetch();
-    if (!$log) throw new Exception("FAILED: War Log not created.");
-    echo "      - [PASS] War Battle Log created (ID: {$log['id']})\n";
+    if (!$stmt->fetch()) throw new Exception("FAIL: War Battle Log not created.");
 
-    echo "[6/6] Cleanup...\n";
-    $db->rollBack();
-    echo "      - DB Transaction Rolled Back\n";
-
-    echo "\n" . str_repeat("=", 50) . "\n";
-    echo "   ✅ SUCCESS: Service Layer is working with DTOs\n";
-    echo str_repeat("=", 50) . "\n";
+    echo "   \033[32m[PASS] Full War Integration Cycle verified.\033[0m\n";
 
 } catch (Throwable $e) {
+    echo "   \033[31m[FAIL] " . $e->getMessage() . "\033[0m\n";
+    echo "   Trace: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    exit(1);
+} finally {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
-    echo "\n❌ TEST FAILED: " . $e->getMessage() . "\n";
-    echo "Trace:\n" . $e->getTraceAsString() . "\n";
 }

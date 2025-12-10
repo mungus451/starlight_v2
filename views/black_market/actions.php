@@ -81,6 +81,52 @@
     </form>
 </div>
 
+<!-- NEW: Electronic Warfare -->
+<div class="item-card">
+    <h4><i class="fas fa-satellite-dish"></i> Radar Jamming</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        Scramble incoming sensors. All spy attempts against you will fail for 4 hours.
+    </p>
+    <form action="/black-market/buy/radar_jamming" method="POST" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+        <button class="btn-submit btn-accent" style="width: 100%;">
+            Jam Signals (<?= number_format($costs['radar_jamming'] ?? 50000) ?> 💎)
+        </button>
+    </form>
+</div>
+
+<!-- NEW: Safehouse -->
+<div class="item-card">
+    <h4><i class="fas fa-house-user"></i> Safehouse Access</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        Disappear from the grid. You are immune to attacks for 6 hours. 
+        <span class="text-danger">Attacking or spying breaks this shield instantly.</span>
+    </p>
+    <form action="/black-market/buy/safehouse" method="POST" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+        <button class="btn-submit" style="width: 100%; background: #4a5568;">
+            Rent (<?= number_format($costs['safehouse'] ?? 100000) ?> 💎)
+        </button>
+    </form>
+</div>
+
+<!-- NEW: Laundering -->
+<div class="item-card">
+    <h4><i class="fas fa-money-bill-wave"></i> Resource Laundering</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        Convert Credits into Untraceable Chips. Chips cannot be stolen in battle.
+        <br><strong class="text-accent">Rate: 1.15 Credits -> 1 Chip</strong>
+    </p>
+    <form action="/black-market/launder" method="POST" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+        <div class="form-group">
+            <input type="hidden" name="amount" id="launder-amount-hidden" value="0">
+            <input type="text" id="launder-amount-display" placeholder="Credits to Launder" required min="100">
+        </div>
+        <button class="btn-submit" style="width: 100%;">Launder</button>
+    </form>
+</div>
+
 <!-- Bounty Board -->
 <div class="item-card grid-col-span-2">
     <div class="card-header">
@@ -126,7 +172,8 @@
                 </div>
                 <div class="form-group">
                     <label>Amount (Crystals)</label>
-                    <input type="number" name="amount" min="10" required placeholder="100">
+                    <input type="hidden" name="amount" id="bounty-amount-hidden" value="0">
+                    <input type="text" id="bounty-amount-display" min="10" required placeholder="100">
                 </div>
                 <button type="submit" class="btn-submit btn-reject">Post Contract</button>
             </form>
@@ -134,4 +181,19 @@
     </div>
 </div>
 </div>
-</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const launderDisplay = document.getElementById('launder-amount-display');
+        const launderHidden = document.getElementById('launder-amount-hidden');
+        if (launderDisplay && launderHidden) {
+            StarlightUtils.setupInputMask(launderDisplay, launderHidden);
+        }
+
+        const bountyDisplay = document.getElementById('bounty-amount-display');
+        const bountyHidden = document.getElementById('bounty-amount-hidden');
+        if (bountyDisplay && bountyHidden) {
+            StarlightUtils.setupInputMask(bountyDisplay, bountyHidden);
+        }
+    });
+</script>

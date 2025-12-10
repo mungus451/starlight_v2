@@ -1,0 +1,81 @@
+<?php
+
+namespace App\Presenters;
+
+use DateTime;
+
+/**
+ * Responsible for formatting Dashboard data for the View.
+ * Handles visual logic like CSS classes, formatting dates, and number formatting.
+ */
+class DashboardPresenter
+{
+    /**
+     * Transforms raw service data into a view-ready array.
+     *
+     * @param array $data The array returned from DashboardService::getDashboardData
+     * @return array The ViewModel with enriched presentation data
+     */
+    public function present(array $data): array
+    {
+        // 1. Format Active Effects
+        if (!empty($data['activeEffects'])) {
+            $data['activeEffects'] = $this->presentEffects($data['activeEffects']);
+        }
+
+        // 2. Format Resources (Optional but cleaner)
+        // We can pass through the rest or format specific complex structures here.
+        // For now, we focus on the remediation of the specific violations (Effects Logic).
+
+        return $data;
+    }
+
+    /**
+     * Enriches the effects array with UI properties and formatted time strings.
+     */
+    private function presentEffects(array $effects): array
+    {
+        $now = new DateTime();
+        $enriched = [];
+
+        foreach ($effects as $effect) {
+            // UI Mapping Logic (Moved from Controller)
+            switch ($effect['effect_type']) {
+                case 'jamming':
+                    $effect['ui_icon'] = 'fa-satellite-dish';
+                    $effect['ui_label'] = 'Radar Jamming';
+                    $effect['ui_color'] = 'text-accent';
+                    break;
+                case 'peace_shield':
+                    $effect['ui_icon'] = 'fa-shield-alt';
+                    $effect['ui_label'] = 'Peace Shield';
+                    $effect['ui_color'] = 'text-success';
+                    break;
+                case 'wounded':
+                    $effect['ui_icon'] = 'fa-user-injured';
+                    $effect['ui_label'] = 'Wounded';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                default:
+                    $effect['ui_icon'] = 'fa-bolt';
+                    $effect['ui_label'] = 'Unknown Effect';
+                    $effect['ui_color'] = 'text-accent';
+            }
+
+            // Time Calculation Logic (Moved from View)
+            $expires = new DateTime($effect['expires_at']);
+            
+            if ($expires <= $now) {
+                // Skip expired effects if they somehow got here, or mark them
+                continue; 
+            }
+
+            $interval = $now->diff($expires);
+            $effect['formatted_time_left'] = $interval->format('%h hrs %i mins');
+
+            $enriched[] = $effect;
+        }
+
+        return $enriched;
+    }
+}

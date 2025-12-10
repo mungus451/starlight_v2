@@ -28,11 +28,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Event Listeners ---
     
     // Add listener to all "Spy" buttons and player avatars
-    allSpyButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+    allSpyButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const playerRow = this.closest('.player-row');
-            const targetName = playerRow.getAttribute('data-target-name');
+            
+            // Get target data from the clicked button's data attributes
+            const targetName = this.getAttribute('data-target-name');
+            // const targetId = this.getAttribute('data-target-id'); // Not used yet
+            
+            // Open the modal
             openModal(targetName);
         });
     });

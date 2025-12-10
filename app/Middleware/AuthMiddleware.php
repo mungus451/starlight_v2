@@ -3,6 +3,7 @@
 namespace App\Middleware;
 
 use App\Core\Session;
+use App\Core\Exceptions\RedirectException;
 
 /**
  * Checks if a user is authenticated before allowing access to a route.
@@ -38,7 +39,6 @@ class AuthMiddleware
         // User is not authenticated. Redirect to login.
         $this->session->setFlash('error', 'You must be logged in to view that page.');
         
-        header('Location: /login');
-        exit;
+        throw new RedirectException('/login');
     }
 }

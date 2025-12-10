@@ -2,7 +2,8 @@
 
 namespace App\Middleware;
 
-use Redis;
+use Predis\Client;
+use App\Core\Exceptions\TerminateException;
 
 /**
  * RateLimitMiddleware
@@ -11,16 +12,16 @@ use Redis;
  */
 class RateLimitMiddleware
 {
-    private Redis $redis;
+    private Client $redis;
     private int $limit;
     private int $window;
 
     /**
-     * @param Redis $redis Injected Redis client
+     * @param Client $redis Injected Redis client
      * @param int $limit Max requests per window (default 60)
      * @param int $window Time window in seconds (default 60)
      */
-    public function __construct(Redis $redis, int $limit = 60, int $window = 60)
+    public function __construct(Client $redis, int $limit = 60, int $window = 60)
     {
         $this->redis = $redis;
         $this->limit = $limit;
@@ -63,7 +64,7 @@ class RateLimitMiddleware
             } else {
                 echo 'Too Many Requests. Please slow down.';
             }
-            exit;
+            throw new TerminateException();
         }
     }
 

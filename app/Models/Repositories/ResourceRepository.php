@@ -35,7 +35,8 @@ class ResourceRepository
                 soldiers,
                 guards,
                 spies,
-                sentries
+                sentries,
+                untraceable_chips
             FROM user_resources WHERE user_id = ?
         ");
         $stmt->execute([$userId]);
@@ -53,6 +54,19 @@ class ResourceRepository
     {
         $stmt = $this->db->prepare("INSERT INTO user_resources (user_id) VALUES (?)");
         $stmt->execute([$userId]);
+    }
+
+    /**
+     * Updates the Untraceable Chips balance.
+     *
+     * @param int $userId
+     * @param int $newAmount
+     * @return bool
+     */
+    public function updateChips(int $userId, int $newAmount): bool
+    {
+        $stmt = $this->db->prepare("UPDATE user_resources SET untraceable_chips = ? WHERE user_id = ?");
+        return $stmt->execute([$newAmount, $userId]);
     }
 
     /**
@@ -262,7 +276,8 @@ class ResourceRepository
             soldiers: (int)$data['soldiers'],
             guards: (int)$data['guards'],
             spies: (int)$data['spies'],
-            sentries: (int)$data['sentries']
+            sentries: (int)$data['sentries'],
+            untraceable_chips: (int)($data['untraceable_chips'] ?? 0)
         );
     }
 }

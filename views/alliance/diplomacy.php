@@ -25,7 +25,7 @@
                     <div class="form-group">
                         <label for="target_alliance_id">Target Alliance</label>
                         <select name="target_alliance_id" id="target_alliance_id" required>
-                            <option value="">Select an alliance...</option>
+                            <option value="">Choose an alliance...</option>
                             <?php foreach ($otherAlliances as $a): ?>
                                 <option value="<?= $a->id ?>">[<?= htmlspecialchars($a->tag) ?>] <?= htmlspecialchars($a->name) ?></option>
                             <?php endforeach; ?>
@@ -56,7 +56,7 @@
                 <div class="form-group">
                     <label for="target_rival_id">Target Alliance</label>
                     <select name="target_alliance_id" id="target_rival_id" required>
-                        <option value="">Select an alliance...</option>
+                        <option value="">Choose an alliance...</option>
                         <?php foreach ($otherAlliances as $a): ?>
                             <option value="<?= $a->id ?>">[<?= htmlspecialchars($a->tag) ?>] <?= htmlspecialchars($a->name) ?></option>
                         <?php endforeach; ?>

@@ -93,15 +93,15 @@ return [
         'attack_turn_cost' => 1,
         
         // Casualty Tuning
-        'global_casualty_scalar' => 0.5, // Reduces all calculated deaths by 50%
+        'global_casualty_scalar' => 0.1, // Reduces all calculated deaths by 90%
         
         'power_per_soldier' => 1.0,
         'power_per_offense_level' => 0.1,
-        'power_per_strength_point' => 0.05,
+        'power_per_strength_point' => 0.1,
         'power_per_guard' => 1.0,
         'power_per_fortification_level' => 0.1,
         'power_per_defense_level' => 0.1,
-        'power_per_constitution_point' => 0.05,
+        'power_per_constitution_point' => 0.1,
         
         // Base Percentages (Scalar is applied to these)
         'winner_loss_percent_min' => 0.05, // Was 0.10

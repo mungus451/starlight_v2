@@ -4,7 +4,7 @@
 
 // This script is intended to be run from the command line (cron)
 if (php_sapi_name() !== 'cli') {
-    die('Access Denied: This script can only be run from the command line.');
+    throw new \RuntimeException('Access Denied: This script can only be run from the command line.');
 }
 
 // 1. Bootstrap the application
@@ -17,7 +17,7 @@ try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
     $dotenv->load();
 } catch (\Dotenv\Exception\InvalidPathException $e) {
-    die("Could not find .env file. \n");
+    throw new \RuntimeException("Could not find .env file. \n");
 }
 
 // Set timezone
@@ -40,9 +40,14 @@ try {
     // 5. Execute Logic
     $service->runNpcCycle();
     
+} catch (\RuntimeException $e) {
+    echo "ERROR: " . $e->getMessage() . "\n";
+    error_log("NPC CRON Runtime Error: " . $e->getMessage(), 3, __DIR__ . '/../logs/php_errors.log');
+    exit(1);
 } catch (\Throwable $e) {
     // Final backstop for catastrophic failures before Logger is initialized
     $errorMessage = "CRITICAL NPC CRON ERROR: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "\n";
     echo $errorMessage;
     error_log($errorMessage, 3, __DIR__ . '/../logs/php_errors.log');
+    exit(1);
 }

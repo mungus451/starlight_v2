@@ -43,6 +43,9 @@ use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Middleware\AuthMiddleware;
 
+use App\Core\Exceptions\RedirectException;
+use App\Core\Exceptions\TerminateException;
+
 // 1. Autoloader
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -51,7 +54,7 @@ try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
     $dotenv->load();
 } catch (\Dotenv\Exception\InvalidPathException $e) {
-    die('Could not find .env file.');
+    throw new \Exception('Could not find .env file.');
 }
 
 // 3. Error Reporting
@@ -71,12 +74,12 @@ if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
 try {
     $container = ContainerFactory::createContainer();
 } catch (Exception $e) {
-    die('CRITICAL: Failed to initialize application container. ' . $e->getMessage());
+    throw new \Exception('CRITICAL: Failed to initialize application container. ' . $e->getMessage());
 }
 
 // 5. Setup Redis Session Handler
 try {
-    $redis = $container->get(Redis::class);
+    $redis = $container->get(Predis\Client::class);
     $handler = new RedisSessionHandler($redis);
     
     // Register the custom handler
@@ -85,7 +88,7 @@ try {
     // Now start the session
     session_start();
 } catch (Exception $e) {
-    die('CRITICAL: Session storage unavailable. ' . $e->getMessage());
+    throw new \Exception('CRITICAL: Session storage unavailable. ' . $e->getMessage());
 }
 
 // 6. Router Definition
@@ -121,6 +124,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // The Undermarket (Actions)
     $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
     $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
+    $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
     $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
     $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
 
@@ -288,6 +293,13 @@ try {
             }
             break;
     }
+} catch (RedirectException $e) {
+    // Handle graceful redirect
+    header("Location: " . $e->getMessage());
+    exit; // Legitimate entry point exit
+} catch (TerminateException $e) {
+    // Application finished intentionally (JSON response, File serve, etc.)
+    exit; // Legitimate entry point exit
 } catch (\Throwable $e) {
     http_response_code(500);
     if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
