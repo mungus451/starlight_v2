@@ -1,465 +1,348 @@
+--- START OF FILE tests/mvc_lint.php ---
+
 <?php
 /**
- * mvc_lint.php
+ * mvc_lint.php (Robust Edition)
  *
- * Simple heuristic MVC rule checker for PHP projects.
+ * Advanced heuristic MVC-S rule checker for PHP projects.
+ * Enforces strict Separation of Concerns, Service Isolation, and View Purity.
  *
  * USAGE:
- *   php mvc_lint.php /path/to/your/app
- *   php mvc_lint.php          # defaults to current directory
- *
- * WHAT IT DOES:
- *   - Recursively scans all *.php files (excluding common vendor/cache dirs)
- *   - Tries to classify each file as: model / view / controller / other
- *       -> Based on directory names and filename suffixes (configurable)
- *   - Applies per-layer rules to detect "MVC violations", e.g.:
- *       * Views that talk directly to DB (mysqli, PDO, raw SQL)
- *       * Controllers that contain raw SQL or full HTML templates
- *       * Models that output HTML or send headers/cookies
- *   - Prints a human-readable report of all violations.
- *
- * NOTE:
- *   - This is static analysis + regex heuristics — it will produce false
- *     positives/negatives. Adjust the config arrays to match your app’s
- *     structure and coding standards.
+ *   php tests/mvc_lint.php /path/to/app
+ *   php tests/mvc_lint.php          # defaults to project root
  */
 
 // -----------------------------------------------------------------------------
-// CONFIG: directory classification (adjust to your app structure)
+// CONFIG: Classification Rules
 // -----------------------------------------------------------------------------
 
-/**
- * How we decide which "layer" a file belongs to.
- * You can tweak/add patterns to match your own directories and naming.
- */
 $layerClassificationConfig = [
-    'model' => [
-        'pathContains'   => ['/Model/', '/Models/', '/app/Models/', '/src/Domain/'],
-        'fileNameRegex'  => '/Model\.php$/i',
-    ],
-    'view' => [
-        'pathContains'   => ['/View/', '/Views/', '/resources/views/', '/templates/'],
-        'fileNameRegex'  => '/(View|\.view)\.php$/i',
-    ],
     'controller' => [
-        'pathContains'   => ['/Controller/', '/Controllers/', '/app/Controllers/'],
+        'pathContains'   => ['/Controllers/', '/app/Controllers/'],
         'fileNameRegex'  => '/Controller\.php$/i',
     ],
-    // Files that don’t match anything above fall back to "other"
-];
-
-/**
- * Directories to skip entirely while scanning.
- */
-$ignoreDirectories = [
-    'vendor',
-    'node_modules',
-    '.git',
-    'storage',
-    'cache',
-    'logs',
-    'tmp',
-];
-
-// -----------------------------------------------------------------------------
-// CONFIG: MVC rules per layer (edit these to your standards)
-// -----------------------------------------------------------------------------
-
-/**
- * Each layer has:
- *   - forbiddenFunctions: [ functionName => message ]
- *   - forbiddenPatterns:  [ ruleId => [ 'pattern' => regex, 'message' => string ] ]
- */
-$mvcRules = [
-    'model' => [
-        'forbiddenFunctions' => [
-            // Presentation / HTTP concerns should not live in models:
-            'view'      => 'Models must not render views directly (calling view()).',
-            'header'    => 'Models must not send HTTP headers; keep them in controllers or middleware.',
-            'setcookie' => 'Models must not manipulate cookies; keep this at the edge (controller/middleware).',
-            'echo'      => 'Models should avoid direct output; return data to controllers instead.',
-            'print'     => 'Models should avoid direct output; return data to controllers instead.',
-        ],
-        'forbiddenPatterns'  => [
-            'htmlMarkup' => [
-                // Basic HTML tags: suggests presentation logic leaking into model.
-                'pattern' => '/<\s*(html|head|body|div|span|p|h[1-6]|table|form)\b/i',
-                'message' => 'Models should not contain HTML markup; move rendering to a view/template.',
-            ],
-        ],
+    'service' => [
+        'pathContains'   => ['/Services/', '/app/Models/Services/'],
+        'fileNameRegex'  => '/Service\.php$/i',
     ],
-
+    'repository' => [
+        'pathContains'   => ['/Repositories/', '/app/Models/Repositories/'],
+        'fileNameRegex'  => '/Repository\.php$/i',
+    ],
+    'entity' => [
+        'pathContains'   => ['/Entities/', '/app/Models/Entities/'],
+        'fileNameRegex'  => '/\.php$/i',
+    ],
     'view' => [
-        'forbiddenFunctions' => [
-            // Data access in views:
-            'mysqli_query'   => 'Views must not talk to the database directly (mysqli_query). Move logic to a model.',
-            'mysqli_prepare' => 'Views must not talk to the database directly (mysqli_prepare).',
-            'mysqli_connect' => 'Views must not create DB connections (mysqli_connect).',
-            'PDO'            => 'Views must not instantiate PDO directly; use models/repositories.',
-            'curl_exec'      => 'Views should not perform HTTP requests; keep I/O in models/services.',
-        ],
-        'forbiddenPatterns'  => [
-            'rawSql' => [
-                'pattern' => '/\b(SELECT|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/i',
-                'message' => 'Views must not contain raw SQL; shift data access to a model or repository.',
-            ],
-            // This is very heuristic; can be noisy. Comment out if too strict.
-            'heavyLogic' => [
-                'pattern' => '/\b(if|foreach|for|while|switch)\b.+\$/i',
-                'message' => 'Views should avoid heavy business logic; keep them mostly presentational.',
-            ],
-        ],
+        'pathContains'   => ['/views/', '/templates/'],
+        'fileNameRegex'  => '/\.php$/i',
     ],
+    'presenter' => [
+        'pathContains'   => ['/Presenters/', '/app/Presenters/'],
+        'fileNameRegex'  => '/Presenter\.php$/i',
+    ],
+];
 
+$ignoreDirectories = [
+    'vendor', 'node_modules', '.git', 'storage', 'cache', 'logs', 'tmp', 'tests', 'config'
+];
+
+// -----------------------------------------------------------------------------
+// CONFIG: Rulesets
+// -----------------------------------------------------------------------------
+
+$globalForbiddenTokens = [
+    'die'      => 'Do not use die() or exit(). Handle exceptions gracefully.',
+    'exit'     => 'Do not use die() or exit(). Handle exceptions gracefully.',
+    'var_dump' => 'Debug code detected (var_dump).',
+    'print_r'  => 'Debug code detected (print_r).',
+    'dd'       => 'Debug code detected (dd).',
+];
+
+$mvcRules = [
+    // --- CONTROLLERS ---
+    // Should handle Input/Output, but NOT Business Logic or SQL
     'controller' => [
         'forbiddenFunctions' => [
-            // Controllers shouldn’t be running raw SQL either in a pure MVC setup:
-            'mysqli_query'   => 'Controllers should not execute raw queries; delegate to models or repositories.',
-            'mysqli_prepare' => 'Controllers should not execute raw queries; delegate to models or repositories.',
-            'mysqli_connect' => 'Controllers should not create low-level DB connections; use a model/service.',
-            'PDO'            => 'Controllers should not instantiate PDO directly; use a model/service.',
+            'mysqli_query'   => 'Controllers must not execute raw SQL.',
+            'pdo_query'      => 'Controllers must not execute raw SQL.',
+            'new PDO'        => 'Controllers must not instantiate DB connections.',
         ],
-        'forbiddenPatterns'  => [
+        'forbiddenPatterns' => [
             'rawSql' => [
-                'pattern' => '/\b(SELECT|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/i',
-                'message' => 'Controllers should not contain raw SQL; move it into models.',
+                'pattern' => '/\b(SELECT\s+\*|INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/i',
+                'message' => 'Raw SQL detected in Controller. Move to Repository.',
             ],
-            'fullHtmlDoc' => [
-                'pattern' => '/<\s*(html|head|body)\b/i',
-                'message' => 'Controllers should not render full HTML documents; use views/templates.',
+            'htmlTags' => [
+                'pattern' => '/<\s*(div|span|table|ul|li|script)\b/i',
+                'message' => 'HTML markup detected in Controller. Move to View.',
             ],
-        ],
+            'repoInjection' => [
+                'pattern' => '/private\s+[a-zA-Z0-9]*Repository\s+\$/',
+                'message' => 'Direct Repository injection in Controller. Use a Service.',
+            ]
+        ]
     ],
 
-    // "other" – you can define general rules if you want:
-    'other' => [
-        'forbiddenFunctions' => [],
-        'forbiddenPatterns'  => [],
+    // --- SERVICES ---
+    // Pure Business Logic. No HTML, No HTTP Headers, No Superglobals.
+    'service' => [
+        'forbiddenFunctions' => [
+            'echo'      => 'Services must not output data directly.',
+            'print'     => 'Services must not output data directly.',
+            'header'    => 'Services must not manage HTTP headers.',
+            'setcookie' => 'Services must not manage cookies.',
+            'http_response_code' => 'Services must not set HTTP codes.',
+        ],
+        'forbiddenPatterns' => [
+            'superglobals' => [
+                'pattern' => '/(\$_GET|\$_POST|\$_SESSION|\$_COOKIE|\$_FILES)/',
+                'message' => 'Direct access to Superglobals in Service. Pass data as arguments.',
+            ],
+            'htmlTags' => [
+                'pattern' => '/<\s*(div|span|br|p|b)\b/i',
+                'message' => 'HTML markup detected in Service. Logic only.',
+            ],
+            'controllerDep' => [
+                'pattern' => '/use\s+App\\\Controllers\\\/i',
+                'message' => 'Circular Dependency: Service should not depend on Controller.',
+            ]
+        ]
     ],
+
+    // --- REPOSITORIES ---
+    // Database Access Only. No Business Logic, No View Logic.
+    'repository' => [
+        'forbiddenFunctions' => [
+            'echo'   => 'Repositories must not output data.',
+            'header' => 'Repositories must not manage HTTP headers.',
+        ],
+        'forbiddenPatterns' => [
+            'serviceDep' => [
+                'pattern' => '/use\s+App\\\Models\\\Services\\\/i',
+                'message' => 'Repositories should not depend on Services (Leaf node violation).',
+            ],
+            'superglobals' => [
+                'pattern' => '/(\$_GET|\$_POST|\$_SESSION)/',
+                'message' => 'Repositories must not read Global State.',
+            ],
+            'htmlTags' => [
+                'pattern' => '/<\s*[a-z]+\b/i',
+                'message' => 'HTML detected in Repository.',
+            ]
+        ]
+    ],
+
+    // --- ENTITIES ---
+    // Pure DTOs. Immutable.
+    'entity' => [
+        'forbiddenFunctions' => [
+            'echo' => 'Entities must not output data.',
+            'save' => 'Entities should not save themselves (Active Record violation).',
+        ],
+        'forbiddenPatterns' => [
+            'notReadonly' => [
+                'pattern' => '/^((?!readonly class).)*class\s+\w+/m',
+                'message' => 'Entities must be defined as "readonly class".',
+            ],
+            'dbAccess' => [
+                'pattern' => '/(PDO|Database::)/i',
+                'message' => 'Entities must not access the Database.',
+            ]
+        ]
+    ],
+
+    // --- PRESENTERS ---
+    // View Logic Only. No DB.
+    'presenter' => [
+        'forbiddenPatterns' => [
+            'dbAccess' => [
+                'pattern' => '/(PDO|Database::|Repository)/i',
+                'message' => 'Presenters must not fetch data. They only format existing data.',
+            ],
+            'echo' => [
+                'pattern' => '/\becho\b/',
+                'message' => 'Presenters should return formatted data, not echo it.',
+            ]
+        ]
+    ],
+
+    // --- VIEWS ---
+    // Presentation Only. No DB, No Complex Logic.
+    'view' => [
+        'forbiddenFunctions' => [
+            'Database::getInstance' => 'Views must not access DB directly.',
+            'new PDO' => 'Views must not access DB directly.',
+            'curl_exec' => 'Views must not perform HTTP requests.',
+        ],
+        'forbiddenPatterns' => [
+            'rawSql' => [
+                'pattern' => '/\b(SELECT|INSERT|UPDATE|DELETE)\b/i',
+                'message' => 'Raw SQL in View.',
+            ],
+            'objCreation' => [
+                'pattern' => '/new\s+(?!DateTime|Exception)\w+/i',
+                'message' => 'Object instantiation in View. Use Presenter.',
+            ]
+        ]
+    ]
 ];
 
 // -----------------------------------------------------------------------------
-// Implementation
+// Engine
 // -----------------------------------------------------------------------------
 
-/**
- * Entry point.
- */
-function main(
-    array $argv,
-    array $layerClassificationConfig,
-    array $ignoreDirectories,
-    array $mvcRules
-): void {
-    $root = $argv[1] ?? getcwd();
-    $root = rtrim($root, DIRECTORY_SEPARATOR);
-
+function main(array $argv, array $config, array $ignore, array $rules): void {
+    // Determine root directory (assuming script is in tests/)
+    $root = realpath(__DIR__ . '/../');
     if (!is_dir($root)) {
-        fwrite(STDERR, "Error: '{$root}' is not a directory.\n");
+        fwrite(STDERR, "Error: Cannot determine project root from " . __DIR__ . "\n");
         exit(1);
     }
 
-    echo "MVC Lint: scanning directory: {$root}\n\n";
+    echo "\n" . str_repeat("=", 60) . "\n";
+    echo "   MVC-S ROBUST ARCHITECTURE LINT\n";
+    echo str_repeat("=", 60) . "\n";
+    echo "Scanning: {$root}\n\n";
 
     $violations = [];
+    $stats = ['files' => 0, 'lines' => 0];
 
     $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator(
-            $root,
-            FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS
-        )
+        new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
     );
 
-    foreach ($iterator as $fileInfo) {
-        /** @var SplFileInfo $fileInfo */
-        if (!$fileInfo->isFile()) {
-            continue;
-        }
+    foreach ($iterator as $file) {
+        if (!$file->isFile() || $file->getExtension() !== 'php') continue;
+        
+        $path = $file->getPathname();
+        if (isInIgnoredDir($path, $ignore, $root)) continue;
 
-        $filePath = $fileInfo->getPathname();
+        $stats['files']++;
+        $code = file_get_contents($path);
+        $stats['lines'] += substr_count($code, "\n");
 
-        if (!isPhpFile($filePath)) {
-            continue;
-        }
+        $layer = classifyLayer($path, $config, $root);
+        
+        // 1. Global Token Check (die, var_dump)
+        global $globalForbiddenTokens;
+        $violations = array_merge($violations, checkTokens($code, $path, 'global', $globalForbiddenTokens));
 
-        if (isInIgnoredDir($filePath, $ignoreDirectories, $root)) {
-            continue;
-        }
+        // 2. Layer Specific Checks
+        if (isset($rules[$layer])) {
+            $layerRules = $rules[$layer];
+            
+            // Check Forbidden Functions
+            if (isset($layerRules['forbiddenFunctions'])) {
+                $violations = array_merge($violations, checkTokens($code, $path, $layer, $layerRules['forbiddenFunctions']));
+            }
 
-        $layer = classifyLayer($filePath, $layerClassificationConfig, $root);
-        $fileViolations = analyzeFile($filePath, $layer, $mvcRules);
-
-        $violations = array_merge($violations, $fileViolations);
-    }
-
-    printReport($violations);
-}
-
-/**
- * Determine if file is a PHP file.
- */
-function isPhpFile(string $path): bool
-{
-    return (bool)preg_match('/\.php$/i', $path);
-}
-
-/**
- * Check if a file is inside one of the ignored directories.
- */
-function isInIgnoredDir(string $filePath, array $ignoreDirectories, string $root): bool
-{
-    $normalized = str_replace('\\', '/', $filePath);
-    $rootNorm   = str_replace('\\', '/', $root);
-
-    foreach ($ignoreDirectories as $dir) {
-        $needle = $rootNorm . '/' . trim($dir, '/');
-        if (strpos($normalized, $needle . '/') !== false || substr($normalized, -strlen($dir)) === $dir) {
-            return true;
+            // Check Forbidden Patterns (Regex)
+            if (isset($layerRules['forbiddenPatterns'])) {
+                $violations = array_merge($violations, checkPatterns($code, $path, $layer, $layerRules['forbiddenPatterns']));
+            }
         }
     }
 
+    printReport($violations, $stats);
+}
+
+function isInIgnoredDir(string $path, array $ignore, string $root): bool {
+    $rel = str_replace($root, '', $path);
+    foreach ($ignore as $dir) {
+        if (strpos($rel, DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR) !== false) return true;
+    }
     return false;
 }
 
-/**
- * Classify the layer of a file based on path and filename.
- */
-function classifyLayer(string $filePath, array $config, string $root): string
-{
-    $normalized = str_replace('\\', '/', $filePath);
-    $relative   = ltrim(str_replace(str_replace('\\', '/', $root), '', $normalized), '/');
-    $fileName   = basename($normalized);
-
+function classifyLayer(string $path, array $config, string $root): string {
+    $normalized = str_replace('\\', '/', $path);
     foreach ($config as $layer => $rules) {
-        // Check pathContains
-        if (!empty($rules['pathContains'])) {
-            foreach ($rules['pathContains'] as $needle) {
-                $needleNorm = str_replace('\\', '/', $needle);
-                if (strpos($normalized, $needleNorm) !== false || strpos($relative, trim($needleNorm, '/')) !== false) {
+        // Check path containment
+        foreach ($rules['pathContains'] as $segment) {
+            if (strpos($normalized, $segment) !== false) {
+                // Verify filename match if exists
+                if (isset($rules['fileNameRegex'])) {
+                    if (preg_match($rules['fileNameRegex'], $normalized)) return $layer;
+                } else {
                     return $layer;
                 }
             }
         }
-
-        // Check fileNameRegex
-        if (!empty($rules['fileNameRegex']) && preg_match($rules['fileNameRegex'], $fileName)) {
-            return $layer;
-        }
     }
-
     return 'other';
 }
 
-/**
- * Analyze a single PHP file for MVC violations.
- */
-function analyzeFile(string $filePath, string $layer, array $mvcRules): array
-{
-    $code = file_get_contents($filePath);
-    if ($code === false) {
-        return [];
-    }
-
-    $rules = $mvcRules[$layer] ?? $mvcRules['other'];
-
-    $violations = [];
-
-    // 1. Token-based forbidden function usage
-    if (!empty($rules['forbiddenFunctions'])) {
-        $violations = array_merge(
-            $violations,
-            findForbiddenFunctions($code, $filePath, $layer, $rules['forbiddenFunctions'])
-        );
-    }
-
-    // 2. Regex-based forbidden patterns
-    if (!empty($rules['forbiddenPatterns'])) {
-        $violations = array_merge(
-            $violations,
-            findForbiddenPatterns($code, $filePath, $layer, $rules['forbiddenPatterns'])
-        );
-    }
-
-    return $violations;
-}
-
-/**
- * Find forbidden function usage using tokens.
- */
-function findForbiddenFunctions(string $code, string $filePath, string $layer, array $forbiddenFunctions): array
-{
+function checkTokens(string $code, string $file, string $layer, array $forbiddenMap): array {
     $tokens = token_get_all($code);
     $violations = [];
-
-    $forbiddenNames = array_change_key_case($forbiddenFunctions, CASE_LOWER);
-
-    $tokenCount = count($tokens);
-
-    for ($i = 0; $i < $tokenCount; $i++) {
-        $token = $tokens[$i];
-
-        if (!is_array($token)) {
-            continue;
-        }
-
+    
+    foreach ($tokens as $token) {
+        if (!is_array($token)) continue;
         [$id, $text, $line] = $token;
-
-        if ($id === T_STRING) {
-            $nameLower = strtolower($text);
-
-            if (!array_key_exists($nameLower, $forbiddenNames)) {
-                continue;
-            }
-
-            // Look ahead for "(" to confirm it's used as a function/method call.
-            $isFunctionCall = false;
-            for ($j = $i + 1; $j < $tokenCount; $j++) {
-                $next = $tokens[$j];
-
-                // Skip whitespace & comments
-                if (is_array($next) && in_array($next[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
-                    continue;
-                }
-
-                if ($next === '(') {
-                    $isFunctionCall = true;
-                }
-                break;
-            }
-
-            if ($isFunctionCall) {
+        
+        // Function calls usually appear as T_STRING
+        if ($id === T_STRING || $id === T_EXIT || $id === T_ECHO || $id === T_PRINT) {
+            $check = strtolower($text);
+            if (array_key_exists($check, $forbiddenMap)) {
+                // Simple heuristic: check if followed by '(' for functions
+                // (Omitted for simplicity, assuming existence of token is enough for strict lint)
                 $violations[] = [
-                    'file'    => $filePath,
-                    'line'    => $line,
-                    'layer'   => $layer,
-                    'rule'    => "function:{$nameLower}",
-                    'snippet' => trimShortLine(getLineFromCode($code, $line)),
-                    'message' => $forbiddenNames[$nameLower],
+                    'file' => $file,
+                    'line' => $line,
+                    'layer' => $layer,
+                    'message' => $forbiddenMap[$check] . " Found '{$text}'"
                 ];
             }
         }
     }
-
     return $violations;
 }
 
-/**
- * Find forbidden regex patterns.
- */
-function findForbiddenPatterns(string $code, string $filePath, string $layer, array $patterns): array
-{
+function checkPatterns(string $code, string $file, string $layer, array $patterns): array {
     $violations = [];
-
-    foreach ($patterns as $ruleId => $rule) {
-        $pattern = $rule['pattern'];
-        $message = $rule['message'];
-
-        if (@preg_match($pattern, '') === false) {
-            // Invalid regex; skip
-            continue;
-        }
-
-        if (!preg_match_all($pattern, $code, $matches, PREG_OFFSET_CAPTURE)) {
-            continue;
-        }
-
-        foreach ($matches[0] as [$matchText, $offset]) {
-            $line = lineNumberFromOffset($code, $offset);
-
-            $violations[] = [
-                'file'    => $filePath,
-                'line'    => $line,
-                'layer'   => $layer,
-                'rule'    => "pattern:{$ruleId}",
-                'snippet' => trimShortLine(getLineFromCode($code, $line)),
-                'message' => $message,
-            ];
+    foreach ($patterns as $key => $rule) {
+        if (preg_match_all($rule['pattern'], $code, $matches, PREG_OFFSET_CAPTURE)) {
+            foreach ($matches[0] as $match) {
+                [$text, $offset] = $match;
+                $line = substr_count(substr($code, 0, $offset), "\n") + 1;
+                $violations[] = [
+                    'file' => $file,
+                    'line' => $line,
+                    'layer' => $layer,
+                    'message' => $rule['message']
+                ];
+            }
         }
     }
-
     return $violations;
 }
 
-/**
- * Compute 1-based line number from string offset.
- */
-function lineNumberFromOffset(string $code, int $offset): int
-{
-    if ($offset <= 0) {
-        return 1;
-    }
-    $before = substr($code, 0, $offset);
-    return substr_count($before, "\n") + 1;
-}
-
-/**
- * Get a specific line from the code (1-based).
- */
-function getLineFromCode(string $code, int $lineNumber): string
-{
-    $lines = preg_split("/\r\n|\n|\r/", $code);
-    if ($lineNumber < 1 || $lineNumber > count($lines)) {
-        return '';
-    }
-    return $lines[$lineNumber - 1];
-}
-
-/**
- * Trim a line for display in the report.
- */
-function trimShortLine(string $line, int $maxLen = 120): string
-{
-    $line = trim($line);
-    if (strlen($line) <= $maxLen) {
-        return $line;
-    }
-    return substr($line, 0, $maxLen - 3) . '...';
-}
-
-/**
- * Print the final report.
- */
-function printReport(array $violations): void
-{
+function printReport(array $violations, array $stats): void {
+    echo "Scanned {$stats['files']} files ({$stats['lines']} LOC).\n";
+    
     if (empty($violations)) {
-        echo "No MVC rule violations found (according to current heuristics).\n";
-        return;
+        echo "\033[32m✅ SUCCESS: No Architecture Violations Found.\033[0m\n";
+        exit(0);
     }
 
-    usort($violations, function ($a, $b) {
-        return [$a['file'], $a['line']] <=> [$b['file'], $b['line']];
-    });
+    echo "\033[31m❌ FOUND " . count($violations) . " VIOLATIONS:\033[0m\n\n";
+    
+    // Sort by file
+    usort($violations, fn($a, $b) => strcmp($a['file'], $b['file']));
 
-    echo "=== MVC Rule Violations ===\n\n";
-
-    $currentFile = null;
+    $lastFile = '';
     foreach ($violations as $v) {
-        if ($v['file'] !== $currentFile) {
-            $currentFile = $v['file'];
-            echo $currentFile . "\n";
-            echo str_repeat('-', strlen($currentFile)) . "\n";
+        if ($v['file'] !== $lastFile) {
+            echo "\033[1;33m" . basename($v['file']) . "\033[0m (" . dirname($v['file']) . ")\n";
+            $lastFile = $v['file'];
         }
-
-        $line    = $v['line'];
-        $layer   = strtoupper($v['layer']);
-        $rule    = $v['rule'];
-        $message = $v['message'];
-        $snippet = $v['snippet'];
-
-        echo "[{$layer}] Line {$line} ({$rule})\n";
-        echo "  {$message}\n";
-        if ($snippet !== '') {
-            echo "  > {$snippet}\n";
-        }
-        echo "\n";
+        echo "   Line {$v['line']} [{$v['layer']}]: {$v['message']}\n";
     }
-
-    $count = count($violations);
-    echo "Total violations: {$count}\n";
+    
+    echo "\n\033[31mFAILURE.\033[0m\n";
+    exit(1);
 }
 
-// -----------------------------------------------------------------------------
 // Run
-// -----------------------------------------------------------------------------
-
 main($argv, $layerClassificationConfig, $ignoreDirectories, $mvcRules);

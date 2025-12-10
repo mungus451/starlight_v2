@@ -6,7 +6,8 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ProfileService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
+use App\Presenters\ProfilePresenter;
 
 /**
  * Handles all HTTP requests for the public Player Profile page.
@@ -16,18 +17,21 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 class ProfileController extends BaseController
 {
     private ProfileService $profileService;
+    private ProfilePresenter $profilePresenter;
 
     /**
      * DI Constructor.
      *
      * @param ProfileService $profileService
+     * @param ProfilePresenter $profilePresenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         ProfileService $profileService,
+        ProfilePresenter $profilePresenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -35,6 +39,7 @@ class ProfileController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->profileService = $profileService;
+        $this->profilePresenter = $profilePresenter;
     }
 
     /**
@@ -60,6 +65,8 @@ class ProfileController extends BaseController
             $this->redirect('/battle'); // Redirect to battle page if not found
             return;
         }
+
+        $data = $this->profilePresenter->present($data);
 
         $data['layoutMode'] = 'full';
         $data['title'] = $data['profile']['character_name'] . "'s Profile";

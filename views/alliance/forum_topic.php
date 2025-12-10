@@ -12,7 +12,7 @@
         <h1><?= htmlspecialchars($topic->title) ?></h1>
         <p style="text-align: center; color: var(--muted); margin-top: -1.5rem;">
             Started by <?= htmlspecialchars($topic->author_name ?? 'N/A') ?> 
-            on <?= (new DateTime($topic->created_at))->format('M d, Y') ?>
+            on <?= $topic->formatted_created_at ?>
         </p>
     </div>
 
@@ -63,7 +63,7 @@
                 <!-- Content Area -->
                 <div class="forum-content">
                     <div class="forum-meta">
-                        <span>Posted on <?= (new DateTime($post->created_at))->format('M d, Y \a\t H:i') ?></span>
+                        <span>Posted on <?= $post->formatted_created_at ?></span>
                         <span>#<?= $post->id ?></span>
                     </div>
                     <div class="forum-body"><?= htmlspecialchars($post->content) ?></div>

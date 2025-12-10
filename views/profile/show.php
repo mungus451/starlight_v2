@@ -32,7 +32,7 @@
                         <?php endif; ?>
                     </span>
                     <span class="sub-text" style="font-size: 0.8rem;">
-                        Member Since: <?= (new DateTime($profile['created_at']))->format('M Y') ?>
+                        Member Since: <?= $profile['formatted_created_at'] ?>
                     </span>
                 </div>
             </div>

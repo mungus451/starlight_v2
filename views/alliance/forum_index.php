@@ -48,7 +48,7 @@
                             <td data-label="Last Post" class="topic-last-reply">
                                 <strong><?= htmlspecialchars($topic->last_reply_user_name ?? 'N/A') ?></strong>
                                 <br>
-                                <?= (new DateTime($topic->last_reply_at))->format('M d, H:i') ?>
+                                <?= $topic->formatted_last_reply_at ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
