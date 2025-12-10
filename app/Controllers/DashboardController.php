@@ -6,7 +6,8 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\DashboardService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
+use App\Presenters\DashboardPresenter;
 
 /**
  * Handles displaying the user's main dashboard.
@@ -16,18 +17,21 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 class DashboardController extends BaseController
 {
     private DashboardService $dashboardService;
+    private DashboardPresenter $dashboardPresenter;
 
     /**
      * DI Constructor.
      *
      * @param DashboardService $dashboardService
+     * @param DashboardPresenter $dashboardPresenter
      * @param Session $session
      * @param CSRFService $csrfService
      * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
+     * @param ViewContextService $viewContextService
      */
     public function __construct(
         DashboardService $dashboardService,
+        DashboardPresenter $dashboardPresenter,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -35,6 +39,7 @@ class DashboardController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->dashboardService = $dashboardService;
+        $this->dashboardPresenter = $dashboardPresenter;
     }
 
     /**
@@ -58,34 +63,9 @@ class DashboardController extends BaseController
         // Tell the layout to render in full-width mode
         $data['layoutMode'] = 'full';
         
-        // --- Presenter Logic (Inline for Compliance) ---
-        // Map effect types to UI properties to keep View clean
-        if (!empty($data['activeEffects'])) {
-            foreach ($data['activeEffects'] as &$effect) {
-                switch ($effect['effect_type']) {
-                    case 'jamming':
-                        $effect['ui_icon'] = 'fa-satellite-dish';
-                        $effect['ui_label'] = 'Radar Jamming';
-                        $effect['ui_color'] = 'text-accent';
-                        break;
-                    case 'peace_shield':
-                        $effect['ui_icon'] = 'fa-shield-alt';
-                        $effect['ui_label'] = 'Peace Shield';
-                        $effect['ui_color'] = 'text-success';
-                        break;
-                    case 'wounded':
-                        $effect['ui_icon'] = 'fa-user-injured';
-                        $effect['ui_label'] = 'Wounded';
-                        $effect['ui_color'] = 'text-danger';
-                        break;
-                    default:
-                        $effect['ui_icon'] = 'fa-bolt';
-                        $effect['ui_label'] = 'Unknown Effect';
-                        $effect['ui_color'] = 'text-accent';
-                }
-            }
-        }
-        // -----------------------------------------------
+        // --- Presenter Logic ---
+        // Delegate presentation logic to the Presenter
+        $data = $this->dashboardPresenter->present($data);
 
         // 2. Render the view
         $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);

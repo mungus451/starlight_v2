@@ -252,25 +252,13 @@
     <h4 style="margin: 0 0 1rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Active Buffs/Debuffs</h4>
     <ul class="data-list" style="margin-top: 0.5rem;">
         <?php foreach ($activeEffects as $effect): ?>
-            <?php 
-                $expires = new DateTime($effect['expires_at']);
-                $now = new DateTime();
-                if ($expires <= $now) continue;
-                $interval = $now->diff($expires);
-                $timeLeft = $interval->format('%h hrs %i mins');
-                
-                // Uses pre-calculated UI properties from Controller (MVC Compliance)
-                $icon = $effect['ui_icon'] ?? 'fa-bolt';
-                $label = $effect['ui_label'] ?? 'Unknown Effect';
-                $color = $effect['ui_color'] ?? 'text-accent';
-            ?>
             <li class="data-item" style="justify-content: space-between; padding: 0.75rem 1rem;">
                 <div style="display: flex; gap: 1rem; align-items: center;">
-                    <i class="fas <?= $icon ?> <?= $color ?>" style="font-size: 1.2rem; width: 25px; text-align: center;"></i>
-                    <span style="font-weight: 600; color: #fff;"><?= $label ?></span>
+                    <i class="fas <?= $effect['ui_icon'] ?> <?= $effect['ui_color'] ?>" style="font-size: 1.2rem; width: 25px; text-align: center;"></i>
+                    <span style="font-weight: 600; color: #fff;"><?= $effect['ui_label'] ?></span>
                 </div>
                 <span style="font-family: monospace; font-size: 1rem; color: var(--muted);">
-                    <i class="far fa-clock" style="margin-right: 5px;"></i> <?= $timeLeft ?>
+                    <i class="far fa-clock" style="margin-right: 5px;"></i> <?= $effect['formatted_time_left'] ?>
                 </span>
             </li>
         <?php endforeach; ?>
