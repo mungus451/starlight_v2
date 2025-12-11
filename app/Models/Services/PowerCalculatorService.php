@@ -171,6 +171,7 @@ class PowerCalculatorService
         // 2. Personal Bonuses
         $statBonusPct = $stats->wealth_points * $config['credit_bonus_per_wealth_point'];
         $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
+        $accountingFirmBonusPct = $structures->accounting_firm_level * 0.01; // 1% per level
         
         // 3. Alliance Bonuses (Credits)
         $allianceCreditMultiplier = 0.0;
@@ -185,8 +186,8 @@ class PowerCalculatorService
         }
         
         // 4. Total Credit Income
-        // Multipliers are additive: 1 + Stat% + Alliance%
-        $totalMultiplier = 1 + $statBonusPct + $allianceCreditMultiplier;
+        // Multipliers are additive: 1 + Stat% + Alliance% + AccountingFirm%
+        $totalMultiplier = 1 + $statBonusPct + $allianceCreditMultiplier + $accountingFirmBonusPct;
         $totalCreditIncome = (int)floor($baseProduction * $totalMultiplier) + $armoryBonus;
         
         // 5. Interest Income
@@ -206,8 +207,10 @@ class PowerCalculatorService
             'stat_bonus_pct' => $statBonusPct,
             'armory_bonus' => $armoryBonus,
             'alliance_credit_bonus_pct' => $allianceCreditMultiplier,
+            'accounting_firm_bonus_pct' => $accountingFirmBonusPct,
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
+            'accounting_firm_level' => $structures->accounting_firm_level,
             'worker_count' => $resources->workers,
             'wealth_points' => $stats->wealth_points,
             'banked_credits' => $resources->banked_credits,

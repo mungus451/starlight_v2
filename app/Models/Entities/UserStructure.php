@@ -25,7 +25,8 @@ readonly class UserStructure
         public readonly int $spy_upgrade_level,
         public readonly int $economy_upgrade_level,
         public readonly int $population_level,
-        public readonly int $armory_level
+        public readonly int $armory_level,
+        public readonly int $accounting_firm_level
     ) {
     }
 }

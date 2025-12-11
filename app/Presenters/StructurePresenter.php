@@ -40,11 +40,20 @@ class StructurePresenter
             $nextLevel = $currentLevel + 1;
             
             // 2. Determine Costs & Status
-            $upgradeCost = $costs[$key] ?? 0;
-            // If cost is 0 or missing in costs array, we assume max level logic depending on game rules,
-            // but usually cost > 0 check is sufficient for "next level exists".
-            $isMaxLevel = ($upgradeCost === 0); 
-            $canAfford = ($resources->credits >= $upgradeCost);
+            $creditCost = $costs[$key]['credits'] ?? 0;
+            $crystalCost = $costs[$key]['crystals'] ?? 0;
+
+            $isMaxLevel = ($creditCost === 0 && $crystalCost === 0); 
+            $canAfford = (
+                $resources->credits >= $creditCost && 
+                $resources->naquadah_crystals >= $crystalCost
+            );
+
+            // Format costs: "100,000 C" or "100,000 C + 5 💎"
+            $costFormatted = number_format($creditCost) . ' C';
+            if ($crystalCost > 0) {
+                $costFormatted .= ' + ' . number_format($crystalCost) . ' 💎';
+            }
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
             $benefitText = $this->calculateBenefitText($key, $turnConfig, $attackConfig, $spyConfig);
@@ -59,8 +68,9 @@ class StructurePresenter
                 'description' => $details['description'] ?? '',
                 'current_level' => $currentLevel,
                 'next_level' => $nextLevel,
-                'upgrade_cost' => $upgradeCost,
-                'cost_formatted' => number_format($upgradeCost),
+                'upgrade_cost_credits' => $creditCost, // Keep for raw access if needed
+                'upgrade_cost_crystals' => $crystalCost, // Keep for raw access if needed
+                'cost_formatted' => $costFormatted,
                 'is_max_level' => $isMaxLevel,
                 'can_afford' => $canAfford,
                 'benefit_text' => $benefitText,
@@ -117,6 +127,9 @@ class StructurePresenter
             
             case 'armory':
                 return "Unlocks & Upgrades Item Tiers";
+
+            case 'accounting_firm':
+                return "+ 1% Global Income Multiplier / Level";
             
             default:
                 return "";

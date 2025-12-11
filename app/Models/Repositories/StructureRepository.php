@@ -60,7 +60,8 @@ class StructureRepository
             'spy_upgrade_level',
             'economy_upgrade_level',
             'population_level',
-            'armory_level'
+            'armory_level',
+            'accounting_firm_level'
         ];
 
         if (!in_array($columnName, $allowedColumns)) {
@@ -93,7 +94,8 @@ class StructureRepository
             spy_upgrade_level: (int)$data['spy_upgrade_level'],
             economy_upgrade_level: (int)$data['economy_upgrade_level'],
             population_level: (int)$data['population_level'],
-            armory_level: (int)$data['armory_level']
+            armory_level: (int)$data['armory_level'],
+            accounting_firm_level: (int)$data['accounting_firm_level']
         );
     }
 }

@@ -69,6 +69,14 @@ return [
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
+        'accounting_firm' => [
+            'name' => 'Accounting Firm',
+            'base_cost' => 50000000, // 50 Million Credits
+            'base_crystal_cost' => 25, // 25 Naquadah Crystals
+            'multiplier' => 1.9, // Cost Multiplier (e.g., Level 2 costs 1.9x Level 1)
+            'category' => 'Economy',
+            'description' => 'Increases passive credit income by 1% per level.'
+        ],
     ],
     // --- Phase 7 ---
     'spy' => [

@@ -51,7 +51,13 @@ class StructureService
         $costs = [];
         foreach ($structureConfig as $key => $data) {
             $currentLevel = $structures->{$key . '_level'} ?? 0;
-            $costs[$key] = $this->calculateCost($data['base_cost'], $data['multiplier'], $currentLevel);
+            $creditCost = $this->calculateCost($data['base_cost'], $data['multiplier'], $currentLevel);
+            $crystalCost = 0;
+
+            if (isset($data['base_crystal_cost'])) {
+                $crystalCost = $this->calculateCost($data['base_crystal_cost'], $data['multiplier'], $currentLevel);
+            }
+            $costs[$key] = ['credits' => $creditCost, 'crystals' => $crystalCost];
         }
 
         return [
@@ -91,18 +97,38 @@ class StructureService
         $currentLevel = $structures->{$dbColumn} ?? 0;
         $nextLevel = $currentLevel + 1;
         
-        $cost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
+        $creditCost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
+        $crystalCost = 0;
+        if (isset($structureConfig['base_crystal_cost'])) {
+            $crystalCost = $this->calculateCost($structureConfig['base_crystal_cost'], $structureConfig['multiplier'], $currentLevel);
+        }
 
         // 4. Check Affordability
-        if ($resources->credits < $cost) {
+        if ($resources->credits < $creditCost) {
             return ServiceResponse::error('Insufficient credits for upgrade.');
+        }
+        if ($resources->naquadah_crystals < $crystalCost) {
+            return ServiceResponse::error('Insufficient naquadah crystals for upgrade.');
         }
 
         // 5. Transaction
         $this->db->beginTransaction();
         try {
-            // Deduct Credits
-            $this->resourceRepo->updateCredits($userId, $resources->credits - $cost);
+            // Deduct Credits and Crystals atomically
+            $this->resourceRepo->updateResources(
+                $userId,
+                $resources->credits - $creditCost,
+                $resources->banked_credits,
+                $resources->gemstones,
+                $resources->naquadah_crystals - $crystalCost, // Deduct crystals
+                $resources->untrained_citizens,
+                $resources->workers,
+                $resources->soldiers,
+                $resources->guards,
+                $resources->spies,
+                $resources->sentries,
+                $resources->untraceable_chips
+            );
             
             // Update Structure Level
             $this->structureRepo->updateStructureLevel($userId, $dbColumn, $nextLevel);
@@ -111,7 +137,7 @@ class StructureService
             
             return ServiceResponse::success(
                 "{$structureConfig['name']} upgraded to Level {$nextLevel}!",
-                ['new_level' => $nextLevel, 'cost' => $cost]
+                ['new_level' => $nextLevel, 'cost' => $creditCost, 'crystal_cost' => $crystalCost]
             );
 
         } catch (Throwable $e) {
