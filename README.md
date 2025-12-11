@@ -212,8 +212,8 @@ Configure .env: Copy the `.env.example` file to `.env` and set your database and
 
 cp .env.example .env
 nano .env
-### Set DB_HOST, DB_NAME, DB_USER, DB_PASS
-### Set REDIS_HOST, REDIS_PORT (Defaults to 127.0.0.1:6379)
+#### Set DB_HOST, DB_NAME, DB_USER, DB_PASS
+#### Set REDIS_HOST, REDIS_PORT (Defaults to 127.0.0.1:6379)
 
 
 Run Database Migrations:
@@ -224,9 +224,9 @@ vendor/bin/phinx migrate --configuration=config/phinx.php
 
 Set Directory Permissions: Crucially, grant the Apache user (`www-data`) write access to storage and log directories:
 
-# Grant ownership of storage and logs to the web server user
+#### Grant ownership of storage and logs to the web server user
 sudo chown -R www-data:www-data storage/ logs/ public/uploads/
-# Set correct directory permissions (rwxr-xr-x)
+#### Set correct directory permissions (rwxr-xr-x)
 sudo chmod -R 755 storage/ logs/ public/uploads/
 
 #### Automated Setup (macOS)
