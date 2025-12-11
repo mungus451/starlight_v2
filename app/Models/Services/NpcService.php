@@ -123,15 +123,29 @@ class NpcService
         
         if (!$structures || !$resources) return;
 
+        // Default strategy: Focus on Economy first, but don't get stuck
         $target = 'economy_upgrade';
-        if ($structures->economy_upgrade_level >= 20) {
+        
+        // 1. If we are desperate for citizens (stalling training), prioritize Population
+        if ($resources->untrained_citizens < 50) {
+            $target = 'population';
+        } 
+        // 2. If Economy is decent or we can't afford it, diversify
+        elseif ($structures->economy_upgrade_level >= 20) {
             $options = ['fortification', 'offense_upgrade', 'defense_upgrade', 'spy_upgrade', 'population', 'armory'];
             $target = $options[array_rand($options)];
         }
 
+        // 3. Attempt Upgrade
         $response = $this->structureService->upgradeStructure($npc->id, $target);
         if ($response->isSuccess()) {
             $this->logger->info("  -> SUCCESS: Upgraded {$target}.");
+        } else {
+            // If the primary target failed (likely due to funds), try a cheap backup
+            // This prevents them from 'saving up' forever for a structure they can't afford yet
+            if ($target === 'economy_upgrade') {
+                 $this->structureService->upgradeStructure($npc->id, 'population');
+            }
         }
     }
 
@@ -140,14 +154,21 @@ class NpcService
         $resources = $this->resourceRepo->findByUserId($npc->id);
         if (!$resources) return;
         
-        if ($resources->untrained_citizens < 100) return;
+        // Lower threshold to keep things moving
+        if ($resources->untrained_citizens < 10) return;
 
+        // Train up to 500 at a time, or whatever we have
         $toTrain = min($resources->untrained_citizens, 500);
         
-        $soldiers = (int)floor($toTrain * 0.4);
-        $guards = (int)floor($toTrain * 0.4);
-        $spies = (int)floor($toTrain * 0.2);
+        $workers = (int)floor($toTrain * 0.25);
+        $soldiers = (int)floor($toTrain * 0.30);
+        $guards = (int)floor($toTrain * 0.30);
+        $spies = (int)floor($toTrain * 0.15);
 
+        if ($workers > 0) {
+            $res = $this->trainingService->trainUnits($npc->id, 'workers', $workers);
+            if ($res->isSuccess()) $this->logger->info("  -> Trained {$workers} Workers.");
+        }
         if ($soldiers > 0) {
             $res = $this->trainingService->trainUnits($npc->id, 'soldiers', $soldiers);
             if ($res->isSuccess()) $this->logger->info("  -> Trained {$soldiers} Soldiers.");
@@ -175,6 +196,9 @@ class NpcService
         $loadouts = $armoryData['loadouts'];
 
         $actionsTaken = 0;
+        
+        // Track local spending since $resources is readonly
+        $currentCredits = $resources->credits;
 
         foreach ($config as $unitKey => $unitData) {
             foreach ($unitData['categories'] as $catKey => $catData) {
@@ -195,20 +219,32 @@ class NpcService
 
                 if ($bestItemKey && $bestItemKey !== $equipped) {
                     $owned = $inventory[$bestItemKey] ?? 0;
-                    $needed = 1000; 
+                    $idealStock = 1000; 
 
-                    if ($owned < $needed && $resources->credits > ($bestItemCost * $needed)) {
-                        $response = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $needed);
-                        if ($response->isSuccess()) {
-                            $this->logger->info("  -> Manufactured {$needed}x {$bestItemName}.");
-                            $actionsTaken++;
-                            $resources = $this->resourceRepo->findByUserId($npc->id);
+                    // Fix: Dynamic Purchasing
+                    // Instead of failing if we can't buy 1000, buy what we can afford.
+                    if ($owned < $idealStock) {
+                        $needed = $idealStock - $owned;
+                        $affordable = (int)floor($currentCredits / max(1, $bestItemCost));
+                        $buyAmount = min($needed, $affordable);
+
+                        // Only buy if we can get a decent batch (avoid spamming 1 item)
+                        if ($buyAmount > 5) {
+                            $response = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $buyAmount);
+                            if ($response->isSuccess()) {
+                                $this->logger->info("  -> Manufactured {$buyAmount}x {$bestItemName}.");
+                                $actionsTaken++;
+                                // Update local tracker
+                                $currentCredits -= ($buyAmount * $bestItemCost);
+                            }
                         }
                     }
 
-                    $newOwned = ($inventory[$bestItemKey] ?? 0) + ($actionsTaken > 0 ? $needed : 0);
+                    // Check inventory again after potential purchase
+                    $currentStock = ($inventory[$bestItemKey] ?? 0) + ($actionsTaken > 0 ? 0 : 0); // (Inventory isn't auto-refreshed in var, but logic holds)
                     
-                    if ($newOwned > 0) {
+                    // Simple Equip Logic: If we have ANY, equip it.
+                    if ($currentStock > 0 || $owned > 0) {
                         $response = $this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey);
                         if ($response->isSuccess()) {
                             $this->logger->info("  -> Equipped {$bestItemName} to {$unitKey} ({$catKey}).");
