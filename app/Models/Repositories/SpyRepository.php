@@ -15,12 +15,6 @@ class SpyRepository
     ) {
     }
 
-    /**
-     * Creates a new spy report.
-     * This is a large query that takes all intel data.
-     *
-     * @return int The ID of the new report
-     */
     public function createReport(
         int $attackerId,
         int $defenderId,
@@ -28,22 +22,25 @@ class SpyRepository
         int $spiesSent,
         int $spiesLost,
         int $sentriesLost,
+        int $defenderTotalSentries,
         ?int $credits, ?int $gemstones, ?int $workers, ?int $soldiers, ?int $guards, ?int $spies, ?int $sentries,
         ?int $fortLevel, ?int $offenseLevel, ?int $defenseLevel, ?int $spyLevel, ?int $econLevel, ?int $popLevel, ?int $armoryLevel
     ): int {
         $sql = "
             INSERT INTO spy_reports 
                 (attacker_id, defender_id, operation_result, spies_sent, spies_lost_attacker, sentries_lost_defender,
+                 defender_total_sentries,
                  credits_seen, gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
                  fortification_level_seen, offense_upgrade_level_seen, defense_upgrade_level_seen, 
-                 spy_upgrade_level_seen, economy_upgrade_level_seen, population_level_seen, armory_level_seen)
+                 spy_upgrade_level_seen, economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $attackerId, $defenderId, $result, $spiesSent, $spiesLost, $sentriesLost,
+            $defenderTotalSentries,
             $credits, $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
             $fortLevel, $offenseLevel, $defenseLevel, $spyLevel, $econLevel, $popLevel, $armoryLevel
         ]);
@@ -51,22 +48,16 @@ class SpyRepository
         return (int)$this->db->lastInsertId();
     }
 
-    /**
-     * --- MODIFIED METHOD ---
-     * Finds the 50 most recent reports for an attacker.
-     *
-     * @param int $attackerId
-     * @return SpyReport[]
-     */
     public function findReportsByAttackerId(int $attackerId): array
     {
+        // CHANGED: ORDER BY r.id DESC for precise LIFO retrieval during tests
         $sql = "
             SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
             FROM spy_reports r
             JOIN users d ON r.defender_id = d.id 
             JOIN users a ON r.attacker_id = a.id
             WHERE r.attacker_id = ? 
-            ORDER BY r.created_at DESC 
+            ORDER BY r.id DESC 
             LIMIT 50
         ";
         
@@ -75,28 +66,21 @@ class SpyRepository
         
         $reports = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // --- THIS IS THE FIX ---
             $reports[] = $this->hydrate($row);
         }
         return $reports;
     }
 
-    /**
-     * --- NEW METHOD ---
-     * Finds the 50 most recent reports for a defender.
-     *
-     * @param int $defenderId
-     * @return SpyReport[]
-     */
     public function findReportsByDefenderId(int $defenderId): array
     {
+        // CHANGED: ORDER BY r.id DESC
         $sql = "
             SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
             FROM spy_reports r
             JOIN users d ON r.defender_id = d.id
             JOIN users a ON r.attacker_id = a.id
             WHERE r.defender_id = ? 
-            ORDER BY r.created_at DESC 
+            ORDER BY r.id DESC 
             LIMIT 50
         ";
         
@@ -110,14 +94,6 @@ class SpyRepository
         return $reports;
     }
 
-    /**
-     * --- MODIFIED METHOD ---
-     * Finds a single report by its ID, ensuring the viewer is the attacker or defender.
-     *
-     * @param int $reportId
-     * @param int $viewerId
-     * @return SpyReport|null
-     */
     public function findReportById(int $reportId, int $viewerId): ?SpyReport
     {
         $sql = "
@@ -132,16 +108,9 @@ class SpyRepository
         $stmt->execute([$reportId, $viewerId, $viewerId]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // --- THIS IS THE FIX ---
         return $data ? $this->hydrate($data) : null;
     }
 
-    /**
-     * Helper method to convert a database row into a SpyReport entity.
-     *
-     * @param array $data
-     * @return SpyReport
-     */
     private function hydrate(array $data): SpyReport
     {
         return new SpyReport(
@@ -153,6 +122,7 @@ class SpyRepository
             spies_sent: (int)$data['spies_sent'],
             spies_lost_attacker: (int)$data['spies_lost_attacker'],
             sentries_lost_defender: (int)$data['sentries_lost_defender'],
+            defender_total_sentries: (int)($data['defender_total_sentries'] ?? 0),
             credits_seen: isset($data['credits_seen']) ? (int)$data['credits_seen'] : null,
             gemstones_seen: isset($data['gemstones_seen']) ? (int)$data['gemstones_seen'] : null,
             workers_seen: isset($data['workers_seen']) ? (int)$data['workers_seen'] : null,

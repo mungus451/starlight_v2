@@ -9,11 +9,19 @@
         &larr; Back to Spy Logs
     </a>
 
-    <div class="report-banner">
-        <h1 class="report-status-text"><?= $report['result_text'] ?></h1>
-        <span style="color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.5rem;">
+    <!-- NEW: Narrative Story Box -->
+    <div class="item-card" style="padding: 2rem; margin-bottom: 2rem; border-color: rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">
+        <div style="font-size: 1.1rem; line-height: 1.8; color: #e0e0e0; text-align: center;">
+            <?= $report['story_html'] ?>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem;">
             <?= $report['full_date'] ?>
-        </span>
+        </div>
+    </div>
+
+    <!-- Legacy Header Banner (Status Only) -->
+    <div class="report-banner" style="padding: 1.5rem 1rem; margin-bottom: 2rem;">
+        <h1 class="report-status-text" style="font-size: 2.5rem;"><?= $report['result_text'] ?></h1>
     </div>
 
     <div class="versus-grid">

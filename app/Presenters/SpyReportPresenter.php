@@ -6,17 +6,12 @@ use App\Models\Entities\SpyReport;
 
 /**
  * Responsible for formatting Spy Reports for the View.
- * Handles the logic of "Success" vs "Failure" which means different things
- * depending on if you are the Attacker (Operator) or Defender (Target).
+ * Updated to include narrative generation.
  */
 class SpyReportPresenter
 {
     /**
      * Transforms a list of SpyReport entities into view-ready arrays.
-     *
-     * @param array $reports Array of SpyReport entities
-     * @param int $viewerId The ID of the user viewing the reports
-     * @return array
      */
     public function presentAll(array $reports, int $viewerId): array
     {
@@ -29,10 +24,6 @@ class SpyReportPresenter
 
     /**
      * Transforms a single SpyReport entity into a view-ready array.
-     *
-     * @param SpyReport $report
-     * @param int $viewerId
-     * @return array
      */
     public function present(SpyReport $report, int $viewerId): array
     {
@@ -50,9 +41,6 @@ class SpyReportPresenter
         $opponentLabel = $isAttacker ? 'Target' : 'Operator';
         
         // 3. Determine Outcome & Theming
-        // 'success' in DB means the spy got the intel.
-        // 'failure' in DB means the spy failed to get intel (and usually got caught).
-        
         if ($isAttacker) {
             // Attacker Perspective
             $operationSuccess = ($report->operation_result === 'success');
@@ -66,10 +54,8 @@ class SpyReportPresenter
             $verb = 'vs';
             
         } else {
-            // Defender Perspective
-            // If operation_result is 'success', the defender was breached (Loss).
-            // If operation_result is 'failure', the defender caught the spy (Win).
-            $operationSuccess = ($report->operation_result !== 'success'); // Inverted for Defender logic
+            // Defender Perspective (Success means Spy Caught)
+            $operationSuccess = ($report->operation_result !== 'success');
             $resultText = $operationSuccess ? 'SPY NEUTRALIZED' : 'SECURITY BREACH';
             $shortResultText = $operationSuccess ? 'Success (Caught)' : 'Failed (Breached)';
             
@@ -80,6 +66,9 @@ class SpyReportPresenter
             $verb = 'from';
         }
 
+        // 4. Generate Narrative
+        $storyHtml = $this->generateNarrative($viewerName, $opponentName, $report, $isAttacker);
+
         return [
             'id' => $report->id,
             'created_at' => $report->created_at,
@@ -87,7 +76,7 @@ class SpyReportPresenter
             'full_date' => date('F j, Y - H:i', strtotime($report->created_at)),
             
             'is_attacker' => $isAttacker,
-            'operation_result' => $report->operation_result, // Raw DB value needed for conditional blocks
+            'operation_result' => $report->operation_result,
             
             'viewer_name' => $viewerName,
             'opponent_name' => $opponentName,
@@ -105,11 +94,11 @@ class SpyReportPresenter
             'result_class' => $resultClass,
             'icon' => $icon,
             
-            // Raw Data Pass-through
+            'story_html' => $storyHtml,
+
+            // Raw Data
             'spies_lost_attacker' => $report->spies_lost_attacker,
             'sentries_lost_defender' => $report->sentries_lost_defender,
-            
-            // Intel Data
             'credits_seen' => $report->credits_seen,
             'soldiers_seen' => $report->soldiers_seen,
             'guards_seen' => $report->guards_seen,
@@ -117,5 +106,45 @@ class SpyReportPresenter
             'fortification_level_seen' => $report->fortification_level_seen,
             'armory_level_seen' => $report->armory_level_seen,
         ];
+    }
+
+    /**
+     * Generates narrative text for the report.
+     */
+    private function generateNarrative(string $viewerName, string $opponentName, SpyReport $report, bool $isAttacker): string
+    {
+        $fmt = fn($n) => number_format($n);
+        
+        $atkName = $isAttacker ? $viewerName : $opponentName;
+        $defName = $isAttacker ? $opponentName : $viewerName;
+
+        // Line 1: Deployment
+        // Handle legacy reports where total_sentries might be 0
+        $sentriesText = $report->defender_total_sentries > 0 ? $fmt($report->defender_total_sentries) : "an unknown number of";
+        $line1 = "<strong>{$atkName}</strong> deployed {$fmt($report->spies_sent)} spies to infiltrate <strong>{$defName}</strong>'s network, defended by {$sentriesText} sentries.";
+
+        // Line 2: Outcome
+        $isSuccess = ($report->operation_result === 'success');
+        $outcomeColor = $isSuccess ? 'var(--accent-blue)' : 'var(--accent-red)';
+        $outcomeText = $isSuccess ? "successfully breached security protocols" : "was detected by counter-intelligence";
+        $line2 = "The operation <strong>{$outcomeText}</strong>.";
+
+        // Line 3: Casualties
+        $line3 = "Casualties: <span class='val-danger'>{$fmt($report->spies_lost_attacker)}</span> spies lost vs <span class='val-danger'>{$fmt($report->sentries_lost_defender)}</span> sentries destroyed.";
+
+        // Line 4: Result Detail
+        $line4 = "";
+        if ($isSuccess) {
+            $line4 = "Full intelligence dossier downloaded.";
+        } else {
+            $line4 = "Connection terminated. No data retrieved.";
+        }
+
+        return "
+            <p>{$line1}</p>
+            <p style='color: {$outcomeColor}'>{$line2}</p>
+            <p>{$line3}</p>
+            <p>{$line4}</p>
+        ";
     }
 }

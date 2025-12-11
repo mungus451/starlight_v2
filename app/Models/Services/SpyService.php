@@ -2,7 +2,6 @@
 
 namespace App\Models\Services;
 
-// ... imports same as before ...
 use App\Core\Config;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
@@ -14,13 +13,13 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\NotificationService;
-use App\Models\Services\EffectService; // --- NEW ---
+use App\Models\Services\EffectService;
+use App\Models\Entities\UserStructure;
 use PDO;
 use Throwable;
 
 class SpyService
 {
-    // ... Constructor and properties same as before ...
     private PDO $db;
     private Config $config;
     private UserRepository $userRepo;
@@ -32,14 +31,14 @@ class SpyService
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
     private NotificationService $notificationService;
-    private EffectService $effectService; // --- NEW ---
+    private EffectService $effectService;
 
     public function __construct(
         PDO $db, Config $config, UserRepository $userRepo, ResourceRepository $resourceRepo,
         StructureRepository $structureRepo, StatsRepository $statsRepo, SpyRepository $spyRepo,
         ArmoryService $armoryService, PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService, NotificationService $notificationService,
-        EffectService $effectService // --- NEW ---
+        EffectService $effectService
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -55,9 +54,8 @@ class SpyService
         $this->effectService = $effectService;
     }
     
-    // ... getSpyData, getSpyReports, getSpyReport same ...
+    // ... getSpyData, getSpyReports, getSpyReport (Keep existing) ...
     public function getSpyData(int $userId, int $page): array {
-        // ... (keep existing implementation)
         $resources = $this->resourceRepo->findByUserId($userId);
         $stats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.spy', []);
@@ -96,18 +94,28 @@ class SpyService
 
     public function conductOperation(int $attackerId, string $targetName): ServiceResponse
     {
-        // ... Validation & Calc (Same as before) ...
         if (empty(trim($targetName))) return ServiceResponse::error('You must enter a target.');
         $defender = $this->userRepo->findByCharacterName($targetName);
         if (!$defender) return ServiceResponse::error("Character '{$targetName}' not found.");
         if ($defender->id === $attackerId) return ServiceResponse::error('You cannot spy on yourself.');
 
+        // --- Active Effects Check ---
+        if ($this->effectService->hasActiveEffect($defender->id, 'peace_shield')) {
+            return ServiceResponse::error("Target is under Safehouse protection. Operation prevented.");
+        }
+        if ($this->effectService->hasActiveEffect($attackerId, 'peace_shield')) {
+            $this->effectService->breakEffect($attackerId, 'peace_shield'); 
+        }
+
         $attacker = $this->userRepo->findById($attackerId);
         $attackerResources = $this->resourceRepo->findByUserId($attackerId);
         $attackerStats = $this->statsRepo->findByUserId($attackerId);
-        $attackerStructures = $this->structureRepo->findByUserId($attackerId);
+        
+        // --- SAFE LOADING: Structures ---
+        $attackerStructures = $this->getOrInitStructures($attackerId);
+        
         $defenderResources = $this->resourceRepo->findByUserId($defender->id);
-        $defenderStructures = $this->structureRepo->findByUserId($defender->id);
+        $defenderStructures = $this->getOrInitStructures($defender->id);
         
         $config = $this->config->get('game_balance.spy');
         $xpConfig = $this->config->get('game_balance.xp.rewards');
@@ -122,42 +130,65 @@ class SpyService
 
         // --- Check for Radar Jamming ---
         if ($this->effectService->hasActiveEffect($defender->id, 'jamming')) {
-            // Deduct costs (The price of failure)
-            $this->db->beginTransaction();
-            try {
-                $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $attackerResources->spies); // No spies lost, just cost
+            $this->safeTransaction(function() use ($attackerId, $attackerResources, $attackerStats, $creditCost, $turnCost, $spiesSent) {
+                $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $spiesSent);
                 $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
-                $this->db->commit();
-            } catch (Throwable $e) {
-                $this->db->rollBack();
-            }
+            });
             return ServiceResponse::success("CRITICAL FAILURE: Target signal is jammed. Operation failed, resources consumed.");
         }
-        // -------------------------------
 
-        // Rolls
+        // --- 1. Calculate Power ---
         $offenseBreakdown = $this->powerCalculatorService->calculateSpyPower($attackerId, $attackerResources, $attackerStructures);
         $offense = $offenseBreakdown['total'];
+        
         $defenseBreakdown = $this->powerCalculatorService->calculateSentryPower($defender->id, $defenderResources, $defenderStructures);
         $defense = $defenseBreakdown['total'];
+        
         $totalPower = $offense + $defense;
 
+        // --- 2. Determine Success (Intel Gathered?) ---
         $successChance = $totalPower > 0 ? ($offense / $totalPower) * $config['base_success_multiplier'] : 1;
         $successChance = max(min($successChance, $config['base_success_chance_cap']), $config['base_success_chance_floor']);
         $isSuccess = (mt_rand(1, 1000) / 1000) <= $successChance;
 
+        // --- 3. Determine Caught (Combat Engaged?) ---
         $counterChance = $totalPower > 0 ? ($defense / $totalPower) * $config['base_counter_spy_multiplier'] : 0;
         $counterChance = min($counterChance, $config['base_counter_spy_chance_cap']);
         $isCaught = (mt_rand(1, 1000) / 1000) <= $counterChance;
 
-        // Losses & XP
-        $spiesLost = $isCaught ? (int)mt_rand($spiesSent * $config['spies_lost_percent_min'], $spiesSent * $config['spies_lost_percent_max']) : 0;
-        $sentriesLost = $isCaught ? (int)mt_rand($defenderResources->sentries * $config['sentries_lost_percent_min'], $defenderResources->sentries * $config['sentries_lost_percent_max']) : 0;
+        // --- 4. Calculate Casualties (Ratio Based) ---
+        $spiesLost = 0;
+        $sentriesLost = 0;
 
+        if ($isCaught) {
+            $safeOffense = max(1, $offense);
+            $safeDefense = max(1, $defense);
+            
+            if ($offense > $defense) {
+                // Spies overpower Sentries
+                $ratio = $safeOffense / $safeDefense;
+                $spiesLost = $this->calculateWinnerLosses($spiesSent, $ratio);
+                $sentriesLost = $this->calculateLoserLosses($defenderResources->sentries, $ratio);
+            } else {
+                // Sentries overpower Spies
+                $ratio = $safeDefense / $safeOffense;
+                $spiesLost = $this->calculateLoserLosses($spiesSent, $ratio);
+                $sentriesLost = $this->calculateWinnerLosses($defenderResources->sentries, $ratio);
+            }
+
+            // Casualties are generally higher/squishier for spies
+            $casualtyScalar = 0.2; 
+            
+            $spiesLost = (int)ceil($spiesLost * $casualtyScalar);
+            $sentriesLost = (int)ceil($sentriesLost * $casualtyScalar);
+
+            $spiesLost = min($spiesSent, $spiesLost);
+            $sentriesLost = min($defenderResources->sentries, $sentriesLost);
+        }
+
+        // --- 5. XP & Intel ---
         $attackerXp = $isSuccess ? ($xpConfig['spy_success'] ?? 100) : ($isCaught ? ($xpConfig['spy_caught'] ?? 10) : ($xpConfig['spy_fail_survived'] ?? 25));
         $defenderXp = $isCaught ? ($xpConfig['defense_caught_spy'] ?? 75) : 0;
-
-        // Intel
         $operation_result = $isSuccess ? 'success' : 'failure';
         
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
@@ -175,16 +206,20 @@ class SpyService
         $intel_popLevel = $isSuccess ? $defenderStructures->population_level : null;
         $intel_armoryLevel = $isSuccess ? $defenderStructures->armory_level : null;
 
-        // Transaction
-        $this->db->beginTransaction();
-        try {
+        $defenderTotalSentriesSnapshot = $defenderResources->sentries;
+
+        // --- Transaction ---
+        $this->safeTransaction(function() use (
+            $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
+            $creditCost, $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
+            $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
+            $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
+            $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
+        ) {
             $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $attackerResources->spies - $spiesLost);
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
-            
-            // --- NEW: Increment Spy Stats ---
             $this->statsRepo->incrementSpyStats($attackerId, $isSuccess);
-            // --------------------------------
 
             if ($isCaught) {
                 if ($sentriesLost > 0) $this->resourceRepo->updateSpyDefender($defender->id, max(0, $defenderResources->sentries - $sentriesLost));
@@ -193,6 +228,7 @@ class SpyService
 
             $reportId = $this->spyRepo->createReport(
                 $attackerId, $defender->id, $operation_result, $spiesSent, $spiesLost, $sentriesLost,
+                $defenderTotalSentriesSnapshot,
                 $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
                 $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
             );
@@ -204,18 +240,68 @@ class SpyService
                 $notifMsg .= " XP Gained: +{$defenderXp}.";
                 $this->notificationService->sendNotification($defender->id, 'spy', $notifTitle, $notifMsg, "/spy/report/{$reportId}");
             }
-
-            $this->db->commit();
-            
-        } catch (Throwable $e) {
-            if ($this->db->inTransaction()) $this->db->rollBack();
-            error_log('Spy Operation Error: ' . $e->getMessage());
-            return ServiceResponse::error('A database error occurred.');
-        }
+        });
 
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         
         return ServiceResponse::success($message);
+    }
+
+    /**
+     * Safety wrapper for transactions to handle nested/test scenarios.
+     */
+    private function safeTransaction(callable $callback): void
+    {
+        $startedByMe = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $startedByMe = true;
+        }
+
+        try {
+            $callback();
+            if ($startedByMe) $this->db->commit();
+        } catch (Throwable $e) {
+            if ($startedByMe && $this->db->inTransaction()) $this->db->rollBack();
+            error_log('Spy Transaction Error: ' . $e->getMessage());
+            throw $e; // Re-throw to controller/test
+        }
+    }
+
+    /**
+     * Safely load structures, creating defaults if missing.
+     */
+    private function getOrInitStructures(int $userId): UserStructure
+    {
+        $struct = $this->structureRepo->findByUserId($userId);
+        if (!$struct) {
+            // Self-Heal: Create missing row
+            $this->structureRepo->createDefaults($userId);
+            $struct = $this->structureRepo->findByUserId($userId);
+        }
+        return $struct;
+    }
+
+    private function calculateWinnerLosses(int $unitCount, float $ratio): int
+    {
+        $lossPercent = 0.05 / $ratio;
+        $losses = (int)ceil($unitCount * $lossPercent);
+        $variance = (int)ceil($losses * 0.2);
+        $losses = mt_rand(max(0, $losses - $variance), $losses + $variance);
+        return $losses;
+    }
+
+    private function calculateLoserLosses(int $unitCount, float $ratio): int
+    {
+        if ($unitCount <= 0) return 0;
+        if ($ratio >= 10.0) return $unitCount;
+
+        $lossPercent = 0.10 * $ratio;
+        $lossPercent = min(1.0, $lossPercent);
+        $losses = (int)ceil($unitCount * $lossPercent);
+        $variance = (int)ceil($losses * 0.1);
+        $losses = mt_rand(max(1, $losses - $variance), min($unitCount, $losses + $variance));
+        return max(1, $losses);
     }
 }
