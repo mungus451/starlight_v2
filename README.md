@@ -245,7 +245,7 @@ crontab -e
 Add this line to run every 10 minutes:
 
 ```cron
-*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/10 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
 ```
 
 #### Ubuntu/Linux Setup
@@ -257,7 +257,7 @@ crontab -e
 Add this line:
 
 ```cron
-*/5 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/10 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
 ```
 
 #### Monitor Logs
