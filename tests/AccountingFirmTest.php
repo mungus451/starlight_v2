@@ -52,7 +52,7 @@ try {
     // Initial Resource Injection (Credits + Crystals)
     // Base Cost: 50M Credits, 25 Crystals
     $initialCredits = 60000000;
-    $initialCrystals = 100;
+    $initialCrystals = 1000;
     
     $stmt = $db->prepare("UPDATE user_resources SET credits = ?, naquadah_crystals = ? WHERE user_id = ?");
     $stmt->execute([$initialCredits, $initialCrystals, $userId]);
@@ -69,7 +69,7 @@ try {
     // Verify Resource Deduction
     $resources = $resRepo->findByUserId($userId);
     $expectedCredits = $initialCredits - 1000000; // Corrected expected deduction
-    $expectedCrystals = $initialCrystals - 25;
+    $expectedCrystals = $initialCrystals - 250;
     
     if ($resources->credits !== $expectedCredits) {
         throw new Exception("Credit Deduction Failed. Expected {$expectedCredits}, got {$resources->credits}");
