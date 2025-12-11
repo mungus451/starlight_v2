@@ -61,13 +61,11 @@ class IntegrityTester
             \App\Presenters\BattleReportPresenter::class,
             \App\Presenters\SpyReportPresenter::class,
             \App\Presenters\AllianceProfilePresenter::class,
-            \App\Presenters\ArmoryPresenter::class,
-
-            // Core
-            \App\Core\ServiceResponse::class, // Result Object Pattern
-            \App\Core\ViewContextService::class, // BaseController Dependency
-            \App\Core\JsonResponse::class, // API Standard
-        ];
+        \App\Presenters\ArmoryPresenter::class,         // Armory View Logic
+        \App\Core\ServiceResponse::class,               // DTO for Service->Controller
+        \App\Models\Services\ViewContextService::class, // BaseController Dependency
+        \App\Core\JsonResponse::class                   // Uniform JSON Output
+    ];
 
         foreach ($requiredClasses as $class) {
             $this->checkClass($class);

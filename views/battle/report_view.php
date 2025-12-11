@@ -10,13 +10,17 @@
         &larr; Back to Log
     </a>
 
-    <div class="report-banner">
-        <h1 class="report-status-text"><?= $report['result_text'] ?></h1>
-        <span style="color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.5rem;">
+    <!-- NEW: Narrative Story Box -->
+    <div class="item-card" style="padding: 2rem; margin-bottom: 2rem; border-color: rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);">
+        <div style="font-size: 1.1rem; line-height: 1.8; color: #e0e0e0; text-align: center;">
+            <?= $report['story_html'] ?>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.9rem;">
             <?= $report['full_date'] ?>
-        </span>
+        </div>
     </div>
 
+    <!-- Legacy Grid (Retained for detail view) -->
     <div class="versus-grid">
         <!-- Viewer Card -->
         <div class="combat-player-card is-me">
@@ -48,7 +52,7 @@
     </div>
 
     <div class="data-card">
-        <h3 style="text-align: center;">Combat Analysis</h3>
+        <h3 style="text-align: center;">Technical Analysis</h3>
         
         <div class="comparison-row">
             <span class="stat-val left"><?= number_format($report['soldiers_sent']) ?></span>
