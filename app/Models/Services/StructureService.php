@@ -112,28 +112,27 @@ class StructureService
         }
 
         // 5. Transaction
-        $this->db->beginTransaction();
+        $transactionStarted = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStarted = true;
+        }
+
         try {
-            // Deduct Credits and Crystals atomically
+            // Deduct Credits and Crystals atomically using relative updates
+            // pass negative values to subtract
             $this->resourceRepo->updateResources(
                 $userId,
-                $resources->credits - $creditCost,
-                $resources->banked_credits,
-                $resources->gemstones,
-                $resources->naquadah_crystals - $crystalCost, // Deduct crystals
-                $resources->untrained_citizens,
-                $resources->workers,
-                $resources->soldiers,
-                $resources->guards,
-                $resources->spies,
-                $resources->sentries,
-                $resources->untraceable_chips
+                -1 * $creditCost,
+                -1 * $crystalCost
             );
             
             // Update Structure Level
             $this->structureRepo->updateStructureLevel($userId, $dbColumn, $nextLevel);
 
-            $this->db->commit();
+            if ($transactionStarted) {
+                $this->db->commit();
+            }
             
             return ServiceResponse::success(
                 "{$structureConfig['name']} upgraded to Level {$nextLevel}!",
@@ -141,7 +140,7 @@ class StructureService
             );
 
         } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
+            if ($transactionStarted && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             error_log('Structure Upgrade Error: ' . $e->getMessage());

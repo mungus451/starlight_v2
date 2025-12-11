@@ -122,7 +122,7 @@ class PowerCalculatorService
         $defBonusPct = $structures->defense_upgrade_level * $config['power_per_defense_level'];
         $structureBonusPercent = $fortBonusPct + $defBonusPct;
         
-        $statBonusPercent = $stats->constitution_points * $config['power_per_constitution_point'];
+        $statBonusPct = $stats->constitution_points * $config['power_per_constitution_point'];
 
         // 3. Alliance Bonuses
         $allianceBonusPercent = 0.0;
