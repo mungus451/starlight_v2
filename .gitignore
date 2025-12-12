@@ -19,3 +19,6 @@
 
 #Specific Files
 starlight_v2.zip
+
+# Cache files
+.phpunit.cache/
