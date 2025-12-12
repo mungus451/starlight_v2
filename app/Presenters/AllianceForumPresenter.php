@@ -18,13 +18,20 @@ class AllianceForumPresenter
     public function presentIndex(array $data): array
     {
         if (!empty($data['topics'])) {
+            $presentedTopics = [];
             foreach ($data['topics'] as $topic) {
+                // Convert readonly entity to mutable stdClass
+                $obj = $this->toMutable($topic);
+                
                 // Format last_reply_at
-                $topic->formatted_last_reply_at = (new DateTime($topic->last_reply_at))->format('M d, H:i');
+                $obj->formatted_last_reply_at = (new DateTime($obj->last_reply_at))->format('M d, H:i');
                 // Ensure other fields are present or defaulted if null
-                $topic->author_name = $topic->author_name ?? 'N/A';
-                $topic->last_reply_user_name = $topic->last_reply_user_name ?? 'N/A';
+                $obj->author_name = $obj->author_name ?? 'N/A';
+                $obj->last_reply_user_name = $obj->last_reply_user_name ?? 'N/A';
+                
+                $presentedTopics[] = $obj;
             }
+            $data['topics'] = $presentedTopics;
         }
         return $data;
     }
@@ -39,18 +46,35 @@ class AllianceForumPresenter
     {
         // Format Topic Date
         if (isset($data['topic'])) {
-            $data['topic']->formatted_created_at = (new DateTime($data['topic']->created_at))->format('M d, Y');
-            $data['topic']->author_name = $data['topic']->author_name ?? 'N/A';
+            $obj = $this->toMutable($data['topic']);
+            $obj->formatted_created_at = (new DateTime($obj->created_at))->format('M d, Y');
+            $obj->author_name = $obj->author_name ?? 'N/A';
+            $data['topic'] = $obj;
         }
 
         // Format Posts Dates
         if (!empty($data['posts'])) {
+            $presentedPosts = [];
             foreach ($data['posts'] as $post) {
-                $post->formatted_created_at = (new DateTime($post->created_at))->format('M d, Y \a\t H:i');
-                $post->author_name = $post->author_name ?? 'N/A';
+                $obj = $this->toMutable($post);
+                $obj->formatted_created_at = (new DateTime($obj->created_at))->format('M d, Y \a\t H:i');
+                $obj->author_name = $obj->author_name ?? 'N/A';
+                $presentedPosts[] = $obj;
             }
+            $data['posts'] = $presentedPosts;
         }
 
         return $data;
+    }
+
+    /**
+     * Helper to convert a readonly entity into a mutable stdClass object.
+     * This preserves the property access syntax (->) for views.
+     */
+    private function toMutable(object $entity): object
+    {
+        // get_object_vars gets accessible properties. 
+        // Since Entity props are public readonly, this works perfectly.
+        return (object) get_object_vars($entity);
     }
 }
