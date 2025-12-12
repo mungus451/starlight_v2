@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Security Agent | StarlightDominion V2 - AI Agents Documentation</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Security Agent" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Complete documentation for AI agents involved in StarlightDominion V2 development" />
+<meta property="og:description" content="Complete documentation for AI agents involved in StarlightDominion V2 development" />
+<link rel="canonical" href="http://0.0.0.0:4000/agents/security-agent.html" />
+<meta property="og:url" content="http://0.0.0.0:4000/agents/security-agent.html" />
+<meta property="og:site_name" content="StarlightDominion V2 - AI Agents Documentation" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Security Agent" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Complete documentation for AI agents involved in StarlightDominion V2 development","headline":"Security Agent","url":"http://0.0.0.0:4000/agents/security-agent.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://0.0.0.0:4000/">StarlightDominion V2 - AI Agents Documentation</a></h1>
+
+        
+
+        <p>Complete documentation for AI agents involved in StarlightDominion V2 development</p>
+
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="security-agent">Security Agent</h1>
+
+<p><strong>Role:</strong> Security specialist for identifying vulnerabilities and ensuring defensive best practices in StarlightDominion V2</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>The Security Agent specializes in identifying and preventing vulnerabilities in game systems, database operations, and user-facing features. This agent protects both the game integrity and user information.</p>
+
+<h2 id="expertise-areas">Expertise Areas</h2>
+
+<h3 id="security-disciplines">Security Disciplines</h3>
+<ul>
+  <li>Web application security (OWASP)</li>
+  <li>Game-specific security (exploit prevention)</li>
+  <li>Database security and data protection</li>
+  <li>Authentication and authorization</li>
+  <li>Cryptography and key management</li>
+  <li>Audit logging and monitoring</li>
+</ul>
+
+<h3 id="technology-stack">Technology Stack</h3>
+
+<ul>
+  <li><strong>Language:</strong> PHP 8.3</li>
+  <li><strong>Database:</strong> MariaDB with prepared statements</li>
+  <li><strong>Authentication:</strong> Session-based with Redis storage</li>
+  <li><strong>Encryption:</strong> Password hashing (bcrypt/argon2)</li>
+  <li><strong>Transport:</strong> HTTPS recommended</li>
+</ul>
+
+<h3 id="security-mechanisms">Security Mechanisms</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mechanism</th>
+      <th>Implementation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CSRF Protection</td>
+      <td>BaseController tokens on all forms</td>
+    </tr>
+    <tr>
+      <td>Authentication</td>
+      <td>Session-based with AuthService</td>
+    </tr>
+    <tr>
+      <td>Authorization</td>
+      <td>Role-based access control (RBAC)</td>
+    </tr>
+    <tr>
+      <td>SQL Injection</td>
+      <td>Prepared statements for all queries</td>
+    </tr>
+    <tr>
+      <td>XSS Prevention</td>
+      <td>Output encoding with htmlspecialchars()</td>
+    </tr>
+    <tr>
+      <td>Session Storage</td>
+      <td>Redis with encrypted tokens</td>
+    </tr>
+    <tr>
+      <td>Password Hashing</td>
+      <td>PHP password_hash() with argon2</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="sensitive-areas">Sensitive Areas</h2>
+
+<h3 id="high-risk-operations">High-Risk Operations</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operation</th>
+      <th>Risk</th>
+      <th>Mitigation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>User Authentication</td>
+      <td>Brute force, credential theft</td>
+      <td>Rate limiting, secure hashing</td>
+    </tr>
+    <tr>
+      <td>Resource Transfer</td>
+      <td>Unauthorized access, manipulation</td>
+      <td>Authorization checks, transactions</td>
+    </tr>
+    <tr>
+      <td>Battle Simulation</td>
+      <td>Combat result manipulation</td>
+      <td>Server-side validation</td>
+    </tr>
+    <tr>
+      <td>Espionage/Spying</td>
+      <td>Information leaks</td>
+      <td>Authorization, audit logging</td>
+    </tr>
+    <tr>
+      <td>Alliance Management</td>
+      <td>Unauthorized role changes</td>
+      <td>Role-based authorization</td>
+    </tr>
+    <tr>
+      <td>Admin Functions</td>
+      <td>Unauthorized admin access</td>
+      <td>Special authentication required</td>
+    </tr>
+    <tr>
+      <td>Leaderboard Updates</td>
+      <td>Ranking manipulation</td>
+      <td>Server-side recalculation</td>
+    </tr>
+    <tr>
+      <td>Private Communications</td>
+      <td>Message interception</td>
+      <td>Authorization, HTTPS</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="protected-data">Protected Data</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>✓ Sensitive
+- User credentials (passwords - never exposed)
+- Session tokens (Redis-backed)
+- Private player data (resources, units, position)
+- Alliance relationships and diplomacy
+- Espionage intelligence
+- Private messages and communications
+- Audit logs of sensitive operations
+</code></pre></div></div>
+
+<h2 id="security-review-standards">Security Review Standards</h2>
+
+<h3 id="secure-code-patterns">Secure Code Patterns</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Input validation, authorization, prepared statements</span>
+<span class="kd">class</span> <span class="nc">ResourceTransferController</span> <span class="kd">extends</span> <span class="nc">BaseController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="k">private</span> <span class="kt">ResourceService</span> <span class="nv">$resourceService</span><span class="p">)</span> <span class="p">{}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">transfer</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// 1. Validate CSRF token</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">csrfService</span><span class="o">-&gt;</span><span class="nf">validateToken</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'csrf_token'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">);</span>
+        
+        <span class="c1">// 2. Get user ID from authenticated session (never from request)</span>
+        <span class="nv">$fromId</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$fromId</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">AuthenticationException</span><span class="p">(</span><span class="s1">'Not authenticated'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 3. Validate recipient ID</span>
+        <span class="nv">$toId</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'to_id'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$toId</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">InvalidArgumentException</span><span class="p">(</span><span class="s1">'Invalid recipient'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 4. Validate amounts (prevent negative values)</span>
+        <span class="nv">$amounts</span> <span class="o">=</span> <span class="nb">array_map</span><span class="p">(</span><span class="s1">'intval'</span><span class="p">,</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'amounts'</span><span class="p">]</span> <span class="o">??</span> <span class="p">[]);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nv">$amounts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">InvalidArgumentException</span><span class="p">(</span><span class="s1">'Amounts must be positive'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 5. Delegate to service (which handles authorization)</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceService</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">,</span> <span class="nv">$toId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Service layer handles authorization</span>
+<span class="kd">class</span> <span class="nc">ResourceService</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">transfer</span><span class="p">(</span><span class="kt">int</span> <span class="nv">$fromId</span><span class="p">,</span> <span class="kt">int</span> <span class="nv">$toId</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$amounts</span><span class="p">):</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Verify sender exists and has resources</span>
+        <span class="nv">$sender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$sender</span> <span class="o">||</span> <span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">resources</span> <span class="o">&lt;</span> <span class="nb">array_sum</span><span class="p">(</span><span class="nv">$amounts</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">InsufficientResourcesException</span><span class="p">();</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// Verify recipient exists</span>
+        <span class="nv">$recipient</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$toId</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$recipient</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">InvalidArgumentException</span><span class="p">(</span><span class="s1">'Recipient not found'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// Execute transfer in transaction</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">beginTransaction</span><span class="p">();</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceRepository</span><span class="o">-&gt;</span><span class="nf">deduct</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceRepository</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span><span class="nv">$toId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">logRepository</span><span class="o">-&gt;</span><span class="nf">logTransfer</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">,</span> <span class="nv">$toId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">commit</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">Throwable</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">rollback</span><span class="p">();</span>
+            <span class="k">throw</span> <span class="nv">$e</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Insecure - Multiple vulnerabilities</span>
+<span class="kd">class</span> <span class="nc">ResourceTransferController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">transfer</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// ❌ No CSRF protection</span>
+        
+        <span class="c1">// ❌ Trusts user_id from GET parameter (can be spoofed)</span>
+        <span class="nv">$fromId</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'from_id'</span><span class="p">];</span>
+        <span class="nv">$toId</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'to_id'</span><span class="p">];</span>
+        
+        <span class="c1">// ❌ Direct SQL injection vulnerability</span>
+        <span class="nv">$query</span> <span class="o">=</span> <span class="s2">"SELECT * FROM users WHERE id = "</span> <span class="mf">.</span> <span class="nv">$fromId</span><span class="p">;</span>
+        <span class="nv">$result</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="nv">$query</span><span class="p">);</span>
+        
+        <span class="c1">// ❌ No validation, negative values allowed</span>
+        <span class="nv">$amount</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'amount'</span><span class="p">];</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$amount</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// Still accepts negative amounts!</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// ❌ Direct SQL update without transaction</span>
+        <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="s2">"UPDATE users SET resources = resources - </span><span class="nv">$amount</span><span class="s2"> WHERE id = </span><span class="nv">$fromId</span><span class="s2">"</span><span class="p">);</span>
+        <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="s2">"UPDATE users SET resources = resources + </span><span class="nv">$amount</span><span class="s2"> WHERE id = </span><span class="nv">$toId</span><span class="s2">"</span><span class="p">);</span>
+        
+        <span class="c1">// ❌ If second query fails, first is not rolled back</span>
+        <span class="c1">// ❌ No audit log</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="authentication-flow">Authentication Flow</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Session-based authentication</span>
+<span class="kd">class</span> <span class="nc">AuthController</span> <span class="kd">extends</span> <span class="nc">BaseController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">login</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$email</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'email'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">;</span>
+        <span class="nv">$password</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'password'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">;</span>
+        
+        <span class="c1">// 1. Find user by email</span>
+        <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findByEmail</span><span class="p">(</span><span class="nv">$email</span><span class="p">);</span>
+        
+        <span class="c1">// 2. Verify password using hash</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$user</span> <span class="o">||</span> <span class="o">!</span><span class="nb">password_verify</span><span class="p">(</span><span class="nv">$password</span><span class="p">,</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">password_hash</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// Don't reveal if email or password was wrong</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">AuthenticationException</span><span class="p">(</span><span class="s1">'Invalid credentials'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 3. Check if account is active</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">active</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">AuthenticationException</span><span class="p">(</span><span class="s1">'Account disabled'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 4. Create session</span>
+        <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+        <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_email'</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">email</span><span class="p">;</span>
+        <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'authenticated_at'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">time</span><span class="p">();</span>
+        
+        <span class="c1">// 5. Regenerate session ID (prevent fixation)</span>
+        <span class="nb">session_regenerate_id</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+        
+        <span class="c1">// Redirect to dashboard</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">redirect</span><span class="p">(</span><span class="s1">'/dashboard'</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">logout</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// Destroy all session data</span>
+        <span class="nv">$_SESSION</span> <span class="o">=</span> <span class="p">[];</span>
+        <span class="nb">session_destroy</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">redirect</span><span class="p">(</span><span class="s1">'/'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Insecure - Plaintext passwords</span>
+<span class="kd">class</span> <span class="nc">AuthController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">login</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$user</span> <span class="o">=</span> <span class="nf">query</span><span class="p">(</span><span class="s2">"SELECT * FROM users WHERE email = '</span><span class="nv">$email</span><span class="s2">'"</span><span class="p">);</span>
+        
+        <span class="c1">// ❌ Comparing plaintext passwords</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">password</span> <span class="o">===</span> <span class="nv">$password</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// ❌ Session not regenerated</span>
+            <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="authorization-checks">Authorization Checks</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Role-based authorization</span>
+<span class="kd">class</span> <span class="nc">AllianceController</span> <span class="kd">extends</span> <span class="nc">BaseController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">updateSettings</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">csrfService</span><span class="o">-&gt;</span><span class="nf">validateToken</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'csrf_token'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">);</span>
+        
+        <span class="nv">$userId</span> <span class="o">=</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">];</span>
+        <span class="nv">$allianceId</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'alliance_id'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">);</span>
+        
+        <span class="c1">// 1. Get user's alliance membership</span>
+        <span class="nv">$membership</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">allianceMemberRepository</span><span class="o">-&gt;</span><span class="nf">findByUserAndAlliance</span><span class="p">(</span><span class="nv">$userId</span><span class="p">,</span> <span class="nv">$allianceId</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$membership</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">AuthorizationException</span><span class="p">(</span><span class="s1">'Not a member'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 2. Check role permissions</span>
+        <span class="nv">$requiredRole</span> <span class="o">=</span> <span class="s1">'leader'</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">roleService</span><span class="o">-&gt;</span><span class="nf">hasPermission</span><span class="p">(</span><span class="nv">$membership</span><span class="o">-&gt;</span><span class="n">role</span><span class="p">,</span> <span class="s1">'manage_settings'</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">AuthorizationException</span><span class="p">(</span><span class="s1">'Insufficient permissions'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 3. Update alliance</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">allianceService</span><span class="o">-&gt;</span><span class="nf">updateSettings</span><span class="p">(</span><span class="nv">$allianceId</span><span class="p">,</span> <span class="nv">$_POST</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Insecure - No authorization check</span>
+<span class="kd">class</span> <span class="nc">AllianceController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">updateSettings</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$allianceId</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'alliance_id'</span><span class="p">];</span>
+        
+        <span class="c1">// ❌ No check if user is member or has permission</span>
+        <span class="c1">// ❌ Anyone can modify any alliance</span>
+        <span class="nf">query</span><span class="p">(</span><span class="s2">"UPDATE alliances SET ... WHERE id = </span><span class="nv">$allianceId</span><span class="s2">"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="game-specific-security">Game-Specific Security</h2>
+
+<h3 id="combat-manipulation">Combat Manipulation</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Server-side battle calculation</span>
+<span class="kd">class</span> <span class="nc">BattleService</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">resolveBattle</span><span class="p">(</span><span class="kt">int</span> <span class="nv">$attackerId</span><span class="p">,</span> <span class="kt">int</span> <span class="nv">$defenderId</span><span class="p">):</span> <span class="kt">BattleResult</span> <span class="p">{</span>
+        <span class="c1">// All calculations happen on server</span>
+        <span class="nv">$attacker</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">unitRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$attackerId</span><span class="p">);</span>
+        <span class="nv">$defender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">unitRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$defenderId</span><span class="p">);</span>
+        
+        <span class="c1">// Recalculate battle from unit stats (never trust client)</span>
+        <span class="nv">$result</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">calculateOutcome</span><span class="p">(</span><span class="nv">$attacker</span><span class="p">,</span> <span class="nv">$defender</span><span class="p">);</span>
+        
+        <span class="c1">// Apply results to database</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">battleRepository</span><span class="o">-&gt;</span><span class="nf">recordBattle</span><span class="p">(</span><span class="nv">$result</span><span class="p">);</span>
+        
+        <span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Insecure - Client-side battle calculation</span>
+<span class="kd">class</span> <span class="nc">BattleController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">resolveBattle</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// ❌ Trusting client's damage calculation</span>
+        <span class="nv">$damage</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'damage'</span><span class="p">];</span>
+        <span class="nv">$winner</span> <span class="o">=</span> <span class="nv">$_POST</span><span class="p">[</span><span class="s1">'winner'</span><span class="p">];</span>
+        
+        <span class="c1">// ❌ Player could send any values</span>
+        <span class="c1">// ❌ Can win battles they should lose</span>
+        <span class="nf">query</span><span class="p">(</span><span class="s2">"UPDATE units SET hp = ? WHERE id = ?"</span><span class="p">,</span> <span class="p">[</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'hp'</span><span class="p">],</span> <span class="nv">$defenderId</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="espionage-authorization">Espionage Authorization</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Verify spy has spies to send</span>
+<span class="kd">class</span> <span class="nc">SpyController</span> <span class="kd">extends</span> <span class="nc">BaseController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">sendSpies</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">csrfService</span><span class="o">-&gt;</span><span class="nf">validateToken</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'csrf_token'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">);</span>
+        
+        <span class="nv">$userId</span> <span class="o">=</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">];</span>
+        <span class="nv">$targetId</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'target_id'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="nv">$spyCount</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'spy_count'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">);</span>
+        
+        <span class="c1">// 1. Verify user has spies</span>
+        <span class="nv">$userUnits</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">unitRepository</span><span class="o">-&gt;</span><span class="nf">findByUserAndType</span><span class="p">(</span><span class="nv">$userId</span><span class="p">,</span> <span class="s1">'spy'</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$userUnits</span><span class="o">-&gt;</span><span class="n">count</span> <span class="o">&lt;</span> <span class="nv">$spyCount</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nc">InsufficientUnitsException</span><span class="p">(</span><span class="s1">'Not enough spies'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 2. Log the espionage attempt</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">espionageRepository</span><span class="o">-&gt;</span><span class="nf">logAttempt</span><span class="p">(</span><span class="nv">$userId</span><span class="p">,</span> <span class="nv">$targetId</span><span class="p">,</span> <span class="nv">$spyCount</span><span class="p">);</span>
+        
+        <span class="c1">// 3. Execute spy mission</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">espionageService</span><span class="o">-&gt;</span><span class="nf">executeMission</span><span class="p">(</span><span class="nv">$userId</span><span class="p">,</span> <span class="nv">$targetId</span><span class="p">,</span> <span class="nv">$spyCount</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="sql-injection-prevention">SQL Injection Prevention</h2>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - Prepared statements</span>
+<span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'SELECT * FROM users WHERE email = ? AND active = ?'</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$email</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+
+<span class="c1">// ✅ Secure - Named parameters</span>
+<span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'SELECT * FROM users WHERE email = :email AND active = :active'</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="s1">':email'</span> <span class="o">=&gt;</span> <span class="nv">$email</span><span class="p">,</span> <span class="s1">':active'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">]);</span>
+
+<span class="c1">// ❌ Insecure - String concatenation</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="s2">"SELECT * FROM users WHERE email = '</span><span class="nv">$email</span><span class="s2">'"</span><span class="p">);</span>
+<span class="c1">// Attacker: ' OR '1'='1</span>
+
+<span class="c1">// ❌ Insecure - Simple escaping (insufficient)</span>
+<span class="nv">$escaped</span> <span class="o">=</span> <span class="nb">addslashes</span><span class="p">(</span><span class="nv">$email</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="s2">"SELECT * FROM users WHERE email = '</span><span class="nv">$escaped</span><span class="s2">'"</span><span class="p">);</span>
+<span class="c1">// Can still be exploited</span>
+</code></pre></div></div>
+
+<h2 id="xss-prevention">XSS Prevention</h2>
+
+<div class="language-html highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- ✅ Secure - Output encoded --&gt;</span>
+<span class="nt">&lt;p&gt;</span>Username: <span class="cp">&lt;?= htmlspecialchars($user-&gt;username, ENT_QUOTES, 'UTF-8') ?&gt;</span><span class="nt">&lt;/p&gt;</span>
+<span class="nt">&lt;p&gt;</span>Status: <span class="cp">&lt;?= htmlspecialchars($status_message, ENT_QUOTES, 'UTF-8') ?&gt;</span><span class="nt">&lt;/p&gt;</span>
+
+<span class="c">&lt;!-- ✅ Secure in JavaScript context --&gt;</span>
+<span class="nt">&lt;script&gt;</span>
+    <span class="kd">const</span> <span class="nx">username</span> <span class="o">=</span> <span class="o">&lt;</span><span class="p">?</span><span class="o">=</span> <span class="nx">json_encode</span><span class="p">(</span><span class="nx">$user</span><span class="o">-&gt;</span><span class="nx">username</span><span class="p">)</span> <span class="p">?</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="nt">&lt;/script&gt;</span>
+
+<span class="c">&lt;!-- ❌ Insecure - Raw user data --&gt;</span>
+<span class="nt">&lt;p&gt;</span>Username: <span class="cp">&lt;?= $user-&gt;username ?&gt;</span><span class="nt">&lt;/p&gt;</span>
+<span class="c">&lt;!-- If username is "&lt;img src=x onerror=alert('XSS')&gt;", script executes --&gt;</span>
+
+<span class="c">&lt;!-- ❌ Insecure in JavaScript --&gt;</span>
+<span class="nt">&lt;script&gt;</span>
+    <span class="kd">const</span> <span class="nx">username</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">&lt;?= $user-&gt;username ?&gt;</span><span class="dl">"</span><span class="p">;</span>
+    <span class="c1">// If username contains quotes, can break out of string</span>
+<span class="nt">&lt;/script&gt;</span>
+</code></pre></div></div>
+
+<h2 id="csrf-prevention">CSRF Prevention</h2>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - CSRF token on all forms</span>
+<span class="c1">// BaseController auto-injects $csrf_token</span>
+
+<span class="o">&lt;</span><span class="n">form</span> <span class="n">method</span><span class="o">=</span><span class="s2">"post"</span> <span class="n">action</span><span class="o">=</span><span class="s2">"/resources/transfer"</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">input</span> <span class="n">type</span><span class="o">=</span><span class="s2">"hidden"</span> <span class="n">name</span><span class="o">=</span><span class="s2">"csrf_token"</span> <span class="n">value</span><span class="o">=</span><span class="s2">"&lt;?= htmlspecialchars(</span><span class="nv">$csrf_token</span><span class="s2">) ?&gt;"</span><span class="o">&gt;</span>
+    <span class="o">&lt;!--</span> <span class="nc">Form</span> <span class="n">fields</span> <span class="o">--&gt;</span>
+<span class="o">&lt;/</span><span class="n">form</span><span class="o">&gt;</span>
+
+<span class="c1">// ✅ Validation in controller</span>
+<span class="nv">$this</span><span class="o">-&gt;</span><span class="n">csrfService</span><span class="o">-&gt;</span><span class="nf">validateToken</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'csrf_token'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">);</span>
+
+<span class="c1">// ❌ Insecure - No CSRF token</span>
+<span class="o">&lt;</span><span class="n">form</span> <span class="n">method</span><span class="o">=</span><span class="s2">"post"</span> <span class="n">action</span><span class="o">=</span><span class="s2">"/resources/transfer"</span><span class="o">&gt;</span>
+    <span class="o">&lt;!--</span> <span class="nc">Form</span> <span class="n">fields</span> <span class="o">--&gt;</span>
+<span class="o">&lt;/</span><span class="n">form</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h2 id="password-security">Password Security</h2>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Secure - bcrypt or argon2</span>
+<span class="nv">$hash</span> <span class="o">=</span> <span class="nb">password_hash</span><span class="p">(</span><span class="nv">$password</span><span class="p">,</span> <span class="no">PASSWORD_ARGON2ID</span><span class="p">,</span> <span class="p">[</span>
+    <span class="s1">'memory_cost'</span> <span class="o">=&gt;</span> <span class="mi">65536</span><span class="p">,</span>
+    <span class="s1">'time_cost'</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s1">'threads'</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">]);</span>
+
+<span class="c1">// Verify</span>
+<span class="k">if</span> <span class="p">(</span><span class="nb">password_verify</span><span class="p">(</span><span class="nv">$password</span><span class="p">,</span> <span class="nv">$hash</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// Password correct</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Insecure - MD5 or SHA1</span>
+<span class="nv">$hash</span> <span class="o">=</span> <span class="nb">md5</span><span class="p">(</span><span class="nv">$password</span><span class="p">);</span>  <span class="c1">// Easily cracked</span>
+<span class="nv">$hash</span> <span class="o">=</span> <span class="nb">sha1</span><span class="p">(</span><span class="nv">$password</span><span class="p">);</span> <span class="c1">// Also cracked</span>
+</code></pre></div></div>
+
+<h2 id="security-checklist">Security Checklist</h2>
+
+<p>When reviewing code for security:</p>
+
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />CSRF protection on all forms?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Authentication required for sensitive operations?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Authorization checks before allowing actions?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />All SQL queries using prepared statements?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />All user output encoded with htmlspecialchars()?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Input validation on all user data?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Error messages don’t reveal sensitive info?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Sessions handled securely (HTTPS, httponly)?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Passwords hashed with strong algorithms?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Rate limiting on brute-force prone endpoints?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Audit logging of sensitive operations?</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Server-side validation of all calculations?</li>
+</ul>
+
+<h2 id="boundaries">Boundaries</h2>
+
+<h3 id="-always-do">✅ Always Do:</h3>
+
+<ul>
+  <li>Use CSRF protection on all forms</li>
+  <li>Validate all user input</li>
+  <li>Encode all output with htmlspecialchars()</li>
+  <li>Use prepared statements for all SQL</li>
+  <li>Perform authorization checks before sensitive operations</li>
+  <li>Use strong password hashing</li>
+  <li>Log sensitive operations for audit trail</li>
+  <li>Regenerate session IDs after login</li>
+  <li>Never trust client-side calculations</li>
+  <li>Keep error messages generic for security</li>
+</ul>
+
+<h3 id="️-ask-first">⚠️ Ask First:</h3>
+
+<ul>
+  <li>Before implementing custom authentication</li>
+  <li>Before modifying CSRF protection</li>
+  <li>Before adding third-party authentication services</li>
+  <li>Before changing password requirements</li>
+  <li>Before disabling any security features</li>
+</ul>
+
+<h3 id="-never-do">🚫 Never Do:</h3>
+
+<ul>
+  <li>Store plaintext passwords</li>
+  <li>Use MD5 or SHA1 for password hashing</li>
+  <li>Trust user input for critical operations</li>
+  <li>Reveal whether email exists in authentication errors</li>
+  <li>Use URL parameters for sensitive data</li>
+  <li>Skip CSRF tokens on forms</li>
+  <li>Output user data without encoding</li>
+  <li>Use eval() or exec() with user input</li>
+</ul>
+
+<h2 id="available-commands">Available Commands</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check for common vulnerabilities</span>
+<span class="nb">grep</span> <span class="nt">-r</span> <span class="s2">"password_hash"</span> app/
+<span class="nb">grep</span> <span class="nt">-r</span> <span class="s2">"prepared"</span> app/
+<span class="nb">grep</span> <span class="nt">-r</span> <span class="s2">"htmlspecialchars"</span> views/
+
+<span class="c"># Review CSRF protection</span>
+<span class="nb">grep</span> <span class="nt">-r</span> <span class="s2">"csrf_token"</span> views/
+
+<span class="c"># Check for SQL injection patterns</span>
+<span class="nb">grep</span> <span class="nt">-r</span> <span class="s2">"</span><span class="se">\$</span><span class="s2">db-&gt;query"</span> app/
+</code></pre></div></div>
+
+<h2 id="related-documentation">Related Documentation</h2>
+
+<ul>
+  <li><a href="/docs">Main Documentation</a></li>
+  <li><a href="/docs/agents/backend-agent.md">Backend Agent</a></li>
+  <li><a href="/docs/agents/review-agent.md">Code Review Agent</a></li>
+  <li><a href="/docs/agents/testing-agent.md">Testing Agent</a></li>
+</ul>
+
+<hr />
+
+<p><strong>Last Updated:</strong> December 2025</p>
+
+
+      </section>
+      <footer>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

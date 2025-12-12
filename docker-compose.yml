@@ -60,6 +60,18 @@ services:
     networks:
       - starlight_network
 
+  docs:
+    image: jekyll/jekyll:4.2.2
+    container_name: starlight_docs
+    ports:
+      - "${DOCKER_DOCS_PORT:-4000}:4000"
+    volumes:
+      - ./docs:/srv/jekyll
+      - jekyll_bundle:/usr/local/bundle
+    command: sh -c "bundle install && bundle exec jekyll serve --force_polling --livereload --host 0.0.0.0"
+    networks:
+      - starlight_network
+
 networks:
   starlight_network:
     driver: bridge
@@ -67,3 +79,4 @@ networks:
 volumes:
   db_data:
   redis_data:
+  jekyll_bundle:

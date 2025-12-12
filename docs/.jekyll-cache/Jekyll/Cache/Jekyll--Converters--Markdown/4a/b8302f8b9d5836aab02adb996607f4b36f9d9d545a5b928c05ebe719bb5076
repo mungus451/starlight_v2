@@ -1,0 +1,491 @@
+I"z�<h1 id="testing-agent">Testing Agent</h1>
+
+<p><strong>Role:</strong> Quality assurance specialist focused on testing and test coverage for StarlightDominion V2</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>The Testing Agent specializes in comprehensive testing, test coverage, and preventing bugs. This agent focuses on reliability and preventing regressions through systematic testing strategies.</p>
+
+<h2 id="expertise-areas">Expertise Areas</h2>
+
+<h3 id="testing-disciplines">Testing Disciplines</h3>
+<ul>
+  <li>Unit testing for individual functions</li>
+  <li>Integration testing for system interactions</li>
+  <li>Game mechanics validation through simulation</li>
+  <li>Architecture compliance testing</li>
+  <li>Performance and edge case testing</li>
+  <li>Regression prevention</li>
+</ul>
+
+<h3 id="technology-stack">Technology Stack</h3>
+
+<ul>
+  <li><strong>Test Framework:</strong> PHPUnit</li>
+  <li><strong>Language:</strong> PHP 8.3</li>
+  <li><strong>Custom Test Runners:</strong> <code class="language-plaintext highlighter-rouge">/tests/</code> directory</li>
+  <li><strong>Test Types:</strong> Unit, Integration, Simulation, Architecture</li>
+</ul>
+
+<h3 id="test-files">Test Files</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">BattleSimulationTest.php</code></td>
+      <td>Battle mechanics validation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">GameLoopSimulationTest.php</code></td>
+      <td>Turn processing and economy</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">AllianceStructureBonusTest.php</code></td>
+      <td>Alliance building bonuses</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">verify_mvc_compliance.php</code></td>
+      <td>Architecture validation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">StrictArchitectureAudit.php</code></td>
+      <td>MVC pattern enforcement</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mvc_lint.php</code></td>
+      <td>Code structure lint</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">verify_di_resolution.php</code></td>
+      <td>Dependency injection testing</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">verify_refactor.php</code></td>
+      <td>Refactoring validation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">VerifySessionDecoupling.php</code></td>
+      <td>Session independence checks</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="testing-standards">Testing Standards</h2>
+
+<h3 id="unit-test-structure">Unit Test Structure</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good test - Comprehensive, isolated, clear assertions</span>
+<span class="kd">class</span> <span class="nc">ResourceTransferTest</span> <span class="kd">extends</span> <span class="nc">TestCase</span> <span class="p">{</span>
+    <span class="k">private</span> <span class="kt">ResourceService</span> <span class="nv">$service</span><span class="p">;</span>
+    <span class="k">private</span> <span class="kt">ResourceRepository</span> <span class="nv">$repository</span><span class="p">;</span>
+    <span class="k">private</span> <span class="kt">UserRepository</span> <span class="nv">$userRepository</span><span class="p">;</span>
+    <span class="k">private</span> <span class="kt">PDO</span> <span class="nv">$db</span><span class="p">;</span>
+    
+    <span class="k">protected</span> <span class="k">function</span> <span class="n">setUp</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Set up test database connection</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createTestDatabase</span><span class="p">();</span>
+        
+        <span class="c1">// Create repositories</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">repository</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ResourceRepository</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">UserRepository</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">);</span>
+        
+        <span class="c1">// Create service with mocked/real dependencies</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ResourceService</span><span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">,</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="p">,</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">repository</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">protected</span> <span class="k">function</span> <span class="n">tearDown</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Clean up test database</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">dropTestDatabase</span><span class="p">();</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferResourcesSuccessfully</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Arrange</span>
+        <span class="nv">$sender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Sender'</span><span class="p">,</span> <span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">1000</span><span class="p">]);</span>
+        <span class="nv">$recipient</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Recipient'</span><span class="p">,</span> <span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">]);</span>
+        
+        <span class="c1">// Act</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="nv">$recipient</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+        
+        <span class="c1">// Assert</span>
+        <span class="nv">$updatedSender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+        <span class="nv">$updatedRecipient</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$recipient</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+        
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">900</span><span class="p">,</span> <span class="nv">$updatedSender</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="nv">$updatedRecipient</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferFailsWithInsufficientResources</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Arrange</span>
+        <span class="nv">$sender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Sender'</span><span class="p">,</span> <span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">50</span><span class="p">]);</span>
+        <span class="nv">$recipient</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Recipient'</span><span class="p">,</span> <span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">]);</span>
+        
+        <span class="c1">// Act &amp; Assert</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">expectException</span><span class="p">(</span><span class="nc">InsufficientResourcesException</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="nv">$recipient</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+        
+        <span class="c1">// Verify transaction rolled back</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$recipient</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferToSelfIsNoop</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Arrange</span>
+        <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'User'</span><span class="p">,</span> <span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">1000</span><span class="p">]);</span>
+        
+        <span class="c1">// Act</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+        
+        <span class="c1">// Assert (no change)</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferValidatesAmounts</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Arrange</span>
+        <span class="nv">$sender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">1000</span><span class="p">]);</span>
+        <span class="nv">$recipient</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">([</span><span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">]);</span>
+        
+        <span class="c1">// Act &amp; Assert</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">expectException</span><span class="p">(</span><span class="nc">InvalidArgumentException</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="nv">$recipient</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">);</span> <span class="c1">// Negative</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Poor test - Unclear, untestable, missing cases</span>
+<span class="kd">class</span> <span class="nc">ResourceTest</span> <span class="kd">extends</span> <span class="nc">TestCase</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testResource</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="nv">$resource</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Resource</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertNotNull</span><span class="p">(</span><span class="nv">$resource</span><span class="p">);</span>  <span class="c1">// What are we testing?</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransfer</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// No setup, unclear what's being tested</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertTrue</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>  <span class="c1">// This test is meaningless</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="arrange-act-assert-pattern">Arrange-Act-Assert Pattern</h3>
+
+<p>Every test should follow this structure:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">function</span> <span class="n">testSomeFeature</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+    <span class="c1">// 1. ARRANGE - Set up test data and state</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createUser</span><span class="p">([</span><span class="s1">'name'</span> <span class="o">=&gt;</span> <span class="s1">'Test'</span><span class="p">,</span> <span class="s1">'level'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">]);</span>
+    <span class="nv">$structure</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createStructure</span><span class="p">([</span><span class="s1">'type'</span> <span class="o">=&gt;</span> <span class="s1">'factory'</span><span class="p">,</span> <span class="s1">'level'</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">]);</span>
+    
+    <span class="c1">// 2. ACT - Execute the code being tested</span>
+    <span class="nv">$result</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">service</span><span class="o">-&gt;</span><span class="nf">buildStructure</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="nv">$structure</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+    
+    <span class="c1">// 3. ASSERT - Verify the results</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertInstanceOf</span><span class="p">(</span><span class="nc">BuildingResult</span><span class="o">::</span><span class="n">class</span><span class="p">,</span> <span class="nv">$result</span><span class="p">);</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nv">$result</span><span class="o">-&gt;</span><span class="n">experience_gained</span><span class="p">);</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertTrue</span><span class="p">(</span><span class="nv">$result</span><span class="o">-&gt;</span><span class="n">success</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="test-coverage-areas">Test Coverage Areas</h2>
+
+<h3 id="service-layer-tests">Service Layer Tests</h3>
+
+<p>Test all business logic:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Test successful operations</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceSuccessfully</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test validation and constraints</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceValidatesAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceEnforcesMaximum</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test error conditions</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceFailsWithInvalidUser</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceRollsBackOnDatabaseError</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test transaction safety</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceTransactionRollsBack</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test edge cases</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceWithZeroAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateResourceWithMaxValue</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="repository-layer-tests">Repository Layer Tests</h3>
+
+<p>Test data access patterns:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Test CRUD operations</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testFindByIdReturnsEntity</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testFindByIdReturnsNullWhenNotFound</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateInsertEntity</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testUpdateModifiesEntity</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testDeleteRemovesEntity</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test queries</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testFindByUserIdReturnsAllUserResources</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testFindActiveReturnsOnlyActiveRecords</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+
+<span class="c1">// Test entity integrity</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testCreateReturnsEntityWithId</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">testEntityIsImmutable</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="game-mechanics-tests">Game Mechanics Tests</h3>
+
+<p>Test complex mechanics:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">BattleSimulationTest</span> <span class="kd">extends</span> <span class="nc">TestCase</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testAttackerWinsWithSuperiorForce</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="c1">// Arrange</span>
+        <span class="nv">$attacker</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createUnits</span><span class="p">([</span><span class="s1">'fighter'</span> <span class="o">=&gt;</span> <span class="mi">100</span><span class="p">]);</span>
+        <span class="nv">$defender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createUnits</span><span class="p">([</span><span class="s1">'fighter'</span> <span class="o">=&gt;</span> <span class="mi">50</span><span class="p">]);</span>
+        
+        <span class="c1">// Act</span>
+        <span class="nv">$result</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">battleService</span><span class="o">-&gt;</span><span class="nf">resolveBattle</span><span class="p">(</span><span class="nv">$attacker</span><span class="p">,</span> <span class="nv">$defender</span><span class="p">);</span>
+        
+        <span class="c1">// Assert</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertTrue</span><span class="p">(</span><span class="nv">$result</span><span class="o">-&gt;</span><span class="n">attacker_won</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertEquals</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nv">$result</span><span class="o">-&gt;</span><span class="n">defender_survivors</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testDefenderWinsWithSuperiorDefense</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testBattleCalculatesCasualtiesCorrectly</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testBattleLogsResults</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="architecture-compliance-tests">Architecture Compliance Tests</h3>
+
+<p>Validate MVC patterns:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run architecture validation</span>
+php tests/verify_mvc_compliance.php
+php tests/StrictArchitectureAudit.php
+php tests/mvc_lint.php
+
+<span class="c"># These checks verify:</span>
+<span class="c"># - Controllers only contain HTTP logic</span>
+<span class="c"># - Services contain business logic</span>
+<span class="c"># - Repositories handle only database queries</span>
+<span class="c"># - No circular dependencies</span>
+<span class="c"># - Proper dependency injection</span>
+</code></pre></div></div>
+
+<h2 id="edge-cases-and-boundary-testing">Edge Cases and Boundary Testing</h2>
+
+<p>Always test edge cases:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">TransferTest</span> <span class="kd">extends</span> <span class="nc">TestCase</span> <span class="p">{</span>
+    <span class="c1">// Boundary tests</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferMinimumAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferMaximumAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithExactBalance</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    
+    <span class="c1">// Null/empty tests</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithNullRecipient</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithEmptyAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    
+    <span class="c1">// Concurrent operation tests</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransfersConcurrentlyToSameUser</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransfersFromSameUserConcurrently</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    
+    <span class="c1">// Data type tests</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithFloatAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithNegativeAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">testTransferWithNonNumericAmount</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span> <span class="mf">...</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="performance-testing">Performance Testing</h2>
+
+<p>Test for performance regressions:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">function</span> <span class="n">testProductionCalculationPerformance</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+    <span class="c1">// Arrange</span>
+    <span class="nv">$users</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createUsers</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+    
+    <span class="c1">// Act &amp; Assert</span>
+    <span class="nv">$start</span> <span class="o">=</span> <span class="nb">microtime</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">economyService</span><span class="o">-&gt;</span><span class="nf">processTurn</span><span class="p">();</span>
+    <span class="nv">$duration</span> <span class="o">=</span> <span class="nb">microtime</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span> <span class="o">-</span> <span class="nv">$start</span><span class="p">;</span>
+    
+    <span class="c1">// Should complete in reasonable time</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">assertLessThan</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="nv">$duration</span><span class="p">,</span> <span class="s1">'Turn processing too slow'</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="test-data-fixtures">Test Data Fixtures</h2>
+
+<p>Create consistent test data:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">TestFixtures</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="n">createUser</span><span class="p">(</span><span class="kt">array</span> <span class="nv">$overrides</span> <span class="o">=</span> <span class="p">[]):</span> <span class="kt">User</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nc">User</span><span class="p">(</span>
+            <span class="n">id</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">email</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'email'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">'test@example.com'</span><span class="p">,</span>
+            <span class="n">username</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'username'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">'testuser'</span><span class="p">,</span>
+            <span class="n">resources</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'resources'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'level'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">alliance_id</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'alliance_id'</span><span class="p">]</span> <span class="o">??</span> <span class="kc">null</span><span class="p">,</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="n">createStructure</span><span class="p">(</span><span class="kt">array</span> <span class="nv">$overrides</span> <span class="o">=</span> <span class="p">[]):</span> <span class="kt">Structure</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nc">Structure</span><span class="p">(</span>
+            <span class="n">id</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">user_id</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">type</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">'factory'</span><span class="p">,</span>
+            <span class="n">level</span><span class="o">:</span> <span class="nv">$overrides</span><span class="p">[</span><span class="s1">'level'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Usage</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nc">TestFixtures</span><span class="o">::</span><span class="nf">createUser</span><span class="p">([</span><span class="s1">'level'</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">]);</span>
+<span class="nv">$structure</span> <span class="o">=</span> <span class="nc">TestFixtures</span><span class="o">::</span><span class="nf">createStructure</span><span class="p">([</span><span class="s1">'user_id'</span> <span class="o">=&gt;</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">]);</span>
+</code></pre></div></div>
+
+<h2 id="regression-testing">Regression Testing</h2>
+
+<p>Prevent re-introduction of fixed bugs:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">function</span> <span class="n">testBugFixedIssue123</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+    <span class="c1">// This test captures a bug that was previously fixed</span>
+    <span class="c1">// It prevents the bug from being reintroduced</span>
+    
+    <span class="c1">// Bug: Resources were negative after transfer</span>
+    <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">createUser</span><span class="p">([</span><span class="s1">'resources'</span> <span class="o">=&gt;</span> <span class="mi">100</span><span class="p">]);</span>
+    
+    <span class="c1">// Try to transfer more than available</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">expectException</span><span class="p">(</span><span class="nc">InsufficientResourcesException</span><span class="o">::</span><span class="n">class</span><span class="p">);</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceService</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">150</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="continuous-integration">Continuous Integration</h2>
+
+<p>Tests should run automatically:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run all tests</span>
+php tests/verify_mvc_compliance.php
+php tests/StrictArchitectureAudit.php
+php tests/mvc_lint.php
+
+<span class="c"># Run specific test class</span>
+php tests/BattleSimulationTest.php
+
+<span class="c"># Run with coverage reporting</span>
+phpunit <span class="nt">--coverage-html</span> coverage/ tests/
+</code></pre></div></div>
+
+<h2 id="test-organization">Test Organization</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tests/
+├── BattleSimulationTest.php      # Battle mechanics
+├── GameLoopSimulationTest.php    # Economy and turns
+├── AllianceStructureBonusTest.php # Alliance features
+├── StrictArchitectureAudit.php   # MVC compliance
+├── verify_mvc_compliance.php     # Architecture validation
+├── mvc_lint.php                  # Code lint checks
+├── verify_di_resolution.php      # DI container validation
+├── verify_refactor.php           # Refactoring validation
+├── VerifySessionDecoupling.php   # Session handling
+└── README_TESTS.md               # Test documentation
+</code></pre></div></div>
+
+<h2 id="test-checklist">Test Checklist</h2>
+
+<p>When writing tests:</p>
+
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test has descriptive name describing what’s being tested</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test uses Arrange-Act-Assert pattern</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test is isolated and doesn’t depend on other tests</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test cleans up after itself (tearDown)</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test has both success and failure cases</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test covers edge cases and boundaries</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test verifies error conditions with exceptions</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test uses meaningful assertions with messages</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test doesn’t test implementation details, only behavior</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Test is fast (&lt; 1 second typically)</li>
+</ul>
+
+<h2 id="boundaries">Boundaries</h2>
+
+<h3 id="-always-do">✅ Always Do:</h3>
+
+<ul>
+  <li>Write tests for new features before implementing (TDD)</li>
+  <li>Test both success and failure paths</li>
+  <li>Test edge cases and boundaries</li>
+  <li>Use clear, descriptive test names</li>
+  <li>Follow Arrange-Act-Assert pattern</li>
+  <li>Test business logic in Services</li>
+  <li>Test data access in Repositories</li>
+  <li>Verify transaction safety</li>
+  <li>Run architecture compliance tests</li>
+  <li>Document why non-obvious tests exist</li>
+</ul>
+
+<h3 id="️-ask-first">⚠️ Ask First:</h3>
+
+<ul>
+  <li>Before removing test coverage</li>
+  <li>Before skipping tests to make deadline</li>
+  <li>Before testing implementation details</li>
+  <li>Before disabling test failures</li>
+</ul>
+
+<h3 id="-never-do">🚫 Never Do:</h3>
+
+<ul>
+  <li>Test implementation details instead of behavior</li>
+  <li>Skip tests because they’re hard to write</li>
+  <li>Mix multiple concerns in one test</li>
+  <li>Write tests without assertions</li>
+  <li>Rely solely on manual testing</li>
+  <li>Test the test framework instead of code</li>
+</ul>
+
+<h2 id="available-commands">Available Commands</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Run MVC compliance test</span>
+php tests/verify_mvc_compliance.php
+
+<span class="c"># Run architecture audit</span>
+php tests/StrictArchitectureAudit.php
+
+<span class="c"># Run lint check</span>
+php tests/mvc_lint.php
+
+<span class="c"># Run battle simulation</span>
+php tests/BattleSimulationTest.php
+
+<span class="c"># Run game loop simulation</span>
+php tests/GameLoopSimulationTest.php
+
+<span class="c"># Run alliance structure bonus test</span>
+php tests/AllianceStructureBonusTest.php
+</code></pre></div></div>
+
+<h2 id="related-documentation">Related Documentation</h2>
+
+<ul>
+  <li><a href="/docs">Main Documentation</a></li>
+  <li><a href="/docs/agents/backend-agent.md">Backend Agent</a></li>
+  <li><a href="/docs/agents/security-agent.md">Security Agent</a></li>
+  <li><a href="/docs/agents/review-agent.md">Code Review Agent</a></li>
+</ul>
+
+<hr />
+
+<p><strong>Last Updated:</strong> December 2025</p>
+:ET

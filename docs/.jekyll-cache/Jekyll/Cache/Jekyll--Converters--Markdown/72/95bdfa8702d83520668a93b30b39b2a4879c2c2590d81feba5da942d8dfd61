@@ -1,0 +1,370 @@
+I"#r<h1 id="database-architect">Database Architect</h1>
+
+<p><strong>Role:</strong> Database specialist for schema design, migrations, and data model architecture in StarlightDominion V2</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>The Database Architect specializes in relational database design, MySQL/MariaDB optimization, and safe migration patterns. This agent focuses on scalability, integrity, and safe evolution of the database schema.</p>
+
+<h2 id="expertise-areas">Expertise Areas</h2>
+
+<h3 id="database-design">Database Design</h3>
+<ul>
+  <li>Relational schema design and normalization</li>
+  <li>Performance optimization and indexing</li>
+  <li>Data integrity and constraints</li>
+  <li>Query optimization</li>
+</ul>
+
+<h3 id="technology-stack">Technology Stack</h3>
+
+<ul>
+  <li><strong>Database System:</strong> MariaDB (MySQL 5.7+ compatible)</li>
+  <li><strong>Connection:</strong> PDO with prepared statements</li>
+  <li><strong>Transactions:</strong> ACID compliance</li>
+  <li><strong>Sessions:</strong> Redis-backed (not database)</li>
+  <li><strong>Migrations:</strong> CLI scripts with version control</li>
+</ul>
+
+<h3 id="key-files">Key Files</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/database.sql</code></td>
+      <td>Current production schema (V2)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/schema.sql</code></td>
+      <td>Schema reference</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/database_v1.sql</code></td>
+      <td>Legacy V1 schema (reference only)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/migrations/</code></td>
+      <td>Migration scripts numbered sequentially</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Core/Database.php</code></td>
+      <td>Database singleton connection</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="current-schema">Current Schema</h2>
+
+<h3 id="core-tables">Core Tables</h3>
+
+<p>The application maintains these primary tables:</p>
+
+<ul>
+  <li><strong>users</strong> - Player accounts and game state (denormalized)</li>
+  <li><strong>resources</strong> - Resource balances per user</li>
+  <li><strong>units</strong> - Military units (ships, troops)</li>
+  <li><strong>structures</strong> - Buildings and production facilities</li>
+  <li><strong>alliances</strong> - Player groups and teams</li>
+  <li><strong>battles</strong> - Combat records and outcomes</li>
+  <li><strong>diplomacy</strong> - Relationships between players</li>
+  <li><strong>sessions</strong> - Session data (Redis-backed)</li>
+  <li><strong>rate_limits</strong> - Request rate limiting</li>
+  <li><strong>notifications</strong> - Player notifications</li>
+  <li><strong>npc_factions</strong> - NPC faction data</li>
+</ul>
+
+<h2 id="database-design-standards">Database Design Standards</h2>
+
+<h3 id="schema-principles">Schema Principles</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good Schema - Proper normalization and constraints</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">users</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="nb">INT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">email</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">UNIQUE</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">username</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="k">UNIQUE</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">password_hash</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="n">alliance_id</span> <span class="nb">INT</span><span class="p">,</span>
+    <span class="n">created_at</span> <span class="nb">TIMESTAMP</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">,</span>
+    <span class="n">updated_at</span> <span class="nb">TIMESTAMP</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">ON</span> <span class="k">UPDATE</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">,</span>
+    <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">alliance_id</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="n">alliances</span><span class="p">(</span><span class="n">id</span><span class="p">),</span>
+    <span class="k">INDEX</span> <span class="n">idx_alliance_id</span> <span class="p">(</span><span class="n">alliance_id</span><span class="p">),</span>
+    <span class="k">INDEX</span> <span class="n">idx_email</span> <span class="p">(</span><span class="n">email</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8mb4</span><span class="p">;</span>
+
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">resources</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="nb">INT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">user_id</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">UNIQUE</span><span class="p">,</span>
+    <span class="n">metal</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="mi">0</span> <span class="k">CHECK</span> <span class="p">(</span><span class="n">metal</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">crystal</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="mi">0</span> <span class="k">CHECK</span> <span class="p">(</span><span class="n">crystal</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">deuterium</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="mi">0</span> <span class="k">CHECK</span> <span class="p">(</span><span class="n">deuterium</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">updated_at</span> <span class="nb">TIMESTAMP</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span> <span class="k">ON</span> <span class="k">UPDATE</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">,</span>
+    <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">user_id</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="n">users</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">CASCADE</span><span class="p">,</span>
+    <span class="k">INDEX</span> <span class="n">idx_user_id</span> <span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8mb4</span><span class="p">;</span>
+
+<span class="c1">-- ❌ Poor Schema - Denormalization, no constraints</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">users</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="nb">INT</span><span class="p">,</span>
+    <span class="n">name</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+    <span class="n">metal</span> <span class="nb">INT</span><span class="p">,</span>
+    <span class="n">crystal</span> <span class="nb">INT</span><span class="p">,</span>
+    <span class="n">alliance_name</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="c1">-- Should be alliance_id FK</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">MyISAM</span><span class="p">;</span>  <span class="c1">-- Wrong engine, no transactions!</span>
+</code></pre></div></div>
+
+<h3 id="normalization">Normalization</h3>
+
+<ul>
+  <li><strong>1NF:</strong> Atomic values, no repeating groups</li>
+  <li><strong>2NF:</strong> No partial dependencies on composite keys</li>
+  <li><strong>3NF:</strong> No transitive dependencies</li>
+  <li><strong>Foreign Keys:</strong> Maintain referential integrity</li>
+  <li><strong>Indexes:</strong> On frequently queried columns</li>
+</ul>
+
+<h3 id="constraints">Constraints</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good - Comprehensive constraints</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">units</span> <span class="p">(</span>
+    <span class="n">id</span> <span class="nb">INT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+    <span class="n">user_id</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">type</span> <span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="k">count</span> <span class="nb">INT</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">DEFAULT</span> <span class="mi">0</span> <span class="k">CHECK</span> <span class="p">(</span><span class="k">count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">created_at</span> <span class="nb">TIMESTAMP</span> <span class="k">DEFAULT</span> <span class="k">CURRENT_TIMESTAMP</span><span class="p">,</span>
+    <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">user_id</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="n">users</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">CASCADE</span><span class="p">,</span>
+    <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="n">uk_user_type</span> <span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="k">type</span><span class="p">),</span>
+    <span class="k">INDEX</span> <span class="n">idx_user_id</span> <span class="p">(</span><span class="n">user_id</span><span class="p">),</span>
+    <span class="k">CHECK</span> <span class="p">(</span><span class="k">type</span> <span class="k">IN</span> <span class="p">(</span><span class="s1">'fighter'</span><span class="p">,</span> <span class="s1">'cruiser'</span><span class="p">,</span> <span class="s1">'capital'</span><span class="p">,</span> <span class="s1">'troop'</span><span class="p">))</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8mb4</span><span class="p">;</span>
+</code></pre></div></div>
+
+<h2 id="migration-patterns">Migration Patterns</h2>
+
+<h3 id="creating-migrations">Creating Migrations</h3>
+
+<p>Each migration is a standalone PHP script:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// ✅ Good migration - Clear, testable, reversible
+<span class="cp">&lt;?php</span>
+
+<span class="kn">use</span> <span class="nc">App\Core\Database</span><span class="p">;</span>
+
+<span class="nv">$db</span> <span class="o">=</span> <span class="nc">Database</span><span class="o">::</span><span class="nf">getInstance</span><span class="p">();</span>
+
+<span class="k">try</span> <span class="p">{</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">beginTransaction</span><span class="p">();</span>
+    
+    <span class="c1">// Add new column with appropriate default</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nb">exec</span><span class="p">(</span><span class="s2">"ALTER TABLE users ADD COLUMN level INT NOT NULL DEFAULT 1"</span><span class="p">);</span>
+    
+    <span class="c1">// Create index for new column</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nb">exec</span><span class="p">(</span><span class="s2">"ALTER TABLE users ADD INDEX idx_level (level)"</span><span class="p">);</span>
+    
+    <span class="c1">// Update existing data with backfill logic</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nb">exec</span><span class="p">(</span><span class="s2">"UPDATE users SET level = CEILING(experience / 1000) WHERE level = 1"</span><span class="p">);</span>
+    
+    <span class="c1">// Add constraint if needed</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nb">exec</span><span class="p">(</span><span class="s2">"ALTER TABLE users ADD CONSTRAINT chk_level CHECK (level &gt; 0)"</span><span class="p">);</span>
+    
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">commit</span><span class="p">();</span>
+    <span class="k">echo</span> <span class="s2">"✓ Migration completed successfully</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+    
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">Exception</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">rollback</span><span class="p">();</span>
+    <span class="k">echo</span> <span class="s2">"✗ Migration failed: "</span> <span class="mf">.</span> <span class="nv">$e</span><span class="o">-&gt;</span><span class="nf">getMessage</span><span class="p">()</span> <span class="mf">.</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+    <span class="k">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="migration-naming">Migration Naming</h3>
+
+<p>Migrations are numbered sequentially:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20_create_sessions_table.php      # Session storage
+21_create_rate_limits_table.php    # Rate limiting
+22_create_notifications_table.php  # Player notifications
+</code></pre></div></div>
+
+<h3 id="running-migrations">Running Migrations</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># From project root</span>
+php migrations/20_create_sessions_table.php
+php migrations/21_create_rate_limits_table.php
+</code></pre></div></div>
+
+<h2 id="query-optimization">Query Optimization</h2>
+
+<h3 id="prepared-statements">Prepared Statements</h3>
+
+<p>Always use prepared statements to prevent SQL injection:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Prepared statement with parameter binding</span>
+<span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'SELECT * FROM users WHERE email = ? AND active = ?'</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="s1">'user@example.com'</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">fetch</span><span class="p">();</span>
+
+<span class="c1">// ❌ Bad - SQL injection vulnerability</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">query</span><span class="p">(</span><span class="s2">"SELECT * FROM users WHERE email = '</span><span class="si">{</span><span class="nv">$email</span><span class="si">}</span><span class="s2">'"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h3 id="indexing-strategy">Indexing Strategy</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good - Strategic indexes for common queries</span>
+<span class="c1">-- Index on foreign keys</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_user_id</span> <span class="k">ON</span> <span class="n">resources</span><span class="p">(</span><span class="n">user_id</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_alliance_id</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">alliance_id</span><span class="p">);</span>
+
+<span class="c1">-- Index on frequently searched columns</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_email</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">email</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_username</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">username</span><span class="p">);</span>
+
+<span class="c1">-- Composite indexes for multi-column queries</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_user_type</span> <span class="k">ON</span> <span class="n">units</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="k">type</span><span class="p">);</span>
+
+<span class="c1">-- ❌ Bad - Over-indexing hurts performance</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_name</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">username</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_name2</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">username</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_name3</span> <span class="k">ON</span> <span class="n">users</span><span class="p">(</span><span class="n">username</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h3 id="query-performance">Query Performance</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good - Efficient query</span>
+<span class="k">SELECT</span> <span class="n">u</span><span class="p">.</span><span class="n">id</span><span class="p">,</span> <span class="n">u</span><span class="p">.</span><span class="n">username</span><span class="p">,</span> <span class="k">COUNT</span><span class="p">(</span><span class="n">unit</span><span class="p">.</span><span class="n">id</span><span class="p">)</span> <span class="k">as</span> <span class="n">total_units</span>
+<span class="k">FROM</span> <span class="n">users</span> <span class="n">u</span>
+<span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">units</span> <span class="n">unit</span> <span class="k">ON</span> <span class="n">u</span><span class="p">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">unit</span><span class="p">.</span><span class="n">user_id</span>
+<span class="k">WHERE</span> <span class="n">u</span><span class="p">.</span><span class="n">alliance_id</span> <span class="o">=</span> <span class="o">?</span> <span class="k">AND</span> <span class="n">u</span><span class="p">.</span><span class="n">active</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="n">u</span><span class="p">.</span><span class="n">id</span>
+<span class="k">ORDER</span> <span class="k">BY</span> <span class="n">total_units</span> <span class="k">DESC</span><span class="p">;</span>
+
+<span class="c1">-- ❌ Bad - N+1 query problem</span>
+<span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">users</span> <span class="k">WHERE</span> <span class="n">alliance_id</span> <span class="o">=</span> <span class="o">?</span><span class="p">;</span>
+<span class="o">//</span> <span class="k">Then</span> <span class="n">loop</span> <span class="k">and</span> <span class="n">query</span><span class="p">:</span> <span class="k">SELECT</span> <span class="k">COUNT</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">FROM</span> <span class="n">units</span> <span class="k">WHERE</span> <span class="n">user_id</span> <span class="o">=</span> <span class="o">?</span>
+</code></pre></div></div>
+
+<h2 id="transaction-management">Transaction Management</h2>
+
+<h3 id="acid-compliance">ACID Compliance</h3>
+
+<p>All multi-table operations use transactions:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Transaction with rollback</span>
+<span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">beginTransaction</span><span class="p">();</span>
+<span class="k">try</span> <span class="p">{</span>
+    <span class="c1">// Update multiple tables</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'UPDATE users SET resources = resources - ?'</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$amount</span><span class="p">]);</span>
+    
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'UPDATE alliances SET treasury = treasury + ?'</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$tax</span><span class="p">]);</span>
+    
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'INSERT INTO transactions (user_id, amount, type) VALUES (?, ?, ?)'</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$userId</span><span class="p">,</span> <span class="nv">$amount</span><span class="p">,</span> <span class="s1">'tax'</span><span class="p">]);</span>
+    
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">commit</span><span class="p">();</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">Exception</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$db</span><span class="o">-&gt;</span><span class="nf">rollback</span><span class="p">();</span>
+    <span class="k">throw</span> <span class="nv">$e</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="isolation-levels">Isolation Levels</h3>
+
+<p>MariaDB uses InnoDB with appropriate isolation levels:</p>
+
+<ul>
+  <li><strong>READ COMMITTED</strong> (default): Prevents dirty reads</li>
+  <li><strong>REPEATABLE READ</strong>: Prevents non-repeatable reads</li>
+  <li><strong>SERIALIZABLE</strong>: Full isolation (use carefully)</li>
+</ul>
+
+<h2 id="boundaries">Boundaries</h2>
+
+<h3 id="-always-do">✅ Always Do:</h3>
+
+<ul>
+  <li>Use prepared statements for all queries</li>
+  <li>Design schemas following normalization principles</li>
+  <li>Add appropriate indexes for query performance</li>
+  <li>Wrap multi-table operations in transactions</li>
+  <li>Include CHECK constraints for data validity</li>
+  <li>Document migration purposes clearly</li>
+  <li>Test migrations on development first</li>
+  <li>Use descriptive column and table names</li>
+</ul>
+
+<h3 id="️-ask-first">⚠️ Ask First:</h3>
+
+<ul>
+  <li>Before adding new dependencies or tools</li>
+  <li>Before major schema redesigns</li>
+  <li>Before removing data or tables</li>
+  <li>Before changing storage engines</li>
+  <li>Before denormalizing data</li>
+</ul>
+
+<h3 id="-never-do">🚫 Never Do:</h3>
+
+<ul>
+  <li>Create SQL without prepared statements</li>
+  <li>Skip indexes on foreign keys</li>
+  <li>Modify schema without migrations</li>
+  <li>Mix transactions across multiple Services</li>
+  <li>Use MyISAM for new tables</li>
+  <li>Hardcode connection strings</li>
+</ul>
+
+<h2 id="available-commands">Available Commands</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># View current schema</span>
+<span class="nb">cat </span>database.sql
+
+<span class="c"># Run a migration</span>
+php migrations/filename.php
+
+<span class="c"># Check database connection</span>
+php <span class="nt">-r</span> <span class="s2">"require 'app/Core/Database.php'; echo 'Connected';"</span>
+
+<span class="c"># Backup database</span>
+mysqldump <span class="nt">-u</span> user <span class="nt">-p</span> database <span class="o">&gt;</span> backup.sql
+</code></pre></div></div>
+
+<h2 id="data-integrity">Data Integrity</h2>
+
+<h3 id="referential-integrity">Referential Integrity</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good - Foreign keys with cascading delete</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">units</span>
+<span class="k">ADD</span> <span class="k">FOREIGN</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">user_id</span><span class="p">)</span> <span class="k">REFERENCES</span> <span class="n">users</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="k">ON</span> <span class="k">DELETE</span> <span class="k">CASCADE</span><span class="p">;</span>
+
+<span class="c1">-- Orphaned records are automatically deleted when user is deleted</span>
+</code></pre></div></div>
+
+<h3 id="constraints-1">Constraints</h3>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- ✅ Good - Multiple constraint types</span>
+<span class="k">ALTER</span> <span class="k">TABLE</span> <span class="n">resources</span>
+<span class="k">ADD</span> <span class="k">CONSTRAINT</span> <span class="n">chk_non_negative</span> <span class="k">CHECK</span> <span class="p">(</span><span class="n">metal</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">AND</span> <span class="n">crystal</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span>
+<span class="k">ADD</span> <span class="k">CONSTRAINT</span> <span class="n">chk_max_resources</span> <span class="k">CHECK</span> <span class="p">(</span><span class="n">metal</span> <span class="o">&lt;=</span> <span class="mi">10000000</span><span class="p">),</span>
+<span class="k">ADD</span> <span class="k">UNIQUE</span> <span class="k">KEY</span> <span class="n">uk_user_id</span> <span class="p">(</span><span class="n">user_id</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="related-documentation">Related Documentation</h2>
+
+<ul>
+  <li><a href="/docs">Main Documentation</a></li>
+  <li><a href="/docs/agents/backend-agent.md">Backend Agent</a></li>
+  <li><a href="/docs/agents/security-agent.md">Security Agent</a></li>
+  <li><a href="/docs/agents/testing-agent.md">Testing Agent</a></li>
+</ul>
+
+<hr />
+
+<p><strong>Last Updated:</strong> December 2025</p>
+:ET

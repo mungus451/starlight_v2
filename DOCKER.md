@@ -29,8 +29,9 @@ The application will be available at: http://localhost:8080
 - **db**: MariaDB 11 database (default port 3307)
 - **redis**: Redis in-memory data store (default port 6379) — required for sessions, CSRF protection, and rate limiting
 - **cron**: Background process for turn processing (runs every 5 minutes)
+- **docs**: Jekyll documentation server (default port 4000) — for local preview of GitHub Pages docs
 
-**Note:** External ports can be customized by setting `DOCKER_APP_PORT`, `DOCKER_DB_PORT`, and `DOCKER_REDIS_PORT` in your `.env` file. If not set, the defaults listed above will be used.
+**Note:** External ports can be customized by setting `DOCKER_APP_PORT`, `DOCKER_DB_PORT`, `DOCKER_REDIS_PORT`, and `DOCKER_DOCS_PORT` in your `.env` file. If not set, the defaults listed above will be used.
 
 ## Database
 
@@ -102,6 +103,35 @@ After changing dependencies or Dockerfile:
 ```bash
 docker compose down
 docker compose up -d --build
+```
+
+## Documentation Preview
+
+The `docs` service runs Jekyll to serve the documentation locally with live reload:
+
+```bash
+# Start only the docs service
+docker compose up docs
+
+# Or start all services including docs
+docker compose up -d
+
+# View docs at:
+# http://localhost:4000
+```
+
+The docs service watches for changes in the `/docs` folder and automatically rebuilds. This mirrors how GitHub Pages will render your documentation.
+
+### Docs-only Development
+
+If you only want to work on documentation without running the full app:
+
+```bash
+# Start only docs service
+docker compose up docs
+
+# Stop docs service
+docker compose stop docs
 ```
 
 ## Clean Reset

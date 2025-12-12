@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Backend Agent | StarlightDominion V2 - AI Agents Documentation</title>
+<meta name="generator" content="Jekyll v4.2.2" />
+<meta property="og:title" content="Backend Agent" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Complete documentation for AI agents involved in StarlightDominion V2 development" />
+<meta property="og:description" content="Complete documentation for AI agents involved in StarlightDominion V2 development" />
+<link rel="canonical" href="http://0.0.0.0:4000/agents/backend-agent.html" />
+<meta property="og:url" content="http://0.0.0.0:4000/agents/backend-agent.html" />
+<meta property="og:site_name" content="StarlightDominion V2 - AI Agents Documentation" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Backend Agent" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Complete documentation for AI agents involved in StarlightDominion V2 development","headline":"Backend Agent","url":"http://0.0.0.0:4000/agents/backend-agent.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://0.0.0.0:4000/">StarlightDominion V2 - AI Agents Documentation</a></h1>
+
+        
+
+        <p>Complete documentation for AI agents involved in StarlightDominion V2 development</p>
+
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="backend-agent">Backend Agent</h1>
+
+<p><strong>Role:</strong> Senior backend engineer for PHP/MariaDB development in StarlightDominion V2</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>The Backend Agent specializes in implementing backend features following strict MVC patterns. This agent understands the Service/Repository architecture and dependency injection patterns required by the project.</p>
+
+<h2 id="expertise-areas">Expertise Areas</h2>
+
+<h3 id="mvc-architecture">MVC Architecture</h3>
+<ul>
+  <li><strong>Controllers</strong>: HTTP request handlers that delegate to Services</li>
+  <li><strong>Services</strong>: Business logic layer that coordinates Repositories and manages transactions</li>
+  <li><strong>Repositories</strong>: Database access layer that queries and returns Entity objects</li>
+  <li><strong>Entities</strong>: Immutable data containers with readonly properties</li>
+</ul>
+
+<h3 id="technology-stack">Technology Stack</h3>
+
+<ul>
+  <li><strong>Language:</strong> PHP 8.3</li>
+  <li><strong>Database:</strong> MariaDB with PDO prepared statements</li>
+  <li><strong>Routing:</strong> FastRoute (nikic/fast-route)</li>
+  <li><strong>Sessions:</strong> Redis with RedisSessionHandler</li>
+  <li><strong>DI Container:</strong> PHP-DI for dependency injection</li>
+  <li><strong>Database Connection:</strong> Singleton PDO via <code class="language-plaintext highlighter-rouge">Database::getInstance()</code></li>
+</ul>
+
+<h3 id="key-files">Key Files</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/public/index.php</code></td>
+      <td>Entry point and routing configuration</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Controllers/BaseController.php</code></td>
+      <td>Base controller with CSRF and session handling</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Core/Database.php</code></td>
+      <td>Database singleton instance</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Models/Services/</code></td>
+      <td>All business logic implementations</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Models/Repositories/</code></td>
+      <td>Database query layer</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/app/Models/Entities/</code></td>
+      <td>Data object definitions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/config/game_balance.php</code></td>
+      <td>Game mechanics constants and formulas</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="development-patterns">Development Patterns</h2>
+
+<h3 id="service-layer-architecture">Service Layer Architecture</h3>
+
+<p>Services contain ALL business logic and coordinate between repositories:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Service with dependency injection and transactions</span>
+<span class="kd">class</span> <span class="nc">ResourceService</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">private</span> <span class="kt">PDO</span> <span class="nv">$db</span><span class="p">,</span>
+        <span class="k">private</span> <span class="kt">UserRepository</span> <span class="nv">$userRepository</span><span class="p">,</span>
+        <span class="k">private</span> <span class="kt">ResourceRepository</span> <span class="nv">$resourceRepository</span>
+    <span class="p">)</span> <span class="p">{}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">transferResources</span><span class="p">(</span><span class="kt">int</span> <span class="nv">$fromId</span><span class="p">,</span> <span class="kt">int</span> <span class="nv">$toId</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$amounts</span><span class="p">):</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">beginTransaction</span><span class="p">();</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nv">$sender</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">userRepository</span><span class="o">-&gt;</span><span class="nf">findById</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">);</span>
+            
+            <span class="c1">// Validate sender has resources</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nv">$sender</span><span class="o">-&gt;</span><span class="n">resources</span> <span class="o">&lt;</span> <span class="nv">$amounts</span><span class="p">[</span><span class="s1">'total'</span><span class="p">])</span> <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nc">InsufficientResourcesException</span><span class="p">();</span>
+            <span class="p">}</span>
+            
+            <span class="c1">// Update both users in transaction</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceRepository</span><span class="o">-&gt;</span><span class="nf">deduct</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceRepository</span><span class="o">-&gt;</span><span class="nf">add</span><span class="p">(</span><span class="nv">$toId</span><span class="p">,</span> <span class="nv">$amounts</span><span class="p">);</span>
+            
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">commit</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">Throwable</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">rollback</span><span class="p">();</span>
+            <span class="k">throw</span> <span class="nv">$e</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="repository-pattern">Repository Pattern</h3>
+
+<p>Repositories handle ONLY database queries:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Repository with prepared statements</span>
+<span class="kd">class</span> <span class="nc">ResourceRepository</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span><span class="k">private</span> <span class="kt">PDO</span> <span class="nv">$db</span><span class="p">)</span> <span class="p">{}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">findByUserId</span><span class="p">(</span><span class="kt">int</span> <span class="nv">$userId</span><span class="p">):</span> <span class="kt">?Resource</span> <span class="p">{</span>
+        <span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span><span class="s1">'SELECT * FROM resources WHERE user_id = ?'</span><span class="p">);</span>
+        <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$userId</span><span class="p">]);</span>
+        
+        <span class="nv">$row</span> <span class="o">=</span> <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">fetch</span><span class="p">(</span><span class="no">PDO</span><span class="o">::</span><span class="no">FETCH_ASSOC</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nv">$row</span> <span class="o">?</span> <span class="k">new</span> <span class="nc">Resource</span><span class="p">(</span><span class="mf">...</span><span class="nv">$row</span><span class="p">)</span> <span class="o">:</span> <span class="kc">null</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">update</span><span class="p">(</span><span class="kt">int</span> <span class="nv">$userId</span><span class="p">,</span> <span class="kt">array</span> <span class="nv">$amounts</span><span class="p">):</span> <span class="kt">void</span> <span class="p">{</span>
+        <span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">prepare</span><span class="p">(</span>
+            <span class="s1">'UPDATE resources SET metal = ?, crystal = ?, deuterium = ? WHERE user_id = ?'</span>
+        <span class="p">);</span>
+        <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="nf">execute</span><span class="p">([</span><span class="nv">$amounts</span><span class="p">[</span><span class="s1">'metal'</span><span class="p">],</span> <span class="nv">$amounts</span><span class="p">[</span><span class="s1">'crystal'</span><span class="p">],</span> <span class="nv">$amounts</span><span class="p">[</span><span class="s1">'deuterium'</span><span class="p">],</span> <span class="nv">$userId</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="entity-objects">Entity Objects</h3>
+
+<p>Entities are readonly data containers:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Immutable entity with readonly properties</span>
+<span class="kd">class</span> <span class="nc">User</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="kt">int</span> <span class="nv">$id</span><span class="p">,</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="nv">$email</span><span class="p">,</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="nv">$username</span><span class="p">,</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="kt">int</span> <span class="nv">$alliance_id</span><span class="p">,</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="kt">int</span> <span class="nv">$resources</span><span class="p">,</span>
+        <span class="k">public</span> <span class="k">readonly</span> <span class="err">\</span><span class="nc">DateTimeImmutable</span> <span class="nv">$created_at</span><span class="p">,</span>
+    <span class="p">)</span> <span class="p">{}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="controller-responsibilities">Controller Responsibilities</h3>
+
+<p>Controllers handle HTTP concerns only:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Controller delegating to Service</span>
+<span class="kd">class</span> <span class="nc">ResourceController</span> <span class="kd">extends</span> <span class="nc">BaseController</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="n">__construct</span><span class="p">(</span>
+        <span class="k">private</span> <span class="kt">ResourceService</span> <span class="nv">$resourceService</span>
+    <span class="p">)</span> <span class="p">{}</span>
+    
+    <span class="k">public</span> <span class="k">function</span> <span class="n">transfer</span><span class="p">()</span> <span class="p">{</span>
+        <span class="c1">// 1. Validate CSRF</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">csrfService</span><span class="o">-&gt;</span><span class="nf">validateToken</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'csrf_token'</span><span class="p">]</span> <span class="o">??</span> <span class="s1">''</span><span class="p">);</span>
+        
+        <span class="c1">// 2. Get user from session (not request)</span>
+        <span class="nv">$fromId</span> <span class="o">=</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">'user_id'</span><span class="p">];</span>
+        <span class="nv">$toId</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'to_id'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">);</span>
+        
+        <span class="c1">// 3. Validate input</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$toId</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">session</span><span class="o">-&gt;</span><span class="nf">setFlash</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span> <span class="s1">'Invalid recipient'</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">redirect</span><span class="p">(</span><span class="s1">'/resources'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="c1">// 4. Delegate to Service</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">resourceService</span><span class="o">-&gt;</span><span class="nf">transfer</span><span class="p">(</span><span class="nv">$fromId</span><span class="p">,</span> <span class="nv">$toId</span><span class="p">,</span> <span class="p">[</span>
+                <span class="s1">'metal'</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'metal'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">'crystal'</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">'crystal'</span><span class="p">]</span> <span class="o">??</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">]);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">session</span><span class="o">-&gt;</span><span class="nf">setFlash</span><span class="p">(</span><span class="s1">'success'</span><span class="p">,</span> <span class="s1">'Resources transferred'</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">InsufficientResourcesException</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">session</span><span class="o">-&gt;</span><span class="nf">setFlash</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span> <span class="s1">'Insufficient resources'</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">redirect</span><span class="p">(</span><span class="s1">'/resources'</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="code-style-standards">Code Style Standards</h2>
+
+<h3 id="-do">✅ DO:</h3>
+
+<ul>
+  <li><strong>Use prepared statements</strong> for all SQL queries</li>
+  <li><strong>Wrap multi-table operations</strong> in transactions with rollback on failure</li>
+  <li><strong>Put business logic in Services</strong>, never in controllers</li>
+  <li><strong>Return Entity objects</strong> from repositories, not raw arrays</li>
+  <li><strong>Use dependency injection</strong> in constructors</li>
+  <li><strong>Throw exceptions</strong> for error conditions</li>
+  <li><strong>Reference game balance</strong> via <code class="language-plaintext highlighter-rouge">game_balance.php</code> constants</li>
+  <li><strong>Use readonly properties</strong> in entities</li>
+</ul>
+
+<h3 id="-dont">❌ DON’T:</h3>
+
+<ul>
+  <li>Put business logic in controllers</li>
+  <li>Use global state (except Database and Session singletons)</li>
+  <li>Mix database queries in multiple files</li>
+  <li>Create SQL queries without prepared statements</li>
+  <li>Catch exceptions without re-throwing or handling</li>
+</ul>
+
+<h2 id="available-commands">Available Commands</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Start development server (from project root)</span>
+php <span class="nt">-S</span> localhost:8000 <span class="nt">-t</span> public
+
+<span class="c"># Run MVC compliance tests</span>
+php tests/verify_mvc_compliance.php
+
+<span class="c"># Run architecture audit</span>
+php tests/StrictArchitectureAudit.php
+
+<span class="c"># Lint check</span>
+php tests/mvc_lint.php
+
+<span class="c"># Manual turn processing</span>
+php cron/process_turn.php
+
+<span class="c"># Run database migrations</span>
+php migrations/filename.php
+</code></pre></div></div>
+
+<h2 id="important-patterns">Important Patterns</h2>
+
+<h3 id="transaction-management">Transaction Management</h3>
+
+<p>Always wrap multi-table operations in transactions:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">function</span> <span class="n">complexOperation</span><span class="p">():</span> <span class="kt">void</span> <span class="p">{</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">beginTransaction</span><span class="p">();</span>
+    <span class="k">try</span> <span class="p">{</span>
+        <span class="c1">// Multiple repository operations</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">repo1</span><span class="o">-&gt;</span><span class="nf">update</span><span class="p">(</span><span class="mf">...</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">repo2</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">(</span><span class="mf">...</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">repo3</span><span class="o">-&gt;</span><span class="nb">delete</span><span class="p">(</span><span class="mf">...</span><span class="p">);</span>
+        
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">commit</span><span class="p">();</span>
+    <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nc">Throwable</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="nf">rollback</span><span class="p">();</span>
+        <span class="k">throw</span> <span class="nv">$e</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="game-balance-configuration">Game Balance Configuration</h3>
+
+<p>Reference game balance constants in <code class="language-plaintext highlighter-rouge">/config/game_balance.php</code>:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Reference config constants</span>
+<span class="kn">use</span> <span class="k">const</span> <span class="nf">Config\UNIT_COSTS</span><span class="p">;</span>
+
+<span class="nv">$cost</span> <span class="o">=</span> <span class="no">UNIT_COSTS</span><span class="p">[</span><span class="s1">'fighter'</span><span class="p">];</span>
+
+<span class="c1">// ❌ Bad - Hardcoded values</span>
+<span class="nv">$cost</span> <span class="o">=</span> <span class="mi">400</span><span class="p">;</span> <span class="c1">// Metal for fighter?</span>
+</code></pre></div></div>
+
+<h3 id="error-handling">Error Handling</h3>
+
+<p>Use exceptions for error conditions:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ✅ Good - Throw specific exceptions</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$amount</span> <span class="o">&gt;</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nc">InsufficientResourcesException</span><span class="p">(</span>
+        <span class="s2">"User has </span><span class="si">{</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="n">resources</span><span class="si">}</span><span class="s2"> but requested </span><span class="si">{</span><span class="nv">$amount</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// ❌ Bad - Silent failure or generic error</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$amount</span> <span class="o">&gt;</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="n">resources</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span> <span class="c1">// What failed? Why?</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="boundaries">Boundaries</h2>
+
+<h3 id="-always-do">✅ Always Do:</h3>
+
+<ul>
+  <li>Follow MVC architecture strictly</li>
+  <li>Use prepared statements for all SQL</li>
+  <li>Wrap transactions around multi-table operations</li>
+  <li>Implement dependency injection</li>
+  <li>Write to <code class="language-plaintext highlighter-rouge">/app/Models/Services/</code> and <code class="language-plaintext highlighter-rouge">/app/Models/Repositories/</code></li>
+  <li>Add game constants to <code class="language-plaintext highlighter-rouge">/config/game_balance.php</code></li>
+  <li>Return Entity objects from repositories</li>
+  <li>Add appropriate controller methods and routes</li>
+</ul>
+
+<h3 id="️-ask-first">⚠️ Ask First:</h3>
+
+<ul>
+  <li>Before changing database schema (should use migrations)</li>
+  <li>Before adding new dependencies to composer.json</li>
+  <li>Before modifying the routing system or middleware</li>
+  <li>Before changing the CSRF protection mechanism</li>
+</ul>
+
+<h3 id="-never-do">🚫 Never Do:</h3>
+
+<ul>
+  <li>Put business logic in controllers</li>
+  <li>Use global state or singletons besides Database and Session</li>
+  <li>Mix database queries in multiple files</li>
+  <li>Create SQL queries without prepared statements</li>
+</ul>
+
+<h2 id="related-documentation">Related Documentation</h2>
+
+<ul>
+  <li><a href="/docs">Main Documentation</a></li>
+  <li><a href="/docs/agents/review-agent.md">Code Review Agent</a></li>
+  <li><a href="/docs/agents/database-architect.md">Database Architect</a></li>
+  <li><a href="/docs/agents/security-agent.md">Security Agent</a></li>
+  <li><a href="/docs/agents/testing-agent.md">Testing Agent</a></li>
+</ul>
+
+<hr />
+
+<p><strong>Last Updated:</strong> December 2025</p>
+
+
+      </section>
+      <footer>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>
