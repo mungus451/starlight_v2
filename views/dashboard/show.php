@@ -80,34 +80,12 @@
     <div class="card-breakdown" id="breakdown-income">
         <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
         <ul>
-            <li>
-                <span>Base from Economy (Lvl <?= $incomeBreakdown['econ_level'] ?>)</span>
-                <span>+ <?= number_format($incomeBreakdown['econ_income']) ?></span>
-            </li>
-            <li>
-                <span>Base from Workers (<?= number_format($incomeBreakdown['worker_count']) ?>)</span>
-                <span>+ <?= number_format($incomeBreakdown['worker_income']) ?></span>
-            </li>
-            <li>
-                <span>Subtotal (Base Production)</span>
-                <span>= <?= number_format($incomeBreakdown['base_production']) ?></span>
-            </li>
-            <li>
-                <span>Wealth Bonus (<?= $incomeBreakdown['stat_bonus_pct'] * 100 ?>%)</span>
-                <span>+ <?= number_format( (int)floor($incomeBreakdown['base_production'] * $incomeBreakdown['stat_bonus_pct']) ) ?></span>
-            </li>
-            <!-- Alliance Credit Bonus -->
-            <?php if ($incomeBreakdown['alliance_credit_bonus_pct'] > 0): ?>
-            <li>
-                <span style="color: var(--accent-2);">Alliance Structures (<?= $incomeBreakdown['alliance_credit_bonus_pct'] * 100 ?>%)</span>
-                <span style="color: var(--accent-2);">+ <?= number_format( (int)floor($incomeBreakdown['base_production'] * $incomeBreakdown['alliance_credit_bonus_pct']) ) ?></span>
-            </li>
-            <?php endif; ?>
-            
-            <li>
-                <span>Armory Bonus (from Loadout)</span>
-                <span>+ <?= number_format($incomeBreakdown['armory_bonus']) ?></span>
-            </li>
+            <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
+                <li>
+                    <span><?= htmlspecialchars($item['label']) ?></span>
+                    <span>+ <?= number_format($item['value']) ?></span>
+                </li>
+            <?php endforeach; ?>
         </ul>
         <br>
         <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>

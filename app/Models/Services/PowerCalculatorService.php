@@ -166,11 +166,13 @@ class PowerCalculatorService
         // 1. Base Production
         $econIncome = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
         $workerIncome = $resources->workers * $config['credit_income_per_worker'];
-        $baseProduction = $econIncome + $workerIncome;
+        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
+        
+        // Base now includes Armory (Workers + Loadout)
+        $baseProduction = $econIncome + $workerIncome + $armoryBonus;
 
         // 2. Personal Bonuses
         $statBonusPct = $stats->wealth_points * $config['credit_bonus_per_wealth_point'];
-        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
         $accountingFirmBonusPct = $structures->accounting_firm_level * 0.01; // 1% per level
         
         // 3. Alliance Bonuses (Credits)
@@ -188,8 +190,53 @@ class PowerCalculatorService
         // 4. Total Credit Income
         // Multipliers are additive: 1 + Stat% + Alliance% + AccountingFirm%
         $totalMultiplier = 1 + $statBonusPct + $allianceCreditMultiplier + $accountingFirmBonusPct;
-        $totalCreditIncome = (int)floor($baseProduction * $totalMultiplier) + $armoryBonus;
         
+        // Calculate raw amounts for the breakdown (based on NEW baseProduction)
+        $amountFromWealth = (int)floor($baseProduction * $statBonusPct);
+        $amountFromAccounting = (int)floor($baseProduction * $accountingFirmBonusPct);
+        $amountFromAlliance = (int)floor($baseProduction * $allianceCreditMultiplier);
+        
+        $totalCreditIncome = (int)floor($baseProduction * $totalMultiplier);
+        
+        // Build Granular Breakdown
+        $detailedBreakdown = [
+            [
+                'label' => "Base from Economy (Lvl {$structures->economy_upgrade_level})",
+                'value' => $econIncome,
+                'type'  => 'base'
+            ],
+            [
+                'label' => "Base from Workers (" . number_format($resources->workers) . ")",
+                'value' => $workerIncome,
+                'type'  => 'base'
+            ],
+            [
+                'label' => "Base from Armory (Worker Loadouts)",
+                'value' => $armoryBonus,
+                'type'  => 'base'
+            ],
+            [
+                'label' => "Subtotal (Base Production)",
+                'value' => $baseProduction,
+                'type'  => 'subtotal'
+            ],
+            [
+                'label' => "Wealth Bonus (" . ($statBonusPct * 100) . "%)",
+                'value' => $amountFromWealth,
+                'type'  => 'bonus'
+            ],
+            [
+                'label' => "Accounting Firm (Lvl {$structures->accounting_firm_level} @ " . ($accountingFirmBonusPct * 100) . "%)",
+                'value' => $amountFromAccounting,
+                'type'  => 'bonus'
+            ],
+            [
+                'label' => "Alliance Structures (" . ($allianceCreditMultiplier * 100) . "%)",
+                'value' => $amountFromAlliance,
+                'type'  => 'bonus'
+            ]
+        ];
+
         // 5. Interest Income
         $interestIncome = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
         
@@ -208,6 +255,7 @@ class PowerCalculatorService
             'armory_bonus' => $armoryBonus,
             'alliance_credit_bonus_pct' => $allianceCreditMultiplier,
             'accounting_firm_bonus_pct' => $accountingFirmBonusPct,
+            'detailed_breakdown' => $detailedBreakdown, // New Detailed Array
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
             'accounting_firm_level' => $structures->accounting_firm_level,
