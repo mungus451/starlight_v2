@@ -75,7 +75,8 @@ class StructureServiceTest extends TestCase
             spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1
+            armory_level: 1,
+            accounting_firm_level: 0
         );
 
         $structureConfig = [
@@ -172,7 +173,8 @@ class StructureServiceTest extends TestCase
             spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0
+            armory_level: 0,
+            accounting_firm_level: 0
         );
 
         $structureConfig = [
@@ -232,7 +234,8 @@ class StructureServiceTest extends TestCase
             spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0, // Level 0, so upgrade to level 1
-            armory_level: 0
+            armory_level: 0,
+            accounting_firm_level: 0
         );
 
         $structureConfig = [
@@ -261,7 +264,7 @@ class StructureServiceTest extends TestCase
             ->once();
 
         $this->mockDb->shouldReceive('inTransaction')
-            ->andReturn(true, false); // First check returns true, then false after commit
+            ->andReturn(false); // No active transaction initially
 
         $this->mockDb->shouldReceive('commit')
             ->once();
@@ -269,9 +272,9 @@ class StructureServiceTest extends TestCase
         // Cost calculation for level 0: base_cost = 150000
         $expectedCost = 150000;
 
-        $this->mockResourceRepo->shouldReceive('updateCredits')
+        $this->mockResourceRepo->shouldReceive('updateResources')
             ->once()
-            ->with($userId, 1000000 - $expectedCost)
+            ->with($userId, -150000, 0) // Expecting negative values for deduction
             ->andReturn(true);
 
         $this->mockStructureRepo->shouldReceive('updateStructureLevel')
@@ -314,7 +317,8 @@ class StructureServiceTest extends TestCase
             spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0
+            armory_level: 0,
+            accounting_firm_level: 0
         );
 
         $structureConfig = [
@@ -351,6 +355,6 @@ class StructureServiceTest extends TestCase
         $result = $this->service->getStructureData($userId);
 
         // For level 0, cost should be base_cost
-        $this->assertEquals(1000, $result['costs']['housing']);
+        $this->assertEquals(1000, $result['costs']['housing']['credits']);
     }
 }

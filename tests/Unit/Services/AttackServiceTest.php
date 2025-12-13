@@ -14,9 +14,11 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
+use App\Models\Repositories\BountyRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\EffectService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -42,10 +44,12 @@ class AttackServiceTest extends TestCase
     private BattleRepository|Mockery\MockInterface $mockBattleRepo;
     private AllianceRepository|Mockery\MockInterface $mockAllianceRepo;
     private AllianceBankLogRepository|Mockery\MockInterface $mockBankLogRepo;
+    private BountyRepository|Mockery\MockInterface $mockBountyRepo;
     private ArmoryService|Mockery\MockInterface $mockArmoryService;
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalcService;
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
     private EventDispatcher|Mockery\MockInterface $mockDispatcher;
+    private EffectService|Mockery\MockInterface $mockEffectService;
 
     protected function setUp(): void
     {
@@ -61,10 +65,13 @@ class AttackServiceTest extends TestCase
         $this->mockBattleRepo = Mockery::mock(BattleRepository::class);
         $this->mockAllianceRepo = Mockery::mock(AllianceRepository::class);
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
+        $this->mockBountyRepo = Mockery::mock(BountyRepository::class);
         $this->mockArmoryService = Mockery::mock(ArmoryService::class);
         $this->mockPowerCalcService = Mockery::mock(PowerCalculatorService::class);
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
         $this->mockDispatcher = Mockery::mock(EventDispatcher::class);
+        $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
 
         // Instantiate service
         $this->service = new AttackService(
@@ -77,10 +84,12 @@ class AttackServiceTest extends TestCase
             $this->mockBattleRepo,
             $this->mockAllianceRepo,
             $this->mockBankLogRepo,
+            $this->mockBountyRepo,
             $this->mockArmoryService,
             $this->mockPowerCalcService,
             $this->mockLevelUpService,
-            $this->mockDispatcher
+            $this->mockDispatcher,
+            $this->mockEffectService
         );
     }
 
@@ -407,7 +416,27 @@ class AttackServiceTest extends TestCase
     {
         $reportId = 123;
         $viewerId = 1;
-        $mockReport = Mockery::mock(\App\Models\Entities\BattleReport::class);
+        $mockReport = new \App\Models\Entities\BattleReport(
+            id: $reportId,
+            attacker_id: $viewerId,
+            defender_id: 2,
+            created_at: '2024-01-01 10:00:00',
+            attack_type: 'plunder',
+            attack_result: 'victory',
+            soldiers_sent: 100,
+            attacker_soldiers_lost: 10,
+            defender_guards_lost: 20,
+            credits_plundered: 5000,
+            experience_gained: 100,
+            war_prestige_gained: 10,
+            net_worth_stolen: 1000,
+            attacker_offense_power: 5000,
+            defender_defense_power: 4000,
+            defender_total_guards: 50,
+            defender_name: 'Defender',
+            attacker_name: 'Attacker',
+            is_hidden: false
+        );
 
         $this->mockBattleRepo->shouldReceive('findReportById')
             ->once()
@@ -486,7 +515,8 @@ class AttackServiceTest extends TestCase
             spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1
+            armory_level: 1,
+            accounting_firm_level: 0
         );
     }
 }
