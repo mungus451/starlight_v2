@@ -245,7 +245,7 @@ class SpyService
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         
-        return ServiceResponse::success($message);
+        return ServiceResponse::success($message, ['report_id' => $reportId, 'result' => $operation_result]);
     }
 
     /**

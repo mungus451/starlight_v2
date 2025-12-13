@@ -13,6 +13,12 @@ use App\Models\Services\TrainingService;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\AttackService;
 use App\Models\Services\AllianceStructureService;
+use App\Models\Services\CurrencyConverterService;
+use App\Models\Services\SpyService;
+use App\Models\Services\PowerCalculatorService;
+use App\Models\Entities\UserResource;
+use App\Models\Entities\UserStructure;
+use App\Models\Entities\UserStats;
 use App\Core\Logger;
 use DI\Attribute\Inject;
 use PDO;
@@ -21,7 +27,7 @@ use Throwable;
 /**
  * Orchestrates the autonomous behavior of NPC agents ("The Void Syndicate").
  * Intended to be run via Cron.
- * * Refactored to use Injected Logger (Decoupled I/O).
+ * * Refactored Phase 4: Intelligence-Led Aggression & Smart Economy.
  */
 class NpcService
 {
@@ -40,13 +46,15 @@ class NpcService
     private ArmoryService $armoryService;
     private AttackService $attackService;
     private AllianceStructureService $allianceStructureService;
+    private CurrencyConverterService $currencyService;
+    private SpyService $spyService;
+    private PowerCalculatorService $powerCalcService;
 
     // Logger
     private Logger $logger;
 
     /**
      * DI Constructor.
-     * Note the use of #[Inject('NpcLogger')] to get the specific CLI-enabled logger.
      */
     public function __construct(
         PDO $db,
@@ -60,6 +68,9 @@ class NpcService
         ArmoryService $armoryService,
         AttackService $attackService,
         AllianceStructureService $allianceStructureService,
+        CurrencyConverterService $currencyService,
+        SpyService $spyService,
+        PowerCalculatorService $powerCalcService,
         #[Inject('NpcLogger')] Logger $logger
     ) {
         $this->db = $db;
@@ -74,13 +85,16 @@ class NpcService
         $this->armoryService = $armoryService;
         $this->attackService = $attackService;
         $this->allianceStructureService = $allianceStructureService;
+        $this->currencyService = $currencyService;
+        $this->spyService = $spyService;
+        $this->powerCalcService = $powerCalcService;
         
         $this->logger = $logger;
     }
 
     public function runNpcCycle(): void
     {
-        $this->logger->info("--- STARTING NPC AGENT CYCLE ---");
+        $this->logger->info("--- STARTING NPC AGENT CYCLE (Phase 4 Logic) ---");
         
         $npcs = $this->userRepo->findNpcs();
         $count = count($npcs);
@@ -104,89 +118,148 @@ class NpcService
 
     private function processNpc(User $npc): void
     {
-        $this->logger->info("Processing Agent: {$npc->characterName} (ID: {$npc->id})");
+        $profile = $this->getPersonalityProfile($npc->id);
+        $this->logger->info("Processing Agent: {$npc->characterName} (ID: {$npc->id}) [Type: {$profile['type']}]");
 
-        $this->manageEconomy($npc);
-        $this->manageTraining($npc);
+        $this->manageEconomy($npc, $profile);
+        $this->manageTraining($npc, $profile);
         $this->manageArmory($npc);
         $this->manageAlliance($npc);
-        $this->manageAggression($npc);
+        $this->manageAggression($npc, $profile);
         
         $this->logger->info("Agent {$npc->characterName} finished.");
         $this->logger->info("----------------------------------------");
     }
 
-    private function manageEconomy(User $npc): void
+    private function getPersonalityProfile(int $npcId): array
     {
-        $structures = $this->structureRepo->findByUserId($npc->id);
-        $resources = $this->resourceRepo->findByUserId($npc->id);
+        $mode = $npcId % 3;
         
-        if (!$structures || !$resources) return;
+        return match ($mode) {
+            0 => [ // The Warlord
+                'type' => 'Warlord',
+                'priorities' => ['offense_upgrade' => 50, 'fortification' => 20, 'armory' => 30, 'spy_upgrade' => 10, 'economy_upgrade' => 5],
+                'training_ratios' => ['workers' => 0.20, 'soldiers' => 0.60, 'guards' => 0.10, 'spies' => 0.10],
+                'aggression_chance' => 70,
+            ],
+            1 => [ // The Banker (Industrialist)
+                'type' => 'Banker',
+                'priorities' => ['economy_upgrade' => 60, 'population' => 20, 'defense_upgrade' => 20, 'accounting_firm' => 30],
+                'training_ratios' => ['workers' => 0.70, 'soldiers' => 0.10, 'guards' => 0.20, 'spies' => 0.0],
+                'aggression_chance' => 5,
+            ],
+            2 => [ // The Turtle (Sentinel)
+                'type' => 'Turtle',
+                'priorities' => ['defense_upgrade' => 40, 'fortification' => 40, 'spy_upgrade' => 20],
+                'training_ratios' => ['workers' => 0.30, 'soldiers' => 0.0, 'guards' => 0.50, 'spies' => 0.10, 'sentries' => 0.10],
+                'aggression_chance' => 0,
+            ],
+            default => [ // Balanced Fallback
+                'type' => 'Balanced',
+                'priorities' => ['economy_upgrade' => 30, 'offense_upgrade' => 30, 'defense_upgrade' => 30],
+                'training_ratios' => ['workers' => 0.33, 'soldiers' => 0.33, 'guards' => 0.33],
+                'aggression_chance' => 30,
+            ]
+        };
+    }
 
-        // Default strategy: Focus on Economy first, but don't get stuck
-        $target = 'economy_upgrade';
-        
-        // 1. If we are desperate for citizens (stalling training), prioritize Population
-        if ($resources->untrained_citizens < 50) {
+    private function manageEconomy(User $npc, array $profile): void
+    {
+        $structureData = $this->structureService->getStructureData($npc->id);
+        $structures = $structureData['structures'];
+        $resources = $structureData['resources'];
+        $costs = $structureData['costs'];
+
+        // 1. Desperation Check: Stalling training due to low pop?
+        if ($resources->untrained_citizens < 50 && $structures->population_level < 50) {
             $target = 'population';
-        } 
-        // 2. If Economy is decent or we can't afford it, diversify
-        elseif ($structures->economy_upgrade_level >= 20) {
-            $options = ['fortification', 'offense_upgrade', 'defense_upgrade', 'spy_upgrade', 'population', 'armory'];
-            $target = $options[array_rand($options)];
+        } else {
+            // 2. Select Target based on Personality Weights
+            $target = $this->selectWeightedTarget($profile['priorities']);
         }
 
-        // 3. Attempt Upgrade
-        $response = $this->structureService->upgradeStructure($npc->id, $target);
-        if ($response->isSuccess()) {
-            $this->logger->info("  -> SUCCESS: Upgraded {$target}.");
-        } else {
-            // If the primary target failed (likely due to funds), try a cheap backup
-            // This prevents them from 'saving up' forever for a structure they can't afford yet
-            if ($target === 'economy_upgrade') {
-                 $this->structureService->upgradeStructure($npc->id, 'population');
+        // 3. Fallback if target invalid or maxed (not handled deeply here, assuming standard upgrades)
+        if (!isset($costs[$target])) {
+            $this->logger->info("  -> Economy: Invalid target {$target}, skipping.");
+            return;
+        }
+
+        $costData = $costs[$target];
+        $creditCost = $costData['credits'];
+        $crystalCost = $costData['crystals'];
+
+        // 4. Affordability & Liquidity Check
+        $hasCredits = $resources->credits >= $creditCost;
+        $hasCrystals = $resources->naquadah_crystals >= $crystalCost;
+
+        if ($hasCredits && $hasCrystals) {
+            $res = $this->structureService->upgradeStructure($npc->id, $target);
+            if ($res->isSuccess()) {
+                $this->logger->info("  -> UPGRADE SUCCESS: {$target}.");
             }
+        } elseif ($hasCredits && !$hasCrystals) {
+            // "The Crystal Wall" Logic: Try to buy missing crystals
+            $missingCrystals = $crystalCost - $resources->naquadah_crystals;
+            // Get conversion rate (Approx 100 + 10% fee = ~110 credits per crystal)
+            // Use converter service data to be precise
+            $converterData = $this->currencyService->getConverterPageData($npc->id);
+            $rate = $converterData['conversionRate']; // 100
+            $feePct = $converterData['feePercentage']; // 0.10
+            
+            // Formula: Crystals = Credits / Rate. But we want Credits needed.
+            // CreditsNeeded = Crystals * Rate. 
+            // Fee is on Input Credits. Input = TargetCredits. 
+            // ReceivedCrystals = (Input - Fee) / Rate
+            // Received = (Input - Input*FeePct) / Rate = Input(1-Fee) / Rate
+            // Input = (Received * Rate) / (1 - Fee)
+            $creditsNeededForConversion = ($missingCrystals * $rate) / (1 - $feePct);
+            
+            // Check if we can afford the Upgrade AND the Conversion
+            if ($resources->credits >= ($creditCost + $creditsNeededForConversion)) {
+                $this->logger->info("  -> ECONOMY: Buying {$missingCrystals} crystals to afford {$target}.");
+                $convRes = $this->currencyService->convertCreditsToCrystals($npc->id, $creditsNeededForConversion);
+                
+                if ($convRes->isSuccess()) {
+                    // Retry Upgrade
+                    $res = $this->structureService->upgradeStructure($npc->id, $target);
+                    if ($res->isSuccess()) {
+                        $this->logger->info("  -> UPGRADE SUCCESS (After Conversion): {$target}.");
+                    }
+                }
+            } else {
+                $this->logger->info("  -> SAVING: Need crystals for {$target}.");
+            }
+        } else {
+            // "Poverty Trap" Fix: Do NOTHING. Save money.
+            $this->logger->info("  -> SAVING: Not enough resources for {$target} (Cost: {$creditCost} Cr, {$crystalCost} Naq).");
         }
     }
 
-    private function manageTraining(User $npc): void
+    private function manageTraining(User $npc, array $profile): void
     {
         $resources = $this->resourceRepo->findByUserId($npc->id);
-        if (!$resources) return;
-        
-        // Lower threshold to keep things moving
-        if ($resources->untrained_citizens < 10) return;
+        if (!$resources || $resources->untrained_citizens < 10) return;
 
-        // Train up to 500 at a time, or whatever we have
-        $toTrain = min($resources->untrained_citizens, 500);
-        
-        $workers = (int)floor($toTrain * 0.25);
-        $soldiers = (int)floor($toTrain * 0.30);
-        $guards = (int)floor($toTrain * 0.30);
-        $spies = (int)floor($toTrain * 0.15);
+        $toTrain = min($resources->untrained_citizens, 1000);
+        $ratios = $profile['training_ratios'];
 
-        if ($workers > 0) {
-            $res = $this->trainingService->trainUnits($npc->id, 'workers', $workers);
-            if ($res->isSuccess()) $this->logger->info("  -> Trained {$workers} Workers.");
-        }
-        if ($soldiers > 0) {
-            $res = $this->trainingService->trainUnits($npc->id, 'soldiers', $soldiers);
-            if ($res->isSuccess()) $this->logger->info("  -> Trained {$soldiers} Soldiers.");
-        }
-        if ($guards > 0) {
-            $res = $this->trainingService->trainUnits($npc->id, 'guards', $guards);
-            if ($res->isSuccess()) $this->logger->info("  -> Trained {$guards} Guards.");
-        }
-        if ($spies > 0) {
-            $res = $this->trainingService->trainUnits($npc->id, 'spies', $spies);
-            if ($res->isSuccess()) $this->logger->info("  -> Trained {$spies} Spies.");
+        foreach ($ratios as $unit => $ratio) {
+            if ($ratio <= 0) continue;
+            
+            $amount = (int)floor($toTrain * $ratio);
+            if ($amount > 0) {
+                // Determine actual key ('sentries' supported by service? Yes.)
+                $res = $this->trainingService->trainUnits($npc->id, $unit, $amount);
+                if ($res->isSuccess()) {
+                    $this->logger->info("  -> Trained {$amount} {$unit}.");
+                }
+            }
         }
     }
 
     private function manageArmory(User $npc): void
     {
-        $this->logger->info("  -> Armory Check...");
-        
+        // Existing logic is decent, keeping it simple but functional
         $armoryData = $this->armoryService->getArmoryData($npc->id);
         $structures = $this->structureRepo->findByUserId($npc->id);
         $resources = $this->resourceRepo->findByUserId($npc->id);
@@ -194,20 +267,17 @@ class NpcService
         $config = $armoryData['armoryConfig'];
         $inventory = $armoryData['inventory'];
         $loadouts = $armoryData['loadouts'];
-
-        $actionsTaken = 0;
         
-        // Track local spending since $resources is readonly
         $currentCredits = $resources->credits;
 
         foreach ($config as $unitKey => $unitData) {
             foreach ($unitData['categories'] as $catKey => $catData) {
                 $equipped = $loadouts[$unitKey][$catKey] ?? null;
-                
                 $bestItemKey = null;
                 $bestItemCost = 0;
                 $bestItemName = '';
 
+                // Find best unlocked item
                 foreach ($catData['items'] as $itemKey => $itemInfo) {
                     $reqLevel = $itemInfo['armory_level_req'] ?? 0;
                     if ($structures->armory_level >= $reqLevel) {
@@ -219,98 +289,162 @@ class NpcService
 
                 if ($bestItemKey && $bestItemKey !== $equipped) {
                     $owned = $inventory[$bestItemKey] ?? 0;
-                    $idealStock = 1000; 
+                    $idealStock = 500; // Cap stock to avoid wasting all money on one slot
 
-                    // Fix: Dynamic Purchasing
-                    // Instead of failing if we can't buy 1000, buy what we can afford.
                     if ($owned < $idealStock) {
                         $needed = $idealStock - $owned;
                         $affordable = (int)floor($currentCredits / max(1, $bestItemCost));
                         $buyAmount = min($needed, $affordable);
 
-                        // Only buy if we can get a decent batch (avoid spamming 1 item)
                         if ($buyAmount > 5) {
-                            $response = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $buyAmount);
-                            if ($response->isSuccess()) {
-                                $this->logger->info("  -> Manufactured {$buyAmount}x {$bestItemName}.");
-                                $actionsTaken++;
-                                // Update local tracker
+                            $res = $this->armoryService->manufactureItem($npc->id, $bestItemKey, $buyAmount);
+                            if ($res->isSuccess()) {
                                 $currentCredits -= ($buyAmount * $bestItemCost);
                             }
                         }
                     }
-
-                    // Check inventory again after potential purchase
-                    $currentStock = ($inventory[$bestItemKey] ?? 0) + ($actionsTaken > 0 ? 0 : 0); // (Inventory isn't auto-refreshed in var, but logic holds)
                     
-                    // Simple Equip Logic: If we have ANY, equip it.
-                    if ($currentStock > 0 || $owned > 0) {
-                        $response = $this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey);
-                        if ($response->isSuccess()) {
-                            $this->logger->info("  -> Equipped {$bestItemName} to {$unitKey} ({$catKey}).");
-                            $actionsTaken++;
-                        }
+                    // Always try to equip if we have some
+                    if (($inventory[$bestItemKey] ?? 0) > 0) {
+                        $this->armoryService->equipItem($npc->id, $unitKey, $catKey, $bestItemKey);
                     }
                 }
             }
-        }
-
-        if ($actionsTaken === 0) {
-            $this->logger->info("  -> Armory: No actions taken.");
         }
     }
 
     private function manageAlliance(User $npc): void
     {
         if (!$npc->alliance_id) return;
-
+        // Simple Leader Logic: Upgrade Alliance Defenses if rich
         $alliance = $this->allianceRepo->findById($npc->alliance_id);
-        if ($alliance && $alliance->leader_id === $npc->id) {
-            if ($alliance->bank_credits > 100000000) {
-                $defs = ['citadel_shield', 'command_nexus', 'galactic_research_hub', 'orbital_training_grounds'];
-                $target = $defs[array_rand($defs)];
-                
-                $response = $this->allianceStructureService->purchaseOrUpgradeStructure($npc->id, $target);
-                if ($response->isSuccess()) {
-                    $this->logger->info("  -> ALLIANCE UPGRADE: Purchased/Upgraded {$target}.");
-                }
-            }
+        if ($alliance && $alliance->leader_id === $npc->id && $alliance->bank_credits > 100_000_000) {
+            $defs = ['citadel_shield', 'command_nexus', 'galactic_research_hub'];
+            $target = $defs[array_rand($defs)];
+            $this->allianceStructureService->purchaseOrUpgradeStructure($npc->id, $target);
         }
     }
 
-    private function manageAggression(User $npc): void
+    private function manageAggression(User $npc, array $profile): void
     {
-        $roll = mt_rand(1, 100);
-        if ($roll <= 30) return;
+        // 1. Check Aggression Roll
+        if (mt_rand(1, 100) > $profile['aggression_chance']) return;
 
+        // 2. Check Turns
         $stats = $this->statsRepo->findByUserId($npc->id);
-        if ($stats->attack_turns < 1) return;
+        if ($stats->attack_turns < 10) return; // Save turns for a real fight
 
+        // 3. Find Target
         $totalTargets = $this->statsRepo->getTotalTargetCount($npc->id);
         if ($totalTargets === 0) return;
 
         $perPage = 25;
-        $totalPages = (int)ceil($totalTargets / $perPage);
-        $randomPage = mt_rand(1, max(1, $totalPages));
+        $randomPage = mt_rand(1, max(1, (int)ceil($totalTargets / $perPage)));
         $offset = ($randomPage - 1) * $perPage;
-
         $targets = $this->statsRepo->getPaginatedTargetList($perPage, $offset, $npc->id);
-        
         if (empty($targets)) return;
 
-        $victim = $targets[array_rand($targets)];
-        
-        $victimUser = $this->userRepo->findById($victim['id']);
-        if ($victimUser && $victimUser->alliance_id === $npc->alliance_id) return;
+        $victimData = $targets[array_rand($targets)];
+        $victimName = $victimData['character_name'];
 
-        $this->logger->info("  -> ATTACKING: {$victim['character_name']} (ID: {$victim['id']})");
+        // 4. Intelligence Phase
+        $this->logger->info("  -> AGGRESSION: Scouting {$victimName}...");
         
-        $response = $this->attackService->conductAttack($npc->id, $victim['character_name'], 'plunder');
+        $spyRes = $this->spyService->conductOperation($npc->id, $victimName);
         
-        if ($response->isSuccess()) {
-            $this->logger->info("  -> Attack COMPLETE.");
-        } else {
-            $this->logger->info("  -> Attack FAILED: " . $response->message);
+        // If spy failed completely (jammed or error), abort
+        if (!$spyRes->isSuccess()) {
+            $this->logger->info("  -> SPY FAILED: {$spyRes->message}");
+            return;
         }
+
+        // 5. Analysis Phase
+        $reportData = $spyRes->data; // ['report_id' => X, 'result' => 'success'|'failure']
+        if (!isset($reportData['report_id'])) {
+            // Should not happen if SpyService is updated, but safety first
+            $this->logger->info("  -> SPY ERROR: No report ID returned.");
+            return;
+        }
+
+        $report = $this->spyService->getSpyReport($reportData['report_id'], $npc->id);
+        if (!$report) return;
+
+        // If we didn't get a successful intel gather, we can't estimate power accurately.
+        // Warlords might attack anyway if blind, but let's play smart.
+        if ($report->operation_result !== 'success') {
+            $this->logger->info("  -> SCOUTING FAILED: No intel gathered. Aborting attack.");
+            return;
+        }
+
+        // 6. Power Comparison
+        $myResources = $this->resourceRepo->findByUserId($npc->id);
+        $myStructures = $this->structureRepo->findByUserId($npc->id);
+        $myStats = $this->statsRepo->findByUserId($npc->id);
+        
+        $myOffense = $this->powerCalcService->calculateOffensePower($npc->id, $myResources, $myStats, $myStructures)['total'];
+
+        // Construct Enemy State from Intel
+        // We use 0 for unknown values to be conservative (or risk-takers?)
+        // Using 0 might underestimate them. Let's use seen values.
+        $enemyRes = new UserResource(
+            id: 0, user_id: 0, 
+            credits: 0, bank_credits: 0, naquadah_crystals: 0, 
+            gemstones: 0, untrained_citizens: 0, 
+            workers: 0, 
+            soldiers: $report->soldiers_seen ?? 0, 
+            guards: $report->guards_seen ?? 0, 
+            spies: $report->spies_seen ?? 0, 
+            sentries: $report->sentries_seen ?? 0,
+            created_at: 'now', updated_at: 'now'
+        );
+
+        $enemyStruct = new UserStructure(
+            id: 0, user_id: 0,
+            economy_upgrade_level: 0,
+            population_level: 0,
+            water_recycling_plant_level: 0,
+            co2_scrubber_level: 0,
+            offense_upgrade_level: $report->offense_upgrade_level_seen ?? 0,
+            defense_upgrade_level: $report->defense_upgrade_level_seen ?? 0,
+            fortification_level: $report->fortification_level_seen ?? 0,
+            spy_upgrade_level: $report->spy_upgrade_level_seen ?? 0,
+            armory_level: $report->armory_level_seen ?? 0,
+            accounting_firm_level: 0,
+            created_at: 'now', updated_at: 'now'
+        );
+        
+        $enemyStats = new UserStats(id: 0, user_id: 0, strength_points: 0, constitution_points: 0, agility_points: 0, wealth_points: 0, attack_turns: 0, created_at: 'now');
+
+        $enemyDefense = $this->powerCalcService->calculateDefensePower(0, $enemyRes, $enemyStats, $enemyStruct)['total'];
+
+        // Decision: Need 20% advantage to attack
+        $ratio = ($enemyDefense > 0) ? ($myOffense / $enemyDefense) : 999;
+        
+        if ($ratio > 1.2) {
+            $this->logger->info("  -> ATTACKING: Power Ratio " . number_format($ratio, 2) . ". Launching assault!");
+            $attRes = $this->attackService->conductAttack($npc->id, $victimName, 'plunder');
+            if ($attRes->isSuccess()) {
+                $this->logger->info("  -> ATTACK RESULT: " . $attRes->message);
+            }
+        } else {
+            $this->logger->info("  -> HOLDING FIRE: Power Ratio " . number_format($ratio, 2) . " insufficient.");
+        }
+    }
+
+    private function selectWeightedTarget(array $priorities): string
+    {
+        $totalWeight = array_sum($priorities);
+        if ($totalWeight <= 0) return array_key_first($priorities);
+
+        $rand = mt_rand(1, $totalWeight);
+        $current = 0;
+        
+        foreach ($priorities as $key => $weight) {
+            $current += $weight;
+            if ($rand <= $current) {
+                return $key;
+            }
+        }
+        return array_key_first($priorities);
     }
 }
