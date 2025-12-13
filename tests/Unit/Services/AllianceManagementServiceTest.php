@@ -1,0 +1,264 @@
+<?php
+
+namespace Tests\Unit\Services;
+
+use Tests\Unit\TestCase;
+use App\Models\Services\AllianceManagementService;
+use App\Models\Services\AlliancePolicyService;
+use App\Core\Config;
+use App\Core\ServiceResponse;
+use App\Models\Repositories\AllianceRepository;
+use App\Models\Repositories\UserRepository;
+use App\Models\Repositories\ApplicationRepository;
+use App\Models\Repositories\AllianceRoleRepository;
+use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\AllianceBankLogRepository;
+use App\Models\Repositories\AllianceLoanRepository;
+use App\Models\Entities\User;
+use App\Models\Entities\AllianceRole;
+use App\Models\Entities\UserResource;
+use App\Models\Entities\Alliance;
+use Mockery;
+use PDO;
+
+class AllianceManagementServiceTest extends TestCase
+{
+    private AllianceManagementService $service;
+    private PDO|Mockery\MockInterface $mockDb;
+    private Config|Mockery\MockInterface $mockConfig;
+    private AllianceRepository|Mockery\MockInterface $mockAllianceRepo;
+    private UserRepository|Mockery\MockInterface $mockUserRepo;
+    private ApplicationRepository|Mockery\MockInterface $mockAppRepo;
+    private AllianceRoleRepository|Mockery\MockInterface $mockRoleRepo;
+    private AlliancePolicyService|Mockery\MockInterface $mockPolicyService;
+    private ResourceRepository|Mockery\MockInterface $mockResourceRepo;
+    private AllianceBankLogRepository|Mockery\MockInterface $mockBankLogRepo;
+    private AllianceLoanRepository|Mockery\MockInterface $mockLoanRepo;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->mockDb = Mockery::mock(PDO::class);
+        $this->mockConfig = Mockery::mock(Config::class);
+        $this->mockAllianceRepo = Mockery::mock(AllianceRepository::class);
+        $this->mockUserRepo = Mockery::mock(UserRepository::class);
+        $this->mockAppRepo = Mockery::mock(ApplicationRepository::class);
+        $this->mockRoleRepo = Mockery::mock(AllianceRoleRepository::class);
+        $this->mockPolicyService = Mockery::mock(AlliancePolicyService::class);
+        $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
+        $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
+        $this->mockLoanRepo = Mockery::mock(AllianceLoanRepository::class);
+
+        $this->service = new AllianceManagementService(
+            $this->mockDb,
+            $this->mockConfig,
+            $this->mockAllianceRepo,
+            $this->mockUserRepo,
+            $this->mockAppRepo,
+            $this->mockRoleRepo,
+            $this->mockPolicyService,
+            $this->mockResourceRepo,
+            $this->mockBankLogRepo,
+            $this->mockLoanRepo
+        );
+    }
+
+    public function testCreateAllianceSuccess(): void
+    {
+        $userId = 1;
+        $name = 'New Alliance';
+        $tag = 'NEW';
+        $cost = 1000;
+
+        // Mock Config
+        $this->mockConfig->shouldReceive('get')->with('game_balance.alliance.creation_cost', 50000000)->andReturn($cost);
+
+        // Mock User & Resources
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($this->createMockUser($userId, null));
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($this->createMockResource($userId, 5000)); // Has enough
+
+        // Mock Uniqueness Checks
+        $this->mockAllianceRepo->shouldReceive('findByName')->with($name)->andReturn(null);
+        $this->mockAllianceRepo->shouldReceive('findByTag')->with($tag)->andReturn(null);
+
+        // Mock Transaction
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Mock Creation Steps
+        $newAllianceId = 100;
+        $this->mockAllianceRepo->shouldReceive('create')->with($name, $tag, $userId)->andReturn($newAllianceId);
+
+        // Mock Role Creation
+        $leaderRoleId = 500;
+        $this->mockRoleRepo->shouldReceive('create')->times(3)->andReturn($leaderRoleId); // Leader, Recruit, Member
+
+        // Mock Updates
+        $this->mockResourceRepo->shouldReceive('updateCredits')->with($userId, 4000); // 5000 - 1000
+        $this->mockUserRepo->shouldReceive('setAlliance')->with($userId, $newAllianceId, $leaderRoleId);
+
+        $response = $this->service->createAlliance($userId, $name, $tag);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertStringContainsString('successfully founded', $response->message);
+    }
+
+    public function testCreateAllianceFailsInsufficientFunds(): void
+    {
+        $userId = 1;
+        $this->mockConfig->shouldReceive('get')->andReturn(10000); // High cost
+        $this->mockUserRepo->shouldReceive('findById')->andReturn($this->createMockUser($userId, null));
+        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($this->createMockResource($userId, 100)); // Low funds
+        $this->mockAllianceRepo->shouldReceive('findByName')->andReturn(null);
+        $this->mockAllianceRepo->shouldReceive('findByTag')->andReturn(null);
+
+        $response = $this->service->createAlliance($userId, 'Name', 'TAG');
+        $this->assertFalse($response->isSuccess());
+        $this->assertStringContainsString('not have enough credits', $response->message);
+    }
+
+    public function testInviteUserSuccess(): void
+    {
+        $inviterId = 1;
+        $targetId = 2;
+        $allianceId = 10;
+
+        $inviter = $this->createMockUser($inviterId, $allianceId);
+        $target = $this->createMockUser($targetId, null);
+        
+        $this->mockUserRepo->shouldReceive('findById')->with($inviterId)->andReturn($inviter);
+        $this->mockUserRepo->shouldReceive('findById')->with($targetId)->andReturn($target);
+
+        // Permission Check
+        $adminRole = $this->createMockRole(true);
+        $this->mockRoleRepo->shouldReceive('findById')->with($inviter->alliance_role_id)->andReturn($adminRole);
+
+        // Recruit Role Lookup
+        $recruitRole = $this->createMockRole(false, 'Recruit', 555);
+        $this->mockRoleRepo->shouldReceive('findDefaultRole')->with($allianceId, 'Recruit')->andReturn($recruitRole);
+
+        // Transaction
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Logic
+        $this->mockUserRepo->shouldReceive('setAlliance')->with($targetId, $allianceId, 555);
+        $this->mockAppRepo->shouldReceive('deleteByUser')->with($targetId);
+
+        $response = $this->service->inviteUser($inviterId, $targetId);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertStringContainsString('accepted your invite', $response->message);
+    }
+
+    public function testKickMemberSuccess(): void
+    {
+        $adminId = 1;
+        $targetId = 2;
+        $allianceId = 10;
+
+        $admin = $this->createMockUser($adminId, $allianceId);
+        $target = $this->createMockUser($targetId, $allianceId);
+
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockUserRepo->shouldReceive('findById')->with($targetId)->andReturn($target);
+
+        $adminRole = $this->createMockRole(true, 'Leader');
+        $targetRole = $this->createMockRole(false, 'Member');
+
+        $this->mockRoleRepo->shouldReceive('findById')->with($admin->alliance_role_id)->andReturn($adminRole);
+        $this->mockRoleRepo->shouldReceive('findById')->with($target->alliance_role_id)->andReturn($targetRole);
+
+        // Policy Check (Null = Allowed)
+        $this->mockPolicyService->shouldReceive('canKick')
+            ->with(
+                Mockery::type(User::class),
+                Mockery::type(AllianceRole::class),
+                Mockery::type(User::class),
+                Mockery::type(AllianceRole::class)
+            )
+            ->andReturn(null);
+
+        // Action
+        $this->mockUserRepo->shouldReceive('leaveAlliance')->with($targetId);
+
+        $response = $this->service->kickMember($adminId, $targetId);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertStringContainsString('has been kicked', $response->message);
+    }
+
+    public function testDonateToAllianceSuccess(): void
+    {
+        $userId = 1;
+        $amount = 100;
+        $allianceId = 50;
+
+        $user = $this->createMockUser($userId, $allianceId);
+        $resources = $this->createMockResource($userId, 1000);
+
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($resources);
+
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        $this->mockResourceRepo->shouldReceive('updateCredits')->with($userId, 900);
+        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')->with($allianceId, 100);
+        $this->mockBankLogRepo->shouldReceive('createLog')->once();
+
+        $response = $this->service->donateToAlliance($userId, $amount);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertStringContainsString('successfully donated', $response->message);
+    }
+
+    // --- Helpers ---
+
+    private function createMockUser(int $id, ?int $allianceId): User
+    {
+        return new User(
+            id: $id,
+            email: 'test@test.com',
+            characterName: 'TestUser',
+            bio: null,
+            profile_picture_url: null,
+            phone_number: null,
+            alliance_id: $allianceId,
+            alliance_role_id: $allianceId ? 100 : null,
+            passwordHash: 'hash',
+            createdAt: '2024-01-01',
+            is_npc: false
+        );
+    }
+
+    private function createMockResource(int $userId, int $credits): UserResource
+    {
+        return new UserResource($userId, $credits, 0, 0, 0.0, 0, 0, 0, 0, 0, 0);
+    }
+
+    private function createMockRole(bool $canInvite, string $name = 'Role', int $id = 100): AllianceRole
+    {
+        return new AllianceRole(
+            id: $id,
+            alliance_id: 10,
+            name: $name,
+            sort_order: 1,
+            can_edit_profile: false,
+            can_manage_applications: false,
+            can_invite_members: $canInvite,
+            can_kick_members: false,
+            can_manage_roles: false,
+            can_see_private_board: false,
+            can_manage_forum: false,
+            can_manage_bank: false,
+            can_manage_structures: false,
+            can_manage_diplomacy: false,
+            can_declare_war: false
+        );
+    }
+}
