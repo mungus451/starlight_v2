@@ -21,7 +21,9 @@ use App\Models\Entities\AllianceApplication;
 use App\Models\Entities\AllianceLoan;
 use Mockery;
 use PDO;
+use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(AllianceManagementService::class)]
 class AllianceManagementServiceTest extends TestCase
 {
     private AllianceManagementService $service;
