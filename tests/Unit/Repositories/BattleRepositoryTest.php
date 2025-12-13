@@ -74,7 +74,9 @@ class BattleRepositoryTest extends TestCase
             $warPrestigeGained,
             $netWorthStolen,
             $attackerOffensePower,
-            $defenderDefensePower
+            $defenderDefensePower,
+            0, // defenderTotalGuards
+            false // isHidden
         );
 
         $this->assertEquals($newReportId, $result);

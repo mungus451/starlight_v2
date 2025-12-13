@@ -15,6 +15,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\NotificationService;
+use App\Models\Services\EffectService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -42,6 +43,7 @@ class SpyServiceTest extends TestCase
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalcService;
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
     private NotificationService|Mockery\MockInterface $mockNotificationService;
+    private EffectService|Mockery\MockInterface $mockEffectService;
 
     protected function setUp(): void
     {
@@ -59,6 +61,8 @@ class SpyServiceTest extends TestCase
         $this->mockPowerCalcService = Mockery::mock(PowerCalculatorService::class);
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
         $this->mockNotificationService = Mockery::mock(NotificationService::class);
+        $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
 
         // Instantiate service
         $this->service = new SpyService(
@@ -72,7 +76,8 @@ class SpyServiceTest extends TestCase
             $this->mockArmoryService,
             $this->mockPowerCalcService,
             $this->mockLevelUpService,
-            $this->mockNotificationService
+            $this->mockNotificationService,
+            $this->mockEffectService
         );
     }
 
@@ -325,7 +330,7 @@ class SpyServiceTest extends TestCase
         $response = $this->service->conductOperation(1, 'Defender');
 
         $this->assertFalse($response->isSuccess());
-        $this->assertEquals('You do not have enough credits to send all your spies.', $response->message);
+        $this->assertEquals('You do not have enough credits.', $response->message);
     }
 
     /**
@@ -420,7 +425,33 @@ class SpyServiceTest extends TestCase
     {
         $reportId = 123;
         $viewerId = 1;
-        $mockReport = Mockery::mock(\App\Models\Entities\SpyReport::class);
+        $mockReport = new \App\Models\Entities\SpyReport(
+            id: $reportId,
+            attacker_id: $viewerId,
+            defender_id: 2,
+            created_at: '2024-01-01 10:00:00',
+            operation_result: 'success',
+            spies_sent: 10,
+            spies_lost_attacker: 0,
+            sentries_lost_defender: 0,
+            defender_total_sentries: 10,
+            credits_seen: 1000,
+            gemstones_seen: 0,
+            workers_seen: 10,
+            soldiers_seen: 10,
+            guards_seen: 10,
+            spies_seen: 10,
+            sentries_seen: 10,
+            fortification_level_seen: 1,
+            offense_upgrade_level_seen: 1,
+            defense_upgrade_level_seen: 1,
+            spy_upgrade_level_seen: 1,
+            economy_upgrade_level_seen: 1,
+            population_level_seen: 1,
+            armory_level_seen: 1,
+            defender_name: 'Defender',
+            attacker_name: 'Attacker'
+        );
 
         $this->mockSpyRepo->shouldReceive('findReportById')
             ->once()
@@ -499,7 +530,8 @@ class SpyServiceTest extends TestCase
             spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1
+            armory_level: 1,
+            accounting_firm_level: 0
         );
     }
 }

@@ -90,7 +90,8 @@ class ArmoryServiceTest extends TestCase
             spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1
+            armory_level: 1,
+            accounting_firm_level: 0
         );
 
         $mockStats = new UserStats(
@@ -208,7 +209,8 @@ class ArmoryServiceTest extends TestCase
             spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0 // Armory level 0
+            armory_level: 0, // Armory level 0
+            accounting_firm_level: 0
         );
 
         $mockStats = new UserStats(
@@ -289,7 +291,8 @@ class ArmoryServiceTest extends TestCase
             spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 1 // Armory level 1
+            armory_level: 1, // Armory level 1
+            accounting_firm_level: 0
         );
 
         $mockStats = new UserStats(
