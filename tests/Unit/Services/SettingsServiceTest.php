@@ -8,6 +8,7 @@ use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\SecurityRepository;
 use App\Models\Entities\User;
+use App\Models\Entities\UserSecurity;
 use Mockery;
 use PDO;
 
@@ -33,6 +34,23 @@ class SettingsServiceTest extends TestCase
         );
     }
 
+    public function testGetSettingsDataReturnsCorrectStructure(): void
+    {
+        $userId = 1;
+        $user = $this->createMockUser($userId);
+        
+        // Mock Security Repo logic (returns null or object)
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+        $this->mockSecurityRepo->shouldReceive('findByUserId')->with($userId)->andReturn(null);
+
+        $result = $this->service->getSettingsData($userId);
+
+        $this->assertArrayHasKey('user', $result);
+        $this->assertArrayHasKey('security', $result);
+        $this->assertSame($user, $result['user']);
+        $this->assertNull($result['security']);
+    }
+
     public function testUpdateProfileUpdatesDescriptionOnly(): void
     {
         $userId = 1;
@@ -40,7 +58,6 @@ class SettingsServiceTest extends TestCase
 
         $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
         
-        // Expect update with SAME filename (no file uploaded, remove=false)
         $this->mockUserRepo->shouldReceive('updateProfile')
             ->once()
             ->with($userId, 'New Bio', 'OldPfp.png', '555-5555')
@@ -57,17 +74,23 @@ class SettingsServiceTest extends TestCase
 
         $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
         
-        // Expect update with NULL filename (remove=true)
         $this->mockUserRepo->shouldReceive('updateProfile')
             ->once()
             ->with($userId, 'New Bio', null, '555-5555')
             ->andReturn(true);
 
-        // Note: Logic attempts to delete file from disk. In unit test env, file likely doesn't exist, 
-        // so `file_exists` returns false and `unlink` isn't called, preventing errors.
-        
         $response = $this->service->updateProfile($userId, 'New Bio', [], '555-5555', true);
         $this->assertTrue($response->isSuccess());
+    }
+
+    public function testUpdateProfileFailsLongBio(): void
+    {
+        $userId = 1;
+        $longBio = str_repeat('A', 501);
+        $response = $this->service->updateProfile($userId, $longBio, [], '', false);
+        
+        $this->assertFalse($response->isSuccess());
+        $this->assertStringContainsString('500 characters', $response->message);
     }
 
     public function testUpdateEmailSucceeds(): void
@@ -123,6 +146,28 @@ class SettingsServiceTest extends TestCase
         $this->assertTrue($response->isSuccess());
     }
 
+    public function testUpdatePasswordFailsMismatch(): void
+    {
+        $userId = 1;
+        $user = $this->createMockUser($userId, 'pfp', password_hash('old', PASSWORD_DEFAULT));
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+
+        $response = $this->service->updatePassword($userId, 'old', 'new', 'mismatch');
+        $this->assertFalse($response->isSuccess());
+        $this->assertStringContainsString('passwords do not match', $response->message);
+    }
+
+    public function testUpdatePasswordFailsShort(): void
+    {
+        $userId = 1;
+        $user = $this->createMockUser($userId, 'pfp', password_hash('old', PASSWORD_DEFAULT));
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+
+        $response = $this->service->updatePassword($userId, 'old', 'hi', 'hi');
+        $this->assertFalse($response->isSuccess());
+        $this->assertStringContainsString('at least 3 characters', $response->message);
+    }
+
     public function testUpdateSecurityQuestionsSucceeds(): void
     {
         $userId = 1;
@@ -138,6 +183,16 @@ class SettingsServiceTest extends TestCase
 
         $response = $this->service->updateSecurityQuestions($userId, 'Q1', 'A1', 'Q2', 'A2', $pass);
         $this->assertTrue($response->isSuccess());
+    }
+
+    public function testUpdateSecurityQuestionsFailsInvalidPassword(): void
+    {
+        $userId = 1;
+        $user = $this->createMockUser($userId, 'pfp', password_hash('correct', PASSWORD_DEFAULT));
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+
+        $response = $this->service->updateSecurityQuestions($userId, 'Q', 'A', 'Q', 'A', 'wrong');
+        $this->assertFalse($response->isSuccess());
     }
 
     // --- Helpers ---
