@@ -208,13 +208,16 @@ class SpyService
 
         $defenderTotalSentriesSnapshot = $defenderResources->sentries;
 
+        $reportId = null; // Initialize variable
+
         // --- Transaction ---
         $this->safeTransaction(function() use (
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
             $creditCost, $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
             $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-            $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
+            $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
+            &$reportId // Pass by reference
         ) {
             $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $attackerResources->spies - $spiesLost);
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);

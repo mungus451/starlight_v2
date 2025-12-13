@@ -383,6 +383,7 @@ class ArmoryServiceTest extends TestCase
                 'title' => 'Soldiers',
                 'categories' => [
                     'weapon' => [
+                        'title' => 'Weapon',
                         'items' => [
                             'soldier_weapon_tier1' => [
                                 'name' => 'Basic Rifle',

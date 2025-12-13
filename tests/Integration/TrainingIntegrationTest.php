@@ -93,7 +93,7 @@ class TrainingIntegrationTest extends TestCase
         // Set up initial stats
         $this->db->prepare("
             INSERT INTO user_stats (
-                user_id, xp, level, attack_turns, energy, deposit_charges
+                user_id, experience, level, attack_turns, energy, deposit_charges
             ) VALUES (?, 0, 1, 50, 100, 5)
         ")->execute([$userId]);
 
@@ -185,8 +185,8 @@ class TrainingIntegrationTest extends TestCase
         // Total citizens consumed: 5 + 3 + 2 = 10
         $this->assertEquals(90, $finalResources->untrained_citizens, 'Citizens: 100 - 10');
         
-        // Total credits: 5*5k + 3*15k + 2*25k = 25k + 45k + 50k = 120k
-        $this->assertEquals(380000, $finalResources->credits, 'Credits: 500k - 120k');
+        // Total credits: 5*10k + 3*15k + 2*25k = 50k + 45k + 50k = 145k
+        $this->assertEquals(355000, $finalResources->credits, 'Credits: 500k - 145k');
     }
 
     /**
