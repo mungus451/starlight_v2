@@ -357,4 +357,111 @@ class StructureServiceTest extends TestCase
         // For level 0, cost should be base_cost
         $this->assertEquals(1000, $result['costs']['housing']['credits']);
     }
+
+    public function testGetStructureDataCalculatesCrystalCosts(): void
+    {
+        $userId = 1;
+        $mockResource = $this->createMockResource($userId, 1000, 1000); // 1000 crystals
+        $mockStructure = $this->createMockStructure($userId); // Lvl 0
+
+        $structureConfig = [
+            'portal' => [
+                'base_cost' => 1000, 
+                'base_crystal_cost' => 50, // Crystal cost!
+                'multiplier' => 1.5, 
+                'name' => 'Portal'
+            ]
+        ];
+
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
+        
+        $this->mockConfig->shouldReceive('get')->with('game_balance.structures', [])->andReturn($structureConfig);
+        $this->mockConfig->shouldReceive('get')->byDefault()->andReturn([]);
+
+        $result = $this->service->getStructureData($userId);
+
+        $this->assertEquals(1000, $result['costs']['portal']['credits']);
+        $this->assertEquals(50, $result['costs']['portal']['crystals']);
+    }
+
+    public function testUpgradeStructureRejectsInsufficientCrystals(): void
+    {
+        $userId = 1;
+        $structureKey = 'portal';
+
+        // Plenty of credits, but 0 crystals
+        $mockResource = $this->createMockResource($userId, 100000, 0); 
+        $mockStructure = $this->createMockStructure($userId);
+
+        $structureConfig = [
+            'base_cost' => 1000,
+            'base_crystal_cost' => 50,
+            'multiplier' => 1.5,
+            'name' => 'Portal'
+        ];
+
+        $this->mockConfig->shouldReceive('get')->with('game_balance.structures.portal')->andReturn($structureConfig);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
+
+        $response = $this->service->upgradeStructure($userId, $structureKey);
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertStringContainsString('Insufficient naquadah crystals', $response->message);
+    }
+
+    public function testUpgradeStructureDeductsCrystals(): void
+    {
+        $userId = 1;
+        $structureKey = 'portal';
+
+        $mockResource = $this->createMockResource($userId, 100000, 100); // 100 crystals
+        $mockStructure = $this->createMockStructure($userId);
+
+        $structureConfig = [
+            'base_cost' => 1000,
+            'base_crystal_cost' => 50,
+            'multiplier' => 1.5,
+            'name' => 'Portal'
+        ];
+
+        $this->mockConfig->shouldReceive('get')->with('game_balance.structures.portal')->andReturn($structureConfig);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
+
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Expect update with CRYSTAL deduction
+        $this->mockResourceRepo->shouldReceive('updateResources')
+            ->once()
+            ->with($userId, -1000, -50)
+            ->andReturn(true);
+
+        $this->mockStructureRepo->shouldReceive('updateStructureLevel')->once();
+
+        $response = $this->service->upgradeStructure($userId, $structureKey);
+
+        $this->assertTrue($response->isSuccess());
+    }
+
+    // --- Helper ---
+    private function createMockResource(int $userId, int $credits, int $crystals): UserResource
+    {
+        return new UserResource(
+            $userId, 
+            $credits, 
+            0, 
+            0, 
+            (float)$crystals, 
+            0, 0, 0, 0, 0, 0
+        );
+    }
+
+    private function createMockStructure(int $userId): UserStructure
+    {
+        return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
 }
