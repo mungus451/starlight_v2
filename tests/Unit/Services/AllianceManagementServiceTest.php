@@ -19,6 +19,7 @@ use App\Models\Entities\AllianceRole;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\AllianceApplication;
 use App\Models\Entities\AllianceLoan;
+use App\Core\Logger;
 use Mockery;
 use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -39,6 +40,7 @@ class AllianceManagementServiceTest extends TestCase
     private $mockResourceRepo;
     private $mockBankLogRepo;
     private $mockLoanRepo;
+    private Logger|Mockery\MockInterface $mockLogger;
 
     protected function setUp(): void
     {
@@ -54,6 +56,7 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockLoanRepo = Mockery::mock(AllianceLoanRepository::class);
+        $this->mockLogger = Mockery::mock(Logger::class);
 
         // Handle DB transactions in service
         $this->mockPdo->shouldReceive('beginTransaction')->byDefault();
@@ -71,7 +74,8 @@ class AllianceManagementServiceTest extends TestCase
             $this->mockPolicyService,
             $this->mockResourceRepo,
             $this->mockBankLogRepo,
-            $this->mockLoanRepo
+            $this->mockLoanRepo,
+            $this->mockLogger
         );
     }
 
@@ -589,6 +593,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockAllianceRepo->shouldReceive('create')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Alliance Creation Error: DB Error/'));
 
         $response = $this->service->createAlliance($userId, 'Empire', 'EMP');
         $this->assertServiceFailure($response, 'database error');
@@ -616,6 +623,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockUserRepo->shouldReceive('setAlliance')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Accept Application Error: DB Error/'));
 
         $response = $this->service->acceptApplication($adminId, $appId);
         $this->assertServiceFailure($response, 'database error');
@@ -640,6 +650,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockUserRepo->shouldReceive('setAlliance')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Invite User Error: DB Error/'));
 
         $response = $this->service->inviteUser($inviterId, $targetId);
         $this->assertServiceFailure($response, 'database error');
@@ -663,6 +676,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockRoleRepo->shouldReceive('reassignRoleMembers')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Delete Role Error: DB Error/'));
 
         $response = $this->service->deleteRole($adminId, $roleId);
         $this->assertServiceFailure($response, 'database error');
@@ -681,6 +697,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockResourceRepo->shouldReceive('updateCredits')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Alliance Donation Error: DB Error/'));
 
         $response = $this->service->donateToAlliance($userId, $amount);
         $this->assertServiceFailure($response, 'database error');
@@ -719,6 +738,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Alliance Loan Approve Error: DB Error/'));
 
         $response = $this->service->approveLoan($adminId, $loanId);
         $this->assertServiceFailure($response, 'database error');
@@ -749,6 +771,9 @@ class AllianceManagementServiceTest extends TestCase
         // Force Exception
         $this->mockResourceRepo->shouldReceive('updateCredits')->andThrow(new \Exception('DB Error'));
         $this->mockPdo->shouldReceive('rollBack')->once();
+        
+        // Expect Log
+        $this->mockLogger->shouldReceive('error')->once()->with(Mockery::pattern('/Alliance Loan Repay Error: DB Error/'));
 
         $response = $this->service->repayLoan($userId, $loanId, 550);
         $this->assertServiceFailure($response, 'database error');

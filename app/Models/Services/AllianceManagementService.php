@@ -12,6 +12,7 @@ use App\Models\Services\AlliancePolicyService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
+use App\Core\Logger;
 use PDO;
 use Throwable;
 
@@ -33,6 +34,7 @@ class AllianceManagementService
     private ResourceRepository $resourceRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
+    private Logger $logger;
 
     private string $storageRoot;
 
@@ -46,7 +48,8 @@ class AllianceManagementService
         AlliancePolicyService $policyService,
         ResourceRepository $resourceRepo,
         AllianceBankLogRepository $bankLogRepo,
-        AllianceLoanRepository $loanRepo
+        AllianceLoanRepository $loanRepo,
+        Logger $logger
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -58,6 +61,7 @@ class AllianceManagementService
         $this->resourceRepo = $resourceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
+        $this->logger = $logger;
 
         // Define storage root relative to this file
         $this->storageRoot = realpath(__DIR__ . '/../../../storage');
@@ -257,7 +261,7 @@ class AllianceManagementService
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            error_log('Alliance Creation Error: ' . $e->getMessage());
+            $this->logger->error('Alliance Creation Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred while creating the alliance.');
         }
     }
@@ -355,7 +359,7 @@ class AllianceManagementService
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Accept Application Error: ' . $e->getMessage());
+            $this->logger->error('Accept Application Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred.');
         }
         
@@ -408,7 +412,7 @@ class AllianceManagementService
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Invite User Error: ' . $e->getMessage());
+            $this->logger->error('Invite User Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred while sending the invite.');
         }
         
@@ -525,7 +529,7 @@ class AllianceManagementService
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Delete Role Error: ' . $e->getMessage());
+            $this->logger->error('Delete Role Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred.');
         }
 
@@ -558,7 +562,7 @@ class AllianceManagementService
             $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Alliance Donation Error: ' . $e->getMessage());
+            $this->logger->error('Alliance Donation Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred during the donation.');
         }
 
@@ -620,7 +624,7 @@ class AllianceManagementService
             
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Alliance Loan Approve Error: ' . $e->getMessage());
+            $this->logger->error('Alliance Loan Approve Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred.');
         }
         
@@ -685,7 +689,7 @@ class AllianceManagementService
             
         } catch (Throwable $e) {
             $this->db->rollBack();
-            error_log('Alliance Loan Repay Error: ' . $e->getMessage());
+            $this->logger->error('Alliance Loan Repay Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred.');
         }
         
