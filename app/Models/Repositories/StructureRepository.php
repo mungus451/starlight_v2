@@ -61,7 +61,9 @@ class StructureRepository
             'economy_upgrade_level',
             'population_level',
             'armory_level',
-            'accounting_firm_level'
+            'accounting_firm_level',
+            'quantum_research_lab_level',
+            'nanite_forge_level'
         ];
 
         if (!in_array($columnName, $allowedColumns)) {
@@ -95,7 +97,9 @@ class StructureRepository
             economy_upgrade_level: (int)$data['economy_upgrade_level'],
             population_level: (int)$data['population_level'],
             armory_level: (int)$data['armory_level'],
-            accounting_firm_level: (int)$data['accounting_firm_level']
+            accounting_firm_level: (int)$data['accounting_firm_level'],
+            quantum_research_lab_level: (int)($data['quantum_research_lab_level'] ?? 0),
+            nanite_forge_level: (int)($data['nanite_forge_level'] ?? 0)
         );
     }
 }
