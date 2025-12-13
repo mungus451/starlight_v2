@@ -569,6 +569,189 @@ class AllianceManagementServiceTest extends TestCase
         $this->assertServiceFailure($response, 'do not have permission');
     }
 
+    // --- Transaction Failure Tests ---
+
+    public function testCreateAlliance_Fail_TransactionError(): void
+    {
+        $userId = 1;
+        $cost = 50000;
+        $user = $this->mockUser(id: $userId, alliance_id: null);
+        $resources = $this->mockResource(credits: 100000);
+
+        $this->mockAllianceRepo->shouldReceive('findByName')->andReturnNull();
+        $this->mockAllianceRepo->shouldReceive('findByTag')->andReturnNull();
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+        $this->mockConfig->shouldReceive('get')->andReturn($cost);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($resources);
+
+        // Force Exception
+        $this->mockAllianceRepo->shouldReceive('create')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->createAlliance($userId, 'Empire', 'EMP');
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testAcceptApplication_Fail_TransactionError(): void
+    {
+        $adminId = 1;
+        $appId = 5;
+        $targetUserId = 2;
+        $allianceId = 10;
+
+        $app = new AllianceApplication(id: $appId, user_id: $targetUserId, alliance_id: $allianceId, created_at: 'now');
+        $admin = $this->mockUser(id: $adminId, alliance_id: $allianceId, alliance_role_id: 50);
+        $adminRole = $this->mockRole(id: 50, perms: ['can_manage_applications' => true]);
+        $targetUser = $this->mockUser(id: $targetUserId, alliance_id: null);
+        $recruitRole = $this->mockRole(id: 60, name: 'Recruit');
+
+        $this->mockAppRepo->shouldReceive('findById')->andReturn($app);
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->with(50)->andReturn($adminRole);
+        $this->mockUserRepo->shouldReceive('findById')->with($targetUserId)->andReturn($targetUser);
+        $this->mockRoleRepo->shouldReceive('findDefaultRole')->andReturn($recruitRole);
+
+        // Force Exception
+        $this->mockUserRepo->shouldReceive('setAlliance')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->acceptApplication($adminId, $appId);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testInviteUser_Fail_TransactionError(): void
+    {
+        $inviterId = 1;
+        $targetId = 2;
+        $allianceId = 10;
+
+        $inviter = $this->mockUser(id: $inviterId, alliance_id: $allianceId, alliance_role_id: 50);
+        $inviterRole = $this->mockRole(id: 50, perms: ['can_invite_members' => true]);
+        $target = $this->mockUser(id: $targetId, alliance_id: null);
+        $recruitRole = $this->mockRole(id: 60, name: 'Recruit');
+
+        $this->mockUserRepo->shouldReceive('findById')->with($inviterId)->andReturn($inviter);
+        $this->mockRoleRepo->shouldReceive('findById')->with(50)->andReturn($inviterRole);
+        $this->mockUserRepo->shouldReceive('findById')->with($targetId)->andReturn($target);
+        $this->mockRoleRepo->shouldReceive('findDefaultRole')->andReturn($recruitRole);
+
+        // Force Exception
+        $this->mockUserRepo->shouldReceive('setAlliance')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->inviteUser($inviterId, $targetId);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testDeleteRole_Fail_TransactionError(): void
+    {
+        $adminId = 1;
+        $roleId = 80;
+        
+        $role = $this->mockRole(id: $roleId, alliance_id: 10, name: 'CustomRole');
+        $recruitRole = $this->mockRole(id: 60, alliance_id: 10, name: 'Recruit');
+        $admin = $this->mockUser(id: $adminId, alliance_id: 10, alliance_role_id: 50);
+        $adminRole = $this->mockRole(id: 50, perms: ['can_manage_roles' => true]);
+
+        $this->mockRoleRepo->shouldReceive('findById')->with($roleId)->andReturn($role);
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->with(50)->andReturn($adminRole);
+        $this->mockRoleRepo->shouldReceive('findDefaultRole')->andReturn($recruitRole);
+        
+        // Force Exception
+        $this->mockRoleRepo->shouldReceive('reassignRoleMembers')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->deleteRole($adminId, $roleId);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testDonateToAlliance_Fail_TransactionError(): void
+    {
+        $userId = 1;
+        $amount = 1000;
+        $user = $this->mockUser(id: $userId, alliance_id: 10);
+        $resources = $this->mockResource(credits: 5000);
+
+        $this->mockUserRepo->shouldReceive('findById')->andReturn($user);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($resources);
+        
+        // Force Exception
+        $this->mockResourceRepo->shouldReceive('updateCredits')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->donateToAlliance($userId, $amount);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testApproveLoan_Fail_TransactionError(): void
+    {
+        $adminId = 1;
+        $loanId = 100;
+        $borrowerId = 2;
+        $allianceId = 10;
+        
+        $loan = new AllianceLoan(
+            id: $loanId, 
+            alliance_id: $allianceId, 
+            user_id: $borrowerId, 
+            amount_requested: 500, 
+            amount_to_repay: 550, 
+            status: 'pending', 
+            created_at: 'now',
+            updated_at: 'now'
+        );
+        $admin = $this->mockUser(id: $adminId, alliance_id: $allianceId, alliance_role_id: 50);
+        $adminRole = $this->mockRole(id: 50, perms: ['can_manage_bank' => true]);
+        $alliance = $this->mockAlliance(id: $allianceId, bank_credits: 10000);
+        $borrower = $this->mockUser(id: $borrowerId);
+        $borrowerResources = $this->mockResource(credits: 100);
+
+        $this->mockLoanRepo->shouldReceive('findById')->andReturn($loan);
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->andReturn($adminRole);
+        $this->mockAllianceRepo->shouldReceive('findById')->andReturn($alliance);
+        $this->mockUserRepo->shouldReceive('findById')->with($borrowerId)->andReturn($borrower);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($borrowerResources);
+        
+        // Force Exception
+        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->approveLoan($adminId, $loanId);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
+    public function testRepayLoan_Fail_TransactionError(): void
+    {
+        $userId = 2;
+        $loanId = 100;
+        
+        $loan = new AllianceLoan(
+            id: $loanId, 
+            alliance_id: 10, 
+            user_id: $userId, 
+            amount_requested: 500, 
+            amount_to_repay: 550, 
+            status: 'active', 
+            created_at: 'now',
+            updated_at: 'now'
+        );
+        $user = $this->mockUser(id: $userId, alliance_id: 10);
+        $resources = $this->mockResource(credits: 1000);
+        
+        $this->mockLoanRepo->shouldReceive('findById')->andReturn($loan);
+        $this->mockUserRepo->shouldReceive('findById')->andReturn($user);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($resources);
+        
+        // Force Exception
+        $this->mockResourceRepo->shouldReceive('updateCredits')->andThrow(new \Exception('DB Error'));
+        $this->mockPdo->shouldReceive('rollBack')->once();
+
+        $response = $this->service->repayLoan($userId, $loanId, 550);
+        $this->assertServiceFailure($response, 'database error');
+    }
+
     // --- Helpers ---
     private function mockUser(int $id, ?int $alliance_id = null, ?int $alliance_role_id = null): User
     {
