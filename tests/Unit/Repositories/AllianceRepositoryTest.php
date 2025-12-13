@@ -87,6 +87,75 @@ class AllianceRepositoryTest extends TestCase
             ->andReturn($mockStmt);
 
         $this->repository->updateLastCompoundAt($allianceId);
-        $this->assertTrue(true); // Asserting no exceptions were thrown
+        $this->assertTrue(true);
+    }
+
+    public function testGetTotalCountReturnsInt(): void
+    {
+        $mockStmt = Mockery::mock(PDOStatement::class);
+        $mockStmt->shouldReceive('fetch')
+            ->once()
+            ->with(PDO::FETCH_ASSOC)
+            ->andReturn(['total' => 5]);
+
+        $this->mockDb->shouldReceive('query')
+            ->once()
+            ->with('SELECT COUNT(id) as total FROM alliances')
+            ->andReturn($mockStmt);
+
+        $result = $this->repository->getTotalCount();
+        $this->assertEquals(5, $result);
+    }
+
+    public function testGetPaginatedAlliancesReturnsEntities(): void
+    {
+        $mockStmt = Mockery::mock(PDOStatement::class);
+        $mockStmt->shouldReceive('bindParam')->times(2);
+        $mockStmt->shouldReceive('execute')->once();
+        
+        $row = [
+            'id' => 1, 'name' => 'A', 'tag' => 'A', 'leader_id' => 1, 'net_worth' => 100, 
+            'bank_credits' => 0, 'created_at' => '2024-01-01', 'is_joinable' => 1
+        ];
+        
+        $mockStmt->shouldReceive('fetch')
+            ->with(PDO::FETCH_ASSOC)
+            ->andReturn($row, false);
+
+        $this->mockDb->shouldReceive('prepare')
+            ->once()
+            ->with(Mockery::pattern('/SELECT \* FROM alliances/'))
+            ->andReturn($mockStmt);
+
+        $result = $this->repository->getPaginatedAlliances(10, 0);
+        
+        $this->assertCount(1, $result);
+        $this->assertInstanceOf(Alliance::class, $result[0]);
+    }
+
+    public function testGetLeaderboardAlliancesReturnsArray(): void
+    {
+        $mockStmt = Mockery::mock(PDOStatement::class);
+        $mockStmt->shouldReceive('bindParam')->times(2);
+        $mockStmt->shouldReceive('execute')->once();
+        
+        $data = [
+            ['id' => 1, 'name' => 'A', 'member_count' => 5]
+        ];
+        
+        $mockStmt->shouldReceive('fetchAll')
+            ->once()
+            ->with(PDO::FETCH_ASSOC)
+            ->andReturn($data);
+
+        $this->mockDb->shouldReceive('prepare')
+            ->once()
+            ->with(Mockery::pattern('/SELECT.*member_count/s'))
+            ->andReturn($mockStmt);
+
+        $result = $this->repository->getLeaderboardAlliances(10, 0);
+        
+        $this->assertIsArray($result);
+        $this->assertEquals(5, $result[0]['member_count']);
     }
 }
