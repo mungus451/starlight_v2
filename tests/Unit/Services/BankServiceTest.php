@@ -410,4 +410,89 @@ class BankServiceTest extends TestCase
         $this->assertFalse($response->isSuccess());
         $this->assertEquals('You cannot transfer credits to yourself.', $response->message);
     }
+
+    /**
+     * Test: transfer fails when insufficient credits
+     */
+    public function testTransferRejectsInsufficientCredits(): void
+    {
+        $senderId = 1;
+        $recipientId = 2;
+        $amount = 1000;
+
+        $recipient = $this->createMockUser($recipientId, 'Recipient');
+        $this->mockUserRepo->shouldReceive('findByCharacterName')->with('Recipient')->andReturn($recipient);
+
+        // Transaction Start
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        // No commit expected on failure path
+
+        $senderRes = $this->createMockResource($senderId, 500); // 500 < 1000
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($senderId)->andReturn($senderRes);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($recipientId)->andReturn($this->createMockResource($recipientId, 0));
+
+        $response = $this->service->transfer($senderId, 'Recipient', $amount);
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertEquals('You do not have enough credits on hand to transfer.', $response->message);
+    }
+
+    /**
+     * Test: transfer succeeds and updates both users
+     */
+    public function testTransferSucceedsAtomicUpdate(): void
+    {
+        $senderId = 1;
+        $recipientId = 2;
+        $amount = 1000;
+
+        $recipient = $this->createMockUser($recipientId, 'Recipient');
+        $this->mockUserRepo->shouldReceive('findByCharacterName')->with('Recipient')->andReturn($recipient);
+
+        // Transaction
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction')->once();
+        $this->mockDb->shouldReceive('commit')->once();
+
+        // Resources
+        $senderRes = $this->createMockResource($senderId, 5000);
+        $recipientRes = $this->createMockResource($recipientId, 500);
+
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($senderId)->andReturn($senderRes);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($recipientId)->andReturn($recipientRes);
+
+        // Expectations
+        $this->mockResourceRepo->shouldReceive('updateCredits')->once()->with($senderId, 4000); // 5000 - 1000
+        $this->mockResourceRepo->shouldReceive('updateCredits')->once()->with($recipientId, 1500); // 500 + 1000
+
+        $response = $this->service->transfer($senderId, 'Recipient', $amount);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertStringContainsString('successfully transferred', $response->message);
+    }
+
+    // --- Helpers ---
+
+    private function createMockUser(int $id, string $name): User
+    {
+        return new User(
+            id: $id,
+            email: 'test@test.com',
+            characterName: $name,
+            bio: null,
+            profile_picture_url: null,
+            phone_number: null,
+            alliance_id: null,
+            alliance_role_id: null,
+            passwordHash: 'hash',
+            createdAt: '2024-01-01',
+            is_npc: false
+        );
+    }
+
+    private function createMockResource(int $userId, int $credits): UserResource
+    {
+        return new UserResource($userId, $credits, 0, 0, 0.0, 0, 0, 0, 0, 0, 0);
+    }
 }
