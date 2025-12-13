@@ -309,13 +309,9 @@ class AllianceManagementServiceTest extends TestCase
         // Loan Mock (stdClass or Array often used in repos, but here likely an Entity?
         // Assuming Loan is likely an Entity or Object. Let's look at signature.
         // It's AllianceLoan Entity.
-        $loan = Mockery::mock('alias:App\Models\Entities\AllianceLoan');
-        $loan->id = $loanId;
-        $loan->alliance_id = $allianceId;
-        $loan->user_id = $borrowerId;
-        $loan->amount_requested = 1000;
-        $loan->amount_to_repay = 1100;
-        $loan->status = 'pending';
+        $loan = new \App\Models\Entities\AllianceLoan(
+            $loanId, $allianceId, $borrowerId, 1000, 1100, 'pending', '2024-01-01', '2024-01-01'
+        );
 
         $this->mockLoanRepo->shouldReceive('findById')->with($loanId)->andReturn($loan);
 
@@ -351,12 +347,9 @@ class AllianceManagementServiceTest extends TestCase
         $allianceId = 10;
         $amount = 500;
 
-        $loan = Mockery::mock('alias:App\Models\Entities\AllianceLoan');
-        $loan->id = $loanId;
-        $loan->user_id = $userId;
-        $loan->alliance_id = $allianceId;
-        $loan->status = 'active';
-        $loan->amount_to_repay = 1000;
+        $loan = new \App\Models\Entities\AllianceLoan(
+            $loanId, $allianceId, $userId, 1000, 1000, 'active', '2024-01-01', '2024-01-01'
+        );
 
         $this->mockLoanRepo->shouldReceive('findById')->with($loanId)->andReturn($loan);
         $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($this->createMockUser($userId, $allianceId));
