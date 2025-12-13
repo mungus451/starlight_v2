@@ -131,6 +131,14 @@ class StructurePresenter
             case 'accounting_firm':
                 return "+ 1% Global Income Multiplier / Level";
             
+            case 'quantum_research_lab':
+                $val = $turnConfig['research_data_per_lab_level'] ?? 0;
+                return "+ " . number_format($val) . " Research Data / Turn";
+
+            case 'nanite_forge':
+                $val = ($attackConfig['nanite_casualty_reduction_per_level'] ?? 0) * 100;
+                return "- " . $val . "% Casualties in Winning Battles";
+            
             default:
                 return "";
         }
@@ -143,6 +151,7 @@ class StructurePresenter
             'Defense' => '🛡️',
             'Offense' => '⚔️',
             'Intel'   => '📡',
+            'Military' => '🛡️', // New category
             default   => '⚙️',
         };
     }

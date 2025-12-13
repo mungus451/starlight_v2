@@ -225,6 +225,18 @@ class AttackService
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
+        // --- NEW: Nanite Forge Casualty Reduction (for Defender) ---
+        $naniteReductionPercent = 0.0;
+        if ($attackResult === 'victory' && $defenderStructures->nanite_forge_level > 0) {
+            $naniteReductionPerLevel = $this->config->get('game_balance.attack.nanite_casualty_reduction_per_level', 0.0);
+            $maxNaniteReduction = $this->config->get('game_balance.attack.max_nanite_casualty_reduction', 0.0);
+            
+            $rawReduction = $defenderStructures->nanite_forge_level * $naniteReductionPerLevel;
+            $naniteReductionPercent = min($rawReduction, $maxNaniteReduction);
+            
+            $defenderGuardsLost = (int)ceil($defenderGuardsLost * (1 - $naniteReductionPercent));
+        }
+
         // XP Calculation
         $attackerXpGain = match($attackResult) {
             'victory' => $xpConfig['battle_win'],

@@ -134,14 +134,14 @@ $structures,
 $user->alliance_id // Pass alliance ID for bonus calculations
 );
 
-$creditsGained = $incomeBreakdown['total_credit_income'];
-$interestGained = $incomeBreakdown['interest'];
-$citizensGained = $incomeBreakdown['total_citizens'];
-$attackTurnsGained = 1; // Grant 1 attack turn per... turn
+        $creditsGained = $incomeBreakdown['total_credit_income'];
+        $interestGained = $incomeBreakdown['interest'];
+        $citizensGained = $incomeBreakdown['total_citizens'];
+        $researchDataIncome = $incomeBreakdown['research_data_income']; // NEW
+        $attackTurnsGained = 1; // Grant 1 attack turn per... turn
 
-// 3. Apply income using the atomic repository method
-$this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained);
-
+        // 3. Apply income using the atomic repository method
+        $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained, $researchDataIncome);
 // 4. Apply attack turns using the new atomic method
 $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 

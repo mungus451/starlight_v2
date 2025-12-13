@@ -36,7 +36,8 @@ class ResourceRepository
                 guards,
                 spies,
                 sentries,
-                untraceable_chips
+                untraceable_chips,
+                research_data
             FROM user_resources WHERE user_id = ?
         ");
         $stmt->execute([$userId]);
@@ -206,18 +207,19 @@ class ResourceRepository
      * @param int $citizensGained
      * @return bool True on success
      */
-    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained): bool
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained): bool
     {
         $sql = "
             UPDATE user_resources SET
                 credits = credits + ?,
                 banked_credits = banked_credits + ?,
-                untrained_citizens = untrained_citizens + ?
+                untrained_citizens = untrained_citizens + ?,
+                research_data = research_data + ?
             WHERE user_id = ?
         ";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $userId]);
+        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $userId]);
     }
 
     // --- END NEW METHOD ---
@@ -277,7 +279,8 @@ class ResourceRepository
             guards: (int)$data['guards'],
             spies: (int)$data['spies'],
             sentries: (int)$data['sentries'],
-            untraceable_chips: (int)($data['untraceable_chips'] ?? 0)
+            untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
+            research_data: (int)($data['research_data'] ?? 0)
         );
     }
 }

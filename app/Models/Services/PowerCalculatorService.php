@@ -244,10 +244,15 @@ class PowerCalculatorService
         $baseCitizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
         $totalCitizenIncome = $baseCitizenIncome + $allianceCitizenFlat;
 
+        // 7. Research Data Income
+        $researchDataPerLevel = $config['research_data_per_lab_level'] ?? 0;
+        $researchDataIncome = $structures->quantum_research_lab_level * $researchDataPerLevel;
+
         return [
             'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
             'total_citizens' => $totalCitizenIncome,
+            'research_data_income' => $researchDataIncome, // NEW
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -264,7 +269,8 @@ class PowerCalculatorService
             'banked_credits' => $resources->banked_credits,
             'interest_rate_pct' => $config['bank_interest_rate'],
             'base_citizen_income' => $baseCitizenIncome,
-            'alliance_citizen_bonus' => $allianceCitizenFlat
+            'alliance_citizen_bonus' => $allianceCitizenFlat,
+            'quantum_research_lab_level' => $structures->quantum_research_lab_level // NEW
         ];
     }
 

@@ -77,6 +77,23 @@ return [
             'category' => 'Economy',
             'description' => 'Increases passive credit income by 1% per level.'
         ],
+        // --- Age of Ascension: Phase 1 Structures ---
+        'quantum_research_lab' => [
+            'name' => 'Quantum Research Lab',
+            'base_cost' => 500000,
+            'base_crystal_cost' => 50,
+            'multiplier' => 1.7,
+            'category' => 'Intel',
+            'description' => 'Generates Research Data each turn, unlocking powerful Doctrines.'
+        ],
+        'nanite_forge' => [
+            'name' => 'Nanite Forge',
+            'base_cost' => 750000,
+            'base_crystal_cost' => 100,
+            'multiplier' => 1.8,
+            'category' => 'Military',
+            'description' => 'Reduces casualties in winning battles, making your armies more efficient.'
+        ],
     ],
     // --- Phase 7 ---
     'spy' => [
@@ -121,6 +138,10 @@ return [
         'net_worth_steal_percent' => 0.05,
         'experience_gain_base' => 500, // Legacy value, kept for reference
         'war_prestige_gain_base' => 5,
+
+        // New: Nanite Forge Casualty Reduction
+        'nanite_casualty_reduction_per_level' => 0.01, // 1% reduction per level
+        'max_nanite_casualty_reduction' => 0.50, // Max 50% reduction
     ],
     // --- Phase 9 ---
     'level_up' => [
@@ -148,7 +169,10 @@ return [
         'credit_bonus_per_wealth_point' => 0.01, // 0.5% bonus to econ/worker income
         
         // New citizens per turn, per level of Population
-        'citizen_growth_per_pop_level' => 1
+        'citizen_growth_per_pop_level' => 1,
+
+        // New: Research Data Generation
+        'research_data_per_lab_level' => 100, // 100 Research Data per QRL level per turn
     ],
 
     // --- Phase 11 ---

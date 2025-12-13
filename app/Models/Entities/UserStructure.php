@@ -26,7 +26,9 @@ readonly class UserStructure
         public readonly int $economy_upgrade_level,
         public readonly int $population_level,
         public readonly int $armory_level,
-        public readonly int $accounting_firm_level
+        public readonly int $accounting_firm_level,
+        public readonly int $quantum_research_lab_level = 0,
+        public readonly int $nanite_forge_level = 0
     ) {
     }
 }
