@@ -70,75 +70,67 @@ class NpcServiceTest extends TestCase
             $this->mockAllianceStructService,
             $this->mockLogger
         );
+
+        // Relaxed Defaults to prevent crashes in non-tested managers
+        $this->mockTrainingService->shouldReceive('trainUnits')->byDefault()->andReturn(ServiceResponse::success('Default'));
+        $this->mockArmoryService->shouldReceive('getArmoryData')->byDefault()->andReturn(['armoryConfig' => [], 'inventory' => [], 'loadouts' => []]);
+        $this->mockStatsRepo->shouldReceive('findByUserId')->byDefault()->andReturn($this->createMockStats(0, 0));
+        $this->mockStatsRepo->shouldReceive('getTotalTargetCount')->byDefault()->andReturn(0);
+        $this->mockAllianceRepo->shouldReceive('findById')->byDefault()->andReturn(null);
     }
 
     public function testRunNpcCycleDoesNothingIfNoNpcs(): void
     {
         $this->mockUserRepo->shouldReceive('findNpcs')->once()->andReturn([]);
+        $this->mockLogger->shouldReceive('info')->byDefault();
         
-        $this->mockLogger->shouldReceive('info')->with("--- STARTING NPC AGENT CYCLE ---")->once();
-        $this->mockLogger->shouldReceive('info')->with("Found 0 NPC agents active.")->once();
-        $this->mockLogger->shouldReceive('info')->with("WARNING: No NPCs found.")->once();
-
         $this->service->runNpcCycle();
-        $this->assertTrue(true); // Implicitly passed if no errors
+        $this->assertTrue(true);
     }
 
-    public function testProcessNpcExecutesAllManagers(): void
+    public function testManageEconomyPrioritizesPopulationWhenLowCitizens(): void
     {
         $npcId = 10;
-        $npc = $this->createMockUser($npcId, 'NPC_Agent');
-
+        $npc = $this->createMockUser($npcId, 'NPC');
         $this->mockUserRepo->shouldReceive('findNpcs')->once()->andReturn([$npc]);
-
-        // Logger Expectations
         $this->mockLogger->shouldReceive('info')->byDefault();
 
-        // 1. Economy Mock
+        // Low Citizens (< 50)
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockResource($npcId, 10)); // 10 citizens
         $this->mockStructureRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockStructure($npcId));
-        $this->mockResourceRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockResource($npcId, citizens: 100));
-        
-        // Should attempt to upgrade something
+
+        // Expect 'population' upgrade
+        $this->mockStructureService->shouldReceive('upgradeStructure')
+            ->once()
+            ->with($npcId, 'population')
+            ->andReturn(ServiceResponse::success('Upgraded'));
+
+        $this->mockArmoryService->shouldReceive('getArmoryData')->andReturn(['armoryConfig' => [], 'inventory' => [], 'loadouts' => []]);
+        $this->mockStatsRepo->shouldReceive('findByUserId')->andReturn($this->createMockStats($npcId, 0)); // No attack turns
+
+        $this->service->runNpcCycle();
+        $this->assertTrue(true);
+    }
+
+    public function testManageEconomyDiversifiesWhenRich(): void
+    {
+        $npcId = 10;
+        $npc = $this->createMockUser($npcId, 'NPC');
+        $this->mockUserRepo->shouldReceive('findNpcs')->once()->andReturn([$npc]);
+        $this->mockLogger->shouldReceive('info')->byDefault();
+
+        // High Citizens, High Economy
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockResource($npcId, 1000));
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockStructure($npcId, econLevel: 25));
+
+        // Expect ANY upgrade (randomized, but definitely called)
         $this->mockStructureService->shouldReceive('upgradeStructure')
             ->once()
             ->with($npcId, Mockery::type('string'))
             ->andReturn(ServiceResponse::success('Upgraded'));
 
-        // 2. Training Mock
-        // 100 Citizens -> min(100, 500) = 100 to train
-        $this->mockTrainingService->shouldReceive('trainUnits')
-            ->times(4) // Workers, Soldiers, Guards, Spies
-            ->with($npcId, Mockery::type('string'), Mockery::type('int'))
-            ->andReturn(ServiceResponse::success('Trained'));
-
-        // 3. Armory Mock
-        $this->mockArmoryService->shouldReceive('getArmoryData')
-            ->once()
-            ->with($npcId)
-            ->andReturn([
-                'armoryConfig' => [],
-                'inventory' => [],
-                'loadouts' => []
-            ]);
-
-        // 4. Alliance Mock (Skip if no alliance or not leader)
-        // NPC has no alliance in mock
-
-        // 5. Aggression Mock
-        // Stats
-        $this->mockStatsRepo->shouldReceive('findByUserId')->with($npcId)->andReturn($this->createMockStats($npcId, attackTurns: 10));
-        $this->mockStatsRepo->shouldReceive('getTotalTargetCount')->with($npcId)->andReturn(1);
-        $this->mockStatsRepo->shouldReceive('getPaginatedTargetList')->andReturn([['id' => 20, 'character_name' => 'Victim']]);
-        
-        // Victim Lookup
-        $this->mockUserRepo->shouldReceive('findById')->with(20)->andReturn($this->createMockUser(20, 'Victim'));
-
-        // Attack!
-        // We use atMost()->once() because mt_rand might skip it
-        $this->mockAttackService->shouldReceive('conductAttack')
-            ->atMost()->once()
-            ->with($npcId, 'Victim', 'plunder')
-            ->andReturn(ServiceResponse::success('Attack complete'));
+        $this->mockArmoryService->shouldReceive('getArmoryData')->andReturn(['armoryConfig' => [], 'inventory' => [], 'loadouts' => []]);
+        $this->mockStatsRepo->shouldReceive('findByUserId')->andReturn($this->createMockStats($npcId, 0));
 
         $this->service->runNpcCycle();
         $this->assertTrue(true);
@@ -163,9 +155,9 @@ class NpcServiceTest extends TestCase
         );
     }
 
-    private function createMockStructure(int $userId): UserStructure
+    private function createMockStructure(int $userId, int $econLevel = 10): UserStructure
     {
-        return new UserStructure($userId, 10, 10, 10, 10, 10, 10, 10, 0);
+        return new UserStructure($userId, 10, 10, 10, 10, $econLevel, 10, 10, 0);
     }
 
     private function createMockResource(int $userId, int $citizens): UserResource

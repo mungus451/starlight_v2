@@ -187,6 +187,49 @@ class PowerCalculatorServiceTest extends TestCase
         $this->assertEquals(0.02, $result['accounting_firm_bonus_pct']);
     }
 
+    public function testCalculateOffensePowerWithWarlordsThrone(): void
+    {
+        $userId = 1;
+        $allianceId = 100;
+        
+        $resources = $this->createMockResources($userId, soldiers: 100);
+        $stats = $this->createMockStats($userId);
+        $structures = $this->createMockStructures($userId);
+
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack')->andReturn([
+            'power_per_soldier' => 10, 'power_per_offense_level' => 0, 'power_per_strength_point' => 0
+        ]);
+        $this->mockArmoryService->shouldReceive('getAggregateBonus')->andReturn(0);
+
+        // 1. Define Training Ground (5% offense)
+        $defTraining = new AllianceStructureDefinition(
+            'training_ground', 'T', 'D', 1, 1, 'B', json_encode([['type' => 'offense_bonus_percent', 'value' => 0.05]])
+        );
+        // 2. Define Warlord's Throne (10% boost to bonuses)
+        $defThrone = new AllianceStructureDefinition(
+            'warlords_throne', 'W', 'D', 1, 1, 'B', json_encode([['type' => 'all_bonus_multiplier', 'value' => 0.10]])
+        );
+
+        $ownedTraining = new AllianceStructure(1, $allianceId, 'training_ground', 2, '', ''); // 10% base
+        $ownedThrone = new AllianceStructure(2, $allianceId, 'warlords_throne', 1, '', ''); // 10% boost
+
+        $this->mockAllianceStructRepo->shouldReceive('findByAllianceId')->with($allianceId)
+            ->andReturn(['training_ground' => $ownedTraining, 'warlords_throne' => $ownedThrone]);
+
+        $this->mockStructDefRepo->shouldReceive('getAllDefinitions')->andReturn([$defTraining, $defThrone]);
+
+        // Logic:
+        // Base Bonus (Training Lvl 2) = 0.05 * 2 = 0.10
+        // Throne Multiplier (Lvl 1) = 0.10
+        // Boosted Bonus = 0.10 * (1 + 0.10) = 0.11 (11%)
+        // Total Power = 1000 * (1 + 0.11) = 1110
+
+        $result = $this->service->calculateOffensePower($userId, $resources, $stats, $structures, $allianceId);
+
+        $this->assertEquals(1110, $result['total']);
+        $this->assertEqualsWithDelta(0.11, $result['alliance_bonus_pct'], 0.0001);
+    }
+
     // --- Helpers ---
 
     private function createMockResources(int $userId, int $soldiers = 0, int $workers = 0, int $banked = 0): UserResource
