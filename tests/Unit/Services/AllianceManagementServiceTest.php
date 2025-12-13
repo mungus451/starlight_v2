@@ -22,6 +22,11 @@ use App\Models\Entities\AllianceLoan;
 use Mockery;
 use PDO;
 
+/**
+ * Comprehensive Unit Tests for AllianceManagementService.
+ * Covers all 22 public methods and their internal logic branches.
+ * @covers \App\Models\Services\AllianceManagementService
+ */
 class AllianceManagementServiceTest extends TestCase
 {
     private AllianceManagementService $service;
