@@ -217,6 +217,199 @@ class AllianceManagementServiceTest extends TestCase
         $this->assertStringContainsString('successfully donated', $response->message);
     }
 
+    // --- Roles ---
+
+    public function testCreateRoleSuccess(): void
+    {
+        $adminId = 1;
+        $allianceId = 10;
+        $admin = $this->createMockUser($adminId, $allianceId);
+        $adminRole = $this->createMockRole(false, 'Leader', 100);
+        // Manually override property for test logic check (can_manage_roles) if needed,
+        // or ensure createMockRole sets it.
+        // My helper sets 'can_manage_roles' to false by default. I need to override/mock it.
+        
+        // Since AllianceRole is readonly, I'll just create a new one here manually
+        $adminRole = new AllianceRole(
+            100, $allianceId, 'Leader', 1, true, true, true, true, true, true, true, true, true, true, true
+        );
+
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->with($admin->alliance_role_id)->andReturn($adminRole);
+
+        $this->mockRoleRepo->shouldReceive('create')
+            ->once()
+            ->with($allianceId, 'Officer', 100, ['can_kick_members' => 1])
+            ->andReturn(200);
+
+        $response = $this->service->createRole($adminId, $allianceId, 'Officer', ['can_kick_members' => 1]);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    public function testDeleteRoleSuccess(): void
+    {
+        $adminId = 1;
+        $roleId = 50;
+        $allianceId = 10;
+
+        $admin = $this->createMockUser($adminId, $allianceId);
+        $adminRole = new AllianceRole(100, $allianceId, 'Leader', 1, true, true, true, true, true, true, true, true, true, true, true);
+        
+        $targetRole = $this->createMockRole(false, 'CustomRole', $roleId);
+        $recruitRole = $this->createMockRole(false, 'Recruit', 555);
+
+        $this->mockRoleRepo->shouldReceive('findById')->with($roleId)->andReturn($targetRole);
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->with($admin->alliance_role_id)->andReturn($adminRole);
+        $this->mockRoleRepo->shouldReceive('findDefaultRole')->with($allianceId, 'Recruit')->andReturn($recruitRole);
+
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        $this->mockRoleRepo->shouldReceive('reassignRoleMembers')->once()->with($roleId, 555);
+        $this->mockRoleRepo->shouldReceive('delete')->once()->with($roleId);
+
+        $response = $this->service->deleteRole($adminId, $roleId);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    // --- Loans ---
+
+    public function testRequestLoanSuccess(): void
+    {
+        $userId = 1;
+        $allianceId = 10;
+        $user = $this->createMockUser($userId, $allianceId);
+
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+        
+        $this->mockLoanRepo->shouldReceive('createLoanRequest')
+            ->once()
+            ->with($allianceId, $userId, 1000)
+            ->andReturn(true);
+
+        $response = $this->service->requestLoan($userId, 1000);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    public function testApproveLoanSuccess(): void
+    {
+        $adminId = 1;
+        $loanId = 50;
+        $borrowerId = 2;
+        $allianceId = 10;
+
+        // Admin
+        $admin = $this->createMockUser($adminId, $allianceId);
+        $adminRole = new AllianceRole(100, $allianceId, 'Leader', 1, true, true, true, true, true, true, true, true, true, true, true);
+        $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
+        $this->mockRoleRepo->shouldReceive('findById')->with($admin->alliance_role_id)->andReturn($adminRole);
+
+        // Loan Mock (stdClass or Array often used in repos, but here likely an Entity?
+        // Assuming Loan is likely an Entity or Object. Let's look at signature.
+        // It's AllianceLoan Entity.
+        $loan = Mockery::mock('alias:App\Models\Entities\AllianceLoan');
+        $loan->id = $loanId;
+        $loan->alliance_id = $allianceId;
+        $loan->user_id = $borrowerId;
+        $loan->amount_requested = 1000;
+        $loan->amount_to_repay = 1100;
+        $loan->status = 'pending';
+
+        $this->mockLoanRepo->shouldReceive('findById')->with($loanId)->andReturn($loan);
+
+        // Alliance Check
+        $alliance = new Alliance($allianceId, 'A', 'A', '', '', true, 1, 0, 100000, null, '');
+        $this->mockAllianceRepo->shouldReceive('findById')->with($allianceId)->andReturn($alliance);
+
+        // Borrower Check
+        $borrower = $this->createMockUser($borrowerId, $allianceId);
+        $borrowerRes = $this->createMockResource($borrowerId, 0);
+        $this->mockUserRepo->shouldReceive('findById')->with($borrowerId)->andReturn($borrower);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($borrowerId)->andReturn($borrowerRes);
+
+        // Transaction
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Logic
+        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')->with($allianceId, -1000);
+        $this->mockResourceRepo->shouldReceive('updateCredits')->with($borrowerId, 1000);
+        $this->mockBankLogRepo->shouldReceive('createLog');
+        $this->mockLoanRepo->shouldReceive('updateLoan')->with($loanId, 'active', 1100);
+
+        $response = $this->service->approveLoan($adminId, $loanId);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    public function testRepayLoanSuccess(): void
+    {
+        $userId = 1;
+        $loanId = 50;
+        $allianceId = 10;
+        $amount = 500;
+
+        $loan = Mockery::mock('alias:App\Models\Entities\AllianceLoan');
+        $loan->id = $loanId;
+        $loan->user_id = $userId;
+        $loan->alliance_id = $allianceId;
+        $loan->status = 'active';
+        $loan->amount_to_repay = 1000;
+
+        $this->mockLoanRepo->shouldReceive('findById')->with($loanId)->andReturn($loan);
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($this->createMockUser($userId, $allianceId));
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($this->createMockResource($userId, 5000));
+
+        // Transaction
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Logic
+        $this->mockResourceRepo->shouldReceive('updateCredits')->with($userId, 4500); // 5000 - 500
+        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')->with($allianceId, 500);
+        $this->mockBankLogRepo->shouldReceive('createLog');
+        $this->mockLoanRepo->shouldReceive('updateLoan')->with($loanId, 'active', 500); // 1000 - 500
+
+        $response = $this->service->repayLoan($userId, $loanId, $amount);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    // --- Membership ---
+
+    public function testLeaveAllianceSuccess(): void
+    {
+        $userId = 1;
+        $user = $this->createMockUser($userId, 10);
+        // Not a leader role
+        $role = $this->createMockRole(false, 'Member');
+
+        $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
+        $this->mockRoleRepo->shouldReceive('findById')->with($user->alliance_role_id)->andReturn($role);
+        $this->mockUserRepo->shouldReceive('leaveAlliance')->with($userId);
+
+        $response = $this->service->leaveAlliance($userId);
+        $this->assertTrue($response->isSuccess());
+    }
+
+    public function testCancelApplicationSuccess(): void
+    {
+        $userId = 1;
+        $appId = 99;
+        
+        $app = Mockery::mock('alias:App\Models\Entities\AllianceApplication');
+        $app->id = $appId;
+        $app->user_id = $userId;
+
+        $this->mockAppRepo->shouldReceive('findById')->with($appId)->andReturn($app);
+        $this->mockAppRepo->shouldReceive('delete')->with($appId);
+
+        $response = $this->service->cancelApplication($userId, $appId);
+        $this->assertTrue($response->isSuccess());
+    }
+
     // --- Helpers ---
 
     private function createMockUser(int $id, ?int $allianceId): User
