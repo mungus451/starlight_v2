@@ -98,13 +98,15 @@ class TurnProcessorServiceTest extends TestCase
             ->andReturn([
                 'total_credit_income' => 1000,
                 'interest' => 50,
-                'total_citizens' => 10
+                'total_citizens' => 10,
+                'research_data_income' => 20 // New
             ]);
 
         // 5. Mock Updates
         $this->mockResourceRepo->shouldReceive('applyTurnIncome')
             ->once()
-            ->with($userId, 1000, 50, 10);
+            ->with($userId, 1000, 50, 10, 20); // New argument
+
 
         $this->mockStatsRepo->shouldReceive('applyTurnAttackTurn')
             ->once()
@@ -196,7 +198,7 @@ class TurnProcessorServiceTest extends TestCase
 
     private function createMockStructure(int $userId): UserStructure
     {
-        return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0);
+        return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     private function createMockStats(int $userId): UserStats

@@ -187,6 +187,36 @@ class PowerCalculatorServiceTest extends TestCase
         $this->assertEquals(0.02, $result['accounting_firm_bonus_pct']);
     }
 
+    public function testCalculateIncomePerTurnIncludesResearchData(): void
+    {
+        $userId = 1;
+        
+        $resources = $this->createMockResources($userId);
+        $stats = $this->createMockStats($userId);
+        $structures = $this->createMockStructures($userId, qrlLevel: 5); // QRL Level 5
+
+        $this->mockConfig->shouldReceive('get')
+            ->with('game_balance.turn_processor')
+            ->andReturn([
+                'credit_income_per_econ_level' => 0, // Not testing credits here
+                'credit_income_per_worker' => 0,
+                'credit_bonus_per_wealth_point' => 0,
+                'bank_interest_rate' => 0,
+                'citizen_growth_per_pop_level' => 0,
+                'research_data_per_lab_level' => 20 // 20 Research Data per level
+            ]);
+
+        $this->mockArmoryService->shouldReceive('getAggregateBonus')->andReturn(0);
+
+        // Logic Check:
+        // Research Data Income = 5 * 20 = 100
+
+        $result = $this->service->calculateIncomePerTurn($userId, $resources, $stats, $structures, null);
+
+        $this->assertEquals(100, $result['research_data_income']);
+        $this->assertEquals(5, $result['quantum_research_lab_level']);
+    }
+
     public function testCalculateOffensePowerWithWarlordsThrone(): void
     {
         $userId = 1;
@@ -270,7 +300,7 @@ class PowerCalculatorServiceTest extends TestCase
         );
     }
 
-    private function createMockStructures(int $userId, int $offenseLevel = 0, int $economyLevel = 0, int $accountingLevel = 0): UserStructure
+    private function createMockStructures(int $userId, int $offenseLevel = 0, int $economyLevel = 0, int $accountingLevel = 0, int $qrlLevel = 0, int $naniteForgeLevel = 0): UserStructure
     {
         return new UserStructure(
             user_id: $userId,
@@ -281,7 +311,9 @@ class PowerCalculatorServiceTest extends TestCase
             economy_upgrade_level: $economyLevel,
             population_level: 0,
             armory_level: 0,
-            accounting_firm_level: $accountingLevel
+            accounting_firm_level: $accountingLevel,
+            quantum_research_lab_level: $qrlLevel,
+            nanite_forge_level: $naniteForgeLevel
         );
     }
 }

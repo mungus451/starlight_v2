@@ -226,6 +226,73 @@ class AttackServiceTest extends TestCase
         $this->assertStringContainsString('Bounty Claimed!', $response->message);
     }
 
+    public function testConductAttackWithNaniteForgeReducesLosses(): void
+    {
+        $attackerId = 1;
+        $defenderId = 2;
+
+        $attacker = $this->createMockUser($attackerId, 'Attacker', null);
+        $defender = $this->createMockUser($defenderId, 'Defender', null);
+
+        // --- Mocks with Nanite Forge ---
+        $this->mockUserRepo->shouldReceive('findByCharacterName')->with($defender->characterName)->andReturn($defender);
+        $this->mockUserRepo->shouldReceive('findById')->with($attacker->id)->andReturn($attacker);
+
+        $attRes = $this->createMockResources($attacker->id, 100000, 100);
+        $defRes = $this->createMockResources($defender->id, 100000, 50, 50); // 50 Guards
+        $attStats = $this->createMockStats($attacker->id);
+        $defStats = $this->createMockStats($defender->id);
+        $attStruct = $this->createMockStructure($attacker->id);
+        $defStruct = $this->createMockStructure($defender->id, 10); // Nanite Forge Level 10
+
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($attacker->id)->andReturn($attRes);
+        $this->mockStatsRepo->shouldReceive('findByUserId')->with($attacker->id)->andReturn($attStats);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($attacker->id)->andReturn($attStruct);
+
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($defender->id)->andReturn($defRes);
+        $this->mockStatsRepo->shouldReceive('findByUserId')->with($defender->id)->andReturn($defStats);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($defender->id)->andReturn($defStruct);
+
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.nanite_casualty_reduction_per_level', 0.0)->andReturn(0.01);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.max_nanite_casualty_reduction', 0.0)->andReturn(0.50);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack')->andReturn([
+            'attack_turn_cost' => 1, 'plunder_percent' => 0.1, 'net_worth_steal_percent' => 0.05, 'war_prestige_gain_base' => 10,
+            'global_casualty_scalar' => 1.0,
+        ]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.alliance_treasury')->andReturn([])->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.xp.rewards')->andReturn(['battle_win' => 100, 'battle_defense_loss' => 50]);
+
+        $this->mockPowerCalcService->shouldReceive('calculateOffensePower')->andReturn(['total' => 1000]); // Attacker wins
+        $this->mockPowerCalcService->shouldReceive('calculateDefensePower')->andReturn(['total' => 500]); // 2:1 ratio
+
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction');
+        $this->mockDb->shouldReceive('commit');
+
+        // Without Nanite Forge, loser at 2:1 loses ~20% of units (10 guards).
+        // With 10% reduction (10 levels * 1%), they should lose ~9 instead.
+        // We will assert the new amount of guards is 41 (50 - 9).
+        $this->mockResourceRepo->shouldReceive('updateBattleDefender')
+            ->once()
+            ->with($defender->id, Mockery::any(), 41); // 50 guards - 9 lost
+            
+        // Other mocks
+        $this->mockResourceRepo->shouldReceive('updateBattleAttacker');
+        $this->mockStatsRepo->shouldReceive('updateBattleAttackerStats');
+        $this->mockStatsRepo->shouldReceive('updateBattleDefenderStats');
+        $this->mockStatsRepo->shouldReceive('incrementBattleStats');
+        $this->mockLevelUpService->shouldReceive('grantExperience');
+        $this->mockBattleRepo->shouldReceive('createReport')->andReturn(999);
+        $this->mockDispatcher->shouldReceive('dispatch');
+        $this->mockBountyRepo->shouldReceive('findActiveByTargetId')->andReturn(null);
+        
+        // Act
+        $this->service->conductAttack($attackerId, 'Defender', 'plunder');
+        
+        // Assert
+        $this->assertTrue(true); // Verifies that the mock expectations were met without error
+    }
+
     // --- Helpers ---
 
     private function setupAttackMocks(User $attacker, User $defender, int $offPower, int $defPower): void
@@ -304,8 +371,8 @@ class AttackServiceTest extends TestCase
         return new UserStats($userId, 5, 1000, 500000, 100, 100, 50, 0, 0, 0, 0, 0, 0, 5, null);
     }
 
-    private function createMockStructure(int $userId): UserStructure
+    private function createMockStructure(int $userId, int $naniteForgeLevel = 0): UserStructure
     {
-        return new UserStructure($userId, 10, 5, 3, 2, 8, 1, 1, 0);
+        return new UserStructure($userId, 10, 5, 3, 2, 8, 1, 1, 0, 0, $naniteForgeLevel);
     }
 }
