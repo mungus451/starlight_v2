@@ -161,7 +161,7 @@ return [
         'max_nanite_casualty_reduction' => 0.50, // Max 50% reduction
 
         // New: Planetary Shield
-        'shield_hp_per_level' => 10000,
+        'shield_hp_per_level' => 25,
     ],
     // --- Phase 9 ---
     'level_up' => [
