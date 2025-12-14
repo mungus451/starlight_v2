@@ -274,7 +274,7 @@ class StructureServiceTest extends TestCase
 
         $this->mockResourceRepo->shouldReceive('updateResources')
             ->once()
-            ->with($userId, -150000, 0) // Expecting negative values for deduction
+            ->with($userId, -150000, 0, 0) // Expecting negative values for deduction
             ->andReturn(true);
 
         $this->mockStructureRepo->shouldReceive('updateStructureLevel')
@@ -437,7 +437,7 @@ class StructureServiceTest extends TestCase
         // Expect update with CRYSTAL deduction
         $this->mockResourceRepo->shouldReceive('updateResources')
             ->once()
-            ->with($userId, -1000, -50)
+            ->with($userId, -1000, -50, 0)
             ->andReturn(true);
 
         $this->mockStructureRepo->shouldReceive('updateStructureLevel')->once();

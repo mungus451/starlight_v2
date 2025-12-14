@@ -215,6 +215,61 @@ class PowerCalculatorServiceTest extends TestCase
         $this->assertEquals(1.0, $result['dark_matter_income']);
     }
 
+    public function testCalculateIncomePerTurnCalculatesCompoundingFormulas(): void
+    {
+        $userId = 1;
+        $resources = $this->createMockResources($userId);
+        $stats = $this->createMockStats($userId);
+        
+        // Setup Levels
+        // Accounting: Level 5
+        // Naquadah: Level 10
+        // Dark Matter: Level 5
+        $structures = $this->createMockStructures($userId, accountingLevel: 5, siphonLevel: 5, naquadahLevel: 10);
+
+        $this->mockConfig->shouldReceive('get')
+            ->with('game_balance.turn_processor')
+            ->andReturn([
+                // Zeros for base stuff
+                'credit_income_per_econ_level' => 0, 'credit_income_per_worker' => 0, 'credit_bonus_per_wealth_point' => 0,
+                'bank_interest_rate' => 0, 'citizen_growth_per_pop_level' => 0, 'research_data_per_lab_level' => 0,
+                
+                // Accounting Firm
+                'accounting_firm_base_bonus' => 0.01, // 1%
+                'accounting_firm_multiplier' => 1.10, // 10% compounding for easy math
+                
+                // Dark Matter
+                'dark_matter_per_siphon_level' => 10,
+                'dark_matter_production_multiplier' => 1.05, // 5% compounding
+                
+                // Naquadah
+                'naquadah_per_mining_complex_level' => 100,
+                'naquadah_production_multiplier' => 1.02 // 2% compounding
+            ]);
+
+        $this->mockArmoryService->shouldReceive('getAggregateBonus')->andReturn(0);
+
+        $result = $this->service->calculateIncomePerTurn($userId, $resources, $stats, $structures, null);
+
+        // 1. Accounting Firm: 
+        // Formula: Base * Level * (Mult ^ (Level - 1))
+        // 0.01 * 5 * (1.10 ^ 4)
+        // 0.05 * 1.4641 = 0.073205
+        $this->assertEqualsWithDelta(0.073205, $result['accounting_firm_bonus_pct'], 0.000001);
+
+        // 2. Dark Matter:
+        // Formula: Base * Level * (Mult ^ (Level - 1))
+        // 10 * 5 * (1.05 ^ 4)
+        // 50 * 1.21550625 = 60.7753125
+        $this->assertEqualsWithDelta(60.7753125, $result['dark_matter_income'], 0.000001);
+
+        // 3. Naquadah:
+        // Formula: Base * Level * (Mult ^ (Level - 1))
+        // 100 * 10 * (1.02 ^ 9)
+        // 1000 * 1.19509257 = 1195.09257
+        $this->assertEqualsWithDelta(1195.09257, $result['naquadah_income'], 0.00001);
+    }
+
     public function testCalculateShieldPower(): void
     {
         $structures = $this->createMockStructures(1, shieldLevel: 10);
@@ -312,7 +367,7 @@ class PowerCalculatorServiceTest extends TestCase
         );
     }
 
-    private function createMockStructures(int $userId, int $offenseLevel = 0, int $economyLevel = 0, int $accountingLevel = 0, int $qrlLevel = 0, int $naniteForgeLevel = 0, int $siphonLevel = 0, int $shieldLevel = 0): UserStructure
+    private function createMockStructures(int $userId, int $offenseLevel = 0, int $economyLevel = 0, int $accountingLevel = 0, int $qrlLevel = 0, int $naniteForgeLevel = 0, int $siphonLevel = 0, int $shieldLevel = 0, int $naquadahLevel = 0): UserStructure
     {
         return new UserStructure(
             user_id: $userId,
@@ -327,7 +382,8 @@ class PowerCalculatorServiceTest extends TestCase
             quantum_research_lab_level: $qrlLevel,
             nanite_forge_level: $naniteForgeLevel,
             dark_matter_siphon_level: $siphonLevel,
-            planetary_shield_level: $shieldLevel
+            planetary_shield_level: $shieldLevel,
+            naquadah_mining_complex_level: $naquadahLevel
         );
     }
 }

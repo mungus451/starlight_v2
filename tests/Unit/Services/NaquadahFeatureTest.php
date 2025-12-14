@@ -89,7 +89,7 @@ class NaquadahFeatureTest extends TestCase
         // Note: updateResources takes negative values for deduction
         $mockResourceRepo->shouldReceive('updateResources')
             ->once()
-            ->with($userId, -1000000, -500) 
+            ->with($userId, -1000000, -500, 0) 
             ->andReturn(true);
 
         $mockStructureRepo->shouldReceive('updateStructureLevel')
