@@ -254,7 +254,13 @@ class PowerCalculatorService
 
         // 9. Naquadah Income
         $naquadahPerLevel = $config['naquadah_per_mining_complex_level'] ?? 0;
-        $naquadahIncome = $structures->naquadah_mining_complex_level * $naquadahPerLevel;
+        $naquadahMultiplier = $config['naquadah_production_multiplier'] ?? 1.0;
+        $level = $structures->naquadah_mining_complex_level;
+        
+        $naquadahIncome = 0;
+        if ($level > 0) {
+            $naquadahIncome = $naquadahPerLevel * $level * pow($naquadahMultiplier, max(0, $level - 1));
+        }
 
         return [
             'total_credit_income' => $totalCreditIncome,

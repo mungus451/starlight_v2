@@ -62,7 +62,7 @@ class StructurePresenter
             $costFormatted = implode(' + ', $costParts);
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
-            $benefitText = $this->calculateBenefitText($key, $turnConfig, $attackConfig, $spyConfig);
+            $benefitText = $this->calculateBenefitText($key, $turnConfig, $attackConfig, $spyConfig, $currentLevel);
 
             // 4. Determine Icon
             $icon = $this->getCategoryIcon($category);
@@ -104,7 +104,7 @@ class StructurePresenter
         return $orderedGrouped;
     }
 
-    private function calculateBenefitText(string $key, array $turnConfig, array $attackConfig, array $spyConfig): string
+    private function calculateBenefitText(string $key, array $turnConfig, array $attackConfig, array $spyConfig, int $currentLevel): string
     {
         switch ($key) {
             case 'economy_upgrade':
@@ -154,8 +154,14 @@ class StructurePresenter
                 return "+ " . number_format($val) . " Shield HP";
 
             case 'naquadah_mining_complex':
-                $val = $turnConfig['naquadah_per_mining_complex_level'] ?? 0;
-                return "+ " . number_format($val, 2) . " Naquadah / Turn";
+                if ($currentLevel === 0) {
+                    return "Base 10 + 1% compounding Naquadah / level";
+                }
+                $base = $turnConfig['naquadah_per_mining_complex_level'] ?? 0;
+                $mult = $turnConfig['naquadah_production_multiplier'] ?? 1.0;
+                $currentOutput = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
+                $nextOutput = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
+                return "Output: " . number_format($currentOutput, 2) . " / Turn (Next: " . number_format($nextOutput, 2) . ")";
             
             default:
                 return "";

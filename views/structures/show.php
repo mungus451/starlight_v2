@@ -81,7 +81,6 @@
                                     <div class="cost-item <?= !$struct['can_afford'] ? 'insufficient' : '' ?>">
                                         <span class="icon">◎</span>
                                         <span class="value"><?= $struct['cost_formatted'] ?></span>
-                                        <span>Credits</span>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -97,7 +96,7 @@
                                     <input type="hidden" name="structure_key" value="<?= htmlspecialchars($struct['key']) ?>">
 
                                     <button type="submit" class="btn-submit" <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                        <?= $struct['can_afford'] ? 'Upgrade to Level ' . $struct['next_level'] : 'Insufficient Credits' ?>
+                                        <?= $struct['can_afford'] ? 'Upgrade to Level ' . $struct['next_level'] : 'Insufficient Resources' ?>
                                     </button>
                                 </form>
                             <?php endif; ?>
