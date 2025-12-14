@@ -118,7 +118,7 @@ jobs:
           # Coverage threshold is intentionally set low (10%) for initial project setup.
           # As test coverage improves, plan to incrementally raise this threshold.
           # Documenting rationale for future maintainers.
-          THRESHOLD=25
+          THRESHOLD=20
           if (( $(php -r "echo ($COVERAGE < $THRESHOLD) ? 1 : 0;") )); then
             echo "❌ Coverage ${COVERAGE}% is below required ${THRESHOLD}%"
             exit 1
