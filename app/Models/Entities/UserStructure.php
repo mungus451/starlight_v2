@@ -31,7 +31,11 @@ readonly class UserStructure
         public readonly int $nanite_forge_level = 0,
         public readonly int $dark_matter_siphon_level = 0,
         public readonly int $planetary_shield_level = 0,
-        public readonly int $naquadah_mining_complex_level = 0
+        public readonly int $naquadah_mining_complex_level = 0,
+        public readonly int $protoform_vat_level = 0,
+        public readonly int $weapon_vault_level = 0,
+        public readonly int $galactic_market_level = 0,
+        public readonly int $embassy_level = 0
     ) {
     }
 }
