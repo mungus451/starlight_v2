@@ -10,6 +10,8 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
+use App\Models\Repositories\GeneralRepository;
+use App\Models\Repositories\ScientistRepository;
 use PDO;
 use Throwable;
 
@@ -28,11 +30,14 @@ private ResourceRepository $resourceRepo;
 private StructureRepository $structureRepo;
 private StatsRepository $statsRepo;
 private PowerCalculatorService $powerCalculatorService;
+private GeneralRepository $generalRepo;
+private ScientistRepository $scientistRepo;
 
 private AllianceRepository $allianceRepo;
 private AllianceBankLogRepository $bankLogRepo;
 
 private array $treasuryConfig;
+private array $upkeepConfig;
 
 /**
 * DI Constructor.
@@ -47,7 +52,9 @@ public function __construct(
     StatsRepository $statsRepo,
     PowerCalculatorService $powerCalculatorService,
     AllianceRepository $allianceRepo,
-    AllianceBankLogRepository $bankLogRepo
+    AllianceBankLogRepository $bankLogRepo,
+    GeneralRepository $generalRepo,
+    ScientistRepository $scientistRepo
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -56,6 +63,8 @@ public function __construct(
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
+        $this->generalRepo = $generalRepo;
+        $this->scientistRepo = $scientistRepo;
 
         $this->powerCalculatorService = $powerCalculatorService;
 
@@ -64,6 +73,7 @@ public function __construct(
 
         // Load config immediately
         $this->treasuryConfig = $this->config->get('game_balance.alliance_treasury', []);
+        $this->upkeepConfig = $this->config->get('game_balance.upkeep', []);
 }
 
 /**
@@ -140,21 +150,34 @@ $user->alliance_id // Pass alliance ID for bonus calculations
         $researchDataIncome = $incomeBreakdown['research_data_income'];
         $darkMatterIncome = $incomeBreakdown['dark_matter_income']; // NEW
         $naquadahIncome = $incomeBreakdown['naquadah_income']; // NEW
+        $protoformIncome = $incomeBreakdown['protoform_income']; // NEW
         $attackTurnsGained = 1; // Grant 1 attack turn per... turn
 
         // 3. Apply income using the atomic repository method
-        $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained, $researchDataIncome, $darkMatterIncome, $naquadahIncome);
+        $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained, $researchDataIncome, $darkMatterIncome, $naquadahIncome, $protoformIncome);
 // 4. Apply attack turns using the new atomic method
 $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
-// 5. Commit if we own the transaction
+// 5. Calculate and apply upkeep
+$generalCount = $this->generalRepo->getGeneralCount($userId);
+$scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
+
+$generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);
+$scientistUpkeep = $scientistCount * ($this->upkeepConfig['scientist']['protoform'] ?? 0);
+$totalUpkeep = $generalUpkeep + $scientistUpkeep;
+
+if ($totalUpkeep > 0) {
+    $this->resourceRepo->updateResources($userId, null, null, null, -1 * $totalUpkeep);
+}
+
+// 6. Commit if we own the transaction
 if ($transactionStartedByMe) {
 $this->db->commit();
 }
 return true;
 
 } catch (Throwable $e) {
-// 6. Rollback only if we started it
+// 7. Rollback only if we started it
 if ($transactionStartedByMe && $this->db->inTransaction()) {
 $this->db->rollBack();
 }

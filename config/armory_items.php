@@ -263,8 +263,8 @@ return [
                     'mining_laser' => ['name' => 'Mining Laser', 'credit_bonus' => 80, 'cost' => 40000, 'notes' => 'Can be used as a makeshift weapon.'],
                     'heavy_drill' => ['name' => 'Heavy Drill', 'credit_bonus' => 160, 'cost' => 80000, 'notes' => 'Can break through tough materials.', 'requires' => 'mining_laser', 'armory_level_req' => 1],
                     'plasma_cutter' => ['name' => 'Plasma Cutter', 'credit_bonus' => 240, 'cost' => 120000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 5],
-                    'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 320, 'cost' => 160000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 15],
-                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 400, 'cost' => 220000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 25],
+                    'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 320, 'cost' => 160000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 10],
+                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 400, 'cost' => 220000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 15],
                 ]
             ],
             'resource_enhancement' => [
@@ -272,10 +272,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'resource_scanner' => ['name' => 'Resource Scanner', 'credit_bonus' => 15, 'cost' => 7500, 'notes' => 'Finds hidden resource deposits.'],
-                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'credit_bonus' => 30, 'cost' => 15000, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 1],
-                    'harvester_drone' => ['name' => 'Harvester Drone', 'credit_bonus' => 45, 'cost' => 22500, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 5],
-                    'matter_converter' => ['name' => 'Matter Converter', 'credit_bonus' => 60, 'cost' => 30000, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 15],
-                    'genesis_device' => ['name' => 'Genesis Device', 'credit_bonus' => 75, 'cost' => 37500, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 25],
+                    'geological_analyzer' => ['name' => 'Geological Analyzer', 'credit_bonus' => 30, 'cost' => 15000, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 2],
+                    'harvester_drone' => ['name' => 'Harvester Drone', 'credit_bonus' => 45, 'cost' => 22500, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 6],
+                    'matter_converter' => ['name' => 'Matter Converter', 'credit_bonus' => 60, 'cost' => 30000, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 11],
+                    'genesis_device' => ['name' => 'Genesis Device', 'credit_bonus' => 75, 'cost' => 37500, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 16],
                 ]
             ],
             'exo_rig_plating' => [
@@ -283,10 +283,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'worker_harness' => ['name' => 'Worker Harness', 'credit_bonus' => 25, 'cost' => 17500, 'notes' => 'Provides basic protection.'],
-                    'reinforced_plating' => ['name' => 'Reinforced Plating', 'credit_bonus' => 50, 'cost' => 35000, 'notes' => 'Protects against workplace accidents.', 'requires' => 'worker_harness', 'armory_level_req' => 1],
-                    'hazard_suit' => ['name' => 'Hazard Suit', 'credit_bonus' => 75, 'cost' => 42500, 'notes' => 'Protects against environmental hazards.', 'requires' => 'reinforced_plating', 'armory_level_req' => 5],
-                    'blast_shield' => ['name' => 'Blast Shield', 'credit_bonus' => 100, 'cost' => 60000, 'notes' => 'Protects against explosions.', 'requires' => 'hazard_suit', 'armory_level_req' => 15],
-                    'power_armor' => ['name' => 'Power Armor', 'credit_bonus' => 125, 'cost' => 77500, 'notes' => 'The ultimate in worker protection.', 'requires' => 'blast_shield', 'armory_level_req' => 25],
+                    'reinforced_plating' => ['name' => 'Reinforced Plating', 'credit_bonus' => 50, 'cost' => 35000, 'notes' => 'Protects against workplace accidents.', 'requires' => 'worker_harness', 'armory_level_req' => 3],
+                    'hazard_suit' => ['name' => 'Hazard Suit', 'credit_bonus' => 75, 'cost' => 42500, 'notes' => 'Protects against environmental hazards.', 'requires' => 'reinforced_plating', 'armory_level_req' => 7],
+                    'blast_shield' => ['name' => 'Blast Shield', 'credit_bonus' => 100, 'cost' => 60000, 'notes' => 'Protects against explosions.', 'requires' => 'hazard_suit', 'armory_level_req' => 12],
+                    'power_armor' => ['name' => 'Power Armor', 'credit_bonus' => 125, 'cost' => 77500, 'notes' => 'The ultimate in worker protection.', 'requires' => 'blast_shield', 'armory_level_req' => 17],
                 ]
             ],
             'scanners' => [
@@ -294,10 +294,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'geiger_counter' => ['name' => 'Geiger Counter', 'credit_bonus' => 20, 'attack' => 0, 'cost' => 10000, 'notes' => 'Detects radiation.'],
-                    'mineral_scanner' => ['name' => 'Mineral Scanner', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Detects valuable minerals.', 'requires' => 'geiger_counter', 'armory_level_req' => 1],
-                    'lifeform_scanner' => ['name' => 'Lifeform Scanner', 'credit_bonus' => 60, 'attack' => 0, 'cost' => 30000, 'notes' => 'Detects nearby lifeforms.', 'requires' => 'mineral_scanner', 'armory_level_req' => 5],
-                    'energy_scanner' => ['name' => 'Energy Scanner', 'credit_bonus' => 80, 'attack' => 0, 'cost' => 40000, 'notes' => 'Detects energy signatures.', 'requires' => 'lifeform_scanner', 'armory_level_req' => 15],
-                    'omni_scanner' => ['name' => 'Omni-Scanner', 'credit_bonus' => 100, 'attack' => 0, 'cost' => 50000, 'notes' => 'Detects everything.', 'requires' => 'energy_scanner', 'armory_level_req' => 25],
+                    'mineral_scanner' => ['name' => 'Mineral Scanner', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Detects valuable minerals.', 'requires' => 'geiger_counter', 'armory_level_req' => 4],
+                    'lifeform_scanner' => ['name' => 'Lifeform Scanner', 'credit_bonus' => 60, 'attack' => 0, 'cost' => 30000, 'notes' => 'Detects nearby lifeforms.', 'requires' => 'mineral_scanner', 'armory_level_req' => 8],
+                    'energy_scanner' => ['name' => 'Energy Scanner', 'credit_bonus' => 80, 'attack' => 0, 'cost' => 40000, 'notes' => 'Detects energy signatures.', 'requires' => 'lifeform_scanner', 'armory_level_req' => 13],
+                    'omni_scanner' => ['name' => 'Omni-Scanner', 'credit_bonus' => 100, 'attack' => 0, 'cost' => 50000, 'notes' => 'Detects everything.', 'requires' => 'energy_scanner', 'armory_level_req' => 18],
                 ]
             ],
             'drones' => [
@@ -305,10 +305,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'repair_drone' => ['name' => 'Repair Drone', 'credit_bonus' => 10, 'attack' => 0, 'cost' => 5000, 'notes' => 'Can repair damaged structures.'],
-                    'construction_drone' => ['name' => 'Construction Drone', 'credit_bonus' => 20, 'attack' => 0, 'cost' => 1000, 'notes' => 'Can build new structures.', 'requires' => 'repair_drone', 'armory_level_req' => 1],
-                    'salvage_drone' => ['name' => 'Salvage Drone', 'credit_bonus' => 30, 'attack' => 0, 'cost' => 15000, 'notes' => 'Can salvage materials from wreckage.', 'requires' => 'construction_drone', 'armory_level_req' => 5],
-                    'fabricator_drone' => ['name' => 'Fabricator Drone', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Can create new items from raw materials.', 'requires' => 'salvage_drone', 'armory_level_req' => 15],
-                    'replicator_drone' => ['name' => 'Replicator Drone', 'credit_bonus' => 50, 'attack' => 0, 'cost' => 25000, 'notes' => 'Can create anything.', 'requires' => 'fabricator_drone', 'armory_level_req' => 25],
+                    'construction_drone' => ['name' => 'Construction Drone', 'credit_bonus' => 20, 'attack' => 0, 'cost' => 1000, 'notes' => 'Can build new structures.', 'requires' => 'repair_drone', 'armory_level_req' => 5],
+                    'salvage_drone' => ['name' => 'Salvage Drone', 'credit_bonus' => 30, 'attack' => 0, 'cost' => 15000, 'notes' => 'Can salvage materials from wreckage.', 'requires' => 'construction_drone', 'armory_level_req' => 9],
+                    'fabricator_drone' => ['name' => 'Fabricator Drone', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Can create new items from raw materials.', 'requires' => 'salvage_drone', 'armory_level_req' => 14],
+                    'replicator_drone' => ['name' => 'Replicator Drone', 'credit_bonus' => 50, 'attack' => 0, 'cost' => 25000, 'notes' => 'Can create anything.', 'requires' => 'fabricator_drone', 'armory_level_req' => 19],
                 ]
             ]
         ]

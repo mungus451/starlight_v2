@@ -19,22 +19,24 @@ final class CreateGeneralsTable extends AbstractMigration
      */
     public function up(): void
     {
-        $table = $this->table('generals');
-        $table->addColumn('user_id', 'integer', ['signed' => false])
-              ->addColumn('name', 'string', ['limit' => 255])
-              ->addColumn('experience', 'integer', ['default' => 0])
-              ->addColumn('weapon_slot_1', 'integer', ['null' => true])
-              ->addColumn('weapon_slot_2', 'integer', ['null' => true])
-              ->addColumn('weapon_slot_3', 'integer', ['null' => true])
-              ->addColumn('weapon_slot_4', 'integer', ['null' => true])
-              ->addColumn('armor_slot_1', 'integer', ['null' => true])
-              ->addColumn('armor_slot_2', 'integer', ['null' => true])
-              ->addColumn('armor_slot_3', 'integer', ['null' => true])
-              ->addColumn('armor_slot_4', 'integer', ['null' => true])
-              ->addTimestamps()
-              ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
-              ->addIndex(['user_id'], ['unique' => true])
-              ->create();
+        if (!$this->hasTable('generals')) {
+            $table = $this->table('generals');
+            $table->addColumn('user_id', 'integer', ['signed' => false])
+                  ->addColumn('name', 'string', ['limit' => 255])
+                  ->addColumn('experience', 'integer', ['default' => 0])
+                  ->addColumn('weapon_slot_1', 'integer', ['null' => true])
+                  ->addColumn('weapon_slot_2', 'integer', ['null' => true])
+                  ->addColumn('weapon_slot_3', 'integer', ['null' => true])
+                  ->addColumn('weapon_slot_4', 'integer', ['null' => true])
+                  ->addColumn('armor_slot_1', 'integer', ['null' => true])
+                  ->addColumn('armor_slot_2', 'integer', ['null' => true])
+                  ->addColumn('armor_slot_3', 'integer', ['null' => true])
+                  ->addColumn('armor_slot_4', 'integer', ['null' => true])
+                  ->addTimestamps()
+                  ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
+                  ->addIndex(['user_id'], ['unique' => true])
+                  ->create();
+        }
     }
 
     public function down(): void
