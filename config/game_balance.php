@@ -137,14 +137,6 @@ return [
             'category' => 'Military',
             'description' => 'Allows the construction of advanced weapons and armor for your Generals.'
         ],
-        'galactic_market' => [
-            'name' => 'Galactic Market',
-            'base_cost' => 5000000,
-            'base_crystal_cost' => 1000,
-            'multiplier' => 2.0,
-            'category' => 'Economy',
-            'description' => 'Enables resource trading with other players at dynamic, server-wide prices.'
-        ],
         'embassy' => [
             'name' => 'Embassy',
             'base_cost' => 10000000,
@@ -251,6 +243,9 @@ return [
         // New: Naquadah Generation
         'naquadah_per_mining_complex_level' => 10, // Base 10 Naquadah per level per turn
         'naquadah_production_multiplier' => 1.01, // 1% boost per level
+
+        // New: Protoform Generation
+        'protoform_per_vat_level' => 5, // 5 Protoform per level per turn
 
         // Accounting Firm
         'accounting_firm_base_bonus' => 0.01, // 1% base

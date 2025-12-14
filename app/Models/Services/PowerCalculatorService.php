@@ -276,6 +276,10 @@ class PowerCalculatorService
             $naquadahIncome = $naquadahPerLevel * $level * pow($naquadahMultiplier, max(0, $level - 1));
         }
 
+        // 10. Protoform Income
+        $protoformPerLevel = $config['protoform_per_vat_level'] ?? 0;
+        $protoformIncome = $structures->protoform_vat_level * $protoformPerLevel;
+
         return [
             'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
@@ -283,6 +287,7 @@ class PowerCalculatorService
             'research_data_income' => $researchDataIncome,
             'dark_matter_income' => $darkMatterIncome,
             'naquadah_income' => $naquadahIncome, // NEW
+            'protoform_income' => $protoformIncome, // NEW
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -302,7 +307,8 @@ class PowerCalculatorService
             'alliance_citizen_bonus' => $allianceCitizenFlat,
             'quantum_research_lab_level' => $structures->quantum_research_lab_level,
             'dark_matter_siphon_level' => $structures->dark_matter_siphon_level,
-            'naquadah_mining_complex_level' => $structures->naquadah_mining_complex_level // NEW
+            'naquadah_mining_complex_level' => $structures->naquadah_mining_complex_level, // NEW
+            'protoform_vat_level' => $structures->protoform_vat_level // NEW
         ];
     }
 

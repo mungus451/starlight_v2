@@ -19,14 +19,16 @@ final class CreateUserDoctrinesTable extends AbstractMigration
      */
     public function up(): void
     {
-        $table = $this->table('user_doctrines');
-        $table->addColumn('user_id', 'integer', ['signed' => false])
-              ->addColumn('doctrine_id', 'integer')
-              ->addTimestamps()
-              ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
-              ->addForeignKey('doctrine_id', 'doctrine_definitions', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
-              ->addIndex(['user_id', 'doctrine_id'], ['unique' => true])
-              ->create();
+        if (!$this->hasTable('user_doctrines')) {
+            $table = $this->table('user_doctrines');
+            $table->addColumn('user_id', 'integer', ['signed' => false])
+                  ->addColumn('doctrine_id', 'integer', ['signed' => true])
+                  ->addTimestamps()
+                  ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
+                  ->addForeignKey('doctrine_id', 'doctrine_definitions', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
+                  ->addIndex(['user_id', 'doctrine_id'], ['unique' => true])
+                  ->create();
+        }
     }
 
     public function down(): void
