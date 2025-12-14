@@ -146,6 +146,10 @@ class StructurePresenter
             case 'planetary_shield':
                 $val = $attackConfig['shield_hp_per_level'] ?? 0;
                 return "+ " . number_format($val) . " Shield HP";
+
+            case 'naquadah_mining_complex':
+                $val = $turnConfig['naquadah_per_mining_complex_level'] ?? 0;
+                return "+ " . number_format($val, 2) . " Naquadah / Turn";
             
             default:
                 return "";

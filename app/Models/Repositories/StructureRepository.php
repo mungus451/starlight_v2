@@ -65,7 +65,8 @@ class StructureRepository
             'quantum_research_lab_level',
             'nanite_forge_level',
             'dark_matter_siphon_level',
-            'planetary_shield_level'
+            'planetary_shield_level',
+            'naquadah_mining_complex_level'
         ];
 
         if (!in_array($columnName, $allowedColumns)) {

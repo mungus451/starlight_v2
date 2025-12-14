@@ -100,13 +100,14 @@ class TurnProcessorServiceTest extends TestCase
                         'interest' => 50,
                         'total_citizens' => 10,
                         'research_data_income' => 20,
-                        'dark_matter_income' => 5.5
+                        'dark_matter_income' => 5.5,
+                        'naquadah_income' => 0.0 // Added for new parameter
                     ]);
         
                 // 5. Mock Updates
                 $this->mockResourceRepo->shouldReceive('applyTurnIncome')
                     ->once()
-                    ->with($userId, 1000, 50, 10, 20, 5.5); // New arguments
+                    ->with($userId, 1000, 50, 10, 20, 5.5, 0.0); // Added for new parameter
         
                 $this->mockStatsRepo->shouldReceive('applyTurnAttackTurn')
                     ->once()

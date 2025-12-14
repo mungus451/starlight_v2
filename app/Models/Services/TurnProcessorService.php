@@ -139,10 +139,11 @@ $user->alliance_id // Pass alliance ID for bonus calculations
         $citizensGained = $incomeBreakdown['total_citizens'];
         $researchDataIncome = $incomeBreakdown['research_data_income'];
         $darkMatterIncome = $incomeBreakdown['dark_matter_income']; // NEW
+        $naquadahIncome = $incomeBreakdown['naquadah_income']; // NEW
         $attackTurnsGained = 1; // Grant 1 attack turn per... turn
 
         // 3. Apply income using the atomic repository method
-        $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained, $researchDataIncome, $darkMatterIncome);
+        $this->resourceRepo->applyTurnIncome($userId, $creditsGained, $interestGained, $citizensGained, $researchDataIncome, $darkMatterIncome, $naquadahIncome);
 // 4. Apply attack turns using the new atomic method
 $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 

@@ -208,7 +208,7 @@ class ResourceRepository
      * @param int $citizensGained
      * @return bool True on success
      */
-    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained): bool
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained): bool
     {
         $sql = "
             UPDATE user_resources SET
@@ -216,12 +216,13 @@ class ResourceRepository
                 banked_credits = banked_credits + ?,
                 untrained_citizens = untrained_citizens + ?,
                 research_data = research_data + ?,
-                dark_matter = dark_matter + ?
+                dark_matter = dark_matter + ?,
+                naquadah_crystals = naquadah_crystals + ?
             WHERE user_id = ?
         ";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $userId]);
+        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $userId]);
     }
 
     // --- END NEW METHOD ---

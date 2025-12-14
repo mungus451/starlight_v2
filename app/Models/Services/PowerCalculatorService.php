@@ -252,12 +252,17 @@ class PowerCalculatorService
         $darkMatterPerLevel = $config['dark_matter_per_siphon_level'] ?? 0;
         $darkMatterIncome = $structures->dark_matter_siphon_level * $darkMatterPerLevel;
 
+        // 9. Naquadah Income
+        $naquadahPerLevel = $config['naquadah_per_mining_complex_level'] ?? 0;
+        $naquadahIncome = $structures->naquadah_mining_complex_level * $naquadahPerLevel;
+
         return [
             'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
             'total_citizens' => $totalCitizenIncome,
             'research_data_income' => $researchDataIncome,
-            'dark_matter_income' => $darkMatterIncome, // NEW
+            'dark_matter_income' => $darkMatterIncome,
+            'naquadah_income' => $naquadahIncome, // NEW
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -276,7 +281,8 @@ class PowerCalculatorService
             'base_citizen_income' => $baseCitizenIncome,
             'alliance_citizen_bonus' => $allianceCitizenFlat,
             'quantum_research_lab_level' => $structures->quantum_research_lab_level,
-            'dark_matter_siphon_level' => $structures->dark_matter_siphon_level // NEW
+            'dark_matter_siphon_level' => $structures->dark_matter_siphon_level,
+            'naquadah_mining_complex_level' => $structures->naquadah_mining_complex_level // NEW
         ];
     }
 

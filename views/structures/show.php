@@ -34,6 +34,10 @@
             <span>Guards</span>
             <strong class="accent-blue"><?= number_format($resources->guards) ?></strong>
         </div>
+        <div class="header-stat">
+            <span>Naquadah</span>
+            <strong class="accent-purple"><?= number_format($resources->naquadah_crystals, 0) ?></strong>
+        </div>
     </div>
 
     <!-- Structures Grid -->

@@ -71,7 +71,7 @@ return [
         ],
         'accounting_firm' => [
             'name' => 'Accounting Firm',
-            'base_cost' => 1000000, // 1 Million Credits
+            'base_cost' => 10000, // 10,000 Credits
             'base_crystal_cost' => 250, // 250 Naquadah Crystals
             'multiplier' => 1.9, // Cost Multiplier (e.g., Level 2 costs 1.9x Level 1)
             'category' => 'Economy',
@@ -110,6 +110,14 @@ return [
             'multiplier' => 2.5,
             'category' => 'Super Defense',
             'description' => 'Creates a powerful shield that must be depleted before your assets can be plundered.'
+        ],
+        'naquadah_mining_complex' => [
+            'name' => 'Naquadah Mining Complex',
+            'base_cost' => 1000000,
+            'base_crystal_cost' => 500,
+            'multiplier' => 2.0,
+            'category' => 'Advanced Industry',
+            'description' => 'Generates Naquadah Crystals each turn.'
         ],
     ],
     // --- Phase 7 ---
@@ -179,8 +187,8 @@ return [
         // 0.0005% interest per turn
         'bank_interest_rate' => 0.00005,
         
-        // 1,000 credits per turn, per level of Economy Upgrade
-        'credit_income_per_econ_level' => 1000,
+        // 100,000 credits per turn, per level of Economy Upgrade
+        'credit_income_per_econ_level' => 100000,
         
         // Income from workers
         'credit_income_per_worker' => 100,
@@ -196,6 +204,9 @@ return [
 
         // New: Dark Matter Generation
         'dark_matter_per_siphon_level' => 0.1, // 0.1 Dark Matter per Siphon level per turn
+
+        // New: Naquadah Generation
+        'naquadah_per_mining_complex_level' => 0.5, // 0.5 Naquadah per level per turn
     ],
 
     // --- Phase 11 ---
