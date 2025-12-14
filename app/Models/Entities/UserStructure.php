@@ -28,7 +28,9 @@ readonly class UserStructure
         public readonly int $armory_level,
         public readonly int $accounting_firm_level,
         public readonly int $quantum_research_lab_level = 0,
-        public readonly int $nanite_forge_level = 0
+        public readonly int $nanite_forge_level = 0,
+        public readonly int $dark_matter_siphon_level = 0,
+        public readonly int $planetary_shield_level = 0
     ) {
     }
 }

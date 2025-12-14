@@ -94,6 +94,23 @@ return [
             'category' => 'Military',
             'description' => 'Reduces casualties in winning battles, making your armies more efficient.'
         ],
+        // --- Age of Ascension: Phase 2 Structures ---
+        'dark_matter_siphon' => [
+            'name' => 'Dark Matter Siphon',
+            'base_cost' => 2500000,
+            'base_crystal_cost' => 1000,
+            'multiplier' => 2.2,
+            'category' => 'Advanced Industry',
+            'description' => 'Generates rare Dark Matter used for constructing superstructures and advanced weaponry.'
+        ],
+        'planetary_shield' => [
+            'name' => 'Planetary Shield',
+            'base_cost' => 5000000,
+            'base_dark_matter_cost' => 50,
+            'multiplier' => 2.5,
+            'category' => 'Super Defense',
+            'description' => 'Creates a powerful shield that must be depleted before your assets can be plundered.'
+        ],
     ],
     // --- Phase 7 ---
     'spy' => [
@@ -142,6 +159,9 @@ return [
         // New: Nanite Forge Casualty Reduction
         'nanite_casualty_reduction_per_level' => 0.01, // 1% reduction per level
         'max_nanite_casualty_reduction' => 0.50, // Max 50% reduction
+
+        // New: Planetary Shield
+        'shield_hp_per_level' => 10000,
     ],
     // --- Phase 9 ---
     'level_up' => [
@@ -173,6 +193,9 @@ return [
 
         // New: Research Data Generation
         'research_data_per_lab_level' => 100, // 100 Research Data per QRL level per turn
+
+        // New: Dark Matter Generation
+        'dark_matter_per_siphon_level' => 0.1, // 0.1 Dark Matter per Siphon level per turn
     ],
 
     // --- Phase 11 ---

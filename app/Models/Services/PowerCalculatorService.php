@@ -248,11 +248,16 @@ class PowerCalculatorService
         $researchDataPerLevel = $config['research_data_per_lab_level'] ?? 0;
         $researchDataIncome = $structures->quantum_research_lab_level * $researchDataPerLevel;
 
+        // 8. Dark Matter Income
+        $darkMatterPerLevel = $config['dark_matter_per_siphon_level'] ?? 0;
+        $darkMatterIncome = $structures->dark_matter_siphon_level * $darkMatterPerLevel;
+
         return [
             'total_credit_income' => $totalCreditIncome,
             'interest' => $interestIncome,
             'total_citizens' => $totalCitizenIncome,
-            'research_data_income' => $researchDataIncome, // NEW
+            'research_data_income' => $researchDataIncome,
+            'dark_matter_income' => $darkMatterIncome, // NEW
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -260,7 +265,7 @@ class PowerCalculatorService
             'armory_bonus' => $armoryBonus,
             'alliance_credit_bonus_pct' => $allianceCreditMultiplier,
             'accounting_firm_bonus_pct' => $accountingFirmBonusPct,
-            'detailed_breakdown' => $detailedBreakdown, // New Detailed Array
+            'detailed_breakdown' => $detailedBreakdown,
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
             'accounting_firm_level' => $structures->accounting_firm_level,
@@ -270,7 +275,8 @@ class PowerCalculatorService
             'interest_rate_pct' => $config['bank_interest_rate'],
             'base_citizen_income' => $baseCitizenIncome,
             'alliance_citizen_bonus' => $allianceCitizenFlat,
-            'quantum_research_lab_level' => $structures->quantum_research_lab_level // NEW
+            'quantum_research_lab_level' => $structures->quantum_research_lab_level,
+            'dark_matter_siphon_level' => $structures->dark_matter_siphon_level // NEW
         ];
     }
 
@@ -400,5 +406,21 @@ class PowerCalculatorService
             }
         }
         return $this->structureDefinitionsCache;
+    }
+
+    /**
+     * Calculates a user's Planetary Shield HP.
+     */
+    public function calculateShieldPower(UserStructure $structures): array
+    {
+        $config = $this->config->get('game_balance.attack');
+        $hpPerLevel = $config['shield_hp_per_level'] ?? 0;
+        $totalHp = $structures->planetary_shield_level * $hpPerLevel;
+
+        return [
+            'total_shield_hp' => (int)$totalHp,
+            'level' => $structures->planetary_shield_level,
+            'hp_per_level' => $hpPerLevel
+        ];
     }
 }

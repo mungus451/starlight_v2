@@ -80,214 +80,234 @@
                     <span>Research Data</span>
                     <span><?= number_format($resources->research_data) ?></span>
                 </li>
-                <li>
-                    <span>Research Data / Turn</span>
-                    <span class="value-green value-total">+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
-                </li>
-            </ul>
-            
-            <div class="card-breakdown" id="breakdown-income">
-                <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
-                <ul>
-                    <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
                         <li>
-                            <span><?= htmlspecialchars($item['label']) ?></span>
-                            <span>+ <?= number_format($item['value']) ?></span>
+                            <span>Research Data / Turn</span>
+                            <span class="value-green value-total">+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
                         </li>
-                    <?php endforeach; ?>
-                </ul>
-                <br>
-                <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
-                <ul>
-                    <li>
-                        <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
-                        <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
-                    </li>
-                </ul>
-                <br>
-                <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
-                <ul>
-                     <li>
-                        <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
-                        <span>+ <?= number_format($incomeBreakdown['base_citizen_income']) ?></span>
-                    </li>
-                    <!-- Alliance Citizen Bonus -->
-                    <?php if ($incomeBreakdown['alliance_citizen_bonus'] > 0): ?>
-                    <li>
-                        <span style="color: var(--accent-2);">Alliance Structures</span>
-                        <span style="color: var(--accent-2);">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-                <br>
-                <strong>Research Data Generation: + <?= number_format($incomeBreakdown['research_data_income']) ?></strong>
-                <ul>
-                    <li>
-                        <span>Quantum Research Lab (Lvl <?= $incomeBreakdown['quantum_research_lab_level'] ?>)</span>
-                        <span>+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        
-        <div class="data-card grid-col-span-1">
-            <div class="card-header">
-                <h3>Stats</h3>
-                <a href="/level-up" class="card-toggle">Spend Points</a>
-            </div>
-            <ul class="card-stats-list">
-                <li><span>Points to Spend</span>
-                    <span class="value-green"><?= number_format($stats->level_up_points) ?></span>
-                </li>
-                <li><span>Strength</span> <span><?= number_format($stats->strength_points) ?></span></li>
-                <li><span>Constitution</span> <span><?= number_format($stats->constitution_points) ?></span></li>
-                <li><span>Wealth</span> <span><?= number_format($stats->wealth_points) ?></span></li>
-                <li><span>Attack Turns</span> <span><?= number_format($stats->attack_turns) ?></span></li>
-            </ul>
-        </div>
-        
-        <div class="data-card grid-col-span-2 grid-row-span-2">
-            <div class="card-header">
-                <h3>Military Command</h3>
-                <a class="card-toggle" data-target="breakdown-military">Show Breakdown</a>
-            </div>
-            <ul class="card-stats-list">
-                <li>
-                    <span>Offense Power</span>
-                    <span class="value-red value-total"><?= number_format($offenseBreakdown['total']) ?></span>
-                </li>
-                <li>
-                    <span>Defense Rating</span>
-                    <span class="value-blue value-total"><?= number_format($defenseBreakdown['total']) ?></span>
-                </li>
-                <li>
-                    <span>Spy Power</span>
-                    <span class="value-green"><?= number_format($spyBreakdown['total']) ?></span>
-                </li>
-                <li>
-                    <span>Sentry Power</span>
-                    <span class="value-green"><?= number_format($sentryBreakdown['total']) ?></span>
-                </li>
-            </ul>
-            <div class="card-breakdown" id="breakdown-military">
-                <strong>Offense Power (<?= number_format($offenseBreakdown['unit_count']) ?> Soldiers)</strong>
-                <ul>
-                    <li><span>Base Soldier Power</span> <span><?= number_format($offenseBreakdown['base_unit_power']) ?></span></li>
-                    <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($offenseBreakdown['armory_bonus']) ?></span></li>
-                    <li><span>Offense Lvl <?= $offenseBreakdown['structure_level'] ?> Bonus</span> <span>+ <?= $offenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
-                    <li><span>Strength (<?= $offenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $offenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
+                        <!-- NEW: Dark Matter -->
+                        <li>
+                            <span>Dark Matter</span>
+                            <span><?= number_format($resources->dark_matter) ?></span>
+                        </li>
+                        <li>
+                            <span>Dark Matter / Turn</span>
+                            <span class="value-green value-total">+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
+                        </li>
+                    </ul>
                     
-                    <!-- Alliance Offense Bonus -->
-                    <?php if ($offenseBreakdown['alliance_bonus_pct'] > 0): ?>
-                    <li>
-                        <span style="color: var(--accent-2);">Alliance Structures</span> 
-                        <span style="color: var(--accent-2);">+ <?= $offenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-                <br>
-                <strong>Defense Rating (<?= number_format($defenseBreakdown['unit_count']) ?> Guards)</strong>
-                <ul>
-                    <li><span>Base Guard Power</span> <span><?= number_format($defenseBreakdown['base_unit_power']) ?></span></li>
-                    <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($defenseBreakdown['armory_bonus']) ?></span></li>
-                    <li><span>Structure (Fort <?= $defenseBreakdown['fort_level'] ?> + Def <?= $defenseBreakdown['def_level'] ?>)</span> <span>+ <?= $defenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
-                    <li><span>Constitution (<?= $defenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $defenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
-                    
-                    <!-- Alliance Defense Bonus -->
-                    <?php if ($defenseBreakdown['alliance_bonus_pct'] > 0): ?>
-                    <li>
-                        <span style="color: var(--accent-2);">Alliance Structures</span> 
-                        <span style="color: var(--accent-2);">+ <?= $defenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
-        
-        <div class="data-card grid-col-span-1">
-            <div class="card-header">
-                <h3>Military Units</h3>
-                <a href="/training" class="card-toggle">Train</a>
-            </div>
-            <ul class="card-stats-list">
-                <li><span>Soldiers</span> <span><?= number_format($resources->soldiers) ?></span></li>
-                <li><span>Guards</span> <span><?= number_format($resources->guards) ?></span></li>
-                <li><span>Spies</span> <span><?= number_format($resources->spies) ?></span></li>
-                <li><span>Sentries</span> <span><?= number_format($resources->sentries) ?></span></li>
-            </ul>
-        </div>
-        
-        <!-- NEW: Active Effects Box -->
-        <?php if (!empty($activeEffects) || $resources->untraceable_chips > 0): ?>
-        <div class="data-card grid-col-span-2">
-            <div class="card-header">
-                <h3 style="color: var(--accent);">Active Effects & Assets</h3>
-            </div>
-            
-            <?php if ($resources->untraceable_chips > 0): ?>
-            <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);">
-                <div class="flex-between mb-1">
-                    <h4 style="margin: 0; color: #fff;"><i class="fas fa-dice text-accent"></i> Untraceable Chips</h4>
-                    <strong class="text-accent-2" style="font-size: 1.2rem;"><?= number_format($resources->untraceable_chips) ?></strong>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">These chips can be converted back to Credits. They are immune to plunder.</p>
-                <form action="/black-market/withdraw-chips" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                    <div class="form-group amount-input-group">
-                        <input type="hidden" name="amount" id="withdraw-chips-hidden" value="0">
-                        <input type="text" id="withdraw-chips-display" placeholder="Chips to Withdraw" required min="1">
-                        <button type="submit" class="btn-submit btn-accent" style="width: auto;">Withdraw</button>
+                    <div class="card-breakdown" id="breakdown-income">
+                        <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
+                        <ul>
+                            <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
+                                <li>
+                                    <span><?= htmlspecialchars($item['label']) ?></span>
+                                    <span>+ <?= number_format($item['value']) ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <br>
+                        <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
+                        <ul>
+                            <li>
+                                <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
+                                <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
+                            </li>
+                        </ul>
+                        <br>
+                        <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
+                        <ul>
+                             <li>
+                                <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
+                                <span>+ <?= number_format($incomeBreakdown['base_citizen_income']) ?></span>
+                            </li>
+                            <!-- Alliance Citizen Bonus -->
+                            <?php if ($incomeBreakdown['alliance_citizen_bonus'] > 0): ?>
+                            <li>
+                                <span style="color: var(--accent-2);">Alliance Structures</span>
+                                <span style="color: var(--accent-2);">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                        <br>
+                        <strong>Research Data Generation: + <?= number_format($incomeBreakdown['research_data_income']) ?></strong>
+                        <ul>
+                            <li>
+                                <span>Quantum Research Lab (Lvl <?= $incomeBreakdown['quantum_research_lab_level'] ?>)</span>
+                                <span>+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
+                            </li>
+                        </ul>
+                        <br>
+                        <strong>Dark Matter Generation: + <?= number_format($incomeBreakdown['dark_matter_income']) ?></strong>
+                        <ul>
+                            <li>
+                                <span>Dark Matter Siphon (Lvl <?= $incomeBreakdown['dark_matter_siphon_level'] ?>)</span>
+                                <span>+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
+                            </li>
+                        </ul>
                     </div>
-                </form>
-            </div>
-            <?php endif; ?>
-        
-            <?php if (!empty($activeEffects)): ?>
-            <h4 style="margin: 0 0 1rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Active Buffs/Debuffs</h4>
-            <ul class="data-list" style="margin-top: 0.5rem;">
-                <?php foreach ($activeEffects as $effect): ?>
-                    <li class="data-item" style="justify-content: space-between; padding: 0.75rem 1rem;">
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <i class="fas <?= $effect['ui_icon'] ?> <?= $effect['ui_color'] ?>" style="font-size: 1.2rem; width: 25px; text-align: center;"></i>
-                            <span style="font-weight: 600; color: #fff;"><?= $effect['ui_label'] ?></span>
+                </div>
+                
+                <div class="data-card grid-col-span-1">
+                    <div class="card-header">
+                        <h3>Stats</h3>
+                        <a href="/level-up" class="card-toggle">Spend Points</a>
+                    </div>
+                    <ul class="card-stats-list">
+                        <li><span>Points to Spend</span>
+                            <span class="value-green"><?= number_format($stats->level_up_points) ?></span>
+                        </li>
+                        <li><span>Strength</span> <span><?= number_format($stats->strength_points) ?></span></li>
+                        <li><span>Constitution</span> <span><?= number_format($stats->constitution_points) ?></span></li>
+                        <li><span>Wealth</span> <span><?= number_format($stats->wealth_points) ?></span></li>
+                        <li><span>Attack Turns</span> <span><?= number_format($stats->attack_turns) ?></span></li>
+                    </ul>
+                </div>
+                
+                <div class="data-card grid-col-span-2 grid-row-span-2">
+                    <div class="card-header">
+                        <h3>Military Command</h3>
+                        <a class="card-toggle" data-target="breakdown-military">Show Breakdown</a>
+                    </div>
+                    <ul class="card-stats-list">
+                        <li>
+                            <span>Offense Power</span>
+                            <span class="value-red value-total"><?= number_format($offenseBreakdown['total']) ?></span>
+                        </li>
+                        <li>
+                            <span>Defense Rating</span>
+                            <span class="value-blue value-total"><?= number_format($defenseBreakdown['total']) ?></span>
+                        </li>
+                        <li>
+                            <span>Spy Power</span>
+                            <span class="value-green"><?= number_format($spyBreakdown['total']) ?></span>
+                        </li>
+                        <li>
+                            <span>Sentry Power</span>
+                            <span class="value-green"><?= number_format($sentryBreakdown['total']) ?></span>
+                        </li>
+                    </ul>
+                    <div class="card-breakdown" id="breakdown-military">
+                        <strong>Offense Power (<?= number_format($offenseBreakdown['unit_count']) ?> Soldiers)</strong>
+                        <ul>
+                            <li><span>Base Soldier Power</span> <span><?= number_format($offenseBreakdown['base_unit_power']) ?></span></li>
+                            <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($offenseBreakdown['armory_bonus']) ?></span></li>
+                            <li><span>Offense Lvl <?= $offenseBreakdown['structure_level'] ?> Bonus</span> <span>+ <?= $offenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
+                            <li><span>Strength (<?= $offenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $offenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
+                            
+                            <!-- Alliance Offense Bonus -->
+                            <?php if ($offenseBreakdown['alliance_bonus_pct'] > 0): ?>
+                            <li>
+                                <span style="color: var(--accent-2);">Alliance Structures</span> 
+                                <span style="color: var(--accent-2);">+ <?= $offenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                        <br>
+                        <strong>Defense Rating (<?= number_format($defenseBreakdown['unit_count']) ?> Guards)</strong>
+                        <ul>
+                            <li><span>Base Guard Power</span> <span><?= number_format($defenseBreakdown['base_unit_power']) ?></span></li>
+                            <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($defenseBreakdown['armory_bonus']) ?></span></li>
+                            <li><span>Structure (Fort <?= $defenseBreakdown['fort_level'] ?> + Def <?= $defenseBreakdown['def_level'] ?>)</span> <span>+ <?= $defenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
+                            <li><span>Constitution (<?= $defenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $defenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
+                            
+                            <!-- Alliance Defense Bonus -->
+                            <?php if ($defenseBreakdown['alliance_bonus_pct'] > 0): ?>
+                            <li>
+                                <span style="color: var(--accent-2);">Alliance Structures</span> 
+                                <span style="color: var(--accent-2);">+ <?= $defenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="data-card grid-col-span-1">
+                    <div class="card-header">
+                        <h3>Military Units</h3>
+                        <a href="/training" class="card-toggle">Train</a>
+                    </div>
+                    <ul class="card-stats-list">
+                        <li><span>Soldiers</span> <span><?= number_format($resources->soldiers) ?></span></li>
+                        <li><span>Guards</span> <span><?= number_format($resources->guards) ?></span></li>
+                        <li><span>Spies</span> <span><?= number_format($resources->spies) ?></span></li>
+                        <li><span>Sentries</span> <span><?= number_format($resources->sentries) ?></span></li>
+                    </ul>
+                </div>
+                
+                <!-- NEW: Active Effects Box -->
+                <?php if (!empty($activeEffects) || $resources->untraceable_chips > 0): ?>
+                <div class="data-card grid-col-span-2">
+                    <div class="card-header">
+                        <h3 style="color: var(--accent);">Active Effects & Assets</h3>
+                    </div>
+                    
+                    <?php if ($resources->untraceable_chips > 0): ?>
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);">
+                        <div class="flex-between mb-1">
+                            <h4 style="margin: 0; color: #fff;"><i class="fas fa-dice text-accent"></i> Untraceable Chips</h4>
+                            <strong class="text-accent-2" style="font-size: 1.2rem;"><?= number_format($resources->untraceable_chips) ?></strong>
                         </div>
-                        <span style="font-family: monospace; font-size: 1rem; color: var(--muted);">
-                            <i class="far fa-clock" style="margin-right: 5px;"></i> <?= $effect['formatted_time_left'] ?>
-                        </span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-        
-        <div class="data-card grid-col-span-1">
-            <div class="card-header">
-                <h3>Structures</h3>
-                <a href="/structures" class="card-toggle">Upgrade</a>
-            </div>
-            <ul class="card-stats-list">
-                <li><span>Fortification</span> <span>Lvl <?= $structures->fortification_level ?></span></li>
-                <li><span>Offense Upgrade</span> <span>Lvl <?= $structures->offense_upgrade_level ?></span></li>
-                <li><span>Defense Upgrade</span> <span>Lvl <?= $structures->defense_upgrade_level ?></span></li>
-                <li><span>Spy Upgrade</span> <span>Lvl <?= $structures->spy_upgrade_level ?></span></li>
-                <li><span>Economy</span> <span>Lvl <?= $structures->economy_upgrade_level ?></span></li>
-                <li><span>Population</span> <span>Lvl <?= $structures->population_level ?></span></li>
-                <li><span>Armory</span> <span>Lvl <?= $structures->armory_level ?></span></li>
-                <!-- NEW: Phase 1 Structures -->
-                <li><span>Quantum Research Lab</span> <span>Lvl <?= $structures->quantum_research_lab_level ?></span></li>
-                <li><span>Nanite Forge</span> <span>Lvl <?= $structures->nanite_forge_level ?></span></li>
-            </ul>
-        </div>
-        </div>
-        
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const withdrawChipsDisplay = document.getElementById('withdraw-chips-display');
-                const withdrawChipsHidden = document.getElementById('withdraw-chips-hidden');
-                if (withdrawChipsDisplay && withdrawChipsHidden) {
-                    StarlightUtils.setupInputMask(withdrawChipsDisplay, withdrawChipsHidden);
-                }
-            });
-        </script>
-        <script src="/js/dashboard.js"></script>
+                        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">These chips can be converted back to Credits. They are immune to plunder.</p>
+                        <form action="/black-market/withdraw-chips" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                            <div class="form-group amount-input-group">
+                                <input type="hidden" name="amount" id="withdraw-chips-hidden" value="0">
+                                <input type="text" id="withdraw-chips-display" placeholder="Chips to Withdraw" required min="1">
+                                <button type="submit" class="btn-submit btn-accent" style="width: auto;">Withdraw</button>
+                            </div>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+                
+                    <?php if (!empty($activeEffects)): ?>
+                    <h4 style="margin: 0 0 1rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Active Buffs/Debuffs</h4>
+                    <ul class="data-list" style="margin-top: 0.5rem;">
+                        <?php foreach ($activeEffects as $effect): ?>
+                            <li class="data-item" style="justify-content: space-between; padding: 0.75rem 1rem;">
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <i class="fas <?= $effect['ui_icon'] ?> <?= $effect['ui_color'] ?>" style="font-size: 1.2rem; width: 25px; text-align: center;"></i>
+                                    <span style="font-weight: 600; color: #fff;"><?= $effect['ui_label'] ?></span>
+                                </div>
+                                <span style="font-family: monospace; font-size: 1rem; color: var(--muted);">
+                                    <i class="far fa-clock" style="margin-right: 5px;"></i> <?= $effect['formatted_time_left'] ?>
+                                </span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+                
+                <div class="data-card grid-col-span-1">
+                    <div class="card-header">
+                        <h3>Structures</h3>
+                        <a href="/structures" class="card-toggle">Upgrade</a>
+                    </div>
+                    <ul class="card-stats-list">
+                        <li><span>Fortification</span> <span>Lvl <?= $structures->fortification_level ?></span></li>
+                        <li><span>Offense Upgrade</span> <span>Lvl <?= $structures->offense_upgrade_level ?></span></li>
+                        <li><span>Defense Upgrade</span> <span>Lvl <?= $structures->defense_upgrade_level ?></span></li>
+                        <li><span>Spy Upgrade</span> <span>Lvl <?= $structures->spy_upgrade_level ?></span></li>
+                        <li><span>Economy</span> <span>Lvl <?= $structures->economy_upgrade_level ?></span></li>
+                        <li><span>Population</span> <span>Lvl <?= $structures->population_level ?></span></li>
+                        <li><span>Armory</span> <span>Lvl <?= $structures->armory_level ?></span></li>
+                        <!-- NEW: Phase 1 Structures -->
+                        <li><span>Quantum Research Lab</span> <span>Lvl <?= $structures->quantum_research_lab_level ?></span></li>
+                        <li><span>Nanite Forge</span> <span>Lvl <?= $structures->nanite_forge_level ?></span></li>
+                        <!-- NEW: Phase 2 Structures -->
+                        <li><span>Dark Matter Siphon</span> <span>Lvl <?= $structures->dark_matter_siphon_level ?></span></li>
+                        <li><span>Planetary Shield</span> <span>Lvl <?= $structures->planetary_shield_level ?></span></li>
+                    </ul>
+                </div>
+                </div>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const withdrawChipsDisplay = document.getElementById('withdraw-chips-display');
+                        const withdrawChipsHidden = document.getElementById('withdraw-chips-hidden');
+                        if (withdrawChipsDisplay && withdrawChipsHidden) {
+                            StarlightUtils.setupInputMask(withdrawChipsDisplay, withdrawChipsHidden);
+                        }
+                    });
+                </script>
+                <script src="/js/dashboard.js"></script>

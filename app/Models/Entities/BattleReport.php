@@ -45,6 +45,8 @@ readonly class BattleReport
         public readonly int $attacker_offense_power,
         public readonly int $defender_defense_power,
         public readonly int $defender_total_guards, // NEW
+        public readonly int $defender_shield_hp = 0, // NEW
+        public readonly int $shield_damage_dealt = 0, // NEW
         public readonly ?string $defender_name = null,
         public readonly ?string $attacker_name = null,
         public readonly bool $is_hidden = false

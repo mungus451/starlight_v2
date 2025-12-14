@@ -63,7 +63,9 @@ class StructureRepository
             'armory_level',
             'accounting_firm_level',
             'quantum_research_lab_level',
-            'nanite_forge_level'
+            'nanite_forge_level',
+            'dark_matter_siphon_level',
+            'planetary_shield_level'
         ];
 
         if (!in_array($columnName, $allowedColumns)) {
@@ -99,7 +101,9 @@ class StructureRepository
             armory_level: (int)$data['armory_level'],
             accounting_firm_level: (int)$data['accounting_firm_level'],
             quantum_research_lab_level: (int)($data['quantum_research_lab_level'] ?? 0),
-            nanite_forge_level: (int)($data['nanite_forge_level'] ?? 0)
+            nanite_forge_level: (int)($data['nanite_forge_level'] ?? 0),
+            dark_matter_siphon_level: (int)($data['dark_matter_siphon_level'] ?? 0),
+            planetary_shield_level: (int)($data['planetary_shield_level'] ?? 0)
         );
     }
 }

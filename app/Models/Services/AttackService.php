@@ -178,11 +178,22 @@ class AttackService
             $attackerId, $attackerResources, $attackerStats, $attackerStructures, $attacker->alliance_id
         );
         $offensePower = $offensePowerBreakdown['total'];
+        $originalOffensePower = $offensePower; // Store original for report
 
         $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
             $defender->id, $defenderResources, $defenderStats, $defenderStructures, $defender->alliance_id
         );
         $defensePower = $defensePowerBreakdown['total'];
+
+        // --- NEW: Planetary Shield Logic ---
+        $shieldPowerBreakdown = $this->powerCalculatorService->calculateShieldPower($defenderStructures);
+        $shieldHp = $shieldPowerBreakdown['total_shield_hp'];
+        $damageToShield = 0;
+
+        if ($shieldHp > 0) {
+            $damageToShield = min($shieldHp, $offensePower);
+            $offensePower -= $damageToShield;
+        }
 
         // Determine Outcome
         $attackResult = 'defeat';
@@ -190,6 +201,11 @@ class AttackService
             $attackResult = 'victory';
         } elseif ($offensePower == $defensePower) {
             $attackResult = 'stalemate';
+        }
+
+        // If the shield absorbed everything, it's an automatic defeat with no defender losses
+        if ($shieldHp > 0 && $offensePower <= 0) {
+            $attackResult = 'defeat';
         }
 
         // --- NEW: RATIO BASED CASUALTY LOGIC ---
@@ -205,11 +221,17 @@ class AttackService
             // Defender is Loser
             $defenderGuardsLost = $this->calculateLoserLosses($defenderResources->guards, $ratio);
         } elseif ($attackResult === 'defeat') {
-            $ratio = $safeDefense / $safeOffense;
-            // Defender is Winner (losses applied to their guards)
-            $defenderGuardsLost = $this->calculateWinnerLosses($defenderResources->guards, $ratio);
-            // Attacker is Loser
-            $attackerSoldiersLost = $this->calculateLoserLosses($soldiersSent, $ratio);
+            // If shield absorbed all damage, no one loses anything
+            if ($shieldHp > 0 && $offensePower <= 0) {
+                $attackerSoldiersLost = 0;
+                $defenderGuardsLost = 0;
+            } else {
+                $ratio = $safeDefense / $safeOffense;
+                // Defender is Winner (losses applied to their guards)
+                $defenderGuardsLost = $this->calculateWinnerLosses($defenderResources->guards, $ratio);
+                // Attacker is Loser
+                $attackerSoldiersLost = $this->calculateLoserLosses($soldiersSent, $ratio);
+            }
         } else {
             // Stalemate (High casualties for both)
             $attackerSoldiersLost = (int)ceil($soldiersSent * 0.15); // Flat 15%
@@ -325,9 +347,11 @@ class AttackService
                 $attackerId, $defender->id, $attackType, $attackResult, $soldiersSent,
                 $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
                 $attackerXpGain, $warPrestigeGained, $netWorthStolen,
-                (int)$offensePower, (int)$defensePower, 
+                (int)$originalOffensePower, (int)$defensePower, 
                 $defenderTotalGuardsSnapshot,
-                $isShadowContract
+                $isShadowContract,
+                $shieldHp, // NEW
+                $damageToShield // NEW
             );
 
             // Alliance Bank

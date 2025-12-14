@@ -138,6 +138,14 @@ class StructurePresenter
             case 'nanite_forge':
                 $val = ($attackConfig['nanite_casualty_reduction_per_level'] ?? 0) * 100;
                 return "- " . $val . "% Casualties in Winning Battles";
+
+            case 'dark_matter_siphon':
+                $val = $turnConfig['dark_matter_per_siphon_level'] ?? 0;
+                return "+ " . $val . " Dark Matter / Turn";
+
+            case 'planetary_shield':
+                $val = $attackConfig['shield_hp_per_level'] ?? 0;
+                return "+ " . number_format($val) . " Shield HP";
             
             default:
                 return "";
@@ -151,7 +159,9 @@ class StructurePresenter
             'Defense' => '🛡️',
             'Offense' => '⚔️',
             'Intel'   => '📡',
-            'Military' => '🛡️', // New category
+            'Military' => '🛡️',
+            'Advanced Industry' => '🔬',
+            'Super Defense' => '✨',
             default   => '⚙️',
         };
     }

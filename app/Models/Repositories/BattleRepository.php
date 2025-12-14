@@ -53,16 +53,19 @@ class BattleRepository
         int $attackerOffensePower,
         int $defenderDefensePower,
         int $defenderTotalGuards,
-        bool $isHidden = false
+        bool $isHidden = false,
+        int $defenderShieldHp = 0,
+        int $shieldDamageDealt = 0
     ): int {
         $sql = "
             INSERT INTO battle_reports
             (attacker_id, defender_id, attack_type, attack_result, soldiers_sent,
              attacker_soldiers_lost, defender_guards_lost, credits_plundered,
              experience_gained, war_prestige_gained, net_worth_stolen,
-             attacker_offense_power, defender_defense_power, defender_total_guards, is_hidden, created_at)
+             attacker_offense_power, defender_defense_power, defender_total_guards, is_hidden,
+             defender_shield_hp, shield_damage_dealt, created_at)
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
 
         $stmt = $this->db->prepare($sql);
@@ -70,7 +73,8 @@ class BattleRepository
             $attackerId, $defenderId, $attackType, $attackResult, $soldiersSent,
             $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
             $experienceGained, $warPrestigeGained, $netWorthStolen,
-            $attackerOffensePower, $defenderDefensePower, $defenderTotalGuards, (int)$isHidden
+            $attackerOffensePower, $defenderDefensePower, $defenderTotalGuards, (int)$isHidden,
+            $defenderShieldHp, $shieldDamageDealt
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -166,7 +170,9 @@ class BattleRepository
             net_worth_stolen: (int)$data['net_worth_stolen'],
             attacker_offense_power: (int)$data['attacker_offense_power'],
             defender_defense_power: (int)$data['defender_defense_power'],
-            defender_total_guards: (int)($data['defender_total_guards'] ?? 0), // Hydrate new field
+            defender_total_guards: (int)($data['defender_total_guards'] ?? 0),
+            defender_shield_hp: (int)($data['defender_shield_hp'] ?? 0),
+            shield_damage_dealt: (int)($data['shield_damage_dealt'] ?? 0),
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null,
             is_hidden: (bool)($data['is_hidden'] ?? false)
