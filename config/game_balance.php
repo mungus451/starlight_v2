@@ -185,7 +185,7 @@ return [
     // --- Phase 10 ---
     'turn_processor' => [
         // 0.0005% interest per turn
-        'bank_interest_rate' => 0.00005,
+        'bank_interest_rate' => 0.0003,
         
         // 100,000 credits per turn, per level of Economy Upgrade
         'credit_income_per_econ_level' => 100000,
