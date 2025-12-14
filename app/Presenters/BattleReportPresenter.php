@@ -134,7 +134,7 @@ class BattleReportPresenter
     {
         // Helper for formatting
         $fmt = fn($n) => number_format($n);
-        $kFmt = fn($n) => $n > 1000 ? round($n / 1000, 1) . 'k' : $n;
+        $kFmt = fn($n) => number_format($n); // Updated to full number format
 
         // Line 1: Deployment
         $line1 = "<strong>{$atkName}</strong> sent {$fmt($report->soldiers_sent)} soldiers with {$kFmt($report->attacker_offense_power)} offense. ";
