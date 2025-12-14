@@ -119,6 +119,48 @@ return [
             'category' => 'Advanced Industry',
             'description' => 'Generates Naquadah Crystals each turn.'
         ],
+
+        // --- Age of Ascension: Phase 2 Structures (New) ---
+        'protoform_vat' => [
+            'name' => 'Protoform Vat',
+            'base_cost' => 1000000,
+            'base_crystal_cost' => 200,
+            'multiplier' => 1.9,
+            'category' => 'Advanced Industry',
+            'description' => 'Cultivates Protoform, a biological resource required for elite units.'
+        ],
+        'weapon_vault' => [
+            'name' => 'Weapon Vault',
+            'base_cost' => 2500000,
+            'base_crystal_cost' => 500,
+            'multiplier' => 2.1,
+            'category' => 'Military',
+            'description' => 'Allows the construction of advanced weapons and armor for your Generals.'
+        ],
+        'galactic_market' => [
+            'name' => 'Galactic Market',
+            'base_cost' => 5000000,
+            'base_crystal_cost' => 1000,
+            'multiplier' => 2.0,
+            'category' => 'Economy',
+            'description' => 'Enables resource trading with other players at dynamic, server-wide prices.'
+        ],
+        'embassy' => [
+            'name' => 'Embassy',
+            'base_cost' => 10000000,
+            'base_crystal_cost' => 2000,
+            'multiplier' => 2.5,
+            'category' => 'Intel',
+            'description' => 'Unlocks strategic Doctrines that provide powerful, empire-wide bonuses.'
+        ],
+    ],
+    'upkeep' => [
+        'general' => [
+            'protoform' => 10, // 10 protoform per turn
+        ],
+        'scientist' => [
+            'protoform' => 5, // 5 protoform per turn for active scientists
+        ],
     ],
     // --- Phase 7 ---
     'spy' => [

@@ -34,7 +34,8 @@ readonly class UserResource
         public readonly int $sentries,
         public readonly int $untraceable_chips = 0,
         public readonly int $research_data = 0,
-        public readonly int $dark_matter = 0
+        public readonly int $dark_matter = 0,
+        public readonly float $protoform = 0.0
     ) {
     }
 }
