@@ -42,18 +42,24 @@ class StructurePresenter
             // 2. Determine Costs & Status
             $creditCost = $costs[$key]['credits'] ?? 0;
             $crystalCost = $costs[$key]['crystals'] ?? 0;
+            $darkMatterCost = $costs[$key]['dark_matter'] ?? 0;
 
-            $isMaxLevel = ($creditCost === 0 && $crystalCost === 0); 
+            $isMaxLevel = ($creditCost === 0 && $crystalCost === 0 && $darkMatterCost === 0); 
             $canAfford = (
                 $resources->credits >= $creditCost && 
-                $resources->naquadah_crystals >= $crystalCost
+                $resources->naquadah_crystals >= $crystalCost &&
+                $resources->dark_matter >= $darkMatterCost
             );
 
-            // Format costs: "100,000 C" or "100,000 C + 5 💎"
-            $costFormatted = number_format($creditCost) . ' C';
+            // Format costs: "100,000 C" or "100,000 C + 5 💎" or "100,000 C + 5 🌌"
+            $costParts = [number_format($creditCost) . ' C'];
             if ($crystalCost > 0) {
-                $costFormatted .= ' + ' . number_format($crystalCost) . ' 💎';
+                $costParts[] = number_format($crystalCost) . ' 💎';
             }
+            if ($darkMatterCost > 0) {
+                $costParts[] = number_format($darkMatterCost) . ' 🌌';
+            }
+            $costFormatted = implode(' + ', $costParts);
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
             $benefitText = $this->calculateBenefitText($key, $turnConfig, $attackConfig, $spyConfig);

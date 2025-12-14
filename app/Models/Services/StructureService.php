@@ -53,11 +53,19 @@ class StructureService
             $currentLevel = $structures->{$key . '_level'} ?? 0;
             $creditCost = $this->calculateCost($data['base_cost'], $data['multiplier'], $currentLevel);
             $crystalCost = 0;
+            $darkMatterCost = 0;
 
             if (isset($data['base_crystal_cost'])) {
                 $crystalCost = $this->calculateCost($data['base_crystal_cost'], $data['multiplier'], $currentLevel);
             }
-            $costs[$key] = ['credits' => $creditCost, 'crystals' => $crystalCost];
+            if (isset($data['base_dark_matter_cost'])) {
+                $darkMatterCost = $this->calculateCost($data['base_dark_matter_cost'], $data['multiplier'], $currentLevel);
+            }
+            $costs[$key] = [
+                'credits' => $creditCost, 
+                'crystals' => $crystalCost,
+                'dark_matter' => $darkMatterCost
+            ];
         }
 
         return [
@@ -99,8 +107,13 @@ class StructureService
         
         $creditCost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
         $crystalCost = 0;
+        $darkMatterCost = 0;
+
         if (isset($structureConfig['base_crystal_cost'])) {
             $crystalCost = $this->calculateCost($structureConfig['base_crystal_cost'], $structureConfig['multiplier'], $currentLevel);
+        }
+        if (isset($structureConfig['base_dark_matter_cost'])) {
+            $darkMatterCost = $this->calculateCost($structureConfig['base_dark_matter_cost'], $structureConfig['multiplier'], $currentLevel);
         }
 
         // 4. Check Affordability
@@ -109,6 +122,9 @@ class StructureService
         }
         if ($resources->naquadah_crystals < $crystalCost) {
             return ServiceResponse::error('Insufficient naquadah crystals for upgrade.');
+        }
+        if ($resources->dark_matter < $darkMatterCost) {
+            return ServiceResponse::error('Insufficient dark matter for upgrade.');
         }
 
         // 5. Transaction
@@ -119,12 +135,12 @@ class StructureService
         }
 
         try {
-            // Deduct Credits and Crystals atomically using relative updates
-            // pass negative values to subtract
+            // Deduct Credits, Crystals, and Dark Matter atomically
             $this->resourceRepo->updateResources(
                 $userId,
                 -1 * $creditCost,
-                -1 * $crystalCost
+                -1 * $crystalCost,
+                -1 * $darkMatterCost
             );
             
             // Update Structure Level
@@ -136,7 +152,12 @@ class StructureService
             
             return ServiceResponse::success(
                 "{$structureConfig['name']} upgraded to Level {$nextLevel}!",
-                ['new_level' => $nextLevel, 'cost' => $creditCost, 'crystal_cost' => $crystalCost]
+                [
+                    'new_level' => $nextLevel, 
+                    'cost' => $creditCost, 
+                    'crystal_cost' => $crystalCost,
+                    'dark_matter_cost' => $darkMatterCost
+                ]
             );
 
         } catch (Throwable $e) {

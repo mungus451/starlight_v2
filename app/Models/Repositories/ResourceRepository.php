@@ -233,9 +233,10 @@ class ResourceRepository
      * @param int $userId
      * @param float|null $creditsChange
      * @param float|null $naquadahCrystalsChange
+     * @param float|null $darkMatterChange
      * @return bool
      */
-    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null): bool
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null): bool
     {
         $updates = [];
         $params = [];
@@ -248,6 +249,11 @@ class ResourceRepository
         if ($naquadahCrystalsChange !== null) {
             $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change";
             $params[':naquadah_crystals_change'] = $naquadahCrystalsChange;
+        }
+
+        if ($darkMatterChange !== null) {
+            $updates[] = "dark_matter = dark_matter + :dark_matter_change";
+            $params[':dark_matter_change'] = $darkMatterChange;
         }
 
         if (empty($updates)) {

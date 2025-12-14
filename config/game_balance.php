@@ -114,7 +114,7 @@ return [
         'naquadah_mining_complex' => [
             'name' => 'Naquadah Mining Complex',
             'base_cost' => 1000000,
-            'base_crystal_cost' => 500,
+            'base_dark_matter_cost' => 1,
             'multiplier' => 2.0,
             'category' => 'Advanced Industry',
             'description' => 'Generates Naquadah Crystals each turn.'
@@ -203,10 +203,10 @@ return [
         'research_data_per_lab_level' => 100, // 100 Research Data per QRL level per turn
 
         // New: Dark Matter Generation
-        'dark_matter_per_siphon_level' => 0.1, // 0.1 Dark Matter per Siphon level per turn
+        'dark_matter_per_siphon_level' => 0.5, // 0.5 Dark Matter per Siphon level per turn
 
         // New: Naquadah Generation
-        'naquadah_per_mining_complex_level' => 0.5, // 0.5 Naquadah per level per turn
+        'naquadah_per_mining_complex_level' => 10, // 10 Naquadah per level per turn
     ],
 
     // --- Phase 11 ---
