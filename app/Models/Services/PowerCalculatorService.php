@@ -173,7 +173,15 @@ class PowerCalculatorService
 
         // 2. Personal Bonuses
         $statBonusPct = $stats->wealth_points * $config['credit_bonus_per_wealth_point'];
-        $accountingFirmBonusPct = $structures->accounting_firm_level * 0.01; // 1% per level
+        
+        $accBase = $config['accounting_firm_base_bonus'] ?? 0.01;
+        $accMult = $config['accounting_firm_multiplier'] ?? 1.0;
+        $accLevel = $structures->accounting_firm_level;
+        
+        $accountingFirmBonusPct = 0.0;
+        if ($accLevel > 0) {
+            $accountingFirmBonusPct = $accBase * $accLevel * pow($accMult, max(0, $accLevel - 1));
+        }
         
         // 3. Alliance Bonuses (Credits)
         $allianceCreditMultiplier = 0.0;
@@ -250,7 +258,13 @@ class PowerCalculatorService
 
         // 8. Dark Matter Income
         $darkMatterPerLevel = $config['dark_matter_per_siphon_level'] ?? 0;
-        $darkMatterIncome = $structures->dark_matter_siphon_level * $darkMatterPerLevel;
+        $darkMatterMultiplier = $config['dark_matter_production_multiplier'] ?? 1.0;
+        $dmLevel = $structures->dark_matter_siphon_level;
+        
+        $darkMatterIncome = 0;
+        if ($dmLevel > 0) {
+            $darkMatterIncome = $darkMatterPerLevel * $dmLevel * pow($darkMatterMultiplier, max(0, $dmLevel - 1));
+        }
 
         // 9. Naquadah Income
         $naquadahPerLevel = $config['naquadah_per_mining_complex_level'] ?? 0;

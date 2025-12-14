@@ -135,7 +135,16 @@ class StructurePresenter
                 return "Unlocks & Upgrades Item Tiers";
 
             case 'accounting_firm':
-                return "+ 1% Global Income Multiplier / Level";
+                if ($currentLevel === 0) {
+                    return "Base 1% + 5% compounding Income Bonus / level";
+                }
+                $base = $turnConfig['accounting_firm_base_bonus'] ?? 0.01;
+                $mult = $turnConfig['accounting_firm_multiplier'] ?? 1.0;
+                
+                $currentBonus = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
+                $nextBonus = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
+                
+                return "Bonus: " . number_format($currentBonus * 100, 2) . "% (Next: " . number_format($nextBonus * 100, 2) . "%)";
             
             case 'quantum_research_lab':
                 $val = $turnConfig['research_data_per_lab_level'] ?? 0;
@@ -146,8 +155,16 @@ class StructurePresenter
                 return "- " . $val . "% Casualties in Winning Battles";
 
             case 'dark_matter_siphon':
-                $val = $turnConfig['dark_matter_per_siphon_level'] ?? 0;
-                return "+ " . $val . " Dark Matter / Turn";
+                if ($currentLevel === 0) {
+                    return "Base 0.5 + 2% compounding Dark Matter / level";
+                }
+                $base = $turnConfig['dark_matter_per_siphon_level'] ?? 0;
+                $mult = $turnConfig['dark_matter_production_multiplier'] ?? 1.0;
+                
+                $currentOutput = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
+                $nextOutput = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
+                
+                return "Output: " . number_format($currentOutput, 2) . " / Turn (Next: " . number_format($nextOutput, 2) . ")";
 
             case 'planetary_shield':
                 $val = $attackConfig['shield_hp_per_level'] ?? 0;

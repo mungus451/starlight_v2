@@ -204,10 +204,15 @@ return [
 
         // New: Dark Matter Generation
         'dark_matter_per_siphon_level' => 0.5, // 0.5 Dark Matter per Siphon level per turn
+        'dark_matter_production_multiplier' => 1.02, // 2% boost per level
 
         // New: Naquadah Generation
         'naquadah_per_mining_complex_level' => 10, // Base 10 Naquadah per level per turn
         'naquadah_production_multiplier' => 1.01, // 1% boost per level
+
+        // Accounting Firm
+        'accounting_firm_base_bonus' => 0.01, // 1% base
+        'accounting_firm_multiplier' => 1.05, // 5% compounding
     ],
 
     // --- Phase 11 ---
