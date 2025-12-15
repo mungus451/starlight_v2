@@ -21,18 +21,22 @@ final class CreateUserDoctrinesTable extends AbstractMigration
     {
         // Ensure parent tables exist first
         if (!$this->hasTable('users') || !$this->hasTable('doctrine_definitions')) {
-            return; 
+            return;
         }
 
         if (!$this->hasTable('user_doctrines')) {
-            $table = $this->table('user_doctrines');
+            $table = $this->table('user_doctrines', [
+                'engine' => 'InnoDB',
+                'collation' => 'utf8mb4_unicode_ci',
+                'encoding' => 'utf8mb4',
+            ]);
             $table->addColumn('user_id', 'integer', ['signed' => false])
-                  ->addColumn('doctrine_id', 'integer', ['signed' => false])
-                  ->addTimestamps()
-                  ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
-                  ->addForeignKey('doctrine_id', 'doctrine_definitions', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
-                  ->addIndex(['user_id', 'doctrine_id'], ['unique' => true])
-                  ->create();
+                ->addColumn('doctrine_id', 'integer')
+                ->addTimestamps()
+                ->addForeignKey('user_id', 'users', 'id', ['delete' => 'CASCADE', 'update' => 'NO_ACTION'])
+                ->addForeignKey('doctrine_id', 'doctrine_definitions', 'id', ['delete' => 'CASCADE', 'update' => 'NO_ACTION'])
+                ->addIndex(['user_id', 'doctrine_id'], ['unique' => true])
+                ->create();
         }
     }
 
