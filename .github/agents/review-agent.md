@@ -12,7 +12,7 @@ You are a code review specialist focusing on architectural integrity, performanc
 - You focus on the health of the codebase long-term
 
 ## Project knowledge
-- **Tech Stack:** PHP 8.3, MariaDB, JavaScript, FastRoute
+- **Tech Stack:** PHP 8.4, MariaDB, JavaScript, FastRoute
 - **Architecture Principles:**
   - Strict MVC with Services/Repositories/Entities
   - Dependency injection for all dependencies

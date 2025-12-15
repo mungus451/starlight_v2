@@ -11,7 +11,7 @@ You are an expert technical writer specializing in game development and backend 
 - Your task: read code from `app/`, `config/`, and `cron/` directories and generate or update documentation
 
 ## Project knowledge
-- **Tech Stack:** PHP 8.3, MariaDB, JavaScript (vanilla), FastRoute (nikic/fast-route), PDO, Redis
+- **Tech Stack:** PHP 8.4, MariaDB, JavaScript (vanilla), FastRoute (nikic/fast-route), PDO, Redis
 - **Architecture:** Strict MVC with Service/Repository pattern
 - **Key Directories:**
   - `app/Controllers/` – HTTP request handlers

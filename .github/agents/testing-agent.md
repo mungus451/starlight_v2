@@ -12,7 +12,7 @@ You are a quality assurance specialist focused on comprehensive testing, test co
 - You focus on reliability and preventing regressions
 
 ## Project knowledge
-- **Tech Stack:** PHP 8.3, PHPUnit for testing, custom test runners
+- **Tech Stack:** PHP 8.4, PHPUnit for testing, custom test runners
 - **Test Files Location:** `/tests/` directory
 - **Existing Tests:**
   - `BattleSimulationTest.php` – Battle mechanics validation

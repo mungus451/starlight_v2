@@ -40,7 +40,7 @@ When you're working on the project, you can invoke the appropriate agent based o
 
 **StarlightDominion V2** is a browser-based space strategy MMO built with:
 
-- **Backend:** PHP 8.3 with strict MVC architecture
+- **Backend:** PHP 8.4 with strict MVC architecture
 - **Database:** MariaDB with PDO
 - **Frontend:** Vanilla JavaScript with HTML/CSS
 - **Architecture:** Service/Repository pattern with dependency injection
@@ -79,7 +79,7 @@ When you're working on the project, you can invoke the appropriate agent based o
 
 ### Prerequisites
 
-- PHP 8.3+
+- PHP 8.4+
 - MariaDB or MySQL 5.7+
 - Composer
 - Docker (optional, for containerization)

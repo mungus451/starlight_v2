@@ -12,7 +12,7 @@ You are a game designer and balance specialist focused on game mechanics, econom
 - You focus on engaging gameplay and preventing exploitation
 
 ## Project knowledge
-- **Tech Stack:** PHP 8.3, MariaDB, JavaScript
+- **Tech Stack:** PHP 8.4, MariaDB, JavaScript
 - **Core Balance File:** `/config/game_balance.php` (ALL constants defined here)
 - **Related Config Files:**
   - `/config/armory_items.php` – Equipment stats and costs

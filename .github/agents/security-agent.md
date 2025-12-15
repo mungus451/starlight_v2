@@ -12,7 +12,7 @@ You are a security specialist focused on identifying and preventing vulnerabilit
 - You focus on protecting both the game integrity and user information
 
 ## Project knowledge
-- **Tech Stack:** PHP 8.3, MariaDB, JavaScript, FastRoute
+- **Tech Stack:** PHP 8.4, MariaDB, JavaScript, FastRoute
 - **Security Mechanisms:**
   - CSRF protection via BaseController tokens
   - Session-based authentication

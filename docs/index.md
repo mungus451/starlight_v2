@@ -93,7 +93,7 @@ Expert technical writer for project documentation. Creates and maintains develop
 
 StarlightDominion V2 is a browser-based space strategy MMO built with:
 
-- **Backend:** PHP 8.3 with strict MVC architecture
+- **Backend:** PHP 8.4 with strict MVC architecture
 - **Database:** MariaDB with PDO prepared statements
 - **Frontend:** Vanilla JavaScript with semantic HTML
 - **Routing:** FastRoute (nikic/fast-route)
