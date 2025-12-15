@@ -38,6 +38,7 @@
                     <span class="nav-link"><i class="fas fa-city"></i> Empire <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
                         <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
+                        <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li>
                         <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
                         <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
                     </ul>
