@@ -16,6 +16,8 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
+use App\Models\Repositories\EdictRepository;
+use App\Models\Services\EmbassyService;
 use App\Models\Services\ArmoryService;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
@@ -79,7 +81,7 @@ class NaquadahFeatureTest extends TestCase
             accounting_firm_level: 0,
             naquadah_mining_complex_level: 0 // Current Level
         );
-        $mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructures);
+        $mockStructureRepo->shouldReceive('findByUserId')->andReturn($mockStructures);
 
         // Mock Transaction
         $mockDb->shouldReceive('inTransaction')->andReturn(false);
@@ -149,12 +151,16 @@ class NaquadahFeatureTest extends TestCase
         $mockArmoryService = Mockery::mock(ArmoryService::class);
         $mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new PowerCalculatorService(
             $mockConfig,
             $mockArmoryService,
             $mockAllianceStructRepo,
-            $mockStructDefRepo
+            $mockStructDefRepo,
+            $mockEdictRepo
         );
 
         $userId = 1;
@@ -245,10 +251,14 @@ class NaquadahFeatureTest extends TestCase
         $mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
         $mockScientistRepo = Mockery::mock(ScientistRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $mockEmbassyService = Mockery::mock(EmbassyService::class);
 
         // Config Treasury for Constructor
         $mockConfig->shouldReceive('get')->with('game_balance.alliance_treasury', [])->andReturn([]);
         $mockConfig->shouldReceive('get')->with('game_balance.upkeep', [])->andReturn([]);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new TurnProcessorService(
             $mockDb,
@@ -261,7 +271,9 @@ class NaquadahFeatureTest extends TestCase
             $mockAllianceRepo,
             $mockBankLogRepo,
             $mockGeneralRepo,
-            $mockScientistRepo
+            $mockScientistRepo,
+            $mockEdictRepo,
+            $mockEmbassyService
         );
 
         $userId = 123;

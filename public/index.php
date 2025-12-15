@@ -41,6 +41,7 @@ use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
+use App\Controllers\EmbassyController;
 use App\Middleware\AuthMiddleware;
 
 use App\Core\Exceptions\RedirectException;
@@ -168,6 +169,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/leaderboard/{type:players|alliances}', [LeaderboardController::class, 'show']);
     $r->addRoute('GET', '/leaderboard/{type:players|alliances}/{page:\d+}', [LeaderboardController::class, 'show']);
 
+    // --- Embassy (Directives) ---
+    $r->addRoute('GET', '/embassy', [EmbassyController::class, 'index']);
+    $r->addRoute('POST', '/embassy/activate', [EmbassyController::class, 'activate']);
+    $r->addRoute('POST', '/embassy/revoke', [EmbassyController::class, 'revoke']);
+
     // --- Alliance System ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
@@ -267,7 +273,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard'
+                '/leaderboard', '/embassy'
             ];
             
             $isProtected = false;
