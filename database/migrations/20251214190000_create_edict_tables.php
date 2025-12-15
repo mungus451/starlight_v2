@@ -10,7 +10,7 @@ final class CreateEdictTables extends AbstractMigration
     {
         // 1. Edict Definitions Table
         if (!$this->hasTable('edict_definitions')) {
-            $table = $this->table('edict_definitions');
+            $table = $this->table('edict_definitions', ['signed' => false]);
             $table->addColumn('name', 'string', ['limit' => 100])
                   ->addColumn('description', 'text')
                   ->addColumn('lore', 'text', ['null' => true])
@@ -27,7 +27,7 @@ final class CreateEdictTables extends AbstractMigration
         if (!$this->hasTable('user_edicts')) {
             $table = $this->table('user_edicts');
             $table->addColumn('user_id', 'integer', ['signed' => false])
-                  ->addColumn('edict_id', 'integer', ['signed' => true]) 
+                  ->addColumn('edict_id', 'integer', ['signed' => false]) 
                   ->addTimestamps()
                   ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
                   ->addForeignKey('edict_id', 'edict_definitions', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
