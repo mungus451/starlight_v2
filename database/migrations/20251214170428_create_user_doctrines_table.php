@@ -19,6 +19,11 @@ final class CreateUserDoctrinesTable extends AbstractMigration
      */
     public function up(): void
     {
+        // Ensure parent tables exist first
+        if (!$this->hasTable('users') || !$this->hasTable('doctrine_definitions')) {
+            return; 
+        }
+
         if (!$this->hasTable('user_doctrines')) {
             $table = $this->table('user_doctrines');
             $table->addColumn('user_id', 'integer', ['signed' => false])
