@@ -19,7 +19,7 @@ final class CreateWeaponDefinitionsTable extends AbstractMigration
      */
     public function up(): void
     {
-        $table = $this->table('weapon_definitions');
+        $table = $this->table('weapon_definitions', ['signed' => false]);
         $table->addColumn('name', 'string', ['limit' => 255])
               ->addColumn('type', 'enum', ['values' => ['weapon', 'armor']])
               ->addColumn('attack_bonus', 'integer', ['default' => 0])

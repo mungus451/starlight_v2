@@ -22,7 +22,7 @@ final class CreateUserDoctrinesTable extends AbstractMigration
         if (!$this->hasTable('user_doctrines')) {
             $table = $this->table('user_doctrines');
             $table->addColumn('user_id', 'integer', ['signed' => false])
-                  ->addColumn('doctrine_id', 'integer', ['signed' => true])
+                  ->addColumn('doctrine_id', 'integer', ['signed' => false])
                   ->addTimestamps()
                   ->addForeignKey('user_id', 'users', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])
                   ->addForeignKey('doctrine_id', 'doctrine_definitions', 'id', ['delete'=> 'CASCADE', 'update'=> 'NO_ACTION'])

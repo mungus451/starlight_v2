@@ -19,7 +19,7 @@ final class CreateDoctrineDefinitionsTable extends AbstractMigration
      */
     public function up(): void
     {
-        $table = $this->table('doctrine_definitions');
+        $table = $this->table('doctrine_definitions', ['signed' => false]);
         $table->addColumn('name', 'string', ['limit' => 255])
               ->addColumn('description', 'text')
               ->addColumn('type', 'enum', ['values' => ['economy', 'military', 'espionage']])
