@@ -23,7 +23,7 @@ The Security Agent specializes in identifying and preventing vulnerabilities in 
 
 ### Technology Stack
 
-- **Language:** PHP 8.3
+- **Language:** PHP 8.4+
 - **Database:** MariaDB with prepared statements
 - **Authentication:** Session-based with Redis storage
 - **Encryption:** Password hashing (bcrypt/argon2)
