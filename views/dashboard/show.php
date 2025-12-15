@@ -101,7 +101,11 @@
                             <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
                                 <li>
                                     <span><?= htmlspecialchars($item['label']) ?></span>
-                                    <span>+ <?= number_format($item['value']) ?></span>
+                                    <?php if (is_numeric($item['value'])): ?>
+                                        <span>+ <?= number_format($item['value']) ?></span>
+                                    <?php else: ?>
+                                        <span><?= htmlspecialchars($item['value']) ?></span>
+                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
