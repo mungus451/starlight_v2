@@ -8,11 +8,11 @@ use App\Models\Entities\UserStats;
 use App\Models\Entities\UserStructure;
 use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
+use App\Models\Repositories\EdictRepository;
 
 /**
  * Handles all complex game logic calculations for power, income, etc.
- * * Refactored Phase 2: Fully wired Alliance Structure Bonuses.
- * * Added clearCache() for testing.
+ * * Refactored Phase 3: Added Edict Modifiers.
  */
 class PowerCalculatorService
 {
@@ -20,12 +20,16 @@ class PowerCalculatorService
     private ArmoryService $armoryService;
     private AllianceStructureRepository $allianceStructRepo;
     private AllianceStructureDefinitionRepository $structDefRepo;
+    private EdictRepository $edictRepo;
     
     /** @var array|null Cached structure definitions keyed by structure_key */
     private ?array $structureDefinitionsCache = null;
 
     /** @var array Runtime cache for alliance bonuses to optimize loops */
     private array $allianceBonusCache = [];
+
+    /** @var array Runtime cache for edict bonuses */
+    private array $edictBonusCache = [];
 
     /**
      * DI Constructor.
@@ -34,21 +38,23 @@ class PowerCalculatorService
         Config $config,
         ArmoryService $armoryService,
         AllianceStructureRepository $allianceStructRepo,
-        AllianceStructureDefinitionRepository $structDefRepo
+        AllianceStructureDefinitionRepository $structDefRepo,
+        EdictRepository $edictRepo
     ) {
         $this->config = $config;
         $this->armoryService = $armoryService;
         $this->allianceStructRepo = $allianceStructRepo;
         $this->structDefRepo = $structDefRepo;
+        $this->edictRepo = $edictRepo;
     }
 
     /**
      * Clears internal runtime caches.
-     * Essential for unit testing state changes within a single script execution.
      */
     public function clearCache(): void
     {
         $this->allianceBonusCache = [];
+        $this->edictBonusCache = [];
         $this->structureDefinitionsCache = null;
     }
 
@@ -81,8 +87,12 @@ class PowerCalculatorService
             $allianceBonusPercent = $allianceBonuses['offense_bonus_percent'];
         }
 
-        // 4. Final Total Power
-        $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent;
+        // 4. Edict Bonuses
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictBonusPercent = $edictBonuses['offense_power_percent'] ?? 0.0;
+
+        // 5. Final Total Power
+        $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -93,6 +103,7 @@ class PowerCalculatorService
             'structure_bonus_pct' => $structureBonusPercent,
             'stat_bonus_pct' => $statBonusPercent,
             'alliance_bonus_pct' => $allianceBonusPercent,
+            'edict_bonus_pct' => $edictBonusPercent,
             'structure_level' => $structures->offense_upgrade_level,
             'stat_points' => $stats->strength_points,
             'unit_count' => $soldiers
@@ -131,8 +142,12 @@ class PowerCalculatorService
             $allianceBonusPercent = $allianceBonuses['defense_bonus_percent'];
         }
 
-        // 4. Final Total Power
-        $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent;
+        // 4. Edict Bonuses
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictBonusPercent = $edictBonuses['defense_power_percent'] ?? 0.0;
+
+        // 5. Final Total Power
+        $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -143,6 +158,7 @@ class PowerCalculatorService
             'structure_bonus_pct' => $structureBonusPercent,
             'stat_bonus_pct' => $statBonusPercent,
             'alliance_bonus_pct' => $allianceBonusPercent,
+            'edict_bonus_pct' => $edictBonusPercent,
             'fort_level' => $structures->fortification_level,
             'def_level' => $structures->defense_upgrade_level,
             'stat_points' => $stats->constitution_points,
@@ -152,7 +168,7 @@ class PowerCalculatorService
 
     /**
      * Calculates a user's total income per turn.
-     * Integrated with Alliance Bonuses (Credits & Citizens).
+     * Integrated with Alliance Bonuses and Edicts.
      */
     public function calculateIncomePerTurn(
         int $userId,
@@ -168,7 +184,6 @@ class PowerCalculatorService
         $workerIncome = $resources->workers * $config['credit_income_per_worker'];
         $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'worker', 'credit_bonus', $resources->workers);
         
-        // Base now includes Armory (Workers + Loadout)
         $baseProduction = $econIncome + $workerIncome + $armoryBonus;
 
         // 2. Personal Bonuses
@@ -183,102 +198,87 @@ class PowerCalculatorService
             $accountingFirmBonusPct = $accBase * $accLevel * pow($accMult, max(0, $accLevel - 1));
         }
         
-        // 3. Alliance Bonuses (Credits)
+        // 3. Alliance Bonuses
         $allianceCreditMultiplier = 0.0;
         $allianceCitizenFlat = 0;
         
         if ($allianceId !== null) {
             $allyBonuses = $this->getAllianceBonuses($allianceId);
-            
-            // "resource_bonus_percent" (Hub) and "income_bonus_percent" (Nexus) both boost credits
             $allianceCreditMultiplier = $allyBonuses['resource_bonus_percent'] + $allyBonuses['income_bonus_percent'];
             $allianceCitizenFlat = $allyBonuses['citizen_growth_flat'];
         }
+
+        // 4. Edict Bonuses
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictCreditMultiplier = $edictBonuses['credit_income_percent'] ?? 0.0;
+        $edictTotalIncomeMultiplier = $edictBonuses['total_income_percent'] ?? 0.0;
+        $edictCitizenMultiplier = 1.0 + ($edictBonuses['citizen_growth_percent'] ?? 0.0);
+        $edictCitizenMultiplicative = $edictBonuses['citizen_growth_mult'] ?? 1.0;
+        $edictResourceMultiplier = 1.0 + ($edictBonuses['resource_production_percent'] ?? 0.0);
+        $edictInterestMultiplier = $edictBonuses['bank_interest_mult'] ?? 1.0;
         
-        // 4. Total Credit Income
-        // Multipliers are additive: 1 + Stat% + Alliance% + AccountingFirm%
-        $totalMultiplier = 1 + $statBonusPct + $allianceCreditMultiplier + $accountingFirmBonusPct;
+        // 5. Total Credit Income
+        // Multipliers are additive: 1 + Stat% + Alliance% + Accounting% + Edict%
+        // But Edict Total Income% might be multiplicative at the end? Let's keep it additive for now to avoid confusion, or apply it to the final sum.
+        // "Scorched Earth: -10% Total Income" suggests a final multiplier.
+        // Let's treat "total_income_percent" as a final scalar.
         
-        // Calculate raw amounts for the breakdown (based on NEW baseProduction)
+        $additiveMultiplier = 1 + $statBonusPct + $allianceCreditMultiplier + $accountingFirmBonusPct + $edictCreditMultiplier;
+        
+        // Calculate raw amounts
         $amountFromWealth = (int)floor($baseProduction * $statBonusPct);
         $amountFromAccounting = (int)floor($baseProduction * $accountingFirmBonusPct);
         $amountFromAlliance = (int)floor($baseProduction * $allianceCreditMultiplier);
+        $amountFromEdicts = (int)floor($baseProduction * $edictCreditMultiplier);
         
-        $totalCreditIncome = (int)floor($baseProduction * $totalMultiplier);
+        $totalCreditIncome = (int)floor($baseProduction * $additiveMultiplier);
         
-        // Build Granular Breakdown
+        // Apply "Total Income" scalar (e.g. Scorched Earth)
+        $finalIncomeScalar = 1.0 + $edictTotalIncomeMultiplier;
+        $totalCreditIncome = (int)floor($totalCreditIncome * $finalIncomeScalar);
+        
         $detailedBreakdown = [
-            [
-                'label' => "Base from Economy (Lvl {$structures->economy_upgrade_level})",
-                'value' => $econIncome,
-                'type'  => 'base'
-            ],
-            [
-                'label' => "Base from Workers (" . number_format($resources->workers) . ")",
-                'value' => $workerIncome,
-                'type'  => 'base'
-            ],
-            [
-                'label' => "Base from Armory (Worker Loadouts)",
-                'value' => $armoryBonus,
-                'type'  => 'base'
-            ],
-            [
-                'label' => "Subtotal (Base Production)",
-                'value' => $baseProduction,
-                'type'  => 'subtotal'
-            ],
-            [
-                'label' => "Wealth Bonus (" . ($statBonusPct * 100) . "%)",
-                'value' => $amountFromWealth,
-                'type'  => 'bonus'
-            ],
-            [
-                'label' => "Accounting Firm (Lvl {$structures->accounting_firm_level} @ " . ($accountingFirmBonusPct * 100) . "%)",
-                'value' => $amountFromAccounting,
-                'type'  => 'bonus'
-            ],
-            [
-                'label' => "Alliance Structures (" . ($allianceCreditMultiplier * 100) . "%)",
-                'value' => $amountFromAlliance,
-                'type'  => 'bonus'
-            ]
+            [ 'label' => "Base from Economy", 'value' => $econIncome, 'type' => 'base' ],
+            [ 'label' => "Base from Workers", 'value' => $workerIncome, 'type' => 'base' ],
+            [ 'label' => "Base from Armory", 'value' => $armoryBonus, 'type' => 'base' ],
+            [ 'label' => "Subtotal (Base)", 'value' => $baseProduction, 'type' => 'subtotal' ],
+            [ 'label' => "Wealth Bonus", 'value' => $amountFromWealth, 'type' => 'bonus' ],
+            [ 'label' => "Accounting Firm", 'value' => $amountFromAccounting, 'type' => 'bonus' ],
+            [ 'label' => "Alliance Structures", 'value' => $amountFromAlliance, 'type' => 'bonus' ],
+            [ 'label' => "Edicts", 'value' => $amountFromEdicts, 'type' => 'bonus' ],
+            [ 'label' => "Total Scalar", 'value' => ($edictTotalIncomeMultiplier * 100) . "%", 'type' => 'scalar' ]
         ];
 
-        // 5. Interest Income
-        $interestIncome = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
+        // 6. Interest Income
+        $rawInterest = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
+        $interestIncome = (int)floor($rawInterest * $edictInterestMultiplier);
         
-        // 6. Citizen Income
+        // 7. Citizen Income
         $baseCitizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
         $totalCitizenIncome = $baseCitizenIncome + $allianceCitizenFlat;
+        $totalCitizenIncome = (int)floor($totalCitizenIncome * $edictCitizenMultiplier * $edictCitizenMultiplicative);
 
-        // 7. Research Data Income
-        $researchDataPerLevel = $config['research_data_per_lab_level'] ?? 0;
-        $researchDataIncome = $structures->quantum_research_lab_level * $researchDataPerLevel;
+        // 8. Research Data
+        $researchDataIncome = $structures->quantum_research_lab_level * ($config['research_data_per_lab_level'] ?? 0);
 
-        // 8. Dark Matter Income
-        $darkMatterPerLevel = $config['dark_matter_per_siphon_level'] ?? 0;
-        $darkMatterMultiplier = $config['dark_matter_production_multiplier'] ?? 1.0;
+        // 9. Dark Matter (Affected by Edict Resource Multiplier)
         $dmLevel = $structures->dark_matter_siphon_level;
-        
         $darkMatterIncome = 0;
         if ($dmLevel > 0) {
-            $darkMatterIncome = $darkMatterPerLevel * $dmLevel * pow($darkMatterMultiplier, max(0, $dmLevel - 1));
+            $base = ($config['dark_matter_per_siphon_level'] ?? 0) * $dmLevel * pow($config['dark_matter_production_multiplier'] ?? 1.0, max(0, $dmLevel - 1));
+            $darkMatterIncome = $base * $edictResourceMultiplier;
         }
 
-        // 9. Naquadah Income
-        $naquadahPerLevel = $config['naquadah_per_mining_complex_level'] ?? 0;
-        $naquadahMultiplier = $config['naquadah_production_multiplier'] ?? 1.0;
-        $level = $structures->naquadah_mining_complex_level;
-        
+        // 10. Naquadah (Affected by Edict Resource Multiplier)
+        $nqLevel = $structures->naquadah_mining_complex_level;
         $naquadahIncome = 0;
-        if ($level > 0) {
-            $naquadahIncome = $naquadahPerLevel * $level * pow($naquadahMultiplier, max(0, $level - 1));
+        if ($nqLevel > 0) {
+            $base = ($config['naquadah_per_mining_complex_level'] ?? 0) * $nqLevel * pow($config['naquadah_production_multiplier'] ?? 1.0, max(0, $nqLevel - 1));
+            $naquadahIncome = $base * $edictResourceMultiplier;
         }
 
-        // 10. Protoform Income
-        $protoformPerLevel = $config['protoform_per_vat_level'] ?? 0;
-        $protoformIncome = $structures->protoform_vat_level * $protoformPerLevel;
+        // 11. Protoform (Affected by Edict Resource Multiplier)
+        $protoformIncome = $structures->protoform_vat_level * ($config['protoform_per_vat_level'] ?? 0) * $edictResourceMultiplier;
 
         return [
             'total_credit_income' => $totalCreditIncome,
@@ -286,8 +286,8 @@ class PowerCalculatorService
             'total_citizens' => $totalCitizenIncome,
             'research_data_income' => $researchDataIncome,
             'dark_matter_income' => $darkMatterIncome,
-            'naquadah_income' => $naquadahIncome, // NEW
-            'protoform_income' => $protoformIncome, // NEW
+            'naquadah_income' => $naquadahIncome,
+            'protoform_income' => $protoformIncome,
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,
@@ -295,6 +295,7 @@ class PowerCalculatorService
             'armory_bonus' => $armoryBonus,
             'alliance_credit_bonus_pct' => $allianceCreditMultiplier,
             'accounting_firm_bonus_pct' => $accountingFirmBonusPct,
+            'edict_credit_bonus_pct' => $edictCreditMultiplier,
             'detailed_breakdown' => $detailedBreakdown,
             'econ_level' => $structures->economy_upgrade_level,
             'pop_level' => $structures->population_level,
@@ -307,8 +308,8 @@ class PowerCalculatorService
             'alliance_citizen_bonus' => $allianceCitizenFlat,
             'quantum_research_lab_level' => $structures->quantum_research_lab_level,
             'dark_matter_siphon_level' => $structures->dark_matter_siphon_level,
-            'naquadah_mining_complex_level' => $structures->naquadah_mining_complex_level, // NEW
-            'protoform_vat_level' => $structures->protoform_vat_level // NEW
+            'naquadah_mining_complex_level' => $structures->naquadah_mining_complex_level,
+            'protoform_vat_level' => $structures->protoform_vat_level
         ];
     }
 
@@ -319,7 +320,12 @@ class PowerCalculatorService
         $armory = $this->armoryService->getAggregateBonus($userId, 'spy', 'attack', $spies);
         $totalBase = $base + $armory;
         $structBonus = $structures->spy_upgrade_level * $config['offense_power_per_level'];
-        $total = $totalBase * (1 + $structBonus);
+
+        // Edict Spy Bonus
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictBonus = $edictBonuses['spy_success_percent'] ?? 0.0; // Assuming this maps to power for now
+
+        $total = $totalBase * (1 + $structBonus + $edictBonus);
         
         return [
             'total' => (int)$total,
@@ -327,6 +333,7 @@ class PowerCalculatorService
             'armory_bonus' => (int)$armory,
             'total_base_power' => (int)$totalBase,
             'structure_bonus_pct' => $structBonus,
+            'edict_bonus_pct' => $edictBonus,
             'structure_level' => $structures->spy_upgrade_level,
             'unit_count' => $spies
         ];
@@ -339,7 +346,12 @@ class PowerCalculatorService
         $armory = $this->armoryService->getAggregateBonus($userId, 'sentry', 'defense', $sentries);
         $totalBase = $base + $armory;
         $structBonus = $structures->spy_upgrade_level * $config['defense_power_per_level'];
-        $total = $totalBase * (1 + $structBonus);
+        
+        // Edict Sentry Bonus
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictBonus = $edictBonuses['spy_defense_percent'] ?? 0.0;
+
+        $total = $totalBase * (1 + $structBonus + $edictBonus);
         
         return [
             'total' => (int)$total,
@@ -347,21 +359,18 @@ class PowerCalculatorService
             'armory_bonus' => (int)$armory,
             'total_base_power' => (int)$totalBase,
             'structure_bonus_pct' => $structBonus,
+            'edict_bonus_pct' => $edictBonus,
             'structure_level' => $structures->spy_upgrade_level,
             'unit_count' => $sentries
         ];
     }
-
+    
     /**
      * Calculates consolidated bonuses for an alliance based on its structures.
-     * Applies the 'all_bonus_multiplier' (Warlord's Throne) logic.
-     * Uses runtime caching to optimize batch processing.
-     *
-     * @param int $allianceId
-     * @return array
      */
     private function getAllianceBonuses(int $allianceId): array
     {
+        // ... (Existing code) ...
         if (isset($this->allianceBonusCache[$allianceId])) {
             return $this->allianceBonusCache[$allianceId];
         }
@@ -383,17 +392,14 @@ class PowerCalculatorService
         $defByKey = $this->getStructureDefinitions();
         $throneMultiplier = 0.0;
 
-        // Pass 1: Calculate Throne Multiplier
         if (isset($ownedStructures['warlords_throne']) && isset($defByKey['warlords_throne'])) {
             $level = $ownedStructures['warlords_throne']->level;
             $defJson = $defByKey['warlords_throne']->getBonuses();
-            // Assuming the first bonus is the multiplier
             if (!empty($defJson[0]['value'])) {
                 $throneMultiplier = $defJson[0]['value'] * $level;
             }
         }
 
-        // Pass 2: Calculate other bonuses
         foreach ($ownedStructures as $key => $structure) {
             if (!isset($defByKey[$key]) || $key === 'warlords_throne') continue;
 
@@ -406,11 +412,8 @@ class PowerCalculatorService
                 $val = $bonus['value'] ?? 0;
                 $totalVal = $val * $level;
 
-                // Apply Throne Multiplier
-                // Example: 10% base * (1 + 0.15 throne) = 11.5%
                 $boostedVal = $totalVal * (1 + $throneMultiplier);
 
-                // Add to aggregate array
                 if (isset($bonuses[$type])) {
                     if ($type === 'citizen_growth_flat') {
                         $bonuses[$type] += (int)floor($boostedVal);
@@ -424,10 +427,71 @@ class PowerCalculatorService
         $this->allianceBonusCache[$allianceId] = $bonuses;
         return $bonuses;
     }
-    
+
     /**
-     * Gets structure definitions with service-level caching.
+     * Aggregates active edict bonuses for a user.
      */
+    public function getEdictBonuses(int $userId): array
+    {
+        if (isset($this->edictBonusCache[$userId])) {
+            return $this->edictBonusCache[$userId];
+        }
+
+        $activeEdicts = $this->edictRepo->findActiveByUserId($userId);
+        $bonuses = [];
+
+        foreach ($activeEdicts as $userEdict) {
+            $definition = $this->edictRepo->getDefinition($userEdict->edict_key);
+            if (!$definition) continue;
+
+            foreach ($definition->modifiers as $key => $value) {
+                // Determine if additive or multiplicative based on key naming convention or hardcoded logic
+                // Most are additive.
+                // 'bank_interest_mult' and 'citizen_growth_mult' are special.
+                
+                if (str_ends_with($key, '_mult')) {
+                    // Multiplicative: Start at 1.0 if not set, then multiply
+                    if (!isset($bonuses[$key])) {
+                        $bonuses[$key] = 1.0;
+                    }
+                    $bonuses[$key] *= $value;
+                } else {
+                    // Additive
+                    if (!isset($bonuses[$key])) {
+                        $bonuses[$key] = 0.0;
+                    }
+                    $bonuses[$key] += $value;
+                }
+            }
+        }
+
+        $this->edictBonusCache[$userId] = $bonuses;
+        return $bonuses;
+    }
+
+    // ... (rest of the file) ...
+
+    public function calculateShieldPower(UserStructure $structures): array
+    {
+        $config = $this->config->get('game_balance.attack');
+        $hpPerLevel = $config['shield_hp_per_level'] ?? 0;
+        
+        // Edict Bonus
+        $userId = $structures->user_id;
+        $edictBonuses = $this->getEdictBonuses($userId);
+        $edictBonusPct = $edictBonuses['shield_hp_percent'] ?? 0.0;
+
+        $totalHp = $structures->planetary_shield_level * $hpPerLevel;
+        $totalHp = $totalHp * (1 + $edictBonusPct);
+
+        return [
+            'total_shield_hp' => (int)$totalHp,
+            'level' => $structures->planetary_shield_level,
+            'hp_per_level' => $hpPerLevel,
+            'edict_bonus_pct' => $edictBonusPct
+        ];
+    }
+    
     private function getStructureDefinitions(): array
     {
         if ($this->structureDefinitionsCache === null) {
@@ -438,21 +502,5 @@ class PowerCalculatorService
             }
         }
         return $this->structureDefinitionsCache;
-    }
-
-    /**
-     * Calculates a user's Planetary Shield HP.
-     */
-    public function calculateShieldPower(UserStructure $structures): array
-    {
-        $config = $this->config->get('game_balance.attack');
-        $hpPerLevel = $config['shield_hp_per_level'] ?? 0;
-        $totalHp = $structures->planetary_shield_level * $hpPerLevel;
-
-        return [
-            'total_shield_hp' => (int)$totalHp,
-            'level' => $structures->planetary_shield_level,
-            'hp_per_level' => $hpPerLevel
-        ];
     }
 }

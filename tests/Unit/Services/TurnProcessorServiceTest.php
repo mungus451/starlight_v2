@@ -14,6 +14,8 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
+use App\Models\Repositories\EdictRepository;
+use App\Models\Services\EmbassyService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -36,6 +38,8 @@ class TurnProcessorServiceTest extends TestCase
     private AllianceBankLogRepository|Mockery\MockInterface $mockBankLogRepo;
     private GeneralRepository|Mockery\MockInterface $mockGeneralRepo;
     private ScientistRepository|Mockery\MockInterface $mockScientistRepo;
+    private EdictRepository|Mockery\MockInterface $mockEdictRepo;
+    private EmbassyService|Mockery\MockInterface $mockEmbassyService;
 
     protected function setUp(): void
     {
@@ -52,6 +56,8 @@ class TurnProcessorServiceTest extends TestCase
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockGeneralRepo = Mockery::mock(GeneralRepository::class);
         $this->mockScientistRepo = Mockery::mock(ScientistRepository::class);
+        $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $this->mockEmbassyService = Mockery::mock(EmbassyService::class);
 
         // Pre-load config in constructor
         $this->mockConfig->shouldReceive('get')
@@ -73,7 +79,9 @@ class TurnProcessorServiceTest extends TestCase
             $this->mockAllianceRepo,
             $this->mockBankLogRepo,
             $this->mockGeneralRepo,
-            $this->mockScientistRepo
+            $this->mockScientistRepo,
+            $this->mockEdictRepo,
+            $this->mockEmbassyService
         );
     }
 
@@ -131,12 +139,29 @@ class TurnProcessorServiceTest extends TestCase
                         ->with($userId)
                         ->andReturn(0);
         
-                    $this->mockScientistRepo->shouldReceive('getActiveScientistCount')
-                        ->once()
-                        ->with($userId)
-                        ->andReturn(0);
+                                $this->mockScientistRepo->shouldReceive('getActiveScientistCount')
         
-                    // 6. Mock Alliances (Empty for this test to focus on users)
+                                    ->once()
+        
+                                    ->with($userId)
+        
+                                    ->andReturn(0);
+        
+                    
+        
+                                $this->mockEdictRepo->shouldReceive('findActiveByUserId')
+        
+                                    ->once()
+        
+                                    ->with($userId)
+        
+                                    ->andReturn([]);
+        
+                    
+        
+                                // 6. Mock Alliances (Empty for this test to focus on users)
+        
+                    
                     $this->mockAllianceRepo->shouldReceive('getAllAlliances')
                         ->once()
                         ->andReturn([]);

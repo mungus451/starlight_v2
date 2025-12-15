@@ -15,6 +15,8 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
+use App\Models\Repositories\EdictRepository;
+use App\Models\Services\EmbassyService;
 use App\Models\Services\ArmoryService;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
@@ -31,12 +33,16 @@ class ProtoformLoopTest extends TestCase
         $mockArmoryService = Mockery::mock(ArmoryService::class);
         $mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new PowerCalculatorService(
             $mockConfig,
             $mockArmoryService,
             $mockAllianceStructRepo,
-            $mockStructDefRepo
+            $mockStructDefRepo,
+            $mockEdictRepo
         );
 
         $userId = 1;
@@ -80,6 +86,8 @@ class ProtoformLoopTest extends TestCase
         $mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
         $mockScientistRepo = Mockery::mock(ScientistRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $mockEmbassyService = Mockery::mock(EmbassyService::class);
 
         $userId = 1;
 
@@ -89,6 +97,8 @@ class ProtoformLoopTest extends TestCase
             'general' => ['protoform' => 10],
             'scientist' => ['protoform' => 5]
         ]);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new TurnProcessorService(
             $mockDb,
@@ -101,7 +111,9 @@ class ProtoformLoopTest extends TestCase
             $mockAllianceRepo,
             $mockBankLogRepo,
             $mockGeneralRepo,
-            $mockScientistRepo
+            $mockScientistRepo,
+            $mockEdictRepo,
+            $mockEmbassyService
         );
 
         $mockUserRepo->shouldReceive('getAllUserIds')->andReturn([$userId]);
