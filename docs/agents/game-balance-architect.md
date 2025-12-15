@@ -22,7 +22,7 @@ The Game Balance Architect specializes in game mechanics, economy balance, and p
 
 ### Technology Stack
 
-- **Primary Language:** PHP 8.3
+- **Primary Language:** PHP 8.4+
 - **Database:** MariaDB
 - **Frontend:** JavaScript with HTML/CSS
 - **Configuration:** `/config/` directory for all constants

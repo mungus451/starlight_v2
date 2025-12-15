@@ -13,7 +13,7 @@ This documentation describes the AI agents that assist with StarlightDominion V2
 Senior backend engineer for PHP/MariaDB development. Specializes in implementing backend features following strict MVC patterns, managing the Service/Repository architecture, and maintaining database integrity.
 
 **Focus Areas:**
-- PHP 8.3 and MVC architecture
+- PHP 8.4+ and MVC architecture
 - Service layer business logic
 - Repository pattern and database access
 - Dependency injection and transactions

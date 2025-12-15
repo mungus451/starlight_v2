@@ -21,7 +21,7 @@ The Backend Agent specializes in implementing backend features following strict 
 
 ### Technology Stack
 
-- **Language:** PHP 8.3
+- **Language:** PHP 8.4+
 - **Database:** MariaDB with PDO prepared statements
 - **Routing:** FastRoute (nikic/fast-route)
 - **Sessions:** Redis with RedisSessionHandler

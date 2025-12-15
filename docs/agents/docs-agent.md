@@ -23,7 +23,7 @@ The Documentation Agent specializes in creating and maintaining developer-focuse
 
 ### Technology Stack
 
-- **Languages:** PHP 8.3, SQL, JavaScript
+- **Languages:** PHP 8.4+, SQL, JavaScript
 - **Format:** Markdown for GitHub Pages
 - **Tools:** GitHub, VS Code
 - **Related Technologies:** Laravel, FastRoute, PDO, Redis

@@ -24,7 +24,7 @@ The Testing Agent specializes in comprehensive testing, test coverage, and preve
 ### Technology Stack
 
 - **Test Framework:** PHPUnit
-- **Language:** PHP 8.3
+- **Language:** PHP 8.4+
 - **Custom Test Runners:** `/tests/` directory
 - **Test Types:** Unit, Integration, Simulation, Architecture
 
