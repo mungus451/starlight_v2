@@ -15,11 +15,11 @@ if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // Load Env
 try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
     $dotenv->load();
 } catch (\Exception $e) {
     die("Error: Could not find .env file.\n");

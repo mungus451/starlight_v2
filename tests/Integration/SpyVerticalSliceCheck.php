@@ -16,7 +16,7 @@ if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // --- CRITICAL FIX: Start Session for CSRF Token Generation in CLI ---
 if (session_status() === PHP_SESSION_NONE) {
@@ -25,7 +25,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Setup Environment
 try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
     $dotenv->load();
 } catch (\Exception $e) {}
 

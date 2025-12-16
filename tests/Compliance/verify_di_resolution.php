@@ -6,11 +6,11 @@ if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // Load Env
 try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
     $dotenv->load();
 } catch (\Dotenv\Exception\InvalidPathException $e) {
     // Ignore if missing for this test

@@ -12,13 +12,13 @@ if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 echo "\n" . str_repeat("=", 50) . "\n";
 echo "   ARCHITECTURAL AUDIT: SESSION DECOUPLING\n";
 echo str_repeat("=", 50) . "\n\n";
 
-$servicesDir = __DIR__ . '/../app/Models/Services';
+$servicesDir = __DIR__ . '/../../app/Models/Services';
 $files = glob($servicesDir . '/*.php');
 $violations = [];
 $checked = 0;

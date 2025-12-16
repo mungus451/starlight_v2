@@ -19,7 +19,7 @@ if (php_sapi_name() !== 'cli') {
     die('Access Denied: CLI only.');
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // --- Configuration ---
 
@@ -32,12 +32,12 @@ $config = [
         'bold' => "\033[1m"
     ],
     'paths' => [
-        'controllers'  => __DIR__ . '/../app/Controllers',
-        'services'     => __DIR__ . '/../app/Models/Services',
-        'repositories' => __DIR__ . '/../app/Models/Repositories',
-        'entities'     => __DIR__ . '/../app/Models/Entities',
-        'presenters'   => __DIR__ . '/../app/Presenters',
-        'views'        => __DIR__ . '/../views',
+        'controllers'  => __DIR__ . '/../../app/Controllers',
+        'services'     => __DIR__ . '/../../app/Models/Services',
+        'repositories' => __DIR__ . '/../../app/Models/Repositories',
+        'entities'     => __DIR__ . '/../../app/Models/Entities',
+        'presenters'   => __DIR__ . '/../../app/Presenters',
+        'views'        => __DIR__ . '/../../views',
     ]
 ];
 
