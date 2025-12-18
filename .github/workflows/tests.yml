@@ -93,10 +93,10 @@ jobs:
         run: php tests/Compliance/mvc_lint.php
 
       - name: Run Session Decoupling Audit
-        run: php tests/VerifySessionDecoupling.php
+        run: php tests/Compliance/VerifySessionDecoupling.php
 
       - name: Run DI Resolution Verification
-        run: php tests/verify_di_resolution.php
+        run: php tests/Compliance/verify_di_resolution.php
 
       - name: Run PHPUnit Tests with Coverage
         run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --colors=never
