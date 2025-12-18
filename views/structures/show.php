@@ -27,6 +27,10 @@
             <strong class="accent-gold"><?= number_format($resources->credits) ?></strong>
         </div>
         <div class="header-stat">
+            <span>Workers</span>
+            <strong class="accent"><?= number_format($resources->workers) ?></strong>
+        </div>
+        <div class="header-stat">
             <span>Soldiers</span>
             <strong class="accent-red"><?= number_format($resources->soldiers) ?></strong>
         </div>
@@ -35,8 +39,24 @@
             <strong class="accent-blue"><?= number_format($resources->guards) ?></strong>
         </div>
         <div class="header-stat">
+            <span>Spies</span>
+            <strong class="accent-green"><?= number_format($resources->spies) ?></strong>
+        </div>
+        <div class="header-stat">
+            <span>Sentries</span>
+            <strong class="accent-green"><?= number_format($resources->sentries) ?></strong>
+        </div>
+        <div class="header-stat">
             <span>Naquadah</span>
             <strong class="accent-purple"><?= number_format($resources->naquadah_crystals, 0) ?></strong>
+        </div>
+        <div class="header-stat">
+            <span>Dark Matter</span>
+            <strong class="accent-blue"><?= number_format($resources->dark_matter) ?></strong>
+        </div>
+        <div class="header-stat">
+            <span>Research</span>
+            <strong class="accent"><?= number_format($resources->research_data) ?></strong>
         </div>
     </div>
 
