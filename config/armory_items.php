@@ -61,7 +61,7 @@ return [
                 'slots' => 1,
                 'items' => [
                     'frag_grenade' => ['name' => 'Frag Grenade', 'attack' => 30, 'cost' => 60000, 'notes' => 'Basic explosive.'],
-                    'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 60, 'cost' => 1200000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 6],
+                    'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 60, 'cost' => 120000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 6],
                     'emp_charge' => ['name' => 'EMP Charge', 'attack' => 120, 'cost' => 180000, 'notes' => 'Weakens shields/tech.', 'requires' => 'plasma_grenade', 'armory_level_req' => 16],
                     'nano_cluster_bomb' => ['name' => 'Nano Cluster Bomb', 'attack' => 240, 'cost' => 240000, 'notes' => 'Drone swarms shred troops.', 'requires' => 'emp_charge', 'armory_level_req' => 26],
                     'void_charge' => ['name' => 'Void Charge', 'attack' => 580, 'cost' => 300000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 36],
