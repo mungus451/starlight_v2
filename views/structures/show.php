@@ -91,14 +91,18 @@
                             <?php if ($struct['is_max_level']): ?>
                                 <div class="max-level-badge">Max Level Achieved!</div>
                             <?php else: ?>
-                                <form action="/structures/upgrade" method="POST">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                    <input type="hidden" name="structure_key" value="<?= htmlspecialchars($struct['key']) ?>">
-
-                                    <button type="submit" class="btn-submit" <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                        <?= $struct['can_afford'] ? 'Upgrade to Level ' . $struct['next_level'] : 'Insufficient Resources' ?>
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn-submit btn-add-cart" 
+                                        style="border: 1px solid var(--accent);"
+                                        data-key="<?= htmlspecialchars($struct['key']) ?>"
+                                        data-name="<?= htmlspecialchars($struct['name']) ?>"
+                                        data-next-level="<?= $struct['next_level'] ?>"
+                                        data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
+                                        data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
+                                        data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
+                                        <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
+                                    <?= $struct['can_afford'] ? 'Add to Batch (Lvl ' . $struct['next_level'] . ')' : 'Insufficient Resources' ?>
+                                </button>
                             <?php endif; ?>
                         </div>
                         
@@ -107,4 +111,42 @@
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <!-- Batch Checkout Box -->
+    <div id="structure-checkout-box" style="display:none; position: fixed; bottom: 20px; right: 20px; width: 320px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(0,0,0,0.8); padding: 15px; z-index: 9999; border-radius: 8px; backdrop-filter: blur(5px);">
+        <div class="checkout-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 1.1em; color: var(--accent);">Batch Upgrade</h3>
+            <button id="btn-cancel-batch" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2em;">&times;</button>
+        </div>
+        
+        <div id="checkout-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; font-size: 0.9em;">
+            <!-- Items injected by JS -->
+        </div>
+        
+        <div class="checkout-totals" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Credits:</span>
+                <span class="accent-gold" id="checkout-total-credits">0</span>
+            </div>
+            <div id="checkout-rare-resources" style="display: none;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Naquadah:</span>
+                    <span class="accent-purple" id="checkout-total-crystal">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Dark Matter:</span>
+                    <span class="accent-blue" id="checkout-total-dm">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <form id="checkout-form" action="/structures/batch-upgrade" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+            <input type="hidden" name="structure_keys" id="checkout-input-keys" value="">
+            <button type="submit" class="btn-submit" style="width: 100%;">Confirm Purchase</button>
+        </form>
+    </div>
+
 </div>
+
+<script src="/js/structures.js"></script>

@@ -136,6 +136,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
+    $r->addRoute('POST', '/structures/batch-upgrade', [StructureController::class, 'handleBatchUpgrade']);
 
     $r->addRoute('GET', '/armory', [ArmoryController::class, 'show']);
     $r->addRoute('POST', '/armory/manufacture', [ArmoryController::class, 'handleManufacture']);
