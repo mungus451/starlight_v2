@@ -20,7 +20,7 @@
     </testsuites>
     <php>
         <env name="APP_ENV" value="testing"/>
-        <!-- <env name="DB_DATABASE" value="starlightDB_test"/> -->
+        <env name="DB_DATABASE" value="starlightDB_test"/>
     </php>
     <source>
         <include>
