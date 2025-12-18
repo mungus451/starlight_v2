@@ -17,10 +17,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'pulse_rifle' => ['name' => 'Pulse Rifle', 'attack' => 40, 'cost' => 80000, 'notes' => 'Basic, reliable.'],
-                    'railgun' => ['name' => 'Railgun', 'attack' => 80, 'cost' => 160000, 'notes' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 1],
-                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'attack' => 120, 'cost' => 240000, 'notes' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
-                    'arc_cannon' => ['name' => 'Arc Cannon', 'attack' => 160, 'cost' => 320000, 'notes' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 35],
-                    'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'attack' => 200, 'cost' => 400000, 'notes' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 50],
+                    'railgun' => ['name' => 'Railgun', 'attack' => 80, 'cost' => 160000, 'notes' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 10],
+                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'attack' => 160, 'cost' => 240000, 'notes' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
+                    'arc_cannon' => ['name' => 'Arc Cannon', 'attack' => 320, 'cost' => 320000, 'notes' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 30],
+                    'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'attack' => 640, 'cost' => 400000, 'notes' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 40],
                 ]
             ],
             'sidearm' => [
@@ -28,10 +28,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'laser_pistol' => ['name' => 'Laser Pistol', 'attack' => 25, 'cost' => 50000, 'notes' => 'Basic energy sidearm.'],
-                    'stun_blaster' => ['name' => 'Stun Blaster', 'attack' => 50, 'cost' => 100000, 'notes' => 'Weak but disables shields briefly.', 'requires' => 'laser_pistol', 'armory_level_req' => 2],
-                    'needler_pistol' => ['name' => 'Needler Pistol', 'attack' => 75, 'cost' => 150000, 'notes' => 'Seeking rounds, bonus vs. light armor.', 'requires' => 'stun_blaster', 'armory_level_req' => 21],
-                    'compact_rail_smg' => ['name' => 'Compact Rail SMG', 'attack' => 100, 'cost' => 200000, 'notes' => 'Burst damage, close range.', 'requires' => 'needler_pistol', 'armory_level_req' => 36],
-                    'photon_revolver' => ['name' => 'Photon Revolver', 'attack' => 125, 'cost' => 250000, 'notes' => 'High crit chance, slower reload.', 'requires' => 'compact_rail_smg', 'armory_level_req' => 49],
+                    'stun_blaster' => ['name' => 'Stun Blaster', 'attack' => 50, 'cost' => 100000, 'notes' => 'Weak but disables shields briefly.', 'requires' => 'laser_pistol', 'armory_level_req' => 9],
+                    'needler_pistol' => ['name' => 'Needler Pistol', 'attack' => 100, 'cost' => 150000, 'notes' => 'Seeking rounds, bonus vs. light armor.', 'requires' => 'stun_blaster', 'armory_level_req' => 19],
+                    'compact_rail_smg' => ['name' => 'Compact Rail SMG', 'attack' => 200, 'cost' => 200000, 'notes' => 'Burst damage, close range.', 'requires' => 'needler_pistol', 'armory_level_req' => 29],
+                    'photon_revolver' => ['name' => 'Photon Revolver', 'attack' => 400, 'cost' => 250000, 'notes' => 'High crit chance, slower reload.', 'requires' => 'compact_rail_smg', 'armory_level_req' => 39],
                 ]
             ],
             'melee' => [
@@ -39,10 +39,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'combat_dagger' => ['name' => 'Combat Dagger', 'attack' => 10, 'cost' => 20000, 'notes' => 'Quick, cheap.'],
-                    'shock_baton' => ['name' => 'Shock Baton', 'attack' => 20, 'cost' => 40000, 'notes' => 'Stuns briefly, low raw damage.', 'requires' => 'combat_dagger', 'armory_level_req' => 3],
-                    'energy_blade' => ['name' => 'Energy Blade', 'attack' => 30, 'cost' => 60000, 'notes' => 'Ignores armor.', 'requires' => 'shock_baton', 'armory_level_req' => 22],
-                    'vibro_axe' => ['name' => 'Vibro Axe', 'attack' => 40, 'cost' => 80000, 'notes' => 'Heavy, great vs. fortifications.', 'requires' => 'energy_blade', 'armory_level_req' => 37],
-                    'plasma_sword' => ['name' => 'Plasma Sword', 'attack' => 50, 'cost' => 100000, 'notes' => 'High damage, rare.', 'requires' => 'vibro_axe', 'armory_level_req' => 48],
+                    'shock_baton' => ['name' => 'Shock Baton', 'attack' => 20, 'cost' => 40000, 'notes' => 'Stuns briefly, low raw damage.', 'requires' => 'combat_dagger', 'armory_level_req' => 8],
+                    'energy_blade' => ['name' => 'Energy Blade', 'attack' => 40, 'cost' => 60000, 'notes' => 'Ignores armor.', 'requires' => 'shock_baton', 'armory_level_req' => 18],
+                    'vibro_axe' => ['name' => 'Vibro Axe', 'attack' => 80, 'cost' => 80000, 'notes' => 'Heavy, great vs. fortifications.', 'requires' => 'energy_blade', 'armory_level_req' => 28],
+                    'plasma_sword' => ['name' => 'Plasma Sword', 'attack' => 160, 'cost' => 100000, 'notes' => 'High damage, rare.', 'requires' => 'vibro_axe', 'armory_level_req' => 38],
                 ]
             ],
             'headgear' => [
@@ -50,10 +50,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'tactical_goggles' => ['name' => 'Tactical Goggles', 'attack' => 5, 'cost' => 10000, 'notes' => 'Accuracy boost.'],
-                    'scout_visor' => ['name' => 'Scout Visor', 'attack' => 10, 'cost' => 20000, 'notes' => 'Detects stealth.', 'requires' => 'tactical_goggles', 'armory_level_req' => 4],
-                    'heavy_helmet' => ['name' => 'Heavy Helmet', 'attack' => 15, 'cost' => 30000, 'notes' => 'Defense bonus, slight weight penalty.', 'requires' => 'scout_visor', 'armory_level_req' => 23],
-                    'neural_uplink' => ['name' => 'Neural Uplink', 'attack' => 20, 'cost' => 40000, 'notes' => 'Faster reactions, boosts all attacks slightly.', 'requires' => 'heavy_helmet', 'armory_level_req' => 38],
-                    'cloak_hood' => ['name' => 'Cloak Hood', 'attack' => 25, 'cost' => 50000, 'notes' => 'Stealth advantage, minimal armor.', 'requires' => 'neural_uplink', 'armory_level_req' => 47],
+                    'scout_visor' => ['name' => 'Scout Visor', 'attack' => 10, 'cost' => 20000, 'notes' => 'Detects stealth.', 'requires' => 'tactical_goggles', 'armory_level_req' => 7],
+                    'heavy_helmet' => ['name' => 'Heavy Helmet', 'attack' => 20, 'cost' => 30000, 'notes' => 'Defense bonus, slight weight penalty.', 'requires' => 'scout_visor', 'armory_level_req' => 17],
+                    'neural_uplink' => ['name' => 'Neural Uplink', 'attack' => 40, 'cost' => 40000, 'notes' => 'Faster reactions, boosts all attacks slightly.', 'requires' => 'heavy_helmet', 'armory_level_req' => 27],
+                    'cloak_hood' => ['name' => 'Cloak Hood', 'attack' => 80, 'cost' => 50000, 'notes' => 'Stealth advantage, minimal armor.', 'requires' => 'neural_uplink', 'armory_level_req' => 37],
                 ]
             ],
             'explosives' => [
@@ -61,10 +61,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'frag_grenade' => ['name' => 'Frag Grenade', 'attack' => 30, 'cost' => 60000, 'notes' => 'Basic explosive.'],
-                    'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 60, 'cost' => 1200000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 5],
-                    'emp_charge' => ['name' => 'EMP Charge', 'attack' => 90, 'cost' => 180000, 'notes' => 'Weakens shields/tech.', 'requires' => 'plasma_grenade', 'armory_level_req' => 22],
-                    'nano_cluster_bomb' => ['name' => 'Nano Cluster Bomb', 'attack' => 120, 'cost' => 240000, 'notes' => 'Drone swarms shred troops.', 'requires' => 'emp_charge', 'armory_level_req' => 37],
-                    'void_charge' => ['name' => 'Void Charge', 'attack' => 150, 'cost' => 300000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 46],
+                    'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 60, 'cost' => 1200000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 6],
+                    'emp_charge' => ['name' => 'EMP Charge', 'attack' => 120, 'cost' => 180000, 'notes' => 'Weakens shields/tech.', 'requires' => 'plasma_grenade', 'armory_level_req' => 16],
+                    'nano_cluster_bomb' => ['name' => 'Nano Cluster Bomb', 'attack' => 240, 'cost' => 240000, 'notes' => 'Drone swarms shred troops.', 'requires' => 'emp_charge', 'armory_level_req' => 26],
+                    'void_charge' => ['name' => 'Void Charge', 'attack' => 580, 'cost' => 300000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 36],
                 ]
             ]
         ]
@@ -78,10 +78,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'light_combat_suit' => ['name' => 'Light Combat Suit', 'defense' => 40, 'cost' => 80000, 'notes' => 'Basic protection, minimal weight.'],
-                    'titanium_plated_armor' => ['name' => 'Titanium Plated Armor', 'defense' => 80, 'cost' => 160000, 'notes' => 'Strong vs. kinetic weapons.', 'requires' => 'light_combat_suit', 'armory_level_req' => 6],
-                    'reactive_nano_suit' => ['name' => 'Reactive Nano Suit', 'defense' => 120, 'cost' => 240000, 'notes' => 'Reduces energy damage, self-repairs slowly.', 'requires' => 'titanium_plated_armor', 'armory_level_req' => 24],
-                    'bulwark_exo_frame' => ['name' => 'Bulwark Exo-Frame', 'defense' => 160, 'cost' => 320000, 'notes' => 'Heavy, extreme damage reduction.', 'requires' => 'reactive_nano_suit', 'armory_level_req' => 35],
-                    'aegis_shield_suit' => ['name' => 'Aegis Shield Suit', 'defense' => 200, 'cost' => 400000, 'notes' => 'Generates energy shield, top-tier defense.', 'requires' => 'bulwark_exo_frame', 'armory_level_req' => 45],
+                    'titanium_plated_armor' => ['name' => 'Titanium Plated Armor', 'defense' => 80, 'cost' => 160000, 'notes' => 'Strong vs. kinetic weapons.', 'requires' => 'light_combat_suit', 'armory_level_req' => 5],
+                    'reactive_nano_suit' => ['name' => 'Reactive Nano Suit', 'defense' => 160, 'cost' => 240000, 'notes' => 'Reduces energy damage, self-repairs slowly.', 'requires' => 'titanium_plated_armor', 'armory_level_req' => 15],
+                    'bulwark_exo_frame' => ['name' => 'Bulwark Exo-Frame', 'defense' => 240, 'cost' => 320000, 'notes' => 'Heavy, extreme damage reduction.', 'requires' => 'reactive_nano_suit', 'armory_level_req' => 25],
+                    'aegis_shield_suit' => ['name' => 'Aegis Shield Suit', 'defense' => 320, 'cost' => 400000, 'notes' => 'Generates energy shield, top-tier defense.', 'requires' => 'bulwark_exo_frame', 'armory_level_req' => 35],
                 ]
             ],
             'secondary_defense' => [
@@ -89,10 +89,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'kinetic_dampener' => ['name' => 'Kinetic Dampener', 'defense' => 15, 'cost' => 30000, 'notes' => 'Reduces ballistic damage.'],
-                    'energy_diffuser' => ['name' => 'Energy Diffuser', 'defense' => 30, 'cost' => 60000, 'notes' => 'Lowers laser/plasma damage.', 'requires' => 'kinetic_dampener', 'armory_level_req' => 1],
-                    'deflector_module' => ['name' => 'Deflector Module', 'defense' => 45, 'cost' => 90000, 'notes' => 'Partial shield that recharges slowly.', 'requires' => 'energy_diffuser', 'armory_level_req' => 25],
-                    'auto_turret_drone' => ['name' => 'Auto-Turret Drone', 'defense' => 60, 'cost' => 120000, 'notes' => 'Assists defense, counters attackers.', 'requires' => 'deflector_module', 'armory_level_req' => 34],
-                    'nano_healing_pod' => ['name' => 'Nano-Healing Pod', 'defense' => 75, 'cost' => 150000, 'notes' => 'Heals user periodically during battle.', 'requires' => 'auto_turret_drone', 'armory_level_req' => 44],
+                    'energy_diffuser' => ['name' => 'Energy Diffuser', 'defense' => 30, 'cost' => 60000, 'notes' => 'Lowers laser/plasma damage.', 'requires' => 'kinetic_dampener', 'armory_level_req' => 4],
+                    'deflector_module' => ['name' => 'Deflector Module', 'defense' => 60, 'cost' => 90000, 'notes' => 'Partial shield that recharges slowly.', 'requires' => 'energy_diffuser', 'armory_level_req' => 14],
+                    'auto_turret_drone' => ['name' => 'Auto-Turret Drone', 'defense' => 120, 'cost' => 120000, 'notes' => 'Assists defense, counters attackers.', 'requires' => 'deflector_module', 'armory_level_req' => 24],
+                    'nano_healing_pod' => ['name' => 'Nano-Healing Pod', 'defense' => 240, 'cost' => 150000, 'notes' => 'Heals user periodically during battle.', 'requires' => 'auto_turret_drone', 'armory_level_req' => 34],
                 ]
             ],
             'melee_counter' => [
@@ -100,10 +100,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'combat_knife_parry_kit' => ['name' => 'Combat Knife Parry Kit', 'defense' => 10, 'cost' => 20000, 'notes' => 'Minimal, last-ditch block.'],
-                    'shock_shield' => ['name' => 'Shock Shield', 'defense' => 20, 'cost' => 40000, 'notes' => 'Electrocutes melee attackers.', 'requires' => 'combat_knife_parry_kit', 'armory_level_req' => 1],
-                    'vibro_blade_guard' => ['name' => 'Vibro Blade Guard', 'defense' => 30, 'cost' => 60000, 'notes' => 'Defensive melee stance, reduces melee damage.', 'requires' => 'shock_shield', 'armory_level_req' => 26],
-                    'energy_buckler' => ['name' => 'Energy Buckler', 'defense' => 40, 'cost' => 80000, 'notes' => 'Small but strong energy shield.', 'requires' => 'vibro_blade_guard', 'armory_level_req' => 33],
-                    'photon_barrier_blade' => ['name' => 'Photon Barrier Blade', 'defense' => 50, 'cost' => 100000, 'notes' => 'Creates a light shield, blocks most melee hits.', 'requires' => 'energy_buckler', 'armory_level_req' => 43],
+                    'shock_shield' => ['name' => 'Shock Shield', 'defense' => 20, 'cost' => 40000, 'notes' => 'Electrocutes melee attackers.', 'requires' => 'combat_knife_parry_kit', 'armory_level_req' => 3],
+                    'vibro_blade_guard' => ['name' => 'Vibro Blade Guard', 'defense' => 40, 'cost' => 60000, 'notes' => 'Defensive melee stance, reduces melee damage.', 'requires' => 'shock_shield', 'armory_level_req' => 13],
+                    'energy_buckler' => ['name' => 'Energy Buckler', 'defense' => 80, 'cost' => 80000, 'notes' => 'Small but strong energy shield.', 'requires' => 'vibro_blade_guard', 'armory_level_req' => 23],
+                    'photon_barrier_blade' => ['name' => 'Photon Barrier Blade', 'defense' => 160, 'cost' => 100000, 'notes' => 'Creates a light shield, blocks most melee hits.', 'requires' => 'energy_buckler', 'armory_level_req' => 33],
                 ]
             ],
             'defensive_headgear' => [
@@ -111,10 +111,10 @@ return [
                 'slots' => 1,
                 'items' => [
                     'recon_helmet' => ['name' => 'Recon Helmet', 'defense' => 5, 'cost' => 10000, 'notes' => 'Basic head protection.'],
-                    'carbon_fiber_visor' => ['name' => 'Carbon Fiber Visor', 'defense' => 10, 'cost' => 20000, 'notes' => 'Lightweight and strong.', 'requires' => 'recon_helmet', 'armory_level_req' => 1],
-                    'reinforced_helmet' => ['name' => 'Reinforced Helmet', 'defense' => 15, 'cost' => 30000, 'notes' => 'Excellent impact resistance.', 'requires' => 'carbon_fiber_visor', 'armory_level_req' => 27],
-                    'neural_guard_mask' => ['name' => 'Neural Guard Mask', 'defense' => 20, 'cost' => 40000, 'notes' => 'Protects against psychic/EMP effects.', 'requires' => 'reinforced_helmet', 'armory_level_req' => 32],
-                    'aegis_helm' => ['name' => 'Aegis Helm', 'defense' => 25, 'cost' => 50000, 'notes' => 'High-tier head defense.', 'requires' => 'neural_guard_mask', 'armory_level_req' => 42],
+                    'carbon_fiber_visor' => ['name' => 'Carbon Fiber Visor', 'defense' => 10, 'cost' => 20000, 'notes' => 'Lightweight and strong.', 'requires' => 'recon_helmet', 'armory_level_req' => 2],
+                    'reinforced_helmet' => ['name' => 'Reinforced Helmet', 'defense' => 20, 'cost' => 30000, 'notes' => 'Excellent impact resistance.', 'requires' => 'carbon_fiber_visor', 'armory_level_req' => 12],
+                    'neural_guard_mask' => ['name' => 'Neural Guard Mask', 'defense' => 40, 'cost' => 40000, 'notes' => 'Protects against psychic/EMP effects.', 'requires' => 'reinforced_helmet', 'armory_level_req' => 22],
+                    'aegis_helm' => ['name' => 'Aegis Helm', 'defense' => 80, 'cost' => 50000, 'notes' => 'High-tier head defense.', 'requires' => 'neural_guard_mask', 'armory_level_req' => 32],
                 ]
             ],
             'defensive_deployable' => [
@@ -123,9 +123,9 @@ return [
                 'items' => [
                     'basic_shield_generator' => ['name' => 'Basic Shield Generator', 'defense' => 30, 'cost' => 60000, 'notes' => 'Small personal barrier.'],
                     'plasma_wall_projector' => ['name' => 'Plasma Wall Projector', 'defense' => 60, 'cost' => 120000, 'notes' => 'Deployable energy wall.', 'requires' => 'basic_shield_generator', 'armory_level_req' => 1],
-                    'emp_scrambler' => ['name' => 'EMP Scrambler', 'defense' => 90, 'cost' => 180000, 'notes' => 'Nullifies enemy EMP attacks.', 'requires' => 'plasma_wall_projector', 'armory_level_req' => 28],
-                    'nano_repair_beacon' => ['name' => 'Nano Repair Beacon', 'defense' => 120, 'cost' => 240000, 'notes' => 'Repairs nearby allies and structures.', 'requires' => 'emp_scrambler', 'armory_level_req' => 31],
-                    'fortress_dome_generator' => ['name' => 'Fortress Dome Generator', 'defense' => 150, 'cost' => 300000, 'notes' => 'Creates a temporary invulnerable dome.', 'requires' => 'nano_repair_beacon', 'armory_level_req' => 41],
+                    'emp_scrambler' => ['name' => 'EMP Scrambler', 'defense' => 120, 'cost' => 180000, 'notes' => 'Nullifies enemy EMP attacks.', 'requires' => 'plasma_wall_projector', 'armory_level_req' => 21],
+                    'nano_repair_beacon' => ['name' => 'Nano Repair Beacon', 'defense' => 240, 'cost' => 240000, 'notes' => 'Repairs nearby allies and structures.', 'requires' => 'emp_scrambler', 'armory_level_req' => 31],
+                    'fortress_dome_generator' => ['name' => 'Fortress Dome Generator', 'defense' => 480, 'cost' => 300000, 'notes' => 'Creates a temporary invulnerable dome.', 'requires' => 'nano_repair_beacon', 'armory_level_req' => 41],
                 ]
             ]
         ]
@@ -262,9 +262,9 @@ return [
                 'items' => [
                     'mining_laser' => ['name' => 'Mining Laser', 'credit_bonus' => 80, 'cost' => 40000, 'notes' => 'Can be used as a makeshift weapon.'],
                     'heavy_drill' => ['name' => 'Heavy Drill', 'credit_bonus' => 160, 'cost' => 80000, 'notes' => 'Can break through tough materials.', 'requires' => 'mining_laser', 'armory_level_req' => 1],
-                    'plasma_cutter' => ['name' => 'Plasma Cutter', 'credit_bonus' => 240, 'cost' => 120000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 5],
-                    'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 320, 'cost' => 160000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 10],
-                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 400, 'cost' => 220000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 15],
+                    'plasma_cutter' => ['name' => 'Plasma Cutter', 'credit_bonus' => 320, 'cost' => 120000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 5],
+                    'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 640, 'cost' => 160000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 10],
+                    'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 800, 'cost' => 220000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 15],
                 ]
             ],
             'resource_enhancement' => [
@@ -273,9 +273,9 @@ return [
                 'items' => [
                     'resource_scanner' => ['name' => 'Resource Scanner', 'credit_bonus' => 15, 'cost' => 7500, 'notes' => 'Finds hidden resource deposits.'],
                     'geological_analyzer' => ['name' => 'Geological Analyzer', 'credit_bonus' => 30, 'cost' => 15000, 'notes' => 'Identifies the best places to mine.', 'requires' => 'resource_scanner', 'armory_level_req' => 2],
-                    'harvester_drone' => ['name' => 'Harvester Drone', 'credit_bonus' => 45, 'cost' => 22500, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 6],
-                    'matter_converter' => ['name' => 'Matter Converter', 'credit_bonus' => 60, 'cost' => 30000, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 11],
-                    'genesis_device' => ['name' => 'Genesis Device', 'credit_bonus' => 75, 'cost' => 37500, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 16],
+                    'harvester_drone' => ['name' => 'Harvester Drone', 'credit_bonus' => 60, 'cost' => 22500, 'notes' => 'Automatically collects nearby resources.', 'requires' => 'geological_analyzer', 'armory_level_req' => 6],
+                    'matter_converter' => ['name' => 'Matter Converter', 'credit_bonus' => 120, 'cost' => 30000, 'notes' => 'Converts raw materials into credits.', 'requires' => 'harvester_drone', 'armory_level_req' => 11],
+                    'genesis_device' => ['name' => 'Genesis Device', 'credit_bonus' => 240, 'cost' => 37500, 'notes' => 'Creates new resources from nothing.', 'requires' => 'matter_converter', 'armory_level_req' => 16],
                 ]
             ],
             'exo_rig_plating' => [
@@ -284,9 +284,9 @@ return [
                 'items' => [
                     'worker_harness' => ['name' => 'Worker Harness', 'credit_bonus' => 25, 'cost' => 17500, 'notes' => 'Provides basic protection.'],
                     'reinforced_plating' => ['name' => 'Reinforced Plating', 'credit_bonus' => 50, 'cost' => 35000, 'notes' => 'Protects against workplace accidents.', 'requires' => 'worker_harness', 'armory_level_req' => 3],
-                    'hazard_suit' => ['name' => 'Hazard Suit', 'credit_bonus' => 75, 'cost' => 42500, 'notes' => 'Protects against environmental hazards.', 'requires' => 'reinforced_plating', 'armory_level_req' => 7],
-                    'blast_shield' => ['name' => 'Blast Shield', 'credit_bonus' => 100, 'cost' => 60000, 'notes' => 'Protects against explosions.', 'requires' => 'hazard_suit', 'armory_level_req' => 12],
-                    'power_armor' => ['name' => 'Power Armor', 'credit_bonus' => 125, 'cost' => 77500, 'notes' => 'The ultimate in worker protection.', 'requires' => 'blast_shield', 'armory_level_req' => 17],
+                    'hazard_suit' => ['name' => 'Hazard Suit', 'credit_bonus' => 100, 'cost' => 42500, 'notes' => 'Protects against environmental hazards.', 'requires' => 'reinforced_plating', 'armory_level_req' => 7],
+                    'blast_shield' => ['name' => 'Blast Shield', 'credit_bonus' => 200, 'cost' => 60000, 'notes' => 'Protects against explosions.', 'requires' => 'hazard_suit', 'armory_level_req' => 12],
+                    'power_armor' => ['name' => 'Power Armor', 'credit_bonus' => 400, 'cost' => 77500, 'notes' => 'The ultimate in worker protection.', 'requires' => 'blast_shield', 'armory_level_req' => 17],
                 ]
             ],
             'scanners' => [
@@ -295,9 +295,9 @@ return [
                 'items' => [
                     'geiger_counter' => ['name' => 'Geiger Counter', 'credit_bonus' => 20, 'attack' => 0, 'cost' => 10000, 'notes' => 'Detects radiation.'],
                     'mineral_scanner' => ['name' => 'Mineral Scanner', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Detects valuable minerals.', 'requires' => 'geiger_counter', 'armory_level_req' => 4],
-                    'lifeform_scanner' => ['name' => 'Lifeform Scanner', 'credit_bonus' => 60, 'attack' => 0, 'cost' => 30000, 'notes' => 'Detects nearby lifeforms.', 'requires' => 'mineral_scanner', 'armory_level_req' => 8],
-                    'energy_scanner' => ['name' => 'Energy Scanner', 'credit_bonus' => 80, 'attack' => 0, 'cost' => 40000, 'notes' => 'Detects energy signatures.', 'requires' => 'lifeform_scanner', 'armory_level_req' => 13],
-                    'omni_scanner' => ['name' => 'Omni-Scanner', 'credit_bonus' => 100, 'attack' => 0, 'cost' => 50000, 'notes' => 'Detects everything.', 'requires' => 'energy_scanner', 'armory_level_req' => 18],
+                    'lifeform_scanner' => ['name' => 'Lifeform Scanner', 'credit_bonus' => 80, 'attack' => 0, 'cost' => 30000, 'notes' => 'Detects nearby lifeforms.', 'requires' => 'mineral_scanner', 'armory_level_req' => 8],
+                    'energy_scanner' => ['name' => 'Energy Scanner', 'credit_bonus' => 160, 'attack' => 0, 'cost' => 40000, 'notes' => 'Detects energy signatures.', 'requires' => 'lifeform_scanner', 'armory_level_req' => 13],
+                    'omni_scanner' => ['name' => 'Omni-Scanner', 'credit_bonus' => 320, 'attack' => 0, 'cost' => 50000, 'notes' => 'Detects everything.', 'requires' => 'energy_scanner', 'armory_level_req' => 18],
                 ]
             ],
             'drones' => [
@@ -306,9 +306,9 @@ return [
                 'items' => [
                     'repair_drone' => ['name' => 'Repair Drone', 'credit_bonus' => 10, 'attack' => 0, 'cost' => 5000, 'notes' => 'Can repair damaged structures.'],
                     'construction_drone' => ['name' => 'Construction Drone', 'credit_bonus' => 20, 'attack' => 0, 'cost' => 1000, 'notes' => 'Can build new structures.', 'requires' => 'repair_drone', 'armory_level_req' => 5],
-                    'salvage_drone' => ['name' => 'Salvage Drone', 'credit_bonus' => 30, 'attack' => 0, 'cost' => 15000, 'notes' => 'Can salvage materials from wreckage.', 'requires' => 'construction_drone', 'armory_level_req' => 9],
-                    'fabricator_drone' => ['name' => 'Fabricator Drone', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 20000, 'notes' => 'Can create new items from raw materials.', 'requires' => 'salvage_drone', 'armory_level_req' => 14],
-                    'replicator_drone' => ['name' => 'Replicator Drone', 'credit_bonus' => 50, 'attack' => 0, 'cost' => 25000, 'notes' => 'Can create anything.', 'requires' => 'fabricator_drone', 'armory_level_req' => 19],
+                    'salvage_drone' => ['name' => 'Salvage Drone', 'credit_bonus' => 40, 'attack' => 0, 'cost' => 15000, 'notes' => 'Can salvage materials from wreckage.', 'requires' => 'construction_drone', 'armory_level_req' => 9],
+                    'fabricator_drone' => ['name' => 'Fabricator Drone', 'credit_bonus' => 80, 'attack' => 0, 'cost' => 20000, 'notes' => 'Can create new items from raw materials.', 'requires' => 'salvage_drone', 'armory_level_req' => 14],
+                    'replicator_drone' => ['name' => 'Replicator Drone', 'credit_bonus' => 160, 'attack' => 0, 'cost' => 25000, 'notes' => 'Can create anything.', 'requires' => 'fabricator_drone', 'armory_level_req' => 19],
                 ]
             ]
         ]
