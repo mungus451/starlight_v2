@@ -90,7 +90,7 @@ jobs:
         run: vendor/bin/phinx migrate -e testing --configuration=config/phinx.php
 
       - name: Run MVC Compliance Audit
-        run: php tests/mvc_lint.php
+        run: php tests/Compliance/mvc_lint.php
 
       - name: Run Session Decoupling Audit
         run: php tests/VerifySessionDecoupling.php
