@@ -38,7 +38,8 @@ class ResourceRepository
                 sentries,
                 untraceable_chips,
                 research_data,
-                dark_matter
+                dark_matter,
+                protoform
             FROM user_resources WHERE user_id = ?
         ");
         $stmt->execute([$userId]);
@@ -208,7 +209,7 @@ class ResourceRepository
      * @param int $citizensGained
      * @return bool True on success
      */
-    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained): bool
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool
     {
         $sql = "
             UPDATE user_resources SET
@@ -217,12 +218,13 @@ class ResourceRepository
                 untrained_citizens = untrained_citizens + ?,
                 research_data = research_data + ?,
                 dark_matter = dark_matter + ?,
-                naquadah_crystals = naquadah_crystals + ?
+                naquadah_crystals = naquadah_crystals + ?,
+                protoform = protoform + ?
             WHERE user_id = ?
         ";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $userId]);
+        return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);
     }
 
     // --- END NEW METHOD ---
@@ -236,7 +238,7 @@ class ResourceRepository
      * @param float|null $darkMatterChange
      * @return bool
      */
-    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null): bool
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null): bool
     {
         $updates = [];
         $params = [];
@@ -254,6 +256,11 @@ class ResourceRepository
         if ($darkMatterChange !== null) {
             $updates[] = "dark_matter = dark_matter + :dark_matter_change";
             $params[':dark_matter_change'] = $darkMatterChange;
+        }
+
+        if ($protoformChange !== null) {
+            $updates[] = "protoform = protoform + :protoform_change";
+            $params[':protoform_change'] = $protoformChange;
         }
 
         if (empty($updates)) {
@@ -290,7 +297,8 @@ class ResourceRepository
             sentries: (int)$data['sentries'],
             untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
             research_data: (int)($data['research_data'] ?? 0),
-            dark_matter: (int)($data['dark_matter'] ?? 0)
+            dark_matter: (int)($data['dark_matter'] ?? 0),
+            protoform: (float)($data['protoform'] ?? 0.0)
         );
     }
 }

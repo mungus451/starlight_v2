@@ -36,6 +36,8 @@ use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\SecurityRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Repositories\GeneralRepository;
+use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Repositories\IntelRepository;   // --- NEW ---
 
@@ -66,6 +68,7 @@ use App\Models\Services\LeaderboardService;
 use App\Models\Services\BlackMarketService;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
+use App\Models\Services\TurnProcessorService;
 use App\Models\Services\EffectService; // --- NEW ---
 
 // Core & Events
@@ -169,6 +172,8 @@ HouseFinanceRepository::class => function (ContainerInterface $c) { return new H
 SecurityRepository::class => function (ContainerInterface $c) { return new SecurityRepository($c->get(PDO::class)); },
 BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
 BlackMarketLogRepository::class => function (ContainerInterface $c) { return new BlackMarketLogRepository($c->get(PDO::class)); },
+GeneralRepository::class => function (ContainerInterface $c) { return new GeneralRepository($c->get(PDO::class)); },
+ScientistRepository::class => function (ContainerInterface $c) { return new ScientistRepository($c->get(PDO::class)); },
 EffectRepository::class => function (ContainerInterface $c) { return new EffectRepository($c->get(PDO::class)); }, // --- NEW ---
 IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },   // --- NEW ---
 
@@ -284,6 +289,22 @@ return new Logger($logPath, false);
 $logPath = __DIR__ . '/../../logs/npc_actions.log';
 return new Logger($logPath, true); // True = Echo to Stdout (CLI)
 },
+
+TurnProcessorService::class => function (ContainerInterface $c) {
+    return new TurnProcessorService(
+        $c->get(PDO::class),
+        $c->get(Config::class),
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StructureRepository::class),
+        $c->get(StatsRepository::class),
+        $c->get(PowerCalculatorService::class),
+        $c->get(AllianceRepository::class),
+        $c->get(AllianceBankLogRepository::class),
+        $c->get(GeneralRepository::class),
+        $c->get(ScientistRepository::class)
+    );
+}
 ]);
 
 return $builder->build();

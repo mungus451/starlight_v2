@@ -14,6 +14,10 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
+use App\Models\Repositories\GeneralRepository;
+use App\Models\Repositories\ScientistRepository;
+use App\Models\Repositories\EdictRepository;
+use App\Models\Services\EmbassyService;
 use App\Models\Services\ArmoryService;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
@@ -77,7 +81,7 @@ class NaquadahFeatureTest extends TestCase
             accounting_firm_level: 0,
             naquadah_mining_complex_level: 0 // Current Level
         );
-        $mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructures);
+        $mockStructureRepo->shouldReceive('findByUserId')->andReturn($mockStructures);
 
         // Mock Transaction
         $mockDb->shouldReceive('inTransaction')->andReturn(false);
@@ -147,12 +151,16 @@ class NaquadahFeatureTest extends TestCase
         $mockArmoryService = Mockery::mock(ArmoryService::class);
         $mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new PowerCalculatorService(
             $mockConfig,
             $mockArmoryService,
             $mockAllianceStructRepo,
-            $mockStructDefRepo
+            $mockStructDefRepo,
+            $mockEdictRepo
         );
 
         $userId = 1;
@@ -241,9 +249,16 @@ class NaquadahFeatureTest extends TestCase
         $mockPowerCalc = Mockery::mock(PowerCalculatorService::class);
         $mockAllianceRepo = Mockery::mock(AllianceRepository::class);
         $mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
+        $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
+        $mockScientistRepo = Mockery::mock(ScientistRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $mockEmbassyService = Mockery::mock(EmbassyService::class);
 
         // Config Treasury for Constructor
         $mockConfig->shouldReceive('get')->with('game_balance.alliance_treasury', [])->andReturn([]);
+        $mockConfig->shouldReceive('get')->with('game_balance.upkeep', [])->andReturn([]);
+
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $service = new TurnProcessorService(
             $mockDb,
@@ -254,7 +269,11 @@ class NaquadahFeatureTest extends TestCase
             $mockStatsRepo,
             $mockPowerCalc,
             $mockAllianceRepo,
-            $mockBankLogRepo
+            $mockBankLogRepo,
+            $mockGeneralRepo,
+            $mockScientistRepo,
+            $mockEdictRepo,
+            $mockEmbassyService
         );
 
         $userId = 123;
@@ -298,9 +317,14 @@ class NaquadahFeatureTest extends TestCase
             'total_citizens' => 10,
             'research_data_income' => 0,
             'dark_matter_income' => 0,
-            'naquadah_income' => 7.5 // EXPECTED VALUE
+            'naquadah_income' => 7.5, // EXPECTED VALUE
+            'protoform_income' => 0.0
         ];
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
+
+        // Mock Upkeep
+        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(0);
+        $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(0);
 
         // Mock DB Transaction
         $mockDb->shouldReceive('inTransaction')->andReturn(false);
@@ -317,7 +341,8 @@ class NaquadahFeatureTest extends TestCase
                 10,   // Citizens
                 0,    // Research
                 0,    // Dark Matter
-                7.5   // Naquadah (The New Parameter)
+                7.5,   // Naquadah (The New Parameter)
+                0.0    // Protoform
             )
             ->andReturn(true);
 

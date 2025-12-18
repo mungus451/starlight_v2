@@ -17,7 +17,7 @@ return [
 ],
 
 'rates' => [
-    'laundering' => 1.15, // 1.15 Credits per 1 Chip
+'laundering' => 1.15, // 1.15 Credits per 1 Chip
 ],
 
 'quantities' => [
@@ -26,9 +26,8 @@ return [
 ],
 
 // Loot Box Probabilities (Weights determine rarity relative to total sum)
-// Current Total Weight: 100
 'void_container_loot' => [
-// --- GOOD OUTCOMES (74%) ---
+// --- GOOD OUTCOMES ---
 'credits_medium' => [
 'weight' => 20,
 'type' => 'credits',
@@ -37,27 +36,43 @@ return [
 'label' => 'Cache of Credits'
 ],
 'credits_high' => [
-'weight' => 23,
+'weight' => 20,
 'type' => 'credits',
 'min' => 500000,
 'max' => 7500000,
 'label' => 'Vault of Credits'
 ],
 'soldiers' => [
-'weight' => 17,
+'weight' => 12,
 'type' => 'unit',
 'unit' => 'soldiers',
 'min' => 500,
 'max' => 2000,
 'label' => 'Mercenary Platoon'
 ],
+'guards' => [
+'weight' => 12,
+'type' => 'unit',
+'unit' => 'guards',
+'min' => 500,
+'max' => 2000,
+'label' => 'Elite Guard Detail'
+],
 'spies' => [
-'weight' => 13,
+'weight' => 8,
 'type' => 'unit',
 'unit' => 'spies',
 'min' => 10,
 'max' => 1500,
 'label' => 'Covert Operatives'
+],
+'sentries' => [
+'weight' => 8,
+'type' => 'unit',
+'unit' => 'sentries',
+'min' => 10,
+'max' => 1500,
+'label' => 'Security Detail'
 ],
 'jackpot' => [
 'weight' => 1,
@@ -67,21 +82,21 @@ return [
 'label' => 'JACKPOT! Naquadah Cache'
 ],
 
-// --- NEUTRAL OUTCOMES (13%) ---
+// --- NEUTRAL OUTCOMES ---
 'space_dust' => [
-'weight' => 8,
+'weight' => 5,
 'type' => 'neutral',
 'label' => 'Space Dust',
 'text' => 'You open the container... it contains nothing but cosmic dust.'
 ],
 'scrap_metal' => [
-'weight' => 5,
+'weight' => 4,
 'type' => 'neutral',
 'label' => 'Rusted Scrap',
 'text' => 'The container is filled with useless rusted metal shards.'
 ],
 
-// --- BAD OUTCOMES (13%) ---
+// --- BAD OUTCOMES ---
 'trap_credits' => [
 'weight' => 4,
 'type' => 'credits_loss',
@@ -91,7 +106,7 @@ return [
 'text' => 'IT\'S A TRAP! A hacking algorithm drains your account.'
 ],
 'ambush_spies' => [
-'weight' => 7,
+'weight' => 3,
 'type' => 'unit_loss',
 'unit' => 'spies',
 'min' => 10,
@@ -100,7 +115,7 @@ return [
 'text' => 'IT\'S A TRAP! A traitor turned you into their sentries. Casualties sustained.'
 ],
 'ambush_soldiers' => [
-'weight' => 2,
+'weight' => 3,
 'type' => 'unit_loss',
 'unit' => 'soldiers',
 'min' => 10,
