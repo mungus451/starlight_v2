@@ -1,0 +1,9 @@
+title: AI Agents
+nav:
+  - index.md
+  - backend-agent.md
+  - database-architect.md
+  - frontend-agent.md
+  - game-balance-architect.md
+  - testing-agent.md
+  - docs-agent.md

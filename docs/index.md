@@ -1,86 +1,57 @@
 ---
 layout: default
-title: AI Agent Documentation
+title: StarlightDominion V2 Documentation
 ---
 
-# StarlightDominion V2 - AI Agent Documentation
+# StarlightDominion V2
 
-This documentation describes the AI agents that assist with StarlightDominion V2 development. Each agent specializes in a specific aspect of the project and follows tailored best practices and architectural patterns.
+A browser-based space strategy MMO built with PHP 8.4, MariaDB, and vanilla JavaScript. Features turn-based mechanics, alliances, combat, espionage, and resource management.
 
-## Available Agents
+## Quick Start
 
-### [Backend Agent](/docs/agents/backend-agent.md)
-Senior backend engineer for PHP/MariaDB development. Specializes in implementing backend features following strict MVC patterns, managing the Service/Repository architecture, and maintaining database integrity.
+- **[Development Guide](DEVELOPMENT.md)** — Set up your local environment and run the project
+- **[Architecture](ARCHITECTURE.md)** — Understand the MVC design and core components
+- **[Docker Guide](DOCKER.md)** — Use Docker for consistent local development
 
-**Focus Areas:**
-- PHP 8.4+ and MVC architecture
-- Service layer business logic
-- Repository pattern and database access
-- Dependency injection and transactions
-- Game mechanics implementation
+## Core Concepts
 
-### [Database Architect](/docs/agents/database-architect.md)
-Database specialist for schema design, migrations, and data model architecture. Expert in relational database design, optimization, and safe migration patterns.
+### Tech Stack
+- **Backend:** PHP 8.4, MariaDB, PDO
+- **Frontend:** Vanilla JavaScript, semantic HTML/CSS
+- **Architecture:** Strict MVC with Service/Repository pattern
+- **Routing:** FastRoute for URL handling
 
-**Focus Areas:**
-- Schema design and normalization
-- Migration strategies and data integrity
-- Query optimization and performance
-- Safe evolution of the database
-- Transaction management
+### Key Components
 
-### [Frontend Agent](/docs/agents/frontend-agent.md)
-Frontend specialist for UI/UX development and vanilla JavaScript. Focuses on user interface, user experience, and client-side interactivity.
+- **Controllers** — HTTP request handlers in `app/Controllers/`
+- **Services** — Business logic layer in `app/Models/Services/`
+- **Repositories** — Database access in `app/Models/Repositories/`
+- **Entities** — Data objects in `app/Models/Entities/`
+- **Views** — PHP templates in `views/`
+- **Configuration** — Game balance and settings in `config/`
 
-**Focus Areas:**
-- HTML templates and semantic markup
-- CSS styling and responsive design
-- Vanilla JavaScript interactions
-- Form validation and CSRF protection
-- Accessibility and user experience
+## Development
 
-### [Game Balance Architect](/docs/agents/game-balance-architect.md)
-Game designer and balance specialist focused on game mechanics, economy balance, and player progression. Ensures engaging and fair gameplay.
+Agents available to assist with specific development areas:
 
-**Focus Areas:**
-- Game mechanics design
-- Economy and resource balance
-- Progression curves and systems
-- Competitive balance and fairness
-- Preventing exploitation
+- **[Backend Agent](agents/backend-agent.md)** — PHP/MariaDB development and MVC patterns
+- **[Database Architect](agents/database-architect.md)** — Schema design and migrations
+- **[Frontend Agent](agents/frontend-agent.md)** — UI/UX and vanilla JavaScript
+- **[Game Balance Architect](agents/game-balance-architect.md)** — Game mechanics and economy
 
-### [Security Agent](/docs/agents/security-agent.md)
-Security specialist for identifying vulnerabilities and ensuring defensive best practices. Protects both game integrity and user information.
+## Game Balance
 
-**Focus Areas:**
-- Authentication and authorization
-- CSRF and XSS prevention
-- SQL injection prevention
-- Game security and exploit prevention
-- Data protection and privacy
+Explore the comprehensive game balance documentation:
 
-### [Testing Agent](/docs/agents/testing-agent.md)
-Quality assurance specialist focused on comprehensive testing and test coverage. Ensures reliability and prevents regressions.
+- **[Overhaul Proposal](../BALANCE_OVERHAUL_PROPOSAL.md)** — Anti-oligarchy system design (proposal stage)
+- **[Analysis & Improvements](../game-balance-analysis-improvements.md)** — Detailed balance analysis
+- See more under the [Game Balance](game-balance-overview.md) section
 
-**Focus Areas:**
-- Unit testing and integration tests
-- Game simulation testing
-- Test coverage and edge cases
-- Architecture validation
-- Performance testing
+## Resources
 
-### [Code Review Agent](/docs/agents/review-agent.md)
-Code review specialist evaluating architecture, patterns, and best practices. Ensures long-term codebase health and maintainability.
-
-**Focus Areas:**
-- MVC architecture compliance
-- Design patterns and best practices
-- Performance optimization
-- Code clarity and maintainability
-- Security and stability
-
-### [Documentation Agent](/docs/agents/docs-agent.md)
-Expert technical writer for project documentation. Creates and maintains developer-focused documentation for the codebase.
+- **[Repository](https://github.com/mungus451/starlight_v2)** — Source code on GitHub
+- **[Development](DEVELOPMENT.md)** — Setup and workflow guide
+- **[Architecture](ARCHITECTURE.md)** — System design and patterns
 
 **Focus Areas:**
 - Developer documentation

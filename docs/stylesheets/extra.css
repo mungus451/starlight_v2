@@ -1,0 +1,37 @@
+/* Custom styling for StarlightDominion V2 Documentation */
+
+:root {
+    --md-primary-fg-color: #3f51b5;
+    --md-primary-fg-color--light: #7986cb;
+    --md-primary-fg-color--dark: #303f9f;
+}
+
+/* Code block enhancements */
+.highlight pre {
+    border-radius: 4px;
+}
+
+/* Admonition customization */
+.md-typeset .admonition,
+.md-typeset details {
+    border-left: 4px solid var(--md-primary-fg-color);
+}
+
+/* Table styling */
+.md-typeset table:not([class]) {
+    border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) th {
+    background-color: var(--md-code-bg-color);
+}
+
+/* Navigation footer spacing */
+.md-footer-meta {
+    margin-top: 2rem;
+}
+
+/* Logo and title spacing */
+.md-header__title {
+    margin-left: 0.5rem;
+}
