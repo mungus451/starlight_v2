@@ -21,6 +21,7 @@ use App\Controllers\BankController;
 use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\ArmoryController;
+use App\Controllers\GeneralController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
@@ -142,6 +143,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/armory/manufacture', [ArmoryController::class, 'handleManufacture']);
     $r->addRoute('POST', '/armory/batch-manufacture', [ArmoryController::class, 'handleBatchManufacture']);
     $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
+
+    // Generals
+    $r->addRoute('GET', '/generals', [GeneralController::class, 'index']);
+    $r->addRoute('POST', '/generals/recruit', [GeneralController::class, 'recruit']);
+    $r->addRoute('POST', '/generals/equip', [GeneralController::class, 'equip']);
 
     // --- User Settings ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
@@ -275,7 +281,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy'
+                '/leaderboard', '/embassy', '/generals'
             ];
             
             $isProtected = false;
