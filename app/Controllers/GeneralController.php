@@ -105,4 +105,50 @@ class GeneralController extends BaseController
         }
         $this->redirect('/generals');
     }
+
+    public function armory(array $params): void
+    {
+        $generalId = (int)($params['id'] ?? 0);
+        $userId = $this->session->get('user_id');
+        
+        $general = $this->generalRepo->findById($generalId);
+        if (!$general || $general['user_id'] != $userId) {
+            $this->session->setFlash('error', 'General not found.');
+            $this->redirect('/generals');
+            return;
+        }
+        
+        $resources = $this->resourceRepo->findByUserId($userId);
+        $weapons = $this->config->get('elite_weapons', []);
+        
+        $this->render('generals/armory.php', [
+            'title' => 'Elite Armory: ' . $general['name'],
+            'general' => $general,
+            'resources' => $resources,
+            'elite_weapons' => $weapons,
+            'layoutMode' => 'full'
+        ]);
+    }
+
+    public function decommission(): void
+    {
+        $rules = ['csrf_token' => 'required', 'general_id' => 'required|int'];
+        $data = $this->validate($_POST, $rules);
+        
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid token.');
+            $this->redirect('/generals');
+            return;
+        }
+        
+        $userId = $this->session->get('user_id');
+        $res = $this->generalService->decommissionGeneral($userId, (int)$data['general_id']);
+        
+        if ($res->isSuccess()) {
+            $this->session->setFlash('success', $res->message);
+        } else {
+            $this->session->setFlash('error', $res->message);
+        }
+        $this->redirect('/generals');
+    }
 }

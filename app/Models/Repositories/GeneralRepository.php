@@ -50,4 +50,10 @@ class GeneralRepository
         $stmt = $this->db->prepare("UPDATE generals SET weapon_slot_1 = :key, updated_at = NOW() WHERE id = :id");
         $stmt->execute(['key' => $weaponKey, 'id' => $generalId]);
     }
+
+    public function delete(int $generalId): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM generals WHERE id = :id");
+        $stmt->execute(['id' => $generalId]);
+    }
 }

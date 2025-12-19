@@ -148,6 +148,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/generals', [GeneralController::class, 'index']);
     $r->addRoute('POST', '/generals/recruit', [GeneralController::class, 'recruit']);
     $r->addRoute('POST', '/generals/equip', [GeneralController::class, 'equip']);
+    $r->addRoute('GET', '/generals/armory/{id:\d+}', [GeneralController::class, 'armory']);
+    $r->addRoute('POST', '/generals/decommission', [GeneralController::class, 'decommission']);
 
     // --- User Settings ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);

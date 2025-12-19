@@ -131,4 +131,22 @@ class GeneralService
             return ServiceResponse::error("Equip failed.");
         }
     }
+
+    public function decommissionGeneral(int $userId, int $generalId): ServiceResponse
+    {
+        $general = $this->generalRepo->findById($generalId);
+        if (!$general || $general['user_id'] != $userId) {
+            return ServiceResponse::error("General not found.");
+        }
+        
+        try {
+            $this->db->beginTransaction();
+            $this->generalRepo->delete($generalId);
+            $this->db->commit();
+            return ServiceResponse::success("General {$general['name']} has been decommissioned.");
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            return ServiceResponse::error("Decommission failed: " . $e->getMessage());
+        }
+    }
 }
