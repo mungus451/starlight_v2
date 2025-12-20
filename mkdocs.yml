@@ -1,0 +1,214 @@
+site_name: StarlightDominion V2 Documentation
+site_description: Complete documentation for StarlightDominion V2 - A space strategy MMO built with PHP, MariaDB, and strict MVC architecture
+site_author: StarlightDominion Development Team
+site_url: https://mungus451.github.io/starlight_v2
+
+repo_name: mungus451/starlight_v2
+repo_url: https://github.com/mungus451/starlight_v2
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+# Build output must not be inside docs_dir
+site_dir: site
+
+theme:
+  name: material
+  locale: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - content.action.view
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: material/rocket-launch
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.ico
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - meta
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Anchor link to this section
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Project Structure: getting-started/project-structure.md
+      - First Feature: getting-started/first-feature.md
+      - Troubleshooting: getting-started/troubleshooting.md
+  - Architecture:
+      - Overview: architecture/index.md
+      - Project Structure: architecture/project-structure.md
+      - Request Lifecycle: architecture/request-lifecycle.md
+      - Controllers: architecture/controllers.md
+      - Services: architecture/services.md
+      - Repositories: architecture/repositories.md
+      - Entities: architecture/entities.md
+      - Views: architecture/views.md
+      - Configuration & DI: architecture/config-di.md
+      - Transactions & Errors: architecture/transactions.md
+      - Security Patterns: architecture/security.md
+      - Testing & Compliance: architecture/testing.md
+      
+  - Development:
+      - Setup Guide: DEVELOPMENT.md
+      - Docker Guide: DOCKER.md
+  - Features:
+      - Overview: features/index.md
+      - Authentication: features/authentication.md
+      - Economy:
+          - Overview: features/economy/index.md
+          - Bank: features/economy/bank.md
+          - Structures: features/economy/structures.md
+          - Training: features/economy/training.md
+      - Combat:
+          - Overview: features/combat/index.md
+          - Attacks: features/combat/attacks.md
+          - Defense: features/combat/defense.md
+          - War System: features/combat/war-system.md
+      - Alliances:
+          - Overview: features/alliances/index.md
+          - Roles & Permissions: features/alliances/roles-permissions.md
+          - Diplomacy: features/alliances/diplomacy.md
+          - Treasury: features/alliances/treasury.md
+      - Espionage: features/espionage.md
+      - Armory: features/armory.md
+      - Black Market: features/black-market.md
+      - NPC System: features/npc-system.md
+  - Guides:
+      - Overview: guides/index.md
+      - Security: guides/security.md
+      - Accessibility: guides/accessibility.md
+      - Performance: guides/performance.md
+  - Game Balance:
+      - Overview: game-balance/index.md
+      - Simulation Engine: game-balance/simulation-engine.md
+      - Implementation Summary: game-balance/IMPLEMENTATION_SUMMARY.md
+      - Python Simulation Guide: game-balance/python-sim.md
+      - Overhaul Proposal:
+          - Index: balance-overhaul/00-INDEX.md
+          - Problem Statement: balance-overhaul/01-PROBLEM-STATEMENT.md
+          - Design Philosophy: balance-overhaul/02-DESIGN-PHILOSOPHY.md
+          - Banking Overhaul: balance-overhaul/03-BANKING-OVERHAUL.md
+          - Protection Systems: balance-overhaul/04-PROTECTION-SYSTEMS.md
+          - Friction Systems: balance-overhaul/05-FRICTION-SYSTEMS.md
+          - Engagement Systems: balance-overhaul/06-ENGAGEMENT-SYSTEMS.md
+          - Multiplier Caps: balance-overhaul/07-MULTIPLIER-CAPS.md
+          - Testing Framework: balance-overhaul/08-TESTING-FRAMEWORK.md
+          - Implementation Plan: balance-overhaul/09-IMPLEMENTATION-PLAN.md
+          - Migration Strategy: balance-overhaul/10-MIGRATION-STRATEGY.md
+  - Agents:
+      - Overview: agents/index.md
+      - Backend: agents/backend/index.md
+      - Database: agents/database/index.md
+      - Frontend: agents/frontend/index.md
+      - Game Balance: agents/game-balance/index.md
+  - Contributing: CONTRIBUTING.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mungus451/starlight_v2
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/thumb-up-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/thumb-down-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback! Help us improve by
+            <a href="https://github.com/mungus451/starlight_v2/issues/new" target="_blank" rel="noopener">opening an issue</a>.
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
