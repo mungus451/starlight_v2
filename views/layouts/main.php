@@ -146,6 +146,7 @@
     
     <?php if ($isLoggedIn): ?>
         <script src="/js/notifications.js"></script>
+        <?php include __DIR__ . '/race_selection_modal.php'; ?>
     <?php endif; ?>
 
     <script>

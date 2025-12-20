@@ -42,6 +42,7 @@ use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
+use App\Controllers\RaceController;
 use App\Middleware\AuthMiddleware;
 
 use App\Core\Exceptions\RedirectException;
@@ -176,6 +177,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/embassy/activate', [EmbassyController::class, 'activate']);
     $r->addRoute('POST', '/embassy/revoke', [EmbassyController::class, 'revoke']);
 
+    // --- Race Selection API ---
+    $r->addRoute('GET', '/api/races', [RaceController::class, 'getRaces']);
+    $r->addRoute('POST', '/api/race/select', [RaceController::class, 'selectRace']);
+    $r->addRoute('GET', '/api/race/check', [RaceController::class, 'checkRaceStatus']);
+
     // --- Alliance System ---
     $r->addRoute('GET', '/alliance/list', [AllianceController::class, 'showList']);
     $r->addRoute('GET', '/alliance/list/page/{page:\d+}', [AllianceController::class, 'showList']);
@@ -275,7 +281,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy'
+                '/leaderboard', '/embassy', '/api'
             ];
             
             $isProtected = false;

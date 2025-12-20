@@ -41,6 +41,7 @@ use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Repositories\IntelRepository;   // --- NEW ---
+use App\Models\Repositories\RaceRepository;
 
 // Services
 use App\Models\Services\AuthService;
@@ -72,6 +73,7 @@ use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
 use App\Models\Services\TurnProcessorService;
 use App\Models\Services\EffectService; // --- NEW ---
+use App\Models\Services\RaceService;
 
 // Core & Events
 use App\Core\Events\EventDispatcher;
@@ -178,6 +180,7 @@ GeneralRepository::class => function (ContainerInterface $c) { return new Genera
 ScientistRepository::class => function (ContainerInterface $c) { return new ScientistRepository($c->get(PDO::class)); },
 EffectRepository::class => function (ContainerInterface $c) { return new EffectRepository($c->get(PDO::class)); }, // --- NEW ---
 IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },   // --- NEW ---
+RaceRepository::class => function (ContainerInterface $c) { return new RaceRepository($c->get(PDO::class)); },
 
 // --- SERVICES ---
 
@@ -221,6 +224,14 @@ $c->get(EffectService::class) // --- NEW ---
 EffectService::class => function (ContainerInterface $c) {
     return new EffectService(
         $c->get(EffectRepository::class),
+        $c->get(UserRepository::class)
+    );
+},
+
+RaceService::class => function (ContainerInterface $c) {
+    return new RaceService(
+        $c->get(PDO::class),
+        $c->get(RaceRepository::class),
         $c->get(UserRepository::class)
     );
 },
