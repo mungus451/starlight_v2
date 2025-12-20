@@ -11,7 +11,6 @@ This migration adds race support to StarlightDominion V2, including:
 ## Migration Files
 
 - **Phinx Migration:** `20251215024921_add_race_support.php`
-- **SQL Reference:** `20251215024921_add_race_support.sql`
 - **Documentation:** `/RACES.md`
 
 ## Running the Migration

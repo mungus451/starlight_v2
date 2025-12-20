@@ -174,4 +174,3 @@ WHERE u.id = ?;
 ## See Also
 
 - `database/migrations/20251215024921_add_race_support.php` - The migration file
-- `database/migrations/20251215024921_add_race_support.sql` - Raw SQL reference
