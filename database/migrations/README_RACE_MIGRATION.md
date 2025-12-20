@@ -4,9 +4,9 @@
 
 This migration adds race support to StarlightDominion V2, including:
 
-1. **`races` table** - Defines the 4 playable races
+1. **`races` table** - Defines the 5 playable races
 2. **`users.race_id`** - Links users to their chosen race
-3. **Race-exclusive resources** - 4 new columns in `user_resources`
+3. **Race-exclusive resources** - 5 new columns in `user_resources`
 
 ## Migration Files
 
@@ -48,7 +48,7 @@ composer phinx status
 
 | Column | Type | Description |
 |--------|------|-------------|
-| id | INT UNSIGNED | Primary key (1-4) |
+| id | INT UNSIGNED | Primary key (1-5) |
 | name | VARCHAR(50) | Race name (unique) |
 | exclusive_resource | VARCHAR(50) | Name of exclusive resource |
 | lore | TEXT | Background story |
@@ -59,6 +59,7 @@ composer phinx status
 2. Luminarch Order → Aurorium Crystals
 3. Vorax Brood → Xenoplasm Bio-Gel
 4. Synthien Collective → Zerulium Cores
+5. The Synthera → Voidsteel Alloy
 
 ### Modified Table: `users`
 
@@ -73,6 +74,7 @@ composer phinx status
 - `aurorium_crystals` - For Luminarch Order
 - `xenoplasm_biogel` - For Vorax Brood
 - `zerulium_cores` - For Synthien Collective
+- `voidsteel_alloy` - For The Synthera
 
 ## Rollback
 
@@ -87,7 +89,7 @@ composer phinx rollback
 ```
 
 This will:
-1. Remove the 4 resource columns from `user_resources`
+1. Remove the 5 resource columns from `user_resources`
 2. Remove the `race_id` column and foreign key from `users`
 3. Drop the `races` table
 

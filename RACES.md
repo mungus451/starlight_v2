@@ -27,7 +27,7 @@ Foreign key linking a user to their chosen race.
 - **Note:** NULL allows users to exist without a race (for backward compatibility or initial setup)
 
 #### `user_resources` - Race-Exclusive Resource Columns
-Four new columns for race-exclusive resources:
+Five new columns for race-exclusive resources:
 
 | Column | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -35,8 +35,9 @@ Four new columns for race-exclusive resources:
 | `aurorium_crystals` | DECIMAL(19,4) | 0.0000 | Luminarch Order exclusive resource |
 | `xenoplasm_biogel` | DECIMAL(19,4) | 0.0000 | Vorax Brood exclusive resource |
 | `zerulium_cores` | DECIMAL(19,4) | 0.0000 | Synthien Collective exclusive resource |
+| `voidsteel_alloy` | DECIMAL(19,4) | 0.0000 | The Synthera exclusive resource |
 
-## The Four Races
+## The Five Races
 
 ### 1. Aridan Nomads
 
@@ -97,15 +98,30 @@ Four new columns for race-exclusive resources:
 
 ---
 
+### 5. The Synthera
+
+**Exclusive Resource:** Voidsteel Alloy
+
+**Lore:** Forged in the void between dimensions, a material that exists partially outside normal space-time.
+
+**Uses:**
+- Dimensional cloaking
+- Reality anchors
+- Phase-shift weaponry
+
+**Gameplay Strategy:** The Synthera manipulate dimensional physics and void energy. Their Voidsteel Alloy allows them to exist partially outside conventional reality, granting unparalleled stealth capabilities and weapons that strike from impossible angles.
+
+---
+
 ## Migration Details
 
 **Migration File:** `database/migrations/20251215024921_add_race_support.php`
 
 **Applies:**
 1. Creates `races` table
-2. Inserts all 4 races with their lore and uses
+2. Inserts all 5 races with their lore and uses
 3. Adds `race_id` column to `users` table with foreign key constraint
-4. Adds 4 race-exclusive resource columns to `user_resources` table
+4. Adds 5 race-exclusive resource columns to `user_resources` table
 
 **Reversible:** Yes, the migration uses Phinx's `change()` method for automatic rollback support.
 
@@ -139,6 +155,7 @@ SELECT
         WHEN 2 THEN ur.aurorium_crystals
         WHEN 3 THEN ur.xenoplasm_biogel
         WHEN 4 THEN ur.zerulium_cores
+        WHEN 5 THEN ur.voidsteel_alloy
     END as resource_amount
 FROM users u
 JOIN races r ON u.race_id = r.id
