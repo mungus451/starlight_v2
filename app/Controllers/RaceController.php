@@ -48,9 +48,15 @@ class RaceController extends BaseController
                 ];
             }, $races);
 
-            JsonResponse::success($racesData);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $racesData
+            ]);
         } catch (\Exception $e) {
-            JsonResponse::error($e->getMessage(), 500);
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -66,7 +72,10 @@ class RaceController extends BaseController
         // Get user ID from session
         $userId = $this->session->get('user_id');
         if (!$userId) {
-            JsonResponse::error('You must be logged in.', 401);
+            $this->jsonResponse([
+                'success' => false,
+                'message' => 'You must be logged in.'
+            ], 401);
             return;
         }
 
@@ -79,11 +88,15 @@ class RaceController extends BaseController
             // Attempt to select race
             $this->raceService->selectRace($userId, (int)$validated['race_id']);
             
-            JsonResponse::success([
+            $this->jsonResponse([
+                'success' => true,
                 'message' => 'Race selected successfully!'
             ]);
         } catch (\Exception $e) {
-            JsonResponse::error($e->getMessage(), 400);
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -95,18 +108,27 @@ class RaceController extends BaseController
     {
         $userId = $this->session->get('user_id');
         if (!$userId) {
-            JsonResponse::error('You must be logged in.', 401);
+            $this->jsonResponse([
+                'success' => false,
+                'message' => 'You must be logged in.'
+            ], 401);
             return;
         }
 
         try {
             $needsSelection = $this->raceService->needsRaceSelection($userId);
             
-            JsonResponse::success([
-                'needs_selection' => $needsSelection
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'needs_selection' => $needsSelection
+                ]
             ]);
         } catch (\Exception $e) {
-            JsonResponse::error($e->getMessage(), 500);
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 }
