@@ -89,8 +89,8 @@ vendor/bin/phpunit tests/BattleSimulationTest.php
 
 ## Related Documentation
 
-- [Overhaul Proposal](../../../BALANCE_OVERHAUL_PROPOSAL.md)
-- [Game Balance Analysis](../../../game-balance-analysis-improvements.md)
+- [Overhaul Proposal](../../balance-overhaul/00-INDEX.md)
+- [Game Balance Overview](../../game-balance/index.md)
 
 ---
 

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 git# External Python Simulation Engine
+=======
+# External Python Simulation Engine
+>>>>>>> 62b96af (docs: update documentation)
 
 This document outlines a language-agnostic way to run large-scale simulations using Python while keeping a single source of truth for balance in `config/game_balance.php`.
 

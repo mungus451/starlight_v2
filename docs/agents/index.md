@@ -9,10 +9,10 @@ Specialized agents to assist with different aspects of StarlightDominion V2 deve
 
 ## Core Agents
 
-- **[Backend Agent](backend/)** — PHP/MariaDB development and MVC patterns
-- **[Database Architect](database/)** — Schema design and migrations  
-- **[Frontend Agent](frontend/)** — UI/UX and vanilla JavaScript
-- **[Game Balance Architect](game-balance/)** — Game mechanics and economy
+- **[Backend Agent](backend/index.md)** — PHP/MariaDB development and MVC patterns
+- **[Database Architect](database/index.md)** — Schema design and migrations  
+- **[Frontend Agent](frontend/index.md)** — UI/UX and vanilla JavaScript
+- **[Game Balance Architect](game-balance/index.md)** — Game mechanics and economy
 
 ---
 

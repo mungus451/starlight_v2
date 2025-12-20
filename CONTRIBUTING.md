@@ -49,7 +49,7 @@ php -S localhost:8000 -t public
 
 ## Architecture Overview
 
-StarlightDominion V2 follows a strict **MVC-S (Model-View-Controller-Service)** pattern. Please read [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
+StarlightDominion V2 follows a strict **MVC-S (Model-View-Controller-Service)** pattern. Please read [ARCHITECTURE.md](architecture) for detailed architecture documentation.
 
 ### Key Principles
 
@@ -595,7 +595,7 @@ $this->csrfService->validateToken($_POST['csrf_token'] ?? '');
 
 ## Questions or Issues?
 
-- Check [ARCHITECTURE.md](ARCHITECTURE.md) for architectural details
+- Check [ARCHITECTURE.md](architecture) for architectural details
 - Review existing code for examples
 - Open an issue for questions or suggestions
 - Join our development discussions

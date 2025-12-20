@@ -79,16 +79,16 @@ docker compose exec app composer install
 ### Run Migrations
 ```bash
 # Check migration status
-docker exec starlight_app composer phinx status
+docker compose exec app composer phinx status
 
 # Run pending migrations
-docker exec starlight_app composer phinx migrate
+docker compose exec app composer phinx migrate
 
 # Create new migration
-docker exec starlight_app composer phinx create MyMigrationName
+docker compose exec app composer phinx create MyMigrationName
 
 # Rollback last migration
-docker exec starlight_app composer phinx rollback
+docker compose exec app composer phinx rollback
 ```
 
 ### Access Container Shell
