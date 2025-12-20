@@ -8,6 +8,7 @@ use App\Models\Services\ArmoryService;
 use App\Core\Config;
 use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
+use App\Models\Repositories\EdictRepository;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
 use App\Models\Entities\UserStructure;
@@ -22,6 +23,7 @@ class PowerCalculatorServiceTest extends TestCase
     private ArmoryService|Mockery\MockInterface $mockArmoryService;
     private AllianceStructureRepository|Mockery\MockInterface $mockAllianceStructRepo;
     private AllianceStructureDefinitionRepository|Mockery\MockInterface $mockStructDefRepo;
+    private EdictRepository|Mockery\MockInterface $mockEdictRepo;
 
     protected function setUp(): void
     {
@@ -31,12 +33,17 @@ class PowerCalculatorServiceTest extends TestCase
         $this->mockArmoryService = Mockery::mock(ArmoryService::class);
         $this->mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $this->mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
+        $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
+
+        // Default: No active edicts for basic tests
+        $this->mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $this->service = new PowerCalculatorService(
             $this->mockConfig,
             $this->mockArmoryService,
             $this->mockAllianceStructRepo,
-            $this->mockStructDefRepo
+            $this->mockStructDefRepo,
+            $this->mockEdictRepo
         );
     }
 
