@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
+use App\Core\Config;
 use App\Models\Services\ViewContextService;
 use App\Models\Repositories\UserRepository;
 
@@ -14,7 +15,7 @@ use App\Models\Repositories\UserRepository;
 class RaceController extends BaseController
 {
     private UserRepository $userRepository;
-    private array $raceConfig;
+    private Config $config;
 
     /**
      * DI Constructor.
@@ -24,11 +25,12 @@ class RaceController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        ViewContextService $viewContextService
+        ViewContextService $viewContextService,
+        Config $config
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->userRepository = $userRepository;
-        $this->raceConfig = require __DIR__ . '/../../config/races.php';
+        $this->config = $config;
     }
 
     /**
@@ -36,9 +38,11 @@ class RaceController extends BaseController
      */
     public function showRaceSelection(): void
     {
+        $races = $this->config->get('races', []);
+        
         $this->render('race/select.php', [
             'title' => 'Select Your Race',
-            'races' => $this->raceConfig
+            'races' => $races
         ]);
     }
 
@@ -47,6 +51,8 @@ class RaceController extends BaseController
      */
     public function handleRaceSelection(): void
     {
+        $raceConfig = $this->config->get('races', []);
+        
         // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
@@ -61,7 +67,7 @@ class RaceController extends BaseController
         }
 
         // 3. Validate race choice
-        if (!isset($this->raceConfig[$data['race']])) {
+        if (!isset($raceConfig[$data['race']])) {
             $this->session->setFlash('error', 'Invalid race selection.');
             $this->redirect('/race/select');
             return;

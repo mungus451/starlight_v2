@@ -299,10 +299,8 @@ try {
                 if (!str_starts_with($uri, '/race/select')) {
                     $container->get(RaceSelectionMiddleware::class)->handle();
                 }
-            }
-            
-            // Race selection routes need auth but not race check
-            if (str_starts_with($uri, '/race/select')) {
+            } elseif (str_starts_with($uri, '/race/select')) {
+                // Race selection routes need auth but not race check
                 $container->get(AuthMiddleware::class)->handle();
             }
 
