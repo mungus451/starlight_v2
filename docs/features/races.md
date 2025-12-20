@@ -171,6 +171,113 @@ WHERE u.id = ?;
 - **Race Technology Trees:** Unique upgrade paths utilizing exclusive resources
 - **Cross-Race Resource Exchange:** Market or trading mechanics for rare resources
 
+## Race Selection Implementation
+
+### Overview
+
+The race selection feature allows existing users who haven't selected a race to choose one on their next login. The selection is one-time only and cannot be changed once made.
+
+### Architecture
+
+#### Backend Components
+
+**Entities:**
+- `App\Models\Entities\Race` - Readonly data object for race information
+- `App\Models\Entities\User` - Extended with `race_id` field (nullable)
+
+**Repositories:**
+- `App\Models\Repositories\RaceRepository` - Database operations for races table
+  - `findAll()` - Gets all races
+  - `findById(int $id)` - Gets a specific race
+- `App\Models\Repositories\UserRepository` - Extended with race operations
+  - `updateRace(int $userId, int $raceId)` - Updates user's race (one-time)
+
+**Services:**
+- `App\Models\Services\RaceService` - Business logic for race selection
+  - `getAllRaces()` - Returns all available races
+  - `selectRace(int $userId, int $raceId)` - Validates and assigns race
+  - `needsRaceSelection(int $userId)` - Checks if user needs to select
+
+**Controllers:**
+- `App\Controllers\RaceController` - API endpoints for race selection
+  - `GET /api/races` - Returns all races as JSON
+  - `POST /api/race/select` - Selects a race (CSRF protected)
+  - `GET /api/race/check` - Checks if selection needed
+
+#### Frontend Components
+
+**Modal:**
+- `views/layouts/race_selection_modal.php` - Self-contained modal component
+  - Automatically checks on page load via `/api/race/check`
+  - Loads races via `/api/races`
+  - Submits selection via `/api/race/select`
+  - Reloads page after successful selection
+
+**Integration:**
+- Included in `views/layouts/main.php` for all logged-in users
+- Modal only displays if user has `race_id = null`
+
+### Security Features
+
+1. **Authentication Required:** All API endpoints are protected by auth middleware
+2. **CSRF Protection:** Selection endpoint validates CSRF tokens
+3. **One-Time Selection:** Service layer prevents changing race after selection
+4. **Input Validation:** Race ID is validated before processing
+5. **Database Constraints:** Foreign key constraint ensures race exists
+
+### User Flow
+
+1. User logs in with `race_id = null`
+2. Page loads normally with navbar and content
+3. JavaScript automatically checks `/api/race/check`
+4. If needed, modal appears with all 5 races
+5. User clicks on a race card to select it
+6. User confirms selection with button
+7. AJAX POST to `/api/race/select` with CSRF token
+8. On success, page reloads
+9. User's `race_id` is now set permanently
+
+### Error Handling
+
+- **Already Selected:** Returns error if user tries to select when they already have one
+- **Invalid Race:** Validates race exists before assignment
+- **Not Logged In:** Returns 401 if user not authenticated
+- **CSRF Failure:** Returns error if token invalid
+
+### Testing Notes
+
+To test race selection:
+1. Ensure the database migration has been run
+2. Set a user's `race_id` to `NULL` in the database
+3. Log in as that user
+4. Modal should appear automatically
+5. Select a race and confirm
+6. Verify user's `race_id` is updated in database
+7. Log out and back in - modal should not appear
+
+### API Response Format
+
+All endpoints return JSON in this format:
+
+**Success:**
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+**Error:**
+```json
+{
+  "success": false,
+  "message": "Error description"
+}
+```
+
 ## See Also
 
 - `database/migrations/20251215024921_add_race_support.php` - The migration file
+- `app/Controllers/RaceController.php` - API implementation
+- `app/Models/Services/RaceService.php` - Business logic
+- `views/layouts/race_selection_modal.php` - Frontend modal
