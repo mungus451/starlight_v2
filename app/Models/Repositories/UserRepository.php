@@ -192,6 +192,15 @@ return $stmt->fetchAll(PDO::FETCH_ASSOC);
 // --- END NPC METHODS ---
 
 /**
+ * Updates a user's race.
+ */
+public function updateRace(int $userId, string $race): bool
+{
+    $stmt = $this->db->prepare("UPDATE users SET race = ? WHERE id = ?");
+    return $stmt->execute([$race, $userId]);
+}
+
+/**
 * Helper method to convert a database row (array) into a User entity.
 */
 private function hydrate(array $data): User
@@ -200,6 +209,7 @@ return new User(
 id: (int)$data['id'],
 email: $data['email'],
 characterName: $data['character_name'],
+race: $data['race'] ?? null,
 bio: $data['bio'] ?? null,
 profile_picture_url: $data['profile_picture_url'] ?? null,
 phone_number: $data['phone_number'] ?? null,

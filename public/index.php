@@ -42,7 +42,9 @@ use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
+use App\Controllers\RaceController;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\RaceSelectionMiddleware;
 
 use App\Core\Exceptions\RedirectException;
 use App\Core\Exceptions\TerminateException;
@@ -105,6 +107,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/register', [AuthController::class, 'showRegister']);
     $r->addRoute('POST', '/register', [AuthController::class, 'handleRegister']);
     $r->addRoute('GET', '/logout', [AuthController::class, 'handleLogout']);
+
+    // --- Race Selection (requires authentication but not race check) ---
+    $r->addRoute('GET', '/race/select', [RaceController::class, 'showRaceSelection']);
+    $r->addRoute('POST', '/race/select', [RaceController::class, 'handleRaceSelection']);
 
     // --- Core Game Features ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
@@ -287,6 +293,16 @@ try {
             }
 
             if ($isProtected) {
+                $container->get(AuthMiddleware::class)->handle();
+                
+                // Skip race check for race selection route itself
+                if (!str_starts_with($uri, '/race/select')) {
+                    $container->get(RaceSelectionMiddleware::class)->handle();
+                }
+            }
+            
+            // Race selection routes need auth but not race check
+            if (str_starts_with($uri, '/race/select')) {
                 $container->get(AuthMiddleware::class)->handle();
             }
 

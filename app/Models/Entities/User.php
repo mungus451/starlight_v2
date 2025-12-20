@@ -12,6 +12,7 @@ readonly class User
      * @param int $id
      * @param string $email
      * @param string $characterName
+     * @param string|null $race
      * @param string|null $bio
      * @param string|null $profile_picture_url
      * @param string|null $phone_number
@@ -25,6 +26,7 @@ readonly class User
         public readonly int $id,
         public readonly string $email,
         public readonly string $characterName,
+        public readonly ?string $race,
         public readonly ?string $bio,
         public readonly ?string $profile_picture_url,
         public readonly ?string $phone_number,
