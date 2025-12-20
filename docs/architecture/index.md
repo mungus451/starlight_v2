@@ -21,14 +21,9 @@ starlight_v2/
 │       └── Services/       # S: Business Logic Layer (The "M" orchestrator)
 ├── config/             # Game balance and environment variables
 ├── cron/               # Game loop scripts (turn processing, NPCs)
-<<<<<<< HEAD:ARCHITECTURE.md
-├── database/           # Phinx migrations and seeds        
-├── public/             # Web entry point (index.php only)
-=======
 ├── database/           # Phinx migrations and seeds
 ├── migrations/         # One-time data migration scripts
 ├── public/             # Front controller (index.php) plus static assets and diagnostic info.php
->>>>>>> 62b96af (docs: update documentation):docs/architecture/index.md
 ├── tests/              # Validation and test scripts
 └── views/              # V: HTML templates
 ```
