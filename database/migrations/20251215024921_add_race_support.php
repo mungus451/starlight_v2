@@ -36,13 +36,14 @@ final class AddRaceSupport extends AbstractMigration
             ->addIndex(['name'], ['unique' => true, 'name' => 'uk_race_name'])
             ->create();
         
-        // Insert the 4 races with their lore and uses
+        // Insert the 5 races with their lore and uses
         $this->execute("
             INSERT INTO `races` (`id`, `name`, `exclusive_resource`, `lore`, `uses`) VALUES
             (1, 'Aridan Nomads', 'Whisperium Spice', 'Harvested from their desert world, used for psychic navigation and psionic tech.', 'Tier 4+ warp route plotting, advanced medical enhancers'),
             (2, 'Luminarch Order', 'Aurorium Crystals', 'Cultivated from radiant crystal groves attuned to cosmic energy.', 'Advanced energy weapons, hyperdrive cores, phase shields'),
             (3, 'Vorax Brood', 'Xenoplasm Bio-Gel', 'A living bio-organic secretion used in biotech fusion.', 'Self-healing armor, bio-weapon engineering, cybernetic upgrades'),
-            (4, 'Synthien Collective', 'Zerulium Cores', 'Exotic quantum matter refined from black hole reactors.', 'Quantum AI cores, teleportation drives, sentient tech construct')
+            (4, 'Synthien Collective', 'Zerulium Cores', 'Exotic quantum matter refined from black hole reactors.', 'Quantum AI cores, teleportation drives, sentient tech construct'),
+            (5, 'The Synthera', 'Voidsteel Alloy', 'Forged in the void between dimensions, a material that exists partially outside normal space-time.', 'Dimensional cloaking, reality anchors, phase-shift weaponry')
         ");
         
         // Add race_id to users table
@@ -99,6 +100,15 @@ final class AddRaceSupport extends AbstractMigration
                 'scale' => 4,
                 'default' => 0.0000,
                 'after' => 'xenoplasm_biogel'
+            ])->update();
+        }
+        
+        if (!$resources->hasColumn('voidsteel_alloy')) {
+            $resources->addColumn('voidsteel_alloy', 'decimal', [
+                'precision' => 19,
+                'scale' => 4,
+                'default' => 0.0000,
+                'after' => 'zerulium_cores'
             ])->update();
         }
     }
