@@ -6,9 +6,10 @@ The primary goal of this architecture is strict separation of concerns and trans
 
 ## 📚 Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed MVC-S architecture patterns and layer responsibilities
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development workflow, adding features, and code standards
-- **[DOCKER.md](DOCKER.md)** - Docker deployment guide
+- **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Getting Started**: [docs/getting-started/index.md](docs/getting-started/index.md)
+- **Contributing**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+- **Docker Guide**: [docs/DOCKER.md](docs/DOCKER.md)
 
 ## ✨ Core Features
 

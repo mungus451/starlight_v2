@@ -194,4 +194,28 @@
     <?php endforeach; ?>
 </div>
 
+<!-- Batch Checkout Box -->
+<div id="armory-checkout-box" style="display:none; position: fixed; bottom: 20px; right: 20px; width: 320px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(0,0,0,0.8); padding: 15px; z-index: 9999; border-radius: 8px; backdrop-filter: blur(5px);">
+    <div class="checkout-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 1.1em; color: var(--accent);">Batch Manufacture</h3>
+        <button id="btn-cancel-batch" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2em;">&times;</button>
+    </div>
+    
+    <div id="checkout-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; font-size: 0.9em;">
+        <!-- Items injected by JS -->
+    </div>
+    
+    <div class="checkout-totals" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span>Total Cost:</span>
+            <span class="accent-gold" id="checkout-total-credits">0</span>
+        </div>
+    </div>
+    
+    <form id="armory-checkout-form" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+        <button type="submit" class="btn-submit" style="width: 100%;">Confirm Purchase</button>
+    </form>
+</div>
+
 <script src="/js/armory.js"></script>

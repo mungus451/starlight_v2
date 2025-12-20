@@ -1,13 +1,13 @@
 /**
  * Armory.js
- * Handles tabs, manufacturing logic, and AJAX interactions.
+ * Handles tabs, batch manufacturing logic, and AJAX interactions.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initMaxButtons();
-    initManufactureForms();
     initEquipForms();
+    initBatchSystem();
 });
 
 // --- Tab Switching ---
@@ -17,14 +17,9 @@ function initTabs() {
 
     links.forEach(link => {
         link.addEventListener('click', (e) => {
-            // Remove active class from all
             links.forEach(l => l.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
-
-            // Add active to clicked
             link.classList.add('active');
-            
-            // Show content
             const targetId = link.dataset.tab;
             document.getElementById(targetId).classList.add('active');
         });
@@ -42,100 +37,155 @@ function initMaxButtons() {
 
             const cost = parseInt(input.dataset.itemCost || 0);
             const reqKey = input.dataset.prereqKey || null;
-            const reqOwned = parseInt(input.dataset.reqOwned || 999999999); // If no req, assume infinite
+            const reqOwned = parseInt(input.dataset.reqOwned || 999999999);
             
-            // Get current global credits (dynamically updated)
             const creditElem = document.getElementById('global-user-credits');
-            // Remove commas for parsing
             const currentCredits = parseInt(creditElem.innerText.replace(/,/g, '')) || 0;
 
             if (cost <= 0) return;
 
-            // Calculate max based on credits
             let maxQty = Math.floor(currentCredits / cost);
-
-            // Calculate max based on prerequisites (if any)
             if (reqKey && reqOwned < maxQty) {
                 maxQty = reqOwned;
             }
 
-            // Update input
             input.value = Math.max(0, maxQty);
         });
     });
 }
 
-// --- AJAX: Manufacture ---
-function initManufactureForms() {
-    const forms = document.querySelectorAll('.manufacture-form');
+// --- Batch System ---
+const cart = new Map(); // key -> {qty, name, cost}
 
+function initBatchSystem() {
+    const forms = document.querySelectorAll('.manufacture-form');
+    
     forms.forEach(form => {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const input = form.querySelector('input[name="quantity"]');
+        const btn = form.querySelector('button[type="submit"]');
+        const itemKey = form.querySelector('input[name="item_key"]').value;
+        
+        // Get Item Name safely
+        const card = form.closest('.item-card');
+        const itemName = card ? card.querySelector('h4').innerText : 'Item';
+        
+        // Transform button
+        btn.type = 'button';
+        btn.innerText = 'Add to Batch';
+        btn.classList.add('btn-add-batch');
+        
+        // Remove old listeners by replacing node? No, standard listener add is fine if we preventDefault or change type.
+        // Changing type to 'button' prevents submit.
+        
+        btn.addEventListener('click', () => {
+            const qty = parseInt(input.value) || 0;
+            if (qty <= 0) {
+                showToast('Please enter a quantity.', 'error');
+                return;
+            }
             
-            const submitBtn = form.querySelector('button[type="submit"]');
+            const cost = parseInt(input.dataset.itemCost || 0);
+            addToCart(itemKey, qty, itemName, cost, btn);
+        });
+    });
+
+    // Checkout Logic
+    const checkoutForm = document.getElementById('armory-checkout-form');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (cart.size === 0) return;
+            
+            const submitBtn = checkoutForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerText = '...';
+            submitBtn.innerText = 'Processing...';
+
+            const items = [];
+            cart.forEach((data, key) => {
+                items.push({ item_key: key, quantity: data.qty });
+            });
 
             try {
-                const formData = new FormData(form);
+                const formData = new FormData();
+                formData.append('csrf_token', checkoutForm.querySelector('input[name="csrf_token"]').value);
+                formData.append('items', JSON.stringify(items));
                 
-                const response = await fetch('/armory/manufacture', {
+                const response = await fetch('/armory/batch-manufacture', {
                     method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: formData
                 });
-
+                
                 const result = await response.json();
-
+                
                 if (result.success) {
-                    // 1. Show Success Toast
-                    showToast(result.message, 'success');
-
-                    // 2. Update Credits Globally
-                    updateCreditsDisplay(result.new_credits);
-
-                    // 3. Update Item Owned Count
-                    // Find all indicators for this item (could be in multiple places?)
-                    const itemCounters = document.querySelectorAll(`strong[data-inventory-key="${result.item_key}"]`);
-                    itemCounters.forEach(el => {
-                        el.innerText = result.new_owned.toLocaleString();
-                        // Visual flash effect
-                        el.style.color = '#4CAF50'; // Green flash
-                        setTimeout(() => el.style.color = '', 1000);
-                    });
-
-                    // 4. Update Input Data Attributes (for Max calc)
-                    // Any input that uses this item as a prerequisite needs its data-req-owned updated
-                    const dependentInputs = document.querySelectorAll(`input[data-prereq-key="${result.item_key}"]`);
-                    dependentInputs.forEach(inp => {
-                        inp.dataset.reqOwned = result.new_owned;
-                    });
-                    
-                    // Update current owned on the input itself (if we were upgrading this item further)
-                    const selfInput = form.querySelector('input.manufacture-amount');
-                    if(selfInput) selfInput.dataset.currentOwned = result.new_owned;
-
-                    // 5. Reset Form
-                    form.reset();
-
+                    window.location.reload(); 
                 } else {
-                    showToast(result.error || 'An error occurred.', 'error');
+                    showToast(result.error || 'Batch failed.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
                 }
-
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Network error. Please try again.', 'error');
-            } finally {
+            } catch (err) {
+                console.error(err);
+                showToast('Network error.', 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;
             }
         });
+    }
+    
+    const cancelBtn = document.getElementById('btn-cancel-batch');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            cart.clear();
+            updateCheckoutUI();
+            document.querySelectorAll('.btn-add-batch').forEach(b => {
+                b.innerText = 'Add to Batch';
+                b.classList.remove('btn-secondary');
+            });
+        });
+    }
+}
+
+function addToCart(key, qty, name, cost, btn) {
+    cart.set(key, { qty, name, cost });
+    
+    btn.innerText = `Update Batch (${qty})`;
+    btn.classList.add('btn-secondary');
+    
+    updateCheckoutUI();
+}
+
+function updateCheckoutUI() {
+    const box = document.getElementById('armory-checkout-box');
+    const list = document.getElementById('checkout-list');
+    const totalEl = document.getElementById('checkout-total-credits');
+    
+    if (cart.size === 0) {
+        if (box) box.style.display = 'none';
+        return;
+    }
+    
+    if (box) box.style.display = 'block';
+    if (list) list.innerHTML = '';
+    
+    let totalCost = 0;
+    
+    cart.forEach((data, key) => {
+        const itemCost = data.cost * data.qty;
+        totalCost += itemCost;
+        
+        if (list) {
+            const div = document.createElement('div');
+            div.className = 'checkout-item';
+            div.style.cssText = 'font-size:0.9em; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between;';
+            div.innerHTML = `<span>${data.name} x${data.qty}</span> <span>${itemCost.toLocaleString()}</span>`;
+            list.appendChild(div);
+        }
     });
+    
+    if (totalEl) totalEl.innerText = totalCost.toLocaleString();
 }
 
 // --- AJAX: Equip ---
@@ -148,17 +198,12 @@ function initEquipForms() {
             const categoryKey = select.dataset.categoryKey;
             const itemKey = select.value;
 
-            // Populate hidden fields needed for the controller logic
             form.querySelector('.dynamic-category-key').value = categoryKey;
             form.querySelector('.dynamic-item-key').value = itemKey;
-
-            // Optional: Disable select while processing
             select.disabled = true;
 
             try {
                 const formData = new FormData(form);
-                // The controller expects unit_key, which is already in the form as hidden input
-
                 const response = await fetch('/armory/equip', {
                     method: 'POST',
                     headers: {
@@ -174,8 +219,6 @@ function initEquipForms() {
                     showToast(result.message, 'success');
                 } else {
                     showToast(result.error || 'Failed to equip.', 'error');
-                    // Revert selection on error? Complex to track previous val, 
-                    // simpler to just let user retry.
                 }
 
             } catch (error) {
@@ -188,62 +231,27 @@ function initEquipForms() {
     });
 }
 
-// --- Helpers ---
-
-function updateCreditsDisplay(newAmount) {
-    const el = document.getElementById('global-user-credits');
-    if (el) {
-        el.innerText = newAmount.toLocaleString();
-        el.dataset.credits = newAmount;
-    }
-}
-
-/**
- * Creates a temporary toast notification
- * @param {string} message 
- * @param {string} type 'success' | 'error'
- */
 function showToast(message, type) {
-    // Create container if not exists
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.style.position = 'fixed';
-        container.style.bottom = '20px';
-        container.style.right = '20px';
-        container.style.zIndex = '9999';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.gap = '10px';
+        container.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;';
         document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
     toast.innerText = message;
-    
-    // Styles
     const bg = type === 'success' ? '#4CAF50' : '#e53e3e';
-    toast.style.background = bg;
-    toast.style.color = '#fff';
-    toast.style.padding = '12px 24px';
-    toast.style.borderRadius = '8px';
-    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-    toast.style.fontFamily = 'sans-serif';
-    toast.style.fontSize = '0.9rem';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(20px)';
-    toast.style.transition = 'all 0.3s ease';
+    toast.style.cssText = `background:${bg}; color:#fff; padding:12px 24px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-family:sans-serif; font-size:0.9rem; opacity:0; transform:translateY(20px); transition:all 0.3s ease;`;
 
     container.appendChild(toast);
 
-    // Animate in
     requestAnimationFrame(() => {
         toast.style.opacity = '1';
         toast.style.transform = 'translateY(0)';
     });
 
-    // Remove after 3s
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(10px)';

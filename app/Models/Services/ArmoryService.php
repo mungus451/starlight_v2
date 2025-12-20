@@ -111,6 +111,118 @@ class ArmoryService
     }
 
     /**
+     * Processes a batch of manufacturing orders in a single transaction.
+     *
+     * @param int $userId
+     * @param array $items Array of ['item_key' => string, 'quantity' => int]
+     * @return ServiceResponse
+     */
+    public function processBatchManufacture(int $userId, array $items): ServiceResponse
+    {
+        if (empty($items)) {
+            return ServiceResponse::error('No items selected.');
+        }
+
+        // 1. Load User Data
+        $userResources = $this->resourceRepo->findByUserId($userId);
+        $userStructures = $this->structureRepo->findByUserId($userId);
+        $userStats = $this->statsRepo->findByUserId($userId);
+        $inventory = $this->armoryRepo->getInventory($userId);
+        
+        // Discount
+        $discountSettings = $this->config->get('game_balance.armory', []);
+        $rate = $discountSettings['discount_per_charisma'] ?? 0.01;
+        $cap = $discountSettings['max_discount'] ?? 0.75;
+        $discountPercent = min($userStats->charisma_points * $rate, $cap);
+
+        // 2. Validate & Calculate Logic
+        $totalCost = 0;
+        $simulatedInventory = $inventory; // Use to track consumption within batch
+        $opsToPerform = []; // ['item_key' => qty]
+
+        // Flatten duplicates
+        $mergedItems = [];
+        foreach ($items as $req) {
+            $key = $req['item_key'];
+            $qty = (int)$req['quantity'];
+            if ($qty <= 0) continue;
+            if (!isset($mergedItems[$key])) $mergedItems[$key] = 0;
+            $mergedItems[$key] += $qty;
+        }
+
+        if (empty($mergedItems)) {
+            return ServiceResponse::error('No valid quantities provided.');
+        }
+
+        foreach ($mergedItems as $itemKey => $quantity) {
+            $item = $this->findItemByKey($itemKey);
+            if (!$item) {
+                return ServiceResponse::error("Invalid item key: $itemKey");
+            }
+
+            // Level Req
+            if ($userStructures->armory_level < ($item['armory_level_req'] ?? 0)) {
+                return ServiceResponse::error("Armory level too low for {$item['name']}.");
+            }
+
+            // Cost
+            $baseCost = $item['cost'];
+            $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
+            $totalCost += ($effectiveUnitCost * $quantity);
+
+            // Prereqs
+            $prereqKey = $item['requires'] ?? null;
+            if ($prereqKey) {
+                $currentStock = $simulatedInventory[$prereqKey] ?? 0;
+                if ($currentStock < $quantity) {
+                    $pItem = $this->findItemByKey($prereqKey);
+                    $pName = $pItem['name'] ?? $prereqKey;
+                    return ServiceResponse::error("Insufficient {$pName} for {$item['name']} batch. Need {$quantity}, have {$currentStock} available/remaining.");
+                }
+                $simulatedInventory[$prereqKey] -= $quantity;
+            }
+            
+            $opsToPerform[$itemKey] = $quantity;
+        }
+
+        // 3. Check Credits
+        if ($userResources->credits < $totalCost) {
+            return ServiceResponse::error('Insufficient credits for batch. Total cost: ' . number_format($totalCost));
+        }
+
+        // 4. Execute Transaction
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+        }
+
+        try {
+            // Deduct Credits
+            $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
+            
+            // Process Items
+            foreach ($opsToPerform as $key => $qty) {
+                 $item = $this->findItemByKey($key);
+                 // Deduct Prereq
+                 if (isset($item['requires'])) {
+                     $this->armoryRepo->updateItemQuantity($userId, $item['requires'], -$qty);
+                 }
+                 // Add Item
+                 $this->armoryRepo->updateItemQuantity($userId, $key, $qty);
+            }
+            
+            $this->db->commit();
+            return ServiceResponse::success("Batch manufacturing successful!", ['total_cost' => $totalCost]);
+
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log('Batch Armory Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred.');
+        }
+    }
+
+    /**
      * Attempts to manufacture (or upgrade) a specific quantity of an item.
      * Returns updated resource and inventory state for immediate UI update.
      *

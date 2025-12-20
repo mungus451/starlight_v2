@@ -38,6 +38,7 @@ use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
+use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Repositories\IntelRepository;   // --- NEW ---
 
@@ -59,6 +60,7 @@ use App\Models\Services\AlliancePolicyService;
 use App\Models\Services\AllianceStructureService;
 use App\Models\Services\AllianceForumService;
 use App\Models\Services\DiplomacyService;
+use App\Models\Services\EmbassyService;
 use App\Models\Services\WarService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelCalculatorService;
@@ -302,7 +304,9 @@ TurnProcessorService::class => function (ContainerInterface $c) {
         $c->get(AllianceRepository::class),
         $c->get(AllianceBankLogRepository::class),
         $c->get(GeneralRepository::class),
-        $c->get(ScientistRepository::class)
+        $c->get(ScientistRepository::class),
+        $c->get(EdictRepository::class),
+        $c->get(EmbassyService::class)
     );
 }
 ]);
