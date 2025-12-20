@@ -1,106 +1,36 @@
 ---
 layout: default
-title: AI Agent Documentation
+title: StarlightDominion V2 Documentation
 ---
 
-# StarlightDominion V2 - AI Agent Documentation
+# StarlightDominion V2
 
-This documentation describes the AI agents that assist with StarlightDominion V2 development. Each agent specializes in a specific aspect of the project and follows tailored best practices and architectural patterns.
+A browser-based space strategy MMO built with PHP 8.4, MariaDB, and vanilla JavaScript. Features turn-based mechanics, alliances, combat, espionage, and resource management.
 
-## Available Agents
+## Quick Start
 
-### [Backend Agent](/docs/agents/backend-agent.md)
-Senior backend engineer for PHP/MariaDB development. Specializes in implementing backend features following strict MVC patterns, managing the Service/Repository architecture, and maintaining database integrity.
+- **Development Guide** — See [Getting Started](getting-started/index.md)
+- **Architecture** — See [Architecture Overview](architecture/index.md)
+- **Docker Guide** — See [Docker Setup](DOCKER.md)
 
-**Focus Areas:**
-- PHP 8.4+ and MVC architecture
-- Service layer business logic
-- Repository pattern and database access
-- Dependency injection and transactions
-- Game mechanics implementation
+## Core Concepts
 
-### [Database Architect](/docs/agents/database-architect.md)
-Database specialist for schema design, migrations, and data model architecture. Expert in relational database design, optimization, and safe migration patterns.
+### Tech Stack
+- **Backend:** PHP 8.4, MariaDB, PDO
+- **Frontend:** Vanilla JavaScript, semantic HTML/CSS
+- **Architecture:** Strict MVC with Service/Repository pattern
+- **Routing:** FastRoute for URL handling
 
-**Focus Areas:**
-- Schema design and normalization
-- Migration strategies and data integrity
-- Query optimization and performance
-- Safe evolution of the database
-- Transaction management
+### Key Components
 
-### [Frontend Agent](/docs/agents/frontend-agent.md)
-Frontend specialist for UI/UX development and vanilla JavaScript. Focuses on user interface, user experience, and client-side interactivity.
+- **Controllers** — HTTP request handlers in `app/Controllers/`
+- **Services** — Business logic layer in `app/Models/Services/`
+- **Repositories** — Database access in `app/Models/Repositories/`
+- **Entities** — Data objects in `app/Models/Entities/`
+- **Views** — PHP templates in `views/`
+- **Configuration** — Game balance and settings in `config/`
 
-**Focus Areas:**
-- HTML templates and semantic markup
-- CSS styling and responsive design
-- Vanilla JavaScript interactions
-- Form validation and CSRF protection
-- Accessibility and user experience
-
-### [Game Balance Architect](/docs/agents/game-balance-architect.md)
-Game designer and balance specialist focused on game mechanics, economy balance, and player progression. Ensures engaging and fair gameplay.
-
-**Focus Areas:**
-- Game mechanics design
-- Economy and resource balance
-- Progression curves and systems
-- Competitive balance and fairness
-- Preventing exploitation
-
-### [Security Agent](/docs/agents/security-agent.md)
-Security specialist for identifying vulnerabilities and ensuring defensive best practices. Protects both game integrity and user information.
-
-**Focus Areas:**
-- Authentication and authorization
-- CSRF and XSS prevention
-- SQL injection prevention
-- Game security and exploit prevention
-- Data protection and privacy
-
-### [Testing Agent](/docs/agents/testing-agent.md)
-Quality assurance specialist focused on comprehensive testing and test coverage. Ensures reliability and prevents regressions.
-
-**Focus Areas:**
-- Unit testing and integration tests
-- Game simulation testing
-- Test coverage and edge cases
-- Architecture validation
-- Performance testing
-
-### [Code Review Agent](/docs/agents/review-agent.md)
-Code review specialist evaluating architecture, patterns, and best practices. Ensures long-term codebase health and maintainability.
-
-**Focus Areas:**
-- MVC architecture compliance
-- Design patterns and best practices
-- Performance optimization
-- Code clarity and maintainability
-- Security and stability
-
-### [Documentation Agent](/docs/agents/docs-agent.md)
-Expert technical writer for project documentation. Creates and maintains developer-focused documentation for the codebase.
-
-**Focus Areas:**
-- Developer documentation
-- Architecture documentation
-- Setup guides and tutorials
-- API reference documentation
-- Code example documentation
-
-## Project Context
-
-StarlightDominion V2 is a browser-based space strategy MMO built with:
-
-- **Backend:** PHP 8.4 with strict MVC architecture
-- **Database:** MariaDB with PDO prepared statements
-- **Frontend:** Vanilla JavaScript with semantic HTML
-- **Routing:** FastRoute (nikic/fast-route)
-- **Sessions:** Redis with RedisSessionHandler
-- **Architecture:** Service/Repository pattern with dependency injection
-
-### Key Principles
+## Key Principles
 
 1. **Strict MVC Architecture**
    - Controllers: HTTP handlers only
@@ -129,130 +59,57 @@ StarlightDominion V2 is a browser-based space strategy MMO built with:
    - Architecture compliance validation
    - Security auditing
 
-## Getting Started
+## Development
 
-### Setting Up Your Environment
+Agents available to assist with specific development areas:
 
-```bash
-# Clone the repository
-git clone https://github.com/mungus451/starlight_v2.git
-cd starlight_v2
+- **Backend Agent** — [agents/backend/index.md](agents/backend/index.md)
+- **Database Architect** — [agents/database/index.md](agents/database/index.md)
+- **Frontend Agent** — [agents/frontend/index.md](agents/frontend/index.md)
+- **Game Balance Architect** — [agents/game-balance/index.md](agents/game-balance/index.md)
 
-# Install dependencies
-composer install
+## Contributing
 
-# Copy environment file
-cp .env.example .env
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, code standards, and how to add features.
 
-# Configure database in .env
-```
+## Game Balance
 
-### Running the Development Server
+Explore the comprehensive game balance documentation:
 
-```bash
-# From project root
-php -S localhost:8000 -t public
-```
+- **Overview:** [game-balance/index.md](game-balance/index.md)
+- **Overhaul Proposal:** [balance-overhaul/00-INDEX.md](balance-overhaul/00-INDEX.md)
 
-### Processing Game Turns
+## Features
 
-```bash
-# Manual turn processing (economy, income, etc.)
-php cron/process_turn.php
+Browse game features by category:
 
-# NPC processing
-php cron/process_npcs.php
-```
+- **[Authentication](features/authentication.md)** — Secure login and session management
+- **[Economy](features/economy/index.md)** — Banking, structures, and training
+- **[Combat](features/combat/index.md)** — Attack, defense, and war systems
+- **[Alliances](features/alliances/index.md)** — Team play and governance
+- **[Espionage](features/espionage.md)** — Intelligence operations
+- **[Armory](features/armory.md)** — Equipment manufacturing
+- **[Black Market](features/black-market.md)** — Special trading
 
-### Running Tests
+## Guides
 
-```bash
-# MVC compliance check
-php tests/verify_mvc_compliance.php
+Cross-cutting concerns:
 
-# Architecture audit
-php tests/StrictArchitectureAudit.php
+- **[Security](guides/security.md)** — Authentication, CSRF, RBAC, and safe practices
+- **[Accessibility](guides/accessibility.md)** — Building inclusive interfaces
+- **[Performance](guides/performance.md)** — Optimization strategies
 
-# Lint check
-php tests/mvc_lint.php
-```
+## Resources
 
-## Choosing the Right Agent
+- **[Repository](https://github.com/mungus451/starlight_v2)** — Source code on GitHub
+- **[Development](DEVELOPMENT.md)** — Setup and workflow guide
+- **[Architecture](architecture/index.md)** — System design and patterns
 
-When working on StarlightDominion V2, select the appropriate agent based on your task:
+**Focus Areas:**
+- Developer documentation
+- Architecture documentation
+- Setup guides and tutorials
+- API reference documentation
+- Code example documentation
 
-| Task | Agent | Related Documentation |
-|------|-------|----------------------|
-| Implementing new backend feature | Backend Agent | [Backend](/docs/agents/backend-agent.md) |
-| Database schema or migration | Database Architect | [Database](/docs/agents/database-architect.md) |
-| UI component or JavaScript | Frontend Agent | [Frontend](/docs/agents/frontend-agent.md) |
-| Game mechanic or balance | Game Balance Architect | [Balance](/docs/agents/game-balance-architect.md) |
-| Security review or vulnerability | Security Agent | [Security](/docs/agents/security-agent.md) |
-| Writing or updating tests | Testing Agent | [Testing](/docs/agents/testing-agent.md) |
-| Code review or refactoring | Code Review Agent | [Review](/docs/agents/review-agent.md) |
-| Documentation or guides | Documentation Agent | [Docs](/docs/agents/docs-agent.md) |
-
-## Common Development Workflows
-
-### Adding a New Game Feature
-
-1. **Start with Balance**: Define constants in `/config/game_balance.php`
-2. **Backend Implementation**: Use Backend Agent to implement Service/Repository logic
-3. **Database**: Use Database Architect if schema changes needed
-4. **Controller**: Add controller action and route
-5. **Frontend**: Use Frontend Agent for UI and JavaScript
-6. **Testing**: Use Testing Agent to write comprehensive tests
-7. **Security**: Use Security Agent to review
-8. **Documentation**: Use Documentation Agent to document
-
-### Bug Fix Workflow
-
-1. **Identify**: Use Code Review Agent to understand the issue
-2. **Test**: Use Testing Agent to write a failing test
-3. **Fix**: Use appropriate specialist agent (Backend, Frontend, etc.)
-4. **Verify**: Ensure tests pass and no regressions
-5. **Review**: Use Code Review Agent for final review
-
-### Refactoring
-
-1. **Plan**: Use Code Review Agent to identify areas
-2. **Implement**: Use Backend Agent or appropriate specialist
-3. **Test**: Use Testing Agent to ensure coverage
-4. **Validate**: Run architecture tests
-5. **Document**: Update Documentation Agent docs
-
-## Additional Resources
-
-- [Project Repository](https://github.com/mungus451/starlight_v2)
-- [Main README](../README.md)
-- [Docker Setup](../DOCKER.md)
-- [Database Schema](../database.sql)
-
-## Directory Structure
-
-```
-starlight_v2/
-├── app/
-│   ├── Controllers/          # HTTP request handlers
-│   ├── Models/
-│   │   ├── Services/         # Business logic layer
-│   │   ├── Repositories/     # Database access layer
-│   │   ├── Entities/         # Data objects
-│   │   └── ...
-│   ├── Core/                 # Framework utilities
-│   └── ...
-├── config/                   # Game balance and settings
-├── cron/                     # Turn processing
-├── public/                   # Web-accessible files
-├── views/                    # PHP templates
-├── migrations/               # Database migrations
-├── tests/                    # Test files
-├── docs/                     # This documentation
-└── ...
-```
-
----
-
-**Last Updated:** December 2025
-
-For questions or contributions, refer to the individual agent documentation pages.
+**Ready to start?** See [Getting Started](getting-started/index.md) for installation and setup instructions.

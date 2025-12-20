@@ -3,14 +3,21 @@
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Log files
-/logs/*.log
+/logs/*
+!/logs/.gitkeep
 
 # IDE/OS specific
 .idea/
 .vscode/
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
 
 #User Uploaded Data
 /public/uploads/avatars/*
@@ -22,3 +29,19 @@ starlight_v2.zip
 
 # Cache files
 .phpunit.cache/
+.phpunit.result.cache
+coverage/
+
+# Build artifacts
+site/
+docs/site/
+
+# Generated outputs
+/outputs/*
+!/outputs/.gitkeep
+
+# Node/Python (if used locally)
+node_modules/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
