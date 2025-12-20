@@ -28,7 +28,7 @@ $_ENV['APP_ENV'] = 'testing';
 // PHPUnit 10+ removed the TestListener API that Mockery previously used for global hooks
 
 use Phinx\Console\PhinxApplication;
-use Symfony\Component\Console\Input\StringInput;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 
 // Run migrations for the test database
@@ -36,7 +36,7 @@ $phinx = new PhinxApplication();
 $phinx->setAutoExit(false);
 
 // Rollback all migrations to ensure a clean state
-$phinx->run(new StringInput('rollback -e testing -t 0'), new NullOutput());
+$phinx->run(new ArrayInput(['command' => 'rollback', '-e' => 'testing', '-t' => '0']), new NullOutput());
 
 // Run all migrations
-$phinx->run(new StringInput('migrate -e testing'), new NullOutput());
+$phinx->run(new ArrayInput(['command' => 'migrate', '-e' => 'testing']), new NullOutput());
