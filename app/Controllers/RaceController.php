@@ -81,7 +81,7 @@ class RaceController extends BaseController
 
         // Validate input
         $validated = $this->validate($_POST, [
-            'race_id' => 'required|integer|min:1|max:5'
+            'race_id' => 'required|integer|min:1'
         ]);
 
         try {

@@ -189,16 +189,20 @@ $stmt = $this->db->query("SELECT character_name FROM users WHERE is_npc = 0 ORDE
 return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// --- END NPC METHODS ---
+    // --- END NPC METHODS ---
 
-/**
-* Updates a user's race_id (one-time selection).
-*/
-public function updateRace(int $userId, int $raceId): bool
-{
-$stmt = $this->db->prepare("UPDATE users SET race_id = ? WHERE id = ?");
-return $stmt->execute([$raceId, $userId]);
-}
+    /**
+     * Updates a user's race_id (one-time selection).
+     * 
+     * @param int $userId The ID of the user
+     * @param int $raceId The ID of the race to assign
+     * @return bool True if update was successful
+     */
+    public function updateRace(int $userId, int $raceId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET race_id = ? WHERE id = ?");
+        return $stmt->execute([$raceId, $userId]);
+    }
 
 /**
 * Helper method to convert a database row (array) into a User entity.
