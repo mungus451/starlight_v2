@@ -15,9 +15,9 @@ class GeneralService
     private ResourceRepository $resourceRepo;
     private PDO $db;
     
-    private const BASE_CAPACITY = 500;
-    private const CAPACITY_PER_GENERAL = 10000;
-    
+    // Config will be loaded in constructor
+    private array $generalConfig;
+
     public function __construct(
         Config $config,
         GeneralRepository $generalRepo,
@@ -28,12 +28,16 @@ class GeneralService
         $this->generalRepo = $generalRepo;
         $this->resourceRepo = $resourceRepo;
         $this->db = $db;
+        $this->generalConfig = $this->config->get('game_balance.generals', []);
     }
     
     public function getArmyCapacity(int $userId): int
     {
+        $baseCapacity = $this->generalConfig['base_capacity'] ?? 500;
+        $capacityPerGeneral = $this->generalConfig['capacity_per_general'] ?? 10000;
+        
         $count = $this->generalRepo->countByUserId($userId);
-        return self::BASE_CAPACITY + ($count * self::CAPACITY_PER_GENERAL);
+        return $baseCapacity + ($count * $capacityPerGeneral);
     }
     
     public function getRecruitmentCost(int $currentCount): array

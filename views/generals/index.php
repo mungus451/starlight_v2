@@ -68,13 +68,22 @@ $getWeapon = function($key) use ($elite_weapons) {
     <div class="data-card mb-2" style="border-color: var(--accent);">
         <h3 class="text-accent">Army Logistics</h3>
         <div class="flex-between">
-            <span>Active Personnel: <?= number_format($resources->soldiers) ?></span>
+            <span>Total Soldiers: <?= number_format($resources->soldiers) ?></span>
             <span>Max Capacity: <?= number_format($army_cap) ?></span>
         </div>
+        
         <div class="progress-bar-bg mt-05" style="background: rgba(255,255,255,0.1); height: 10px; border-radius: 5px; overflow: hidden;">
-            <?php $pct = min(100, ($resources->soldiers / max(1, $army_cap)) * 100); ?>
-            <div class="progress-bar-fill" style="width: <?= $pct ?>%; background: <?= $pct >= 100 ? 'var(--accent-red)' : 'var(--accent)' ?>; height: 100%;"></div>
+            <?php 
+                $effectiveSoldiers = min($resources->soldiers, $army_cap);
+                $effectivePct = ($effectiveSoldiers / max(1, $army_cap)) * 100;
+            ?>
+            <div class="progress-bar-fill" style="width: <?= $effectivePct ?>%; background: var(--accent); height: 100%;"></div>
         </div>
+        <?php if ($resources->soldiers > $army_cap): ?>
+            <p class="text-red font-08 mt-05">
+                <?= number_format($resources->soldiers - $army_cap) ?> soldiers are over capacity and contribute no power.
+            </p>
+        <?php endif; ?>
     </div>
 
     <div class="structures-grid">

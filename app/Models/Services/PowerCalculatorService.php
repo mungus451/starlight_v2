@@ -24,7 +24,8 @@ class PowerCalculatorService
     private AllianceStructureDefinitionRepository $structDefRepo;
     private EdictRepository $edictRepo;
     private GeneralRepository $generalRepo;
-    
+    private array $generalConfig;
+
     /** @var array|null Cached structure definitions keyed by structure_key */
     private ?array $structureDefinitionsCache = null;
 
@@ -54,6 +55,7 @@ class PowerCalculatorService
         $this->structDefRepo = $structDefRepo;
         $this->edictRepo = $edictRepo;
         $this->generalRepo = $generalRepo;
+        $this->generalConfig = $this->config->get('game_balance.generals', []);
     }
 
     /**
@@ -120,11 +122,23 @@ class PowerCalculatorService
         $soldiers = $resources->soldiers;
         
         // 1. Base Power
-        $baseUnitPower = $soldiers * $config['power_per_soldier'];
-        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'soldier', 'attack', $soldiers);
-        
         // Generals
         $genBonuses = $this->calculateGeneralBonuses($userId);
+
+        // Apply Army Capacity (Soldiers only)
+        $baseCapacity = $this->generalConfig['base_capacity'] ?? 500;
+        $capacityPerGeneral = $this->generalConfig['capacity_per_general'] ?? 10000;
+        $generalCount = $this->generalRepo->countByUserId($userId);
+        $armyCapacity = $baseCapacity + ($generalCount * $capacityPerGeneral);
+
+        $effectiveSoldiers = min($soldiers, $armyCapacity);
+        $ineffectiveSoldiers = $soldiers - $effectiveSoldiers;
+
+        // Calculate base power using ONLY effective soldiers
+        $baseUnitPower = $effectiveSoldiers * $config['power_per_soldier'];
+        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'soldier', 'attack', $effectiveSoldiers); // Armory bonus also only for effective soldiers
+
+        // Add General's flat offense
         $baseUnitPower += $genBonuses['flat_offense'];
         
         $totalBasePower = $baseUnitPower + $armoryBonus;
@@ -163,7 +177,10 @@ class PowerCalculatorService
             'general_mult' => $genBonuses['offense_mult'],
             'structure_level' => $structures->offense_upgrade_level,
             'stat_points' => $stats->strength_points,
-            'unit_count' => $soldiers
+            'unit_count' => $soldiers,
+            'army_capacity' => $armyCapacity,
+            'effective_soldiers' => $effectiveSoldiers,
+            'ineffective_soldiers' => $ineffectiveSoldiers
         ];
     }
 
