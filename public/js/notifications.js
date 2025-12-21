@@ -6,14 +6,11 @@ const NotificationSystem = {
     pollInterval: 15000, // 15 Seconds
     pollTimer: null,
     lastUnreadCount: 0,
+    preferences: null,
 
     init: function() {
-        // 1. Request Permission on first interaction (optional, better to do on button click)
-        // We will lazily request it if the user clicks a "Enable Alerts" button, 
-        // or silently check status here.
-        if ("Notification" in window && Notification.permission === "default") {
-            // Don't spam prompt on load, wait for user intent or high alert
-        }
+        // 1. Load user preferences
+        this.loadPreferences();
 
         // 2. Initial Check
         this.check();
@@ -39,6 +36,15 @@ const NotificationSystem = {
         }
     },
 
+    loadPreferences: function() {
+        fetch('/notifications/preferences')
+            .then(response => response.json())
+            .then(data => {
+                this.preferences = data;
+            })
+            .catch(err => console.error('Failed to load notification preferences:', err));
+    },
+
     requestPermission: function() {
         if (!("Notification" in window)) return;
         Notification.requestPermission().then(permission => {
@@ -62,7 +68,7 @@ const NotificationSystem = {
             .then(data => {
                 this.updateUI(data.unread);
                 
-                // Trigger Push if count increased
+                // Trigger Push if count increased and user has enabled push notifications
                 if (data.unread > this.lastUnreadCount && data.latest) {
                     this.triggerPush(data.latest);
                 }
@@ -94,6 +100,11 @@ const NotificationSystem = {
 
     triggerPush: function(notificationData) {
         if (!("Notification" in window)) return;
+
+        // Check if user has push notifications enabled in preferences
+        if (this.preferences && !this.preferences.push_notifications_enabled) {
+            return;
+        }
 
         if (Notification.permission === "granted") {
             const notif = new Notification(notificationData.title, {

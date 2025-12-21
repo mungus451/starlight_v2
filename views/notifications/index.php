@@ -71,6 +71,34 @@
                     </div>
                 <?php endforeach; ?>
             </div>
+
+            <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 2rem; padding: 1rem; background: var(--bg-panel); border-radius: 12px;">
+                    <?php if ($pagination['has_previous']): ?>
+                        <a href="/notifications?page=<?= $pagination['current_page'] - 1 ?>" class="btn-submit" style="margin: 0; padding: 0.5rem 1rem;">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    <?php else: ?>
+                        <span class="btn-submit" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </span>
+                    <?php endif; ?>
+
+                    <span style="color: var(--muted); padding: 0 1rem;">
+                        Page <?= $pagination['current_page'] ?> of <?= $pagination['total_pages'] ?>
+                    </span>
+
+                    <?php if ($pagination['has_next']): ?>
+                        <a href="/notifications?page=<?= $pagination['current_page'] + 1 ?>" class="btn-submit" style="margin: 0; padding: 0.5rem 1rem;">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="btn-submit" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>

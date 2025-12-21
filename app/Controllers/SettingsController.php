@@ -213,4 +213,55 @@ class SettingsController extends BaseController
         
         $this->redirect('/settings');
     }
+
+    /**
+     * Handles the notification preferences update form.
+     */
+    public function handleNotifications(): void
+    {
+        // 1. Validate Input
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'attack_enabled' => 'nullable',
+            'spy_enabled' => 'nullable',
+            'alliance_enabled' => 'nullable',
+            'system_enabled' => 'nullable',
+            'push_notifications_enabled' => 'nullable'
+        ]);
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/settings');
+            return;
+        }
+
+        // 3. Execute Logic
+        $userId = $this->session->get('user_id');
+        
+        // Checkboxes: absent means false, present means true
+        $attackEnabled = isset($data['attack_enabled']) && $data['attack_enabled'] == '1';
+        $spyEnabled = isset($data['spy_enabled']) && $data['spy_enabled'] == '1';
+        $allianceEnabled = isset($data['alliance_enabled']) && $data['alliance_enabled'] == '1';
+        $systemEnabled = isset($data['system_enabled']) && $data['system_enabled'] == '1';
+        $pushEnabled = isset($data['push_notifications_enabled']) && $data['push_notifications_enabled'] == '1';
+        
+        $response = $this->settingsService->updateNotificationPreferences(
+            $userId,
+            $attackEnabled,
+            $spyEnabled,
+            $allianceEnabled,
+            $systemEnabled,
+            $pushEnabled
+        );
+        
+        // 4. Handle Response
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
+        $this->redirect('/settings');
+    }
 }

@@ -149,6 +149,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/settings/email', [SettingsController::class, 'handleEmail']);
     $r->addRoute('POST', '/settings/password', [SettingsController::class, 'handlePassword']);
     $r->addRoute('POST', '/settings/security', [SettingsController::class, 'handleSecurity']);
+    $r->addRoute('POST', '/settings/notifications', [SettingsController::class, 'handleNotifications']);
 
     // --- PvP ---
     $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
@@ -239,6 +240,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Notification System ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
     $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
+    $r->addRoute('GET', '/notifications/preferences', [NotificationController::class, 'getPreferences']);
     $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
     $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
 });

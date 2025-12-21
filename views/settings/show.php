@@ -128,5 +128,58 @@
             </form>
         </div>
 
+        <div class="item-card">
+            <h4><i class="fas fa-bell"></i> Notification Preferences</h4>
+            <form action="/settings/notifications" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                
+                <p class="form-note" style="margin-bottom: 1rem;">Choose which types of notifications you want to receive in your Command Uplink.</p>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="attack_enabled" value="1" <?= $notification_prefs->attack_enabled ? 'checked' : '' ?>>
+                        <span><i class="fas fa-crosshairs" style="color: #ff6b6b; margin-right: 0.5rem;"></i>Attack Notifications</span>
+                    </label>
+                    <p class="form-note" style="margin-left: 1.5rem; margin-top: 0.25rem;">Get notified when your empire is attacked</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="spy_enabled" value="1" <?= $notification_prefs->spy_enabled ? 'checked' : '' ?>>
+                        <span><i class="fas fa-user-secret" style="color: #9b59b6; margin-right: 0.5rem;"></i>Espionage Notifications</span>
+                    </label>
+                    <p class="form-note" style="margin-left: 1.5rem; margin-top: 0.25rem;">Get notified when enemy spies target your empire</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="alliance_enabled" value="1" <?= $notification_prefs->alliance_enabled ? 'checked' : '' ?>>
+                        <span><i class="fas fa-users" style="color: #3498db; margin-right: 0.5rem;"></i>Alliance Notifications</span>
+                    </label>
+                    <p class="form-note" style="margin-left: 1.5rem; margin-top: 0.25rem;">Get notified about alliance activities and updates</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="system_enabled" value="1" <?= $notification_prefs->system_enabled ? 'checked' : '' ?>>
+                        <span><i class="fas fa-info-circle" style="color: #95a5a6; margin-right: 0.5rem;"></i>System Notifications</span>
+                    </label>
+                    <p class="form-note" style="margin-left: 1.5rem; margin-top: 0.25rem;">Get notified about game updates and important announcements</p>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="push_notifications_enabled" value="1" <?= $notification_prefs->push_notifications_enabled ? 'checked' : '' ?>>
+                        <span><i class="fas fa-bell" style="color: #f39c12; margin-right: 0.5rem;"></i>Enable Browser Push Notifications</span>
+                    </label>
+                    <p class="form-note" style="margin-left: 1.5rem; margin-top: 0.25rem;">Receive desktop notifications even when not viewing the game (requires browser permission)</p>
+                </div>
+
+                <button type="submit" class="btn-submit">Save Preferences</button>
+            </form>
+        </div>
+
     </div> 
 </div>
