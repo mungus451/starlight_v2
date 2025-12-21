@@ -32,6 +32,7 @@ use App\Models\Repositories\WarHistoryRepository;
 use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\SpyRepository;
 use App\Models\Repositories\NotificationRepository;
+use App\Models\Repositories\UserNotificationPreferencesRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\SecurityRepository;
 use App\Models\Repositories\BountyRepository;
@@ -170,6 +171,7 @@ WarHistoryRepository::class => function (ContainerInterface $c) { return new War
 BattleRepository::class => function (ContainerInterface $c) { return new BattleRepository($c->get(PDO::class)); },
 SpyRepository::class => function (ContainerInterface $c) { return new SpyRepository($c->get(PDO::class)); },
 NotificationRepository::class => function (ContainerInterface $c) { return new NotificationRepository($c->get(PDO::class)); },
+UserNotificationPreferencesRepository::class => function (ContainerInterface $c) { return new UserNotificationPreferencesRepository($c->get(PDO::class)); },
 HouseFinanceRepository::class => function (ContainerInterface $c) { return new HouseFinanceRepository($c->get(PDO::class)); },
 SecurityRepository::class => function (ContainerInterface $c) { return new SecurityRepository($c->get(PDO::class)); },
 BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
@@ -255,7 +257,10 @@ $c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
 
 // Notifications
 NotificationService::class => function (ContainerInterface $c) {
-return new NotificationService($c->get(NotificationRepository::class));
+return new NotificationService(
+    $c->get(NotificationRepository::class),
+    $c->get(UserNotificationPreferencesRepository::class)
+);
 },
 
 // Event Dispatcher (The Hub)
