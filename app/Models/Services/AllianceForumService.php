@@ -149,7 +149,9 @@ class AllianceForumService
             $newTopicId = $this->topicRepo->createTopic($user->alliance_id, $userId, $title);
             $this->postRepo->createPost($newTopicId, $user->alliance_id, $userId, $content);
             
-            // Send notifications to all alliance members (except the topic creator)
+            $this->db->commit();
+            
+            // Send notifications to all alliance members after successful commit (except the topic creator)
             $this->notificationService->notifyAllianceMembers(
                 $user->alliance_id,
                 $userId,
@@ -157,8 +159,6 @@ class AllianceForumService
                 "{$user->characterName} created topic \"{$title}\"",
                 "/alliance/forum/topic/{$newTopicId}"
             );
-            
-            $this->db->commit();
             
             return ServiceResponse::success('Topic created successfully.', ['topic_id' => $newTopicId]);
 
@@ -196,7 +196,9 @@ class AllianceForumService
             $this->postRepo->createPost($topicId, $user->alliance_id, $userId, $content);
             $this->topicRepo->updateLastReply($topicId, $userId);
             
-            // Get users who have participated in this topic
+            $this->db->commit();
+            
+            // Get users who have participated in this topic and send notifications after successful commit
             $participantIds = $this->postRepo->getTopicParticipantIds($topicId);
             
             // Send notifications only to users who have participated in the topic (except the poster)
@@ -208,7 +210,6 @@ class AllianceForumService
                 "/alliance/forum/topic/{$topicId}"
             );
             
-            $this->db->commit();
             return ServiceResponse::success('Reply posted successfully.');
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();

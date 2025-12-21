@@ -158,7 +158,12 @@ $this->bankLogRepo->createLog($allianceId, $adminUserId, 'structure_purchase', -
 // 5c. Upgrade structure level
 $this->allianceStructRepo->createOrUpgrade($allianceId, $structureKey, $nextLevel);
 
-// 5d. Notify alliance members
+// 5e. Commit
+if ($transactionStartedByMe) {
+$this->db->commit();
+}
+
+// 5d. Notify alliance members after successful commit
 $this->notificationService->notifyAllianceMembers(
     $allianceId,
     $adminUserId,
@@ -166,11 +171,6 @@ $this->notificationService->notifyAllianceMembers(
     "{$adminUser->characterName} upgraded {$definition->name} to Level {$nextLevel}",
     "/alliance/structures"
 );
-
-// 5e. Commit
-if ($transactionStartedByMe) {
-$this->db->commit();
-}
 
 return ServiceResponse::success("{$definition->name} upgrade to Level {$nextLevel} complete!");
 

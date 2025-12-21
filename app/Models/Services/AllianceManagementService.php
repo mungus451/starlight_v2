@@ -372,7 +372,9 @@ class AllianceManagementService
             $this->userRepo->setAlliance($targetUser->id, $targetAllianceId, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
             
-            // Notify all alliance members about the new member
+            $this->db->commit();
+            
+            // Notify all alliance members about the new member after successful commit
             $this->notificationService->notifyAllianceMembers(
                 $targetAllianceId,
                 $targetUser->id,
@@ -380,8 +382,6 @@ class AllianceManagementService
                 "{$targetUser->characterName} joined the alliance",
                 "/alliance/profile"
             );
-            
-            $this->db->commit();
         } catch (Throwable $e) {
             $this->db->rollBack();
             $this->logger->error('Accept Application Error: ' . $e->getMessage());

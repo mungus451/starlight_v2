@@ -140,21 +140,23 @@ class WarService
         $declaringAlliance = $this->allianceRepo->findById($declarerAllianceId);
         $targetAlliance = $this->allianceRepo->findById($targetAllianceId);
         
-        $this->notificationService->notifyAllianceMembers(
-            $targetAllianceId,
-            0,
-            'War Declared!',
-            "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared war: {$name}",
-            "/alliance/war"
-        );
-        
-        $this->notificationService->notifyAllianceMembers(
-            $declarerAllianceId,
-            $adminUserId,
-            'War Declared!',
-            "Your alliance declared war against [{$targetAlliance->tag}] {$targetAlliance->name}: {$name}",
-            "/alliance/war"
-        );
+        if ($declaringAlliance && $targetAlliance) {
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                0,
+                'War Declared!',
+                "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared war: {$name}",
+                "/alliance/war"
+            );
+            
+            $this->notificationService->notifyAllianceMembers(
+                $declarerAllianceId,
+                $adminUserId,
+                'War Declared!',
+                "Your alliance declared war against [{$targetAlliance->tag}] {$targetAlliance->name}: {$name}",
+                "/alliance/war"
+            );
+        }
         
         return ServiceResponse::success('War has been successfully declared!');
     }

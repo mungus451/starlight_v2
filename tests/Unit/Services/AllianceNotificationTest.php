@@ -124,9 +124,15 @@ class AllianceNotificationTest extends TestCase
             ->once()
             ->andReturn(true);
 
-        // Expect the NotificationService.notifyAllianceMembers to be called once
-        $this->mockNotificationService->shouldReceive('notifyAllianceMembers')
-            ->with($allianceId, $posterId, 'New Forum Post', Mockery::any(), "/alliance/forum/topic/{$topicId}")
+        // Mock getTopicParticipantIds to return some participant IDs
+        $this->mockPostRepo->shouldReceive('getTopicParticipantIds')
+            ->with($topicId)
+            ->once()
+            ->andReturn([2, 3, 5]); // Sample participant IDs
+
+        // Expect the NotificationService.notifySpecificUsers to be called once (not notifyAllianceMembers)
+        $this->mockNotificationService->shouldReceive('notifySpecificUsers')
+            ->with([2, 3, 5], $posterId, 'New Forum Post', Mockery::any(), "/alliance/forum/topic/{$topicId}")
             ->once();
 
         // Mock transaction
