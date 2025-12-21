@@ -79,9 +79,9 @@
                             <i class="fas fa-chevron-left"></i> Previous
                         </a>
                     <?php else: ?>
-                        <span class="btn-submit" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
+                        <button class="btn-submit" disabled aria-disabled="true" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
                             <i class="fas fa-chevron-left"></i> Previous
-                        </span>
+                        </button>
                     <?php endif; ?>
 
                     <span style="color: var(--muted); padding: 0 1rem;">
@@ -93,9 +93,9 @@
                             Next <i class="fas fa-chevron-right"></i>
                         </a>
                     <?php else: ?>
-                        <span class="btn-submit" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
+                        <button class="btn-submit" disabled aria-disabled="true" style="margin: 0; padding: 0.5rem 1rem; opacity: 0.3; cursor: not-allowed;">
                             Next <i class="fas fa-chevron-right"></i>
-                        </span>
+                        </button>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>

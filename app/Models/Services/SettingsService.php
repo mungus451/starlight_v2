@@ -49,7 +49,7 @@ class SettingsService
      * Gets all data needed to render the settings page.
      *
      * @param int $userId
-     * @return array Contains 'user' (entity), 'security' (entity or null), and 'notification_prefs'
+     * @return array Contains 'user' (User entity), 'security' (SecurityEntity or null), and 'notification_prefs' (UserNotificationPreferences entity)
      */
     public function getSettingsData(int $userId): array
     {

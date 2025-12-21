@@ -38,7 +38,12 @@ const NotificationSystem = {
 
     loadPreferences: function() {
         fetch('/notifications/preferences')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load preferences');
+                }
+                return response.json();
+            })
             .then(data => {
                 this.preferences = data;
             })
