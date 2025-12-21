@@ -99,13 +99,13 @@ class AllianceNotificationTest extends TestCase
         $topic = new AllianceForumTopic(
             id: $topicId,
             alliance_id: $allianceId,
-            created_by_user_id: 1,
+            user_id: 1,
             title: 'Test Topic',
             is_pinned: false,
             is_locked: false,
             created_at: '2024-01-01 00:00:00',
             last_reply_at: '2024-01-01 00:00:00',
-            last_reply_by_user_id: 1
+            last_reply_user_id: 1
         );
 
         $this->mockUserRepo->shouldReceive('findById')
