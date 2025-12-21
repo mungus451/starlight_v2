@@ -1,0 +1,99 @@
+name: Migration Validation
+
+on:
+  pull_request:
+    branches: [ master, dev ]
+
+jobs:
+  validate-migrations:
+    name: Validate Phinx Migrations
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: rootpass
+          MARIADB_DATABASE: starlightDB
+          MARIADB_USER: sd_admin
+          MARIADB_PASSWORD: starlight
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_mysql
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Setup environment file
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_HOST=db/DB_HOST=127.0.0.1/' .env
+          sed -i 's/APP_ENV=development/APP_ENV=development/' .env
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MariaDB is ready"
+              break
+            fi
+            echo "Waiting for MariaDB... ($i/30)"
+            sleep 2
+          done
+
+      - name: Verify database connection
+        run: |
+          MYSQL_PWD=starlight mysql -h 127.0.0.1 -u sd_admin -e "SHOW DATABASES;"
+
+      - name: Run Phinx migrations
+        run: |
+          echo "Running migrations..."
+          vendor/bin/phinx migrate -e development --configuration=config/phinx.php
+          echo "✅ Migrations completed successfully"
+
+      - name: Verify migration status
+        run: |
+          echo "Checking migration status..."
+          vendor/bin/phinx status -e development --configuration=config/phinx.php
+
+      - name: Validate table creation
+        run: |
+          echo "Validating tables were created..."
+          MYSQL_PWD=starlight mysql -h 127.0.0.1 -u sd_admin starlightDB -e "SHOW TABLES;"
+          
+          echo "Checking key tables exist..."
+          TABLES="users doctrine_definitions user_doctrines"
+          for table in $TABLES; do
+            COUNT=$(MYSQL_PWD=starlight mysql -h 127.0.0.1 -u sd_admin starlightDB -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='starlightDB' AND table_name='$table';")
+            if [ "$COUNT" -eq "1" ]; then
+              echo "✅ Table '$table' exists"
+            else
+              echo "❌ Table '$table' not found"
+              exit 1
+            fi
+          done
