@@ -23,6 +23,7 @@ final class CreateDoctrineDefinitionsTable extends AbstractMigration
             'engine' => 'InnoDB',
             'collation' => 'utf8mb4_unicode_ci',
             'encoding' => 'utf8mb4',
+            'signed' => false, // make PK unsigned
         ]);
         $table->addColumn('name', 'string', ['limit' => 255])
             ->addColumn('description', 'text')
