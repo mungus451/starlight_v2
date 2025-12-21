@@ -53,7 +53,6 @@ jobs:
         run: |
           cp .env.example .env
           sed -i 's/DB_HOST=db/DB_HOST=127.0.0.1/' .env
-          sed -i 's/APP_ENV=development/APP_ENV=development/' .env
 
       - name: Wait for MariaDB
         run: |
