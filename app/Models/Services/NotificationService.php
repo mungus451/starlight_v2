@@ -34,25 +34,19 @@ class NotificationService
     /**
      * Sends a notification to a user.
      * Used internally by other services (Attack, Spy, etc).
-     * Checks user preferences before sending.
+     * Always creates the notification in the database for history purposes.
+     * User preferences only control browser push notifications, not notification creation.
      *
      * @param int $userId The recipient's ID
      * @param string $type The category ('attack', 'spy', 'alliance', 'system')
      * @param string $title A short summary
      * @param string $message The detailed message
      * @param string|null $link An optional URL (e.g., '/battle/report/123')
-     * @return int The ID of the created notification, or 0 if not sent due to preferences
+     * @return int The ID of the created notification
      */
     public function sendNotification(int $userId, string $type, string $title, string $message, ?string $link = null): int
     {
-        // Check user preferences
-        $preferences = $this->preferencesRepo->getByUserId($userId);
-        
-        if (!$preferences->isTypeEnabled($type)) {
-            // User has disabled this notification type
-            return 0;
-        }
-        
+        // Always create the notification for history
         return $this->notificationRepo->create($userId, $type, $title, $message, $link);
     }
 

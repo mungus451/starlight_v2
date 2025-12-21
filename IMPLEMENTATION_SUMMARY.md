@@ -91,38 +91,45 @@ CREATE TABLE `user_notification_preferences` (
 
 ## Key Features
 
-### 1. Smart Preference Filtering
-When a notification is sent via `NotificationService::sendNotification()`, the system:
-1. Fetches user preferences
-2. Checks if that notification type is enabled
-3. Only creates the notification if enabled
-4. Returns 0 (no notification created) if disabled
+### 1. Complete Notification History
+All notifications are ALWAYS created in the database when events occur:
+1. `NotificationService::sendNotification()` always creates the notification
+2. Users can always review their complete history in Command Uplink
+3. User preferences ONLY control browser push notifications, not notification creation
+4. This ensures users never miss important events even if they have push disabled
 
-### 2. Graceful Defaults
+### 2. Two-Level Push Control
+Browser push notifications require TWO conditions:
+1. Master toggle (`push_notifications_enabled`) must be enabled
+2. Specific type toggle (e.g., `attack_enabled`) must be enabled
+3. JavaScript checks both before triggering browser push
+4. Provides granular control while preventing notification spam
+
+### 3. Graceful Defaults
 If a user doesn't have preferences in the database:
 - Repository returns default preferences (all enabled except push)
 - No database error occurs
 - User can start using the system immediately
 
-### 3. Settings Integration
-The settings page now includes a dedicated "Notification Preferences" card:
+### 4. Settings Integration
+The settings page now includes a dedicated "Push Notification Preferences" card:
 - Visual icons for each notification type (color-coded)
-- Clear descriptions of what each type includes
+- Clear descriptions emphasizing these are PUSH preferences only
 - Checkboxes for easy toggling
 - "Save Preferences" button
 - CSRF protection
 
-### 4. Responsive Pagination
+### 5. Responsive Pagination
 - Shows page controls only when needed (more than 1 page)
 - Disables Previous/Next when not available
 - Shows clear page indicator
 - Clean, accessible UI
 
-### 5. JavaScript Enhancement
+### 6. JavaScript Enhancement
 The notification poller now:
 - Loads preferences on initialization
-- Checks `push_notifications_enabled` before showing browser notifications
-- Continues to show in-app badge and updates regardless of push preference
+- Checks BOTH `push_notifications_enabled` AND type-specific preference before showing browser push
+- Always shows in-app badge and updates regardless of push preferences
 
 ## Code Quality
 
@@ -142,13 +149,20 @@ To test this feature once deployed:
 1. **Run Migration**: Execute the migration to create the preferences table
 2. **Test Preferences**: 
    - Visit `/settings`
-   - Toggle notification preferences
+   - Toggle push notification preferences
    - Save and verify they persist
-3. **Test Filtering**:
-   - Disable a notification type
-   - Trigger that event (e.g., attack)
-   - Verify no notification is created
-4. **Test Pagination**:
+3. **Test Notification Creation**:
+   - Disable all push notification types
+   - Trigger an event (e.g., attack)
+   - Verify notification STILL appears in Command Uplink history
+   - Verify NO browser push notification is shown
+4. **Test Push Filtering**:
+   - Enable master push toggle
+   - Enable only "Attack" push notifications
+   - Trigger attack event → should get browser push
+   - Trigger spy event → should NOT get browser push
+   - Both should appear in notification history
+5. **Test Pagination**:
    - Generate 25+ notifications
    - Visit `/notifications`
    - Verify pagination controls appear

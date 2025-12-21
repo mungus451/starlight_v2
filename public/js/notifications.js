@@ -107,7 +107,13 @@ const NotificationSystem = {
         if (!("Notification" in window)) return;
 
         // Check if user has push notifications enabled in preferences
-        if (this.preferences && !this.preferences.push_notifications_enabled) {
+        if (!this.preferences || !this.preferences.push_notifications_enabled) {
+            return;
+        }
+
+        // Check if user has this specific notification type enabled for push
+        const typeEnabled = this.isTypePushEnabled(notificationData.type);
+        if (!typeEnabled) {
             return;
         }
 
@@ -123,6 +129,23 @@ const NotificationSystem = {
                 window.location.href = '/notifications';
                 this.close();
             };
+        }
+    },
+
+    isTypePushEnabled: function(type) {
+        if (!this.preferences) return false;
+        
+        switch(type) {
+            case 'attack':
+                return this.preferences.attack_enabled;
+            case 'spy':
+                return this.preferences.spy_enabled;
+            case 'alliance':
+                return this.preferences.alliance_enabled;
+            case 'system':
+                return this.preferences.system_enabled;
+            default:
+                return false;
         }
     },
 

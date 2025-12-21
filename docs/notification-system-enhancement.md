@@ -1,23 +1,25 @@
 # Notification System Enhancement
 
 ## Overview
-The Command Uplink notification system has been enhanced with user preferences and pagination support. Users can now customize which notification types they want to receive and manage their notifications more easily.
+The Command Uplink notification system has been enhanced with browser push notification preferences and pagination support. Users can now customize which notification types trigger browser push notifications while all notifications are always stored in their history.
 
 ## Features
 
-### 1. User Notification Preferences
-Users can control which types of notifications they receive:
-- **Attack Notifications**: Get notified when their empire is attacked
-- **Espionage Notifications**: Get notified when enemy spies target their empire
-- **Alliance Notifications**: Receive alliance-related updates
-- **System Notifications**: Receive game updates and announcements
-- **Browser Push Notifications**: Enable/disable desktop push notifications
+### 1. User Push Notification Preferences
+Users can control which types of events trigger browser push notifications:
+- **Attack Push Notifications**: Browser push when their empire is attacked
+- **Espionage Push Notifications**: Browser push when enemy spies target their empire
+- **Alliance Push Notifications**: Browser push for alliance-related updates
+- **System Push Notifications**: Browser push for game updates and announcements
+- **Master Push Toggle**: Enable/disable all browser push notifications
+
+**Important:** All notifications are ALWAYS created in the Command Uplink history regardless of preferences. User preferences only control browser push notifications, not whether notifications appear in the notification list.
 
 ### 2. Pagination
 The notification inbox now supports pagination (20 items per page) to handle large notification histories efficiently.
 
-### 3. Push Notification Preferences
-The JavaScript notification system now respects user preferences before triggering browser push notifications.
+### 3. Push Notification Logic
+The JavaScript notification system checks both the master push toggle AND the specific notification type preference before triggering browser push notifications.
 
 ## Database Schema
 
@@ -144,7 +146,7 @@ The notification polling system (`notifications.js`) now:
 
 ## Usage Examples
 
-### Sending a Notification (Respects Preferences)
+### Sending a Notification (Always Created)
 ```php
 $notificationService->sendNotification(
     userId: $defenderId,
@@ -155,7 +157,7 @@ $notificationService->sendNotification(
 );
 ```
 
-If the user has disabled attack notifications, this will return 0 and no notification will be created.
+The notification is ALWAYS created in the database regardless of user preferences. User preferences only control whether a browser push notification is triggered, not whether the notification appears in the Command Uplink history.
 
 ### Getting Paginated Notifications
 ```php
