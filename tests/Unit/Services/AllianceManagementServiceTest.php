@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\Unit\TestCase;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
@@ -58,7 +59,7 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockLoanRepo = Mockery::mock(AllianceLoanRepository::class);
         $this->mockLogger = Mockery::mock(Logger::class);
-        $this->mockNotificationService = Mockery::mock(\App\Models\Services\NotificationService::class);
+        $this->mockNotificationService = Mockery::mock(NotificationService::class);
 
         // Handle DB transactions in service
         $this->mockPdo->shouldReceive('beginTransaction')->byDefault();
