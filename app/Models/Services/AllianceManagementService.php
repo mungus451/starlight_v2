@@ -507,9 +507,14 @@ class AllianceManagementService
 
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
         
-        // Determine if this is a promotion or demotion based on sort_order (lower = higher rank)
-        $isPromotion = $newRole->sort_order < $targetRole->sort_order;
-        $notifTitle = $isPromotion ? 'Member Promoted' : 'Member Role Changed';
+        // Determine if this is a promotion, demotion, or lateral role change (lower sort_order = higher rank)
+        if ($newRole->sort_order < $targetRole->sort_order) {
+            $notifTitle = 'Member Promoted';
+        } elseif ($newRole->sort_order > $targetRole->sort_order) {
+            $notifTitle = 'Member Demoted';
+        } else {
+            $notifTitle = 'Member Role Changed';
+        }
         
         // Notify all alliance members about the role change
         $this->notificationService->notifyAllianceMembers(

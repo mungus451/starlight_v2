@@ -233,6 +233,7 @@ class DiplomacyService
             // Notify both alliances about the treaty cancellation
             $breakingAlliance = $this->allianceRepo->findById($adminUser->alliance_id);
             $otherAllianceId = ($treaty->alliance1_id === $adminUser->alliance_id) ? $treaty->alliance2_id : $treaty->alliance1_id;
+            $otherAlliance = $this->allianceRepo->findById($otherAllianceId);
             
             $this->notificationService->notifyAllianceMembers(
                 $otherAllianceId,
@@ -246,7 +247,7 @@ class DiplomacyService
                 $adminUser->alliance_id,
                 $adminUserId,
                 'Treaty Cancelled',
-                "Your alliance cancelled the treaty with the other alliance",
+                "Your alliance cancelled the treaty with [{$otherAlliance->tag}] {$otherAlliance->name}",
                 "/alliance/diplomacy"
             );
             
