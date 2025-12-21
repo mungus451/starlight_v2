@@ -736,22 +736,3 @@ CREATE TABLE `house_finances` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Stores the total fees collected by the house';
 
 INSERT INTO `house_finances` (`id`, `credits_taxed`, `crystals_taxed`) VALUES (1, 0.0000, 0.0000);
-
--- User Notification Preferences Table
--- Stores user preferences for which notification types they want to receive
-CREATE TABLE IF NOT EXISTS `user_notification_preferences` (
-    `user_id` INT UNSIGNED NOT NULL,
-    `attack_enabled` TINYINT(1) NOT NULL DEFAULT 1,
-    `spy_enabled` TINYINT(1) NOT NULL DEFAULT 1,
-    `alliance_enabled` TINYINT(1) NOT NULL DEFAULT 1,
-    `system_enabled` TINYINT(1) NOT NULL DEFAULT 1,
-    `push_notifications_enabled` TINYINT(1) NOT NULL DEFAULT 0,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (`user_id`),
-    CONSTRAINT `fk_notif_prefs_user`
-        FOREIGN KEY (`user_id`)
-        REFERENCES `users`(`id`)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
