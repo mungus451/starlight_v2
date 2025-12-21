@@ -9,14 +9,14 @@ const NotificationSystem = {
     preferences: null,
 
     init: function() {
-        // 1. Load user preferences
-        this.loadPreferences();
+        // 1. Load user preferences first, then start checking
+        this.loadPreferences().then(() => {
+            // 2. Initial Check (after preferences loaded)
+            this.check();
 
-        // 2. Initial Check
-        this.check();
-
-        // 3. Start Polling Loop
-        this.startPolling();
+            // 3. Start Polling Loop
+            this.startPolling();
+        });
 
         // 4. Bind "Mark Read" clicks (Delegation)
         const list = document.getElementById('notification-list');
@@ -37,7 +37,7 @@ const NotificationSystem = {
     },
 
     loadPreferences: function() {
-        fetch('/notifications/preferences')
+        return fetch('/notifications/preferences')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load preferences');
@@ -47,7 +47,17 @@ const NotificationSystem = {
             .then(data => {
                 this.preferences = data;
             })
-            .catch(err => console.error('Failed to load notification preferences:', err));
+            .catch(err => {
+                console.error('Failed to load notification preferences:', err);
+                // Set default preferences on error to prevent blocking
+                this.preferences = {
+                    push_notifications_enabled: false,
+                    attack_enabled: true,
+                    spy_enabled: true,
+                    alliance_enabled: true,
+                    system_enabled: true
+                };
+            });
     },
 
     requestPermission: function() {
