@@ -10,6 +10,7 @@ use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -30,6 +31,7 @@ private UserRepository $userRepo;
 private AllianceRoleRepository $roleRepo;
 
 private AlliancePolicyService $policyService;
+private NotificationService $notificationService;
 
 public function __construct(
 PDO $db,
@@ -39,7 +41,8 @@ AllianceStructureRepository $allianceStructRepo,
 AllianceStructureDefinitionRepository $structDefRepo,
 UserRepository $userRepo,
 AllianceRoleRepository $roleRepo,
-AlliancePolicyService $policyService
+AlliancePolicyService $policyService,
+NotificationService $notificationService
 ) {
 $this->db = $db;
 
@@ -51,6 +54,7 @@ $this->userRepo = $userRepo;
 $this->roleRepo = $roleRepo;
 
 $this->policyService = $policyService;
+$this->notificationService = $notificationService;
 }
 
 /**
@@ -154,7 +158,16 @@ $this->bankLogRepo->createLog($allianceId, $adminUserId, 'structure_purchase', -
 // 5c. Upgrade structure level
 $this->allianceStructRepo->createOrUpgrade($allianceId, $structureKey, $nextLevel);
 
-// 5d. Commit
+// 5d. Notify alliance members
+$this->notifyAllianceMembers(
+    $allianceId,
+    $adminUserId,
+    'Alliance Structure Upgrade',
+    "{$adminUser->characterName} upgraded {$definition->name} to Level {$nextLevel}",
+    "/alliance/structures"
+);
+
+// 5e. Commit
 if ($transactionStartedByMe) {
 $this->db->commit();
 }
@@ -184,5 +197,33 @@ if ($level <= 1) {
 return $baseCost;
 }
 return (int)floor($baseCost * pow($multiplier, $level - 1));
+}
+
+/**
+ * Helper function to notify all alliance members except the actor.
+ * 
+ * @param int $allianceId
+ * @param int $excludeUserId The user who performed the action (won't receive notification)
+ * @param string $title
+ * @param string $message
+ * @param string|null $link
+ */
+private function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
+{
+    $members = $this->userRepo->findAllByAllianceId($allianceId);
+    
+    foreach ($members as $memberData) {
+        $memberId = (int)$memberData['id'];
+        // Don't notify the user who performed the action
+        if ($memberId !== $excludeUserId) {
+            $this->notificationService->sendNotification(
+                $memberId,
+                'alliance',
+                $title,
+                $message,
+                $link
+            );
+        }
+    }
 }
 }

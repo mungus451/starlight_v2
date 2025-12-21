@@ -8,6 +8,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceForumTopicRepository;
 use App\Models\Repositories\AllianceForumPostRepository;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -25,6 +26,7 @@ class AllianceForumService
     private AllianceRoleRepository $roleRepo;
     private AllianceForumTopicRepository $topicRepo;
     private AllianceForumPostRepository $postRepo;
+    private NotificationService $notificationService;
 
     public function __construct(
         PDO $db,
@@ -32,7 +34,8 @@ class AllianceForumService
         UserRepository $userRepo,
         AllianceRoleRepository $roleRepo,
         AllianceForumTopicRepository $topicRepo,
-        AllianceForumPostRepository $postRepo
+        AllianceForumPostRepository $postRepo,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -40,6 +43,7 @@ class AllianceForumService
         $this->roleRepo = $roleRepo;
         $this->topicRepo = $topicRepo;
         $this->postRepo = $postRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -181,6 +185,16 @@ class AllianceForumService
         try {
             $this->postRepo->createPost($topicId, $user->alliance_id, $userId, $content);
             $this->topicRepo->updateLastReply($topicId, $userId);
+            
+            // Send notifications to all alliance members (except the poster)
+            $this->notifyAllianceMembers(
+                $user->alliance_id,
+                $userId,
+                'New Forum Post',
+                "{$user->characterName} posted in \"{$topic->title}\"",
+                "/alliance/forum/topic/{$topicId}"
+            );
+            
             $this->db->commit();
             return ServiceResponse::success('Reply posted successfully.');
         } catch (Throwable $e) {
@@ -234,6 +248,34 @@ class AllianceForumService
         if ($role && $role->can_manage_forum) return ['allowed' => true, 'message' => ''];
 
         return ['allowed' => false, 'message' => 'Permission denied.'];
+    }
+    
+    /**
+     * Helper function to notify all alliance members except the actor.
+     * 
+     * @param int $allianceId
+     * @param int $excludeUserId The user who performed the action (won't receive notification)
+     * @param string $title
+     * @param string $message
+     * @param string|null $link
+     */
+    private function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
+    {
+        $members = $this->userRepo->findAllByAllianceId($allianceId);
+        
+        foreach ($members as $memberData) {
+            $memberId = (int)$memberData['id'];
+            // Don't notify the user who performed the action
+            if ($memberId !== $excludeUserId) {
+                $this->notificationService->sendNotification(
+                    $memberId,
+                    'alliance',
+                    $title,
+                    $message,
+                    $link
+                );
+            }
+        }
     }
     
     // --- Added for View Logic support ---
