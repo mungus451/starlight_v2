@@ -15,7 +15,9 @@ final class CreateNotificationsTable extends AbstractMigration
 
         $table = $this->table('notifications', [
             'id' => 'id',
+            'signed' => false,
             'engine' => 'InnoDB',
+            'encoding' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
         ]);
 
@@ -28,15 +30,17 @@ final class CreateNotificationsTable extends AbstractMigration
             ->addColumn('is_read', 'boolean', ['null' => false, 'default' => 0])
             ->addColumn('created_at', 'timestamp', ['null' => false, 'default' => 'CURRENT_TIMESTAMP'])
             ->addIndex(['user_id', 'is_read'], ['name' => 'idx_user_read'])
+            ->addForeignKey('user_id', 'users', 'id', [
+                'delete'     => 'CASCADE',
+                'update'     => 'NO_ACTION',
+                'constraint' => 'fk_notification_user',
+            ])
             ->create();
-
-        // Add FK to users(id) with cascade delete
-        $this->table('notifications')
-            ->addForeignKey('user_id', 'users', 'id', ['delete' => 'CASCADE', 'update' => 'NO_ACTION', 'constraint' => 'fk_notification_user'])
-            ->save();
-
         // Index for paginating recent notifications: user_id + created_at DESC
-        // Phinx doesn't expose DESC index direction options, so use raw SQL to match schema exactly.
+        // NOTE: Our pinned Phinx version does not support specifying DESC index direction via the fluent API.
+        // To keep this migration consistent with the existing production schema (which relies on a DESC index
+        // for efficient "most recent first" pagination) we intentionally use raw SQL here instead of the
+        // table abstraction. Changing this to a default ASC index would alter query plans and performance.
         $this->execute('ALTER TABLE `notifications` ADD INDEX `idx_user_created` (`user_id`, `created_at` DESC)');
     }
 }
