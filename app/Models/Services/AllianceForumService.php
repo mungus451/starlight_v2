@@ -196,9 +196,12 @@ class AllianceForumService
             $this->postRepo->createPost($topicId, $user->alliance_id, $userId, $content);
             $this->topicRepo->updateLastReply($topicId, $userId);
             
-            // Send notifications to all alliance members (except the poster)
-            $this->notificationService->notifyAllianceMembers(
-                $user->alliance_id,
+            // Get users who have participated in this topic
+            $participantIds = $this->postRepo->getTopicParticipantIds($topicId);
+            
+            // Send notifications only to users who have participated in the topic (except the poster)
+            $this->notificationService->notifySpecificUsers(
+                $participantIds,
                 $userId,
                 'New Forum Post',
                 "{$user->characterName} posted in \"{$topic->title}\"",

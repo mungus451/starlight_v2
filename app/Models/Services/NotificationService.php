@@ -169,4 +169,31 @@ class NotificationService
             }
         }
     }
+
+    /**
+     * Sends a notification to specific users in an alliance.
+     * Useful for notifying only users who have participated in a forum topic.
+     * 
+     * @param array $userIds Array of user IDs to notify
+     * @param int $excludeUserId The user who performed the action (won't receive notification)
+     * @param string $title
+     * @param string $message
+     * @param string|null $link
+     * @return void
+     */
+    public function notifySpecificUsers(array $userIds, int $excludeUserId, string $title, string $message, ?string $link = null): void
+    {
+        foreach ($userIds as $userId) {
+            // Don't notify the user who performed the action
+            if ($userId !== $excludeUserId) {
+                $this->sendNotification(
+                    $userId,
+                    'alliance',
+                    $title,
+                    $message,
+                    $link
+                );
+            }
+        }
+    }
 }
