@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ master, dev ]
 
+permissions:
+  contents: read
+
 jobs:
   validate-migrations:
     name: Validate Phinx Migrations
