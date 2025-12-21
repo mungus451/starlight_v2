@@ -140,6 +140,47 @@ class AllianceNotificationTest extends TestCase
     }
 
     /**
+     * Test that creating a forum topic sends notifications to all alliance members except the creator.
+     */
+    public function testForumTopicCreationSendsNotificationsToAllianceMembers(): void
+    {
+        $creatorId = 1;
+        $allianceId = 10;
+        $topicId = 100;
+
+        $creator = $this->createMockUser($creatorId, 'TopicCreator', $allianceId);
+
+        $this->mockUserRepo->shouldReceive('findById')
+            ->with($creatorId)
+            ->andReturn($creator);
+
+        $this->mockTopicRepo->shouldReceive('createTopic')
+            ->with($allianceId, $creatorId, 'New Test Topic')
+            ->once()
+            ->andReturn($topicId);
+
+        $this->mockPostRepo->shouldReceive('createPost')
+            ->with($topicId, $allianceId, $creatorId, 'First post content')
+            ->once()
+            ->andReturn(true);
+
+        // Expect the NotificationService.notifyAllianceMembers to be called once for topic creation
+        $this->mockNotificationService->shouldReceive('notifyAllianceMembers')
+            ->with($allianceId, $creatorId, 'New Forum Topic', Mockery::any(), "/alliance/forum/topic/{$topicId}")
+            ->once();
+
+        // Mock transaction
+        $this->mockDb->shouldReceive('beginTransaction')->once();
+        $this->mockDb->shouldReceive('commit')->once();
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+
+        $response = $this->forumService->createTopic($creatorId, 'New Test Topic', 'First post content');
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertEquals($topicId, $response->data['topic_id']);
+    }
+
+    /**
      * Helper to create a mock user entity.
      */
     private function createMockUser(int $id, string $name, ?int $allianceId = null): User

@@ -148,6 +148,16 @@ class AllianceForumService
         try {
             $newTopicId = $this->topicRepo->createTopic($user->alliance_id, $userId, $title);
             $this->postRepo->createPost($newTopicId, $user->alliance_id, $userId, $content);
+            
+            // Send notifications to all alliance members (except the topic creator)
+            $this->notificationService->notifyAllianceMembers(
+                $user->alliance_id,
+                $userId,
+                'New Forum Topic',
+                "{$user->characterName} created topic \"{$title}\"",
+                "/alliance/forum/topic/{$newTopicId}"
+            );
+            
             $this->db->commit();
             
             return ServiceResponse::success('Topic created successfully.', ['topic_id' => $newTopicId]);
