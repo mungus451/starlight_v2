@@ -19,7 +19,9 @@ final class CreateHouseFinancesTable extends AbstractMigration
 
         $this->table('house_finances', [
                 'id' => 'id',
+                'signed' => false,
                 'engine' => 'InnoDB',
+                'encoding' => 'utf8mb4',
                 'collation' => 'utf8mb4_unicode_ci',
             ])
             ->addColumn('credits_taxed', 'decimal', ['precision' => 19, 'scale' => 4, 'null' => false, 'default' => '0.0000', 'comment' => 'Total credits collected as conversion fees'])
