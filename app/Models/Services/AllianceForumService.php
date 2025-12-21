@@ -187,7 +187,7 @@ class AllianceForumService
             $this->topicRepo->updateLastReply($topicId, $userId);
             
             // Send notifications to all alliance members (except the poster)
-            $this->notifyAllianceMembers(
+            $this->notificationService->notifyAllianceMembers(
                 $user->alliance_id,
                 $userId,
                 'New Forum Post',
@@ -248,34 +248,6 @@ class AllianceForumService
         if ($role && $role->can_manage_forum) return ['allowed' => true, 'message' => ''];
 
         return ['allowed' => false, 'message' => 'Permission denied.'];
-    }
-    
-    /**
-     * Helper function to notify all alliance members except the actor.
-     * 
-     * @param int $allianceId
-     * @param int $excludeUserId The user who performed the action (won't receive notification)
-     * @param string $title
-     * @param string $message
-     * @param string|null $link
-     */
-    private function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
-    {
-        $members = $this->userRepo->findAllByAllianceId($allianceId);
-        
-        foreach ($members as $memberData) {
-            $memberId = (int)$memberData['id'];
-            // Don't notify the user who performed the action
-            if ($memberId !== $excludeUserId) {
-                $this->notificationService->sendNotification(
-                    $memberId,
-                    'alliance',
-                    $title,
-                    $message,
-                    $link
-                );
-            }
-        }
     }
     
     // --- Added for View Logic support ---

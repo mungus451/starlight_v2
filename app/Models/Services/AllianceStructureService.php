@@ -159,7 +159,7 @@ $this->bankLogRepo->createLog($allianceId, $adminUserId, 'structure_purchase', -
 $this->allianceStructRepo->createOrUpgrade($allianceId, $structureKey, $nextLevel);
 
 // 5d. Notify alliance members
-$this->notifyAllianceMembers(
+$this->notificationService->notifyAllianceMembers(
     $allianceId,
     $adminUserId,
     'Alliance Structure Upgrade',
@@ -197,33 +197,5 @@ if ($level <= 1) {
 return $baseCost;
 }
 return (int)floor($baseCost * pow($multiplier, $level - 1));
-}
-
-/**
- * Helper function to notify all alliance members except the actor.
- * 
- * @param int $allianceId
- * @param int $excludeUserId The user who performed the action (won't receive notification)
- * @param string $title
- * @param string $message
- * @param string|null $link
- */
-private function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
-{
-    $members = $this->userRepo->findAllByAllianceId($allianceId);
-    
-    foreach ($members as $memberData) {
-        $memberId = (int)$memberData['id'];
-        // Don't notify the user who performed the action
-        if ($memberId !== $excludeUserId) {
-            $this->notificationService->sendNotification(
-                $memberId,
-                'alliance',
-                $title,
-                $message,
-                $link
-            );
-        }
-    }
 }
 }

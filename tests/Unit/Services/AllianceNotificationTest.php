@@ -95,9 +95,6 @@ class AllianceNotificationTest extends TestCase
         $topicId = 5;
 
         $poster = $this->createMockUser($posterId, 'PostAuthor', $allianceId);
-        $member1 = ['id' => 2, 'character_name' => 'Member1'];
-        $member2 = ['id' => 3, 'character_name' => 'Member2'];
-        $member3 = ['id' => $posterId, 'character_name' => 'PostAuthor']; // Should not receive notification
 
         $topic = new AllianceForumTopic(
             id: $topicId,
@@ -127,19 +124,10 @@ class AllianceNotificationTest extends TestCase
             ->once()
             ->andReturn(true);
 
-        // Expect to fetch all alliance members
-        $this->mockUserRepo->shouldReceive('findAllByAllianceId')
-            ->with($allianceId)
-            ->andReturn([$member1, $member2, $member3]);
-
-        // Expect notifications to be sent to members 1 and 2 only (not the poster)
-        $this->mockNotificationService->shouldReceive('sendNotification')
-            ->with(2, 'alliance', 'New Forum Post', Mockery::any(), "/alliance/forum/topic/{$topicId}")
+        // Expect the NotificationService.notifyAllianceMembers to be called once
+        $this->mockNotificationService->shouldReceive('notifyAllianceMembers')
+            ->with($allianceId, $posterId, 'New Forum Post', Mockery::any(), "/alliance/forum/topic/{$topicId}")
             ->once();
-
-        $this->mockNotificationService->shouldReceive('sendNotification')
-            ->with(3, 'alliance', 'New Forum Post', Mockery::any(), "/alliance/forum/topic/{$topicId}")
-            ->never(); // Poster should not receive notification
 
         // Mock transaction
         $this->mockDb->shouldReceive('beginTransaction')->once();

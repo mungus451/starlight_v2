@@ -4,6 +4,7 @@ namespace App\Models\Services;
 
 use App\Core\ServiceResponse;
 use App\Models\Repositories\NotificationRepository;
+use App\Models\Repositories\UserRepository;
 
 /**
  * Handles the creation and retrieval of user notifications.
@@ -13,15 +14,20 @@ use App\Models\Repositories\NotificationRepository;
 class NotificationService
 {
     private NotificationRepository $notificationRepo;
+    private UserRepository $userRepo;
 
     /**
      * DI Constructor.
      *
      * @param NotificationRepository $notificationRepo
+     * @param UserRepository $userRepo
      */
-    public function __construct(NotificationRepository $notificationRepo)
-    {
+    public function __construct(
+        NotificationRepository $notificationRepo,
+        UserRepository $userRepo
+    ) {
         $this->notificationRepo = $notificationRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -131,6 +137,36 @@ class NotificationService
             return ServiceResponse::success('All notifications marked as read.');
         } else {
             return ServiceResponse::error('Failed to update notifications.');
+        }
+    }
+
+    /**
+     * Sends a notification to all members of an alliance except the specified user.
+     * Useful for alliance-wide announcements (forum posts, structure purchases, etc).
+     * 
+     * @param int $allianceId
+     * @param int $excludeUserId The user who performed the action (won't receive notification)
+     * @param string $title
+     * @param string $message
+     * @param string|null $link
+     * @return void
+     */
+    public function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
+    {
+        $members = $this->userRepo->findAllByAllianceId($allianceId);
+        
+        foreach ($members as $memberData) {
+            $memberId = (int)$memberData['id'];
+            // Don't notify the user who performed the action
+            if ($memberId !== $excludeUserId) {
+                $this->sendNotification(
+                    $memberId,
+                    'alliance',
+                    $title,
+                    $message,
+                    $link
+                );
+            }
         }
     }
 }
