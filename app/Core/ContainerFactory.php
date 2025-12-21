@@ -255,7 +255,10 @@ $c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
 
 // Notifications
 NotificationService::class => function (ContainerInterface $c) {
-return new NotificationService($c->get(NotificationRepository::class));
+return new NotificationService(
+    $c->get(NotificationRepository::class),
+    $c->get(UserRepository::class)
+);
 },
 
 // Event Dispatcher (The Hub)
