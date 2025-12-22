@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  contents: read
+
 jobs:
   connectivity-test:
     name: Test Self-Hosted Runner Connectivity
