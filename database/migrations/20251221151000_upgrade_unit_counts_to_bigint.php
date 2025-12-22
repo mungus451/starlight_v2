@@ -278,8 +278,8 @@ final class UpgradeUnitCountsToBigint extends AbstractMigration
                 'signed' => true,
                 'default' => 0,
                 'null' => false
-            ])
-            ->update();
+            ]);
+            $spyReportsTable->update();
         }
 
         $this->output->writeln('<info>Rollback complete</info>');
