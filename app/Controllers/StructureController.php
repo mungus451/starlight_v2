@@ -92,4 +92,42 @@ class StructureController extends BaseController
         
         $this->redirect('/structures');
     }
+
+    /**
+     * Handles batch structure upgrades.
+     */
+    public function handleBatchUpgrade(): void
+    {
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'structure_keys' => 'required' 
+        ]);
+
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/structures');
+            return;
+        }
+        
+        // Expecting JSON string from the frontend checkout form
+        // We use $_POST directly because the Validator sanitizes strings with htmlspecialchars, which breaks JSON.
+        $keys = json_decode($_POST['structure_keys'], true);
+        
+        if (!is_array($keys) || empty($keys)) {
+             $this->session->setFlash('error', 'No structures selected for batch upgrade.');
+             $this->redirect('/structures');
+             return;
+        }
+
+        $userId = $this->session->get('user_id');
+        $response = $this->structureService->processBatchUpgrade($userId, $keys);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
+        $this->redirect('/structures');
+    }
 }

@@ -76,6 +76,7 @@ class StructurePresenter
                 'next_level' => $nextLevel,
                 'upgrade_cost_credits' => $creditCost, // Keep for raw access if needed
                 'upgrade_cost_crystals' => $crystalCost, // Keep for raw access if needed
+                'upgrade_cost_dark_matter' => $darkMatterCost, // Keep for raw access if needed
                 'cost_formatted' => $costFormatted,
                 'is_max_level' => $isMaxLevel,
                 'can_afford' => $canAfford,

@@ -81,6 +81,127 @@ class StructureService
     }
 
     /**
+     * Process multiple structure upgrades in a single transaction.
+     *
+     * @param int $userId
+     * @param array $structureKeys
+     * @return ServiceResponse
+     */
+    public function processBatchUpgrade(int $userId, array $structureKeys): ServiceResponse
+    {
+        if (empty($structureKeys)) {
+            return ServiceResponse::error('No structures selected for upgrade.');
+        }
+
+        // 1. Get User Data
+        $resources = $this->resourceRepo->findByUserId($userId);
+        $structures = $this->structureRepo->findByUserId($userId);
+        
+        // 2. Load Config
+        $structureConfig = $this->config->get('game_balance.structures', []);
+        
+        // 3. Simulate & Calculate Total Costs
+        $simulatedLevels = [];
+        foreach ($structureConfig as $k => $v) {
+            $simulatedLevels[$k] = $structures->{$k . '_level'} ?? 0;
+        }
+
+        $totalCreditCost = 0;
+        $totalCrystalCost = 0;
+        $totalDarkMatterCost = 0;
+        
+        $upgradesToPerform = []; // [key => newLevel]
+
+        foreach ($structureKeys as $key) {
+            if (!isset($structureConfig[$key])) {
+                continue; // Skip invalid keys
+            }
+            
+            $config = $structureConfig[$key];
+            $currentLevel = $simulatedLevels[$key];
+            
+            // Calculate Cost for THIS level
+            $cCost = $this->calculateCost($config['base_cost'], $config['multiplier'], $currentLevel);
+            
+            $cryCost = 0;
+            if (isset($config['base_crystal_cost'])) {
+                $cryCost = $this->calculateCost($config['base_crystal_cost'], $config['multiplier'], $currentLevel);
+            }
+            
+            $dmCost = 0;
+            if (isset($config['base_dark_matter_cost'])) {
+                $dmCost = $this->calculateCost($config['base_dark_matter_cost'], $config['multiplier'], $currentLevel);
+            }
+
+            $totalCreditCost += $cCost;
+            $totalCrystalCost += $cryCost;
+            $totalDarkMatterCost += $dmCost;
+
+            // Increment simulated level for next iteration (if same key is present)
+            $simulatedLevels[$key]++;
+            
+            // Track the FINAL level to reach for this key
+            $upgradesToPerform[$key] = $simulatedLevels[$key];
+        }
+
+        if (empty($upgradesToPerform)) {
+             return ServiceResponse::error('No valid structures selected.');
+        }
+
+        // 4. Check Affordability
+        if ($resources->credits < $totalCreditCost) {
+            return ServiceResponse::error('Insufficient credits for batch upgrade. Total: ' . number_format($totalCreditCost));
+        }
+        if ($resources->naquadah_crystals < $totalCrystalCost) {
+            return ServiceResponse::error('Insufficient naquadah crystals. Total: ' . number_format($totalCrystalCost));
+        }
+        if ($resources->dark_matter < $totalDarkMatterCost) {
+            return ServiceResponse::error('Insufficient dark matter. Total: ' . number_format($totalDarkMatterCost));
+        }
+
+        // 5. Transaction
+        $transactionStarted = false;
+        if (!$this->db->inTransaction()) {
+            $this->db->beginTransaction();
+            $transactionStarted = true;
+        }
+
+        try {
+            // Deduct Resources
+            $this->resourceRepo->updateResources(
+                $userId,
+                -1 * $totalCreditCost,
+                -1 * $totalCrystalCost,
+                -1 * $totalDarkMatterCost
+            );
+            
+            // Update Levels
+            foreach ($upgradesToPerform as $key => $level) {
+                 $column = $key . '_level';
+                 $this->structureRepo->updateStructureLevel($userId, $column, $level);
+            }
+
+            if ($transactionStarted) {
+                $this->db->commit();
+            }
+            
+            return ServiceResponse::success(
+                count($structureKeys) . " structures upgraded successfully!",
+                [
+                    'total_cost' => $totalCreditCost
+                ]
+            );
+
+        } catch (Throwable $e) {
+            if ($transactionStarted && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log('Batch Upgrade Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred during batch upgrade.');
+        }
+    }
+
+    /**
      * Process a structure upgrade.
      *
      * @param int $userId

@@ -60,6 +60,20 @@ services:
     networks:
       - starlight_network
 
+  docs:
+    image: squidfunk/mkdocs-material:latest
+    container_name: starlight_docs
+    ports:
+      - "${DOCKER_DOCS_PORT:-8000}:8000"
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: serve --dev-addr=0.0.0.0:8000
+    networks:
+      - starlight_network
+    environment:
+      - WATCHDOG_FALLBACK_POLL=500 # forces polling file watcher
+
 networks:
   starlight_network:
     driver: bridge

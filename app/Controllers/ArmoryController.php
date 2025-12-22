@@ -127,12 +127,57 @@ $this->redirect('/armory');
 }
 }
 
-/**
-* Handles the "Equip" form submission.
-*/
-public function handleEquip(): void
-{
-$isJson = $this->wantsJson();
+    /**
+    * Handles batch manufacture requests (JSON).
+    */
+    public function handleBatchManufacture(): void
+    {
+        if (!$this->wantsJson()) {
+            $this->redirect('/armory');
+            return;
+        }
+
+        $rules = [
+            'csrf_token' => 'required',
+            'items' => 'required'
+        ];
+
+        $val = $this->validator->make($_POST, $rules);
+        if ($val->fails()) {
+            $this->jsonResponse(['success' => false, 'error' => implode(' ', $val->errors())]);
+            return;
+        }
+        
+        // Use RAW $_POST['items'] because Validator sanitizes quotes in JSON
+        $items = json_decode($_POST['items'], true);
+
+        if (!is_array($items) || empty($items)) {
+             $this->jsonResponse(['success' => false, 'error' => 'Invalid batch data.']);
+             return;
+        }
+        
+        $data = $val->validated();
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+             $this->jsonResponse(['success' => false, 'error' => 'Invalid security token.']);
+             return;
+        }
+
+        $userId = $this->session->get('user_id');
+        $response = $this->armoryService->processBatchManufacture($userId, $items);
+        
+        if ($response->isSuccess()) {
+             $this->session->setFlash('success', $response->message);
+             $this->jsonResponse(['success' => true, 'message' => $response->message]);
+        } else {
+             $this->jsonResponse(['success' => false, 'error' => $response->message]);
+        }
+    }
+
+    /**
+    * Handles the "Equip" form submission.
+    */
+    public function handleEquip(): void
+    {$isJson = $this->wantsJson();
 $rules = [
 'csrf_token' => 'required',
 'unit_key' => 'required|string',

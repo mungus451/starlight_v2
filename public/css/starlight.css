@@ -1276,3 +1276,193 @@ details[open] .tier-summary::after {
         text-align: center;
     }
 }
+
+/* --- EMBASSY / COCKPIT THEME --- */
+:root {
+    --hud-bg: rgba(10, 15, 30, 0.95);
+    --hud-border: #1a2f40;
+    --hud-accent: #00f0ff; /* Cyan */
+    --desk-wood: #2c1a10;
+    --desk-trim: #c5a059; /* Gold/Brass */
+    --desk-leather: #1a110d;
+}
+
+.embassy-container {
+    background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+    min-height: 80vh;
+    color: #e0e0e0;
+    padding-bottom: 3rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- The Cockpit HUD (Header & Stats) --- */
+.hud-panel {
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-border);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+.hud-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--hud-accent), transparent);
+}
+
+.stat-display {
+    font-family: 'Courier New', Courier, monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--hud-accent);
+    text-shadow: 0 0 5px var(--hud-accent);
+}
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* --- The Resolute Desk (Active Directives) --- */
+.resolute-desk {
+    background: linear-gradient(180deg, var(--desk-leather) 0%, #0d0806 100%);
+    border: 2px solid var(--desk-wood);
+    border-top: 4px solid var(--desk-trim);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.desk-title {
+    font-family: 'Georgia', serif;
+    color: var(--desk-trim);
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(197, 160, 89, 0.3);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.directive-card {
+    background: #fffdf5; /* Paper color */
+    color: #333;
+    border: 1px solid #d4c4a8;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    position: relative;
+    transition: transform 0.2s;
+    font-family: 'Georgia', serif;
+}
+.directive-card:hover {
+    transform: translateY(-2px);
+}
+.directive-card::after {
+    /* "Stamped" effect */
+    content: 'ACTIVE';
+    position: absolute;
+    top: 10px; right: 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--accent-green);
+    border: 2px solid var(--accent-green);
+    padding: 2px 5px;
+    transform: rotate(-10deg);
+    opacity: 0.8;
+}
+.directive-card .card-body {
+    padding: 1rem;
+}
+
+/* --- The Terminal (Available Edicts) --- */
+.terminal-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.nav-tabs-terminal {
+    border-bottom: 1px solid var(--hud-border);
+}
+.nav-tabs-terminal .nav-link {
+    color: #888;
+    border: 1px solid transparent;
+    border-radius: 4px 4px 0 0;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+.nav-tabs-terminal .nav-link:hover {
+    color: var(--hud-accent);
+    border-color: transparent;
+    background: rgba(0, 240, 255, 0.05);
+}
+.nav-tabs-terminal .nav-link.active {
+    color: var(--hud-accent);
+    background: rgba(0, 240, 255, 0.1);
+    border-color: var(--hud-border) var(--hud-border) transparent;
+}
+
+.terminal-card {
+    background: rgba(20, 30, 40, 0.8);
+    border: 1px solid #2a3b4c;
+    color: #aab;
+    transition: all 0.2s;
+}
+.terminal-card:hover {
+    border-color: var(--hud-accent);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+}
+.terminal-card .card-title {
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+.terminal-card .lore-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-style: italic;
+}
+.terminal-btn {
+    border: 1px solid var(--hud-accent);
+    color: var(--hud-accent);
+    background: transparent;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+.terminal-btn:hover {
+    background: var(--hud-accent);
+    color: #000;
+    box-shadow: 0 0 15px var(--hud-accent);
+}
+.terminal-btn:disabled {
+    border-color: #555;
+    color: #555;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Mobile Tweaks */
+@media (max-width: 768px) {
+    .stat-value { font-size: 1.2rem; }
+    .desk-title { font-size: 1.2rem; text-align: center; }
+}
+
+/* Missing Bootstrap Tab Classes Compatibility */
+.tab-content > .tab-pane {
+    display: none;
+}
+.tab-content > .active {
+    display: block;
+}
+.fade {
+    transition: opacity 0.15s linear;
+    opacity: 0;
+}
+.fade.show {
+    opacity: 1;
+}

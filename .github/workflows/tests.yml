@@ -2,9 +2,9 @@ name: Tests & Architecture Audits
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, dev ]
   pull_request:
-    branches: [ master, develop ]
+    branches: [ master, dev ]
 
 jobs:
   tests:
@@ -90,13 +90,13 @@ jobs:
         run: vendor/bin/phinx migrate -e testing --configuration=config/phinx.php
 
       - name: Run MVC Compliance Audit
-        run: php tests/mvc_lint.php
+        run: php tests/Compliance/mvc_lint.php
 
       - name: Run Session Decoupling Audit
-        run: php tests/VerifySessionDecoupling.php
+        run: php tests/Compliance/VerifySessionDecoupling.php
 
       - name: Run DI Resolution Verification
-        run: php tests/verify_di_resolution.php
+        run: php tests/Compliance/verify_di_resolution.php
 
       - name: Run PHPUnit Tests with Coverage
         run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --colors=never

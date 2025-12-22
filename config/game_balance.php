@@ -22,56 +22,56 @@ return [
         // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
         'fortification' => [
             'name' => 'Fortification',
-            'base_cost' => 100000,
+            'base_cost' => 1000,
             'multiplier' => 1.8,
             'category' => 'Defense',
             'description' => 'Increases the base power of your Guards and overall structural integrity.'
         ],
         'offense_upgrade' => [
             'name' => 'Offense Upgrade',
-            'base_cost' => 50000,
+            'base_cost' => 500,
             'multiplier' => 2.0,
             'category' => 'Offense',
             'description' => 'Increases the base power of your Soldiers in offensive operations.'
         ],
         'defense_upgrade' => [
             'name' => 'Defense Upgrade',
-            'base_cost' => 50000,
+            'base_cost' => 500,
             'multiplier' => 2.0,
             'category' => 'Defense',
             'description' => 'Increases the effectiveness of your Guards and Fortifications on defense.'
         ],
         'spy_upgrade' => [
             'name' => 'Spy Upgrade',
-            'base_cost' => 75000,
+            'base_cost' => 750,
             'multiplier' => 1.9,
             'category' => 'Intel',
             'description' => 'Improves spy success rates and counter-espionage capabilities.'
         ],
         'economy_upgrade' => [
             'name' => 'Economy Upgrade',
-            'base_cost' => 200000,
+            'base_cost' => 2000,
             'multiplier' => 1.7,
             'category' => 'Economy',
             'description' => 'Increases your passive credit income generated each turn.'
         ],
         'population' => [
             'name' => 'Population',
-            'base_cost' => 150000,
+            'base_cost' => 1500,
             'multiplier' => 1.6,
             'category' => 'Economy',
             'description' => 'Increases the number of untrained citizens that arrive each turn.'
         ],
         'armory' => [
             'name' => 'Armory',
-            'base_cost' => 120000,
+            'base_cost' => 1200,
             'multiplier' => 2.1,
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
         'accounting_firm' => [
             'name' => 'Accounting Firm',
-            'base_cost' => 10000, // 10,000 Credits
+            'base_cost' => 1000, // 1,000 Credits
             'base_crystal_cost' => 250, // 250 Naquadah Crystals
             'multiplier' => 1.9, // Cost Multiplier (e.g., Level 2 costs 1.9x Level 1)
             'category' => 'Economy',
@@ -80,7 +80,7 @@ return [
         // --- Age of Ascension: Phase 1 Structures ---
         'quantum_research_lab' => [
             'name' => 'Quantum Research Lab',
-            'base_cost' => 500000,
+            'base_cost' => 5000,
             'base_crystal_cost' => 50,
             'multiplier' => 1.7,
             'category' => 'Intel',
@@ -88,7 +88,7 @@ return [
         ],
         'nanite_forge' => [
             'name' => 'Nanite Forge',
-            'base_cost' => 750000,
+            'base_cost' => 7500,
             'base_crystal_cost' => 100,
             'multiplier' => 1.8,
             'category' => 'Military',
@@ -97,7 +97,7 @@ return [
         // --- Age of Ascension: Phase 2 Structures ---
         'dark_matter_siphon' => [
             'name' => 'Dark Matter Siphon',
-            'base_cost' => 2500000,
+            'base_cost' => 25000,
             'base_crystal_cost' => 1000,
             'multiplier' => 2.2,
             'category' => 'Advanced Industry',
@@ -105,7 +105,7 @@ return [
         ],
         'planetary_shield' => [
             'name' => 'Planetary Shield',
-            'base_cost' => 5000000,
+            'base_cost' => 50000,
             'base_dark_matter_cost' => 50,
             'multiplier' => 2.5,
             'category' => 'Super Defense',
@@ -113,7 +113,7 @@ return [
         ],
         'naquadah_mining_complex' => [
             'name' => 'Naquadah Mining Complex',
-            'base_cost' => 1000000,
+            'base_cost' => 10000,
             'base_dark_matter_cost' => 1,
             'multiplier' => 2.0,
             'category' => 'Advanced Industry',
@@ -123,7 +123,7 @@ return [
         // --- Age of Ascension: Phase 2 Structures (New) ---
         'protoform_vat' => [
             'name' => 'Protoform Vat',
-            'base_cost' => 1000000,
+            'base_cost' => 10000,
             'base_crystal_cost' => 200,
             'multiplier' => 1.9,
             'category' => 'Advanced Industry',
@@ -131,7 +131,7 @@ return [
         ],
         'weapon_vault' => [
             'name' => 'Weapon Vault',
-            'base_cost' => 2500000,
+            'base_cost' => 25000,
             'base_crystal_cost' => 500,
             'multiplier' => 2.1,
             'category' => 'Military',
@@ -139,7 +139,7 @@ return [
         ],
         'embassy' => [
             'name' => 'Embassy',
-            'base_cost' => 10000000,
+            'base_cost' => 100000,
             'base_crystal_cost' => 2000,
             'multiplier' => 2.5,
             'category' => 'Intel',
