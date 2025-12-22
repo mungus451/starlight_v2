@@ -16,6 +16,7 @@ class TrainingService
 {
     private Config $config;
     private ResourceRepository $resourceRepo;
+    private GeneralService $generalService;
 
     /**
      * DI Constructor.
@@ -23,11 +24,16 @@ class TrainingService
      *
      * @param Config $config
      * @param ResourceRepository $resourceRepo
+     * @param GeneralService $generalService
      */
-    public function __construct(Config $config, ResourceRepository $resourceRepo)
-    {
+    public function __construct(
+        Config $config, 
+        ResourceRepository $resourceRepo,
+        GeneralService $generalService
+    ) {
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
+        $this->generalService = $generalService;
     }
 
     /**
@@ -87,7 +93,15 @@ class TrainingService
             return ServiceResponse::error('You do not have enough untrained citizens for this training.');
         }
 
-        // 6. Calculate New Totals
+        // 6. Validation 5: Army Capacity (Generals)
+        if ($unitType === 'soldiers') {
+            $cap = $this->generalService->getArmyCapacity($userId);
+            if (($resources->soldiers + $amount) > $cap) {
+                return ServiceResponse::error("Army Limit Reached ({$cap}). Commission a General to expand your forces.");
+            }
+        }
+
+        // 7. Calculate New Totals
         $newCredits = $resources->credits - $totalCreditCost;
         $newUntrained = $resources->untrained_citizens - $totalCitizenCost;
         
