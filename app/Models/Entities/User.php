@@ -17,6 +17,7 @@ readonly class User
      * @param string|null $phone_number
      * @param int|null $alliance_id
      * @param int|null $alliance_role_id
+     * @param int|null $race_id
      * @param string $passwordHash
      * @param string $createdAt
      * @param bool $is_npc
@@ -30,6 +31,7 @@ readonly class User
         public readonly ?string $phone_number,
         public readonly ?int $alliance_id,
         public readonly ?int $alliance_role_id,
+        public readonly ?int $race_id,
         public readonly string $passwordHash,
         public readonly string $createdAt,
         public readonly bool $is_npc = false // Default false for backward compatibility
