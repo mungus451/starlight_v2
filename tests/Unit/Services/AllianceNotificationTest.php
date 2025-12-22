@@ -86,7 +86,7 @@ class AllianceNotificationTest extends TestCase
     }
 
     /**
-     * Test that creating a forum post sends notifications to all alliance members except the poster.
+     * Test that creating a forum post sends notifications to topic participants except the poster.
      */
     public function testForumPostSendsNotificationsToAllianceMembers(): void
     {
