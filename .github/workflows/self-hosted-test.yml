@@ -1,0 +1,14 @@
+name: Self-Hosted Runner Test
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  connectivity-test:
+    name: Test Self-Hosted Runner Connectivity
+    runs-on: self-hosted
+
+    steps:
+      - name: Echo Hello World
+        run: echo "Hello World from self-hosted runner!"
