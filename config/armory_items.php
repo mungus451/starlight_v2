@@ -5,6 +5,7 @@
  *
  * This file stores all data for armory items, including costs, stats,
  * and upgrade (manufacturing) requirements.
+ * 
  */
 
 return [

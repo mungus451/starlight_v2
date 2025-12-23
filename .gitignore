@@ -26,6 +26,7 @@ Thumbs.db
 
 #Specific Files
 starlight_v2.zip
+.env.testing
 
 # Cache files
 .phpunit.cache/

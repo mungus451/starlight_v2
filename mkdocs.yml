@@ -155,6 +155,7 @@ nav:
       - Armory: features/armory.md
       - Black Market: features/black-market.md
       - NPC System: features/npc-system.md
+      - Races: features/races.md
   - Guides:
       - Overview: guides/index.md
       - Security: guides/security.md

@@ -19,15 +19,20 @@ final class CreateDoctrineDefinitionsTable extends AbstractMigration
      */
     public function up(): void
     {
-        $table = $this->table('doctrine_definitions', ['signed' => false]);
+        $table = $this->table('doctrine_definitions', [
+            'engine' => 'InnoDB',
+            'collation' => 'utf8mb4_unicode_ci',
+            'encoding' => 'utf8mb4',
+            'signed' => false, // make PK unsigned
+        ]);
         $table->addColumn('name', 'string', ['limit' => 255])
-              ->addColumn('description', 'text')
-              ->addColumn('type', 'enum', ['values' => ['economy', 'military', 'espionage']])
-              ->addColumn('effect', 'string', ['limit' => 255]) // e.g., 'credit_income_bonus'
-              ->addColumn('value', 'float') // e.g., 0.05 for a 5% bonus
-              ->addTimestamps()
-              ->addIndex(['type'])
-              ->create();
+            ->addColumn('description', 'text')
+            ->addColumn('type', 'enum', ['values' => ['economy', 'military', 'espionage']])
+            ->addColumn('effect', 'string', ['limit' => 255]) // e.g., 'credit_income_bonus'
+            ->addColumn('value', 'float') // e.g., 0.05 for a 5% bonus
+            ->addTimestamps()
+            ->addIndex(['type'])
+            ->create();
     }
 
     public function down(): void
