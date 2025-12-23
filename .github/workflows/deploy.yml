@@ -1,0 +1,114 @@
+name: Deploy to Starlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-guest
+  cancel-in-progress: false
+
+jobs:
+  deploy-guest:
+    name: Deploy to Apache GUEST
+    runs-on: self-hosted
+    env:
+      DEPLOY_PATH: /var/www/html/starlight_v2
+      APACHE_USER: www-data
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Preflight (versions and rsync feature check)
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -v || true
+          composer --version || true
+          rsync --version || true
+
+          if rsync --help 2>/dev/null | grep -q -- '--chown'; then
+            echo "RSYNC_HAS_CHOWN=1" >> "$GITHUB_ENV"
+          else
+            echo "RSYNC_HAS_CHOWN=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: Sync files to Apache GUEST directory
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo mkdir -p "$DEPLOY_PATH"
+
+          RSYNC_OPTS=(
+            -rltD
+            --delete
+            --delete-delay
+            --exclude='.git'
+            --exclude='.github'
+            --exclude='.env'
+            --exclude='.env.*'
+            --exclude='docs'
+            --exclude='tests'
+            --exclude='logs'
+            --exclude='vendor'
+            --filter='protect .env'
+            --filter='protect .env.*'
+            --filter='protect storage/***'
+            --filter='protect public/uploads/***'
+            --filter='protect cache/***'
+            --filter='protect var/***'
+            --chmod=Du=rwx,Dg=rx,Da=rx,Fu=rw,Fg=r,Fa=r
+          )
+
+          sudo rsync "${RSYNC_OPTS[@]}" ./ "$DEPLOY_PATH"/
+
+      - name: Install production dependencies in deploy dir
+        working-directory: ${{ env.DEPLOY_PATH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Installing deps (locked)..."
+          sudo -u "$APACHE_USER" composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Run database migrations
+        working-directory: ${{ env.DEPLOY_PATH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f ".env" ]; then
+            echo "Missing .env in $PWD; cannot run migrations." >&2
+            exit 1
+          fi
+          echo "Running migrations..."
+          php vendor/bin/phinx migrate -e production -c config/phinx.php
+
+      - name: Fix runtime directory permissions for web user
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNTIME_DIRS=(
+            "$DEPLOY_PATH/storage"
+            "$DEPLOY_PATH/public/uploads"
+            "$DEPLOY_PATH/cache"
+            "$DEPLOY_PATH/var"
+          )
+
+          for dir in "${RUNTIME_DIRS[@]}"; do
+            if [ -d "$dir" ]; then
+              sudo chown -R "$APACHE_USER:$APACHE_USER" "$dir"
+              sudo chmod -R u+rwX,g+rwX "$dir"
+            fi
+          done
+
+      - name: Verify deployment contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Deployment complete. Listing target directory:"
+          ls -la "$DEPLOY_PATH" | head
