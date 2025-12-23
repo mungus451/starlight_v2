@@ -19,6 +19,38 @@
 </head>
 <body>
 
+<?php if ($this->session->get('is_mobile')): ?>
+
+    <!-- ======================= MOBILE NAVIGATION ======================= -->
+    <header class="mobile-header">
+        <div class="logo">Starlight V2</div>
+        <div class="hamburger-menu">
+            <i class="fas fa-bars"></i>
+        </div>
+    </header>
+    <nav class="mobile-nav">
+        <div class="mobile-nav-header">
+            <div class="logo">Navigation</div>
+            <div class="close-btn">&times;</div>
+        </div>
+        <ul>
+            <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="/bank"><i class="fas fa-piggy-bank"></i> Bank</a></li>
+            <li><a href="/training"><i class="fas fa-dumbbell"></i> Training</a></li>
+            <li><a href="/structures"><i class="fas fa-building"></i> Structures</a></li>
+            <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
+            <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy</a></li>
+            <li><a href="/battle"><i class="fas fa-fist-raised"></i> Battle</a></li>
+            <li><a href="/alliance/list"><i class="fas fa-users"></i> Alliance</a></li>
+            <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+            <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </nav>
+
+<?php else: ?>
+
+    <!-- ======================= DESKTOP NAVIGATION ======================= -->
     <nav class="main-nav">
         <!-- Logo -->
         <a href="/" class="nav-brand">
@@ -123,6 +155,7 @@
             </ul>
         <?php endif; ?>
     </nav>
+<?php endif; ?>
     
     <?php 
     if (isset($layoutMode) && $layoutMode === 'full'): 
@@ -144,41 +177,28 @@
     </div>
 
     <script src="/js/utils.js"></script>
-    
-    <?php if ($isLoggedIn): ?>
-        <script src="/js/notifications.js"></script>
-    <?php endif; ?>
 
+<?php if ($this->session->get('is_mobile') && $isLoggedIn): ?>
+    
+    <!-- Mobile-Specific Dashboard & Nav JS -->
+    <script src="/js/mobile_dashboard.js?v=<?= time(); ?>"></script>
+
+<?php elseif ($isLoggedIn): ?>
+
+    <!-- Desktop-Specific JS -->
+    <script src="/js/notifications.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Mobile Menu Toggle
-            const nav = document.querySelector('.main-nav');
-            // Create toggle button dynamically to avoid layout issues on desktop
-            const toggleBtn = document.createElement('button');
-            toggleBtn.className = 'mobile-menu-btn';
-            toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            toggleBtn.style.display = 'none'; // Hidden by default (desktop)
-            
-            const brand = nav.querySelector('.nav-brand');
-            if (brand) {
-                brand.parentNode.insertBefore(toggleBtn, brand.nextSibling);
-            }
-
-            toggleBtn.addEventListener('click', () => {
-                nav.classList.toggle('mobile-open');
-            });
-
-            // Mobile Dropdown Toggles
-            const dropdowns = document.querySelectorAll('.nav-item');
+            // Desktop Dropdown Toggles for Mobile Viewports (on the desktop nav)
+            const dropdowns = document.querySelectorAll('.main-nav .nav-item');
             dropdowns.forEach(item => {
                 const link = item.querySelector('.nav-link');
                 const submenu = item.querySelector('.nav-submenu');
                 
                 if (submenu && link) {
                     link.addEventListener('click', (e) => {
-                        // Only prevent default if we are in mobile view
                         if (window.innerWidth <= 980) {
-                            if (e.target.closest('.nav-submenu')) return; // Allow clicking links inside
+                            if (e.target.closest('.nav-submenu')) return;
                             e.preventDefault();
                             item.classList.toggle('active');
                         }
@@ -187,5 +207,8 @@
             });
         });
     </script>
+    
+<?php endif; ?>
+
 </body>
 </html>
