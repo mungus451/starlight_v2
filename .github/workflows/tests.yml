@@ -21,7 +21,7 @@ jobs:
           MARIADB_USER: sd_admin
           MARIADB_PASSWORD: starlight
         ports:
-          - 3306:3306
+          - 33306:3306
         options: >-
           --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=10s
