@@ -2,14 +2,14 @@ name: Tests & Architecture Audits
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master, dev, mungus/EliteUnits ]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ master, dev, mungus/EliteUnits ]
 
 jobs:
   tests:
-    name: PHPUnit Tests & Architecture Verification
-    runs-on: ubuntu-latest
+    name: PHPUnit Tests & Architecture Verification shr
+    runs-on: self-hosted
 
     services:
       mysql:
@@ -20,7 +20,7 @@ jobs:
           MARIADB_USER: sd_admin
           MARIADB_PASSWORD: starlight
         ports:
-          - 3306:3306
+          - 33306:3306
         options: >-
           --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=10s
@@ -30,7 +30,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6379:6379
+          - 6380:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -44,7 +44,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: mbstring, pdo, pdo_mysql, redis
           coverage: xdebug
 
@@ -66,14 +66,16 @@ jobs:
         run: |
           cp .env.example .env
           sed -i 's/DB_HOST=db/DB_HOST=127.0.0.1/' .env
+          sed -i 's/DB_PORT=3306/DB_PORT=33306/' .env
           sed -i 's/REDIS_HOST=redis/REDIS_HOST=127.0.0.1/' .env
+          sed -i 's/REDIS_PORT=6379/REDIS_PORT=6380/' .env
           sed -i 's/APP_ENV=development/APP_ENV=testing/' .env
           sed -i 's/# DB_DATABASE_TEST=starlightDB_test/DB_DATABASE_TEST=starlightDB_test/' .env
 
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 --silent; then
+            if mysqladmin ping -h 127.0.0.1 -P 33306 --silent; then
               echo "MySQL is ready"
               break
             fi
@@ -83,8 +85,8 @@ jobs:
 
       - name: Create test database
         run: |
-          MYSQL_PWD=rootpass mysql -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS starlightDB_test;"
-          MYSQL_PWD=rootpass mysql -h 127.0.0.1 -u root -e "GRANT ALL PRIVILEGES ON starlightDB_test.* TO 'sd_admin'@'%'; FLUSH PRIVILEGES;"
+          MYSQL_PWD=rootpass mysql -h 127.0.0.1 -P 33306 -u root -e "CREATE DATABASE IF NOT EXISTS starlightDB_test;"
+          MYSQL_PWD=rootpass mysql -h 127.0.0.1 -P 33306 -u root -e "GRANT ALL PRIVILEGES ON starlightDB_test.* TO 'sd_admin'@'%'; FLUSH PRIVILEGES;"
 
       - name: Run Phinx migrations for test database
         run: vendor/bin/phinx migrate -e testing --configuration=config/phinx.php
