@@ -9,6 +9,7 @@ use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\WarRepository;
 use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Repositories\WarHistoryRepository;
+use App\Models\Services\NotificationService;
 use App\Models\Entities\User;
 use PDO;
 
@@ -27,6 +28,7 @@ class WarService
     private WarRepository $warRepo;
     private WarBattleLogRepository $warLogRepo;
     private WarHistoryRepository $warHistoryRepo;
+    private NotificationService $notificationService;
 
     public function __construct(
         PDO $db,
@@ -35,7 +37,8 @@ class WarService
         AllianceRoleRepository $roleRepo,
         WarRepository $warRepo,
         WarBattleLogRepository $warLogRepo,
-        WarHistoryRepository $warHistoryRepo
+        WarHistoryRepository $warHistoryRepo,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
@@ -44,6 +47,7 @@ class WarService
         $this->warRepo = $warRepo;
         $this->warLogRepo = $warLogRepo;
         $this->warHistoryRepo = $warHistoryRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -131,6 +135,29 @@ class WarService
         
         // 4. Create War
         $this->warRepo->createWar($name, $declarerAllianceId, $targetAllianceId, $casusBelli, $goalKey, $goalThreshold);
+        
+        // Notify both alliances about the war declaration
+        $declaringAlliance = $this->allianceRepo->findById($declarerAllianceId);
+        $targetAlliance = $this->allianceRepo->findById($targetAllianceId);
+        
+        if ($declaringAlliance && $targetAlliance) {
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                0,
+                'War Declared!',
+                "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared war: {$name}",
+                "/alliance/war"
+            );
+            
+            $this->notificationService->notifyAllianceMembers(
+                $declarerAllianceId,
+                $adminUserId,
+                'War Declared!',
+                "Your alliance declared war against [{$targetAlliance->tag}] {$targetAlliance->name}: {$name}",
+                "/alliance/war"
+            );
+        }
+        
         return ServiceResponse::success('War has been successfully declared!');
     }
 

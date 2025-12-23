@@ -9,6 +9,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
@@ -35,6 +36,7 @@ class AllianceManagementService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
     private Logger $logger;
+    private NotificationService $notificationService;
 
     private string $storageRoot;
 
@@ -49,7 +51,8 @@ class AllianceManagementService
         ResourceRepository $resourceRepo,
         AllianceBankLogRepository $bankLogRepo,
         AllianceLoanRepository $loanRepo,
-        Logger $logger
+        Logger $logger,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -62,6 +65,7 @@ class AllianceManagementService
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
         $this->logger = $logger;
+        $this->notificationService = $notificationService;
 
         // Define storage root relative to this file
         $this->storageRoot = realpath(__DIR__ . '/../../../storage');
@@ -315,7 +319,18 @@ class AllianceManagementService
             return ServiceResponse::error('Leaders must disband the alliance or transfer leadership. You cannot leave.');
         }
 
+        $allianceId = $user->alliance_id;
         $this->userRepo->leaveAlliance($userId);
+        
+        // Notify all alliance members about the departure
+        $this->notificationService->notifyAllianceMembers(
+            $allianceId,
+            $userId,
+            'Member Left Alliance',
+            "{$user->characterName} left the alliance",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success('You have left the alliance.');
     }
 
@@ -356,7 +371,17 @@ class AllianceManagementService
         try {
             $this->userRepo->setAlliance($targetUser->id, $targetAllianceId, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
+            
             $this->db->commit();
+            
+            // Notify all alliance members about the new member after successful commit
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                $targetUser->id,
+                'New Alliance Member',
+                "{$targetUser->characterName} joined the alliance",
+                "/alliance/profile"
+            );
         } catch (Throwable $e) {
             $this->db->rollBack();
             $this->logger->error('Accept Application Error: ' . $e->getMessage());
@@ -440,7 +465,18 @@ class AllianceManagementService
             return ServiceResponse::error($authError);
         }
 
+        $allianceId = $targetUser->alliance_id;
         $this->userRepo->leaveAlliance($targetUserId);
+        
+        // Notify all alliance members about the kick
+        $this->notificationService->notifyAllianceMembers(
+            $allianceId,
+            $targetUserId,
+            'Member Kicked',
+            "{$targetUser->characterName} was kicked from the alliance",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success("{$targetUser->characterName} has been kicked from the alliance.");
     }
 
@@ -470,6 +506,25 @@ class AllianceManagementService
         }
 
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
+        
+        // Determine if this is a promotion, demotion, or lateral role change (lower sort_order = higher rank)
+        if ($newRole->sort_order < $targetRole->sort_order) {
+            $notifTitle = 'Member Promoted';
+        } elseif ($newRole->sort_order > $targetRole->sort_order) {
+            $notifTitle = 'Member Demoted';
+        } else {
+            $notifTitle = 'Member Role Changed';
+        }
+        
+        // Notify all alliance members about the role change
+        $this->notificationService->notifyAllianceMembers(
+            $adminUser->alliance_id,
+            $targetUserId,
+            $notifTitle,
+            "{$targetUser->characterName} was assigned the role: {$newRole->name}",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success("{$targetUser->characterName}'s role has been updated to {$newRole->name}.");
     }
 
@@ -581,6 +636,16 @@ class AllianceManagementService
         }
         
         $this->loanRepo->createLoanRequest($user->alliance_id, $userId, $amount);
+        
+        // Notify alliance members with bank management permission about the loan request
+        $this->notificationService->notifyAllianceMembers(
+            $user->alliance_id,
+            $userId,
+            'Loan Request',
+            "{$user->characterName} requested a loan of " . number_format($amount) . " credits",
+            "/alliance/bank"
+        );
+        
         return ServiceResponse::success('Loan request for ' . number_format($amount) . ' credits has been submitted.');
     }
 
