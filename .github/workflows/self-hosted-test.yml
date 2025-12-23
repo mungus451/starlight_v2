@@ -25,15 +25,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install production dependencies
-        run: |
-          echo "Installing deps (locked)..."
-          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+      # - name: Install production dependencies
+      #   run: |
+      #     echo "Installing deps (locked)..."
+      #     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-      - name: Run database migrations
-        run: |
-          echo "Running migrations..."
-          php vendor/bin/phinx migrate -e production
+      # - name: Run database migrations
+      #   run: |
+      #     echo "Running migrations..."
+      #     php vendor/bin/phinx migrate -e production
 
       - name: Sync files to Apache GUEST directory
         env:
