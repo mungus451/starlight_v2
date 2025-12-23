@@ -3,14 +3,14 @@ name: Tests & Architecture Audits
 
 on:
   push:
-    branches: [ master, dev, feature/GeneralsAndScientists ]
+    branches: [ master, dev, mungus/EliteUnits ]
   pull_request:
-    branches: [ master, dev, feature/GeneralsAndScientists ]
+    branches: [ master, dev, mungus/EliteUnits ]
 
 jobs:
   tests:
-    name: PHPUnit Tests & Architecture Verification
-    runs-on: ubuntu-latest
+    name: PHPUnit Tests & Architecture Verification shr
+    runs-on: self-hosted
 
     services:
       mysql:
