@@ -9,12 +9,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-guest
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
-  deploy-guest:
-    name: Deploy to Apache GUEST
+  deploy-prod:
+    name: Deploy to Apache PROD
     runs-on: self-hosted
     env:
       DEPLOY_PATH: /var/www/html/starlight_v2
@@ -28,17 +28,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          php -v || true
-          composer --version || true
-          rsync --version || true
+          require_cmd() {
+            local cmd="$1"
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+              echo "Error: $cmd is not installed or not in PATH; cannot deploy." >&2
+              exit 1
+            fi
+          }
 
-          if rsync --help 2>/dev/null | grep -q -- '--chown'; then
-            echo "RSYNC_HAS_CHOWN=1" >> "$GITHUB_ENV"
-          else
-            echo "RSYNC_HAS_CHOWN=0" >> "$GITHUB_ENV"
-          fi
+          require_cmd php
+          require_cmd composer
+          require_cmd rsync
 
-      - name: Sync files to Apache GUEST directory
+          COMPOSER_BIN="$(command -v composer)"
+          echo "COMPOSER_BIN=$COMPOSER_BIN" >> "$GITHUB_ENV"
+
+          echo "PHP:"
+          php -v | head -n 2
+
+          echo "Composer:"
+          composer --version
+
+          echo "rsync:"
+          rsync --version | head -n 2
+
+
+      - name: Sync files to Apache Starlight directory
         shell: bash
         run: |
           set -euo pipefail
@@ -66,7 +81,10 @@ jobs:
             --chmod=Du=rwx,Dg=rx,Da=rx,Fu=rw,Fg=r,Fa=r
           )
 
-          sudo rsync "${RSYNC_OPTS[@]}" ./ "$DEPLOY_PATH"/
+          if ! sudo rsync "${RSYNC_OPTS[@]}" ./ "$DEPLOY_PATH"/; then
+            echo "::error::rsync deployment to ${DEPLOY_PATH} failed. Check runner logs, permissions, and connectivity." >&2
+            exit 1
+          fi
 
       - name: Install production dependencies in deploy dir
         working-directory: ${{ env.DEPLOY_PATH }}
@@ -74,7 +92,30 @@ jobs:
         run: |
           set -euo pipefail
           echo "Installing deps (locked)..."
-          sudo -u "$APACHE_USER" composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+          SOURCE_LOCK="${GITHUB_WORKSPACE}/composer.lock"
+          DEPLOY_LOCK="${PWD}/composer.lock"
+
+          if [ ! -f "$SOURCE_LOCK" ]; then
+            echo "composer.lock is missing in source repository at $SOURCE_LOCK. Aborting deployment." >&2
+            exit 1
+          fi
+
+          if [ ! -f "$DEPLOY_LOCK" ]; then
+            echo "composer.lock is missing in deploy directory at $DEPLOY_LOCK. Aborting deployment." >&2
+            exit 1
+          fi
+
+          if ! cmp -s "$SOURCE_LOCK" "$DEPLOY_LOCK"; then
+            echo "composer.lock in deploy directory does not match repository version. Aborting deployment." >&2
+            exit 1
+          fi
+
+          if [ -z "${COMPOSER_BIN:-}" ]; then
+            echo "COMPOSER_BIN is not set; missing from preflight. Aborting deployment." >&2
+            exit 1
+          fi
+
+          sudo -u "$APACHE_USER" "$COMPOSER_BIN" install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
       - name: Run database migrations
         working-directory: ${{ env.DEPLOY_PATH }}
@@ -85,8 +126,26 @@ jobs:
             echo "Missing .env in $PWD; cannot run migrations." >&2
             exit 1
           fi
+          echo "Checking current migration status (pre-migration)..."
+          if ! php vendor/bin/phinx status -e production -c config/phinx.php; then
+            echo "Failed to fetch pre-migration status; aborting." >&2
+            exit 1
+          fi
+
           echo "Running migrations..."
-          php vendor/bin/phinx migrate -e production -c config/phinx.php
+          if ! php vendor/bin/phinx migrate -e production -c config/phinx.php; then
+            echo "Migration failed; attempting rollback to previous state..." >&2
+            php vendor/bin/phinx rollback -e production -c config/phinx.php -t -1 || {
+              echo "Rollback attempt failed; manual intervention may be required." >&2
+            }
+            exit 1
+          fi
+
+          echo "Verifying migration status (post-migration)..."
+          if php vendor/bin/phinx status -e production -c config/phinx.php | grep -q '\[down\]'; then
+            echo "Post-migration verification detected pending 'down' migrations; failing deploy." >&2
+            exit 1
+          fi
 
       - name: Fix runtime directory permissions for web user
         shell: bash
