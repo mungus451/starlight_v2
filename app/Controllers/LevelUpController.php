@@ -45,8 +45,17 @@ class LevelUpController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $data = $this->levelUpService->getLevelUpData($userId);
+        
+        $viewData = $data + [
+            'title' => 'Level Up',
+            'csrf_token' => $this->csrfService->generateToken()
+        ];
 
-        $this->render('level_up/show.php', $data + ['title' => 'Level Up']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('level_up/mobile_show.php', $viewData);
+        } else {
+            $this->render('level_up/show.php', $viewData);
+        }
     }
 
     /**
