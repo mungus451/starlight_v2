@@ -46,11 +46,18 @@ class BankController extends BaseController
         $userId = $this->session->get('user_id');
         
         $data = $this->bankService->getBankData($userId);
-
-        $this->render('bank/show.php', $data + [
+        
+        $viewData = $data + [
             'title' => 'Bank',
-            'layoutMode' => 'full'
-        ]);
+            'layoutMode' => 'full',
+            'csrf_token' => $this->csrfService->generateToken()
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('bank/mobile_show.php', $viewData);
+        } else {
+            $this->render('bank/show.php', $viewData);
+        }
     }
 
     /**
