@@ -63,6 +63,10 @@ class LeaderboardController extends BaseController
         $viewData['layoutMode'] = 'full';
         $viewData['title'] = 'Leaderboard - ' . ucfirst($type);
 
-        $this->render('leaderboard/show.php', $viewData);
+        if ($this->session->get('is_mobile')) {
+            $this->render('leaderboard/mobile_show.php', $viewData);
+        } else {
+            $this->render('leaderboard/show.php', $viewData);
+        }
     }
 }
