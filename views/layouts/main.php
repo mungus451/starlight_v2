@@ -35,14 +35,50 @@
         </div>
         <ul>
             <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="/bank"><i class="fas fa-piggy-bank"></i> Bank</a></li>
-            <li><a href="/training"><i class="fas fa-dumbbell"></i> Training</a></li>
-            <li><a href="/structures"><i class="fas fa-building"></i> Structures</a></li>
-            <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
-            <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy</a></li>
-            <li><a href="/battle"><i class="fas fa-fist-raised"></i> Battle</a></li>
-            <li><a href="/alliance/list"><i class="fas fa-users"></i> Alliance</a></li>
-            <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+
+            <li class="has-submenu">
+                <a href="#"><i class="fas fa-city"></i> Empire <i class="fas fa-chevron-down submenu-indicator"></i></a>
+                <ul class="submenu">
+                    <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
+                    <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li>
+                    <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
+                    <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+                </ul>
+            </li>
+
+            <li class="has-submenu">
+                <a href="#"><i class="fas fa-coins"></i> Economy <i class="fas fa-chevron-down submenu-indicator"></i></a>
+                <ul class="submenu">
+                    <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
+                    <li><a href="/black-market/converter"><i class="fas fa-exchange-alt"></i> Black Market</a></li>
+                </ul>
+            </li>
+
+            <li class="has-submenu">
+                <a href="#"><i class="fas fa-crosshairs"></i> Military <i class="fas fa-chevron-down submenu-indicator"></i></a>
+                <ul class="submenu">
+                    <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li>
+                    <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
+                    <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
+                    <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy Network</a></li>
+                    <li><a href="/battle"><i class="fas fa-fighter-jet"></i> Battle Control</a></li>
+                </ul>
+            </li>
+
+            <li class="has-submenu">
+                <a href="#"><i class="fas fa-flag"></i> Alliance <i class="fas fa-chevron-down submenu-indicator"></i></a>
+                <ul class="submenu">
+                    <li><a href="/alliance/list"><i class="fas fa-list"></i> Alliance List</a></li>
+                    <?php if ($currentUserAllianceId !== null): ?>
+                        <li><a href="/alliance/profile/<?= $currentUserAllianceId ?>"><i class="fas fa-home"></i> My Alliance</a></li>
+                        <li><a href="/alliance/forum"><i class="fas fa-comments"></i> Forum</a></li>
+                        <li><a href="/alliance/structures"><i class="fas fa-building"></i> Structures</a></li>
+                        <li><a href="/alliance/diplomacy"><i class="fas fa-handshake"></i> Diplomacy</a></li>
+                        <li><a href="/alliance/war"><i class="fas fa-skull"></i> War Room</a></li>
+                    <?php endif; ?>
+                </ul>
+            </li>
+            
             <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>

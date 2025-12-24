@@ -23,6 +23,28 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('[Mobile JS] Main navigation elements not found on this page.');
     }
 
+    // --- Feature 1a: Submenu Toggling ---
+    const submenuToggles = document.querySelectorAll('.mobile-nav .has-submenu > a');
+    if (submenuToggles.length > 0) {
+        console.log('[Mobile JS] Submenu module loaded.');
+        submenuToggles.forEach(toggle => {
+            toggle.addEventListener('click', e => {
+                e.preventDefault();
+                const parentLi = toggle.parentElement;
+                const submenu = toggle.nextElementSibling;
+
+                if (parentLi && submenu) {
+                    parentLi.classList.toggle('active');
+                    if (parentLi.classList.contains('active')) {
+                        submenu.style.maxHeight = submenu.scrollHeight + 'px';
+                    } else {
+                        submenu.style.maxHeight = '0';
+                    }
+                }
+            });
+        });
+    }
+
     // --- Feature 2: Dashboard - Avatar Lightbox ---
     // This should only run on the dashboard.
     const avatarTrigger = document.getElementById('avatar-trigger');
