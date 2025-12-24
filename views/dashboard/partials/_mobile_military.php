@@ -1,5 +1,11 @@
 <?php
 // --- Partial View: Military ---
+/* @var \App\Models\Entities\UserResource $resources */
+/* @var array $offenseBreakdown */
+/* @var array $defenseBreakdown */
+/* @var array $spyBreakdown */
+/* @var array $sentryBreakdown */
+/* @var array $generals */
 ?>
 <div class="mobile-card">
     <div class="mobile-card-header">
@@ -17,15 +23,36 @@
 
 <div class="mobile-card">
     <div class="mobile-card-header">
-        <h3><i class="fas fa-tools"></i> Armory</h3>
+        <h3><i class="fas fa-users-cog"></i> Unit Overview</h3>
     </div>
     <div class="mobile-card-content" style="display: block;">
         <ul class="mobile-stats-list">
-            <li><span><i class="fas fa-gavel"></i> Attack Weapon</span> <strong><?= htmlspecialchars($armory_loadout['attack_weapon_name'] ?? 'None') ?></strong></li>
-            <li><span><i class="fas fa-shield-alt"></i> Defense Weapon</span> <strong><?= htmlspecialchars($armory_loadout['defense_weapon_name'] ?? 'None') ?></strong></li>
-            <li><span><i class="fas fa-user-secret"></i> Spy Weapon</span> <strong><?= htmlspecialchars($armory_loadout['spy_weapon_name'] ?? 'None') ?></strong></li>
-            <li><span><i class="fas fa-broadcast-tower"></i> Sentry Weapon</span> <strong><?= htmlspecialchars($armory_loadout['sentry_weapon_name'] ?? 'None') ?></strong></li>
+            <li><span><i class="fas fa-user-ninja"></i> Soldiers</span> <strong><?= number_format($resources->soldiers) ?></strong></li>
+            <li><span><i class="fas fa-user-shield"></i> Guards</span> <strong><?= number_format($resources->guards) ?></strong></li>
+            <li><span><i class="fas fa-mask"></i> Spies</span> <strong><?= number_format($resources->spies) ?></strong></li>
+            <li><span><i class="fas fa-satellite-dish"></i> Sentries</span> <strong><?= number_format($resources->sentries) ?></strong></li>
         </ul>
-        <a href="/armory" class="btn">Manage Armory</a>
+        <a href="/training" class="btn">Train Units</a>
+    </div>
+</div>
+
+<div class="mobile-card">
+    <div class="mobile-card-header">
+        <h3><i class="fas fa-chess-king"></i> Elite Units</h3>
+    </div>
+    <div class="mobile-card-content" style="display: block;">
+        <?php if (!empty($generals)): ?>
+            <ul class="mobile-stats-list">
+                <?php foreach ($generals as $general): ?>
+                    <li>
+                        <span><i class="fas fa-user-tie"></i> <?= htmlspecialchars($general['name'] ?? 'Unknown') ?></span>
+                        <strong>Lvl <?= $general['level'] ?? 1 ?></strong>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="text-center text-muted">No elite units recruited yet.</p>
+            <a href="/generals" class="btn">Recruit Generals</a>
+        <?php endif; ?>
     </div>
 </div>

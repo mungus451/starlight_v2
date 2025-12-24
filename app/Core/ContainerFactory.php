@@ -182,6 +182,19 @@ IntelRepository::class => function (ContainerInterface $c) { return new IntelRep
 
 // --- SERVICES ---
 
+DashboardService::class => function (ContainerInterface $c) {
+    return new DashboardService(
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StatsRepository::class),
+        $c->get(StructureRepository::class),
+        $c->get(EffectRepository::class),
+        $c->get(PowerCalculatorService::class),
+        $c->get(ArmoryService::class),
+        $c->get(GeneralRepository::class)
+    );
+},
+
 // Attack Service (Updated Phase 19)
 AttackService::class => function (ContainerInterface $c) {
 return new AttackService(

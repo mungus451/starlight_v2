@@ -9,6 +9,7 @@ use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\ArmoryService;
+use App\Models\Repositories\GeneralRepository;
 
 /**
 * Orchestrates fetching all data needed for the dashboard.
@@ -24,6 +25,7 @@ class DashboardService
     private EffectRepository $effectRepo; // --- NEW ---
     private PowerCalculatorService $powerCalculator;
     private ArmoryService $armoryService;
+    private GeneralRepository $generalRepo;
 
     /**
     * DI Constructor.
@@ -32,17 +34,20 @@ class DashboardService
     * @param ResourceRepository $resourceRepository
     * @param StatsRepository $statsRepository
     * @param StructureRepository $structureRepository
+    * @param EffectRepository $effectRepo
     * @param PowerCalculatorService $powerCalculator
     * @param ArmoryService $armoryService
+    * @param GeneralRepository $generalRepo
     */
     public function __construct(
         UserRepository $userRepository,
         ResourceRepository $resourceRepository,
         StatsRepository $statsRepository,
         StructureRepository $structureRepository,
-        EffectRepository $effectRepo, // --- NEW ---
+        EffectRepository $effectRepo, 
         PowerCalculatorService $powerCalculator,
-        ArmoryService $armoryService
+        ArmoryService $armoryService,
+        GeneralRepository $generalRepo
     ) {
         $this->userRepository = $userRepository;
         $this->resourceRepository = $resourceRepository;
@@ -51,6 +56,7 @@ class DashboardService
         $this->effectRepo = $effectRepo;
         $this->powerCalculator = $powerCalculator;
         $this->armoryService = $armoryService;
+        $this->generalRepo = $generalRepo;
     }
 
     /**
@@ -82,6 +88,7 @@ class DashboardService
         ];
                 
         $activeEffects = $this->effectRepo->getAllActiveEffects($userId); // --- NEW ---
+        $generals = $this->generalRepo->findByUserId($userId); // Fetch Generals
 
         // 2. Get all calculation breakdowns from the injected service
         // Pass alliance_id to ALL calculators to ensure structure bonuses apply
@@ -128,8 +135,9 @@ class DashboardService
             'resources' => $resources,
             'stats' => $stats,
             'structures' => $structures,
-            'activeEffects' => $activeEffects, // --- NEW ---
+            'activeEffects' => $activeEffects,
             'armory_loadout' => $armory_loadout,
+            'generals' => $generals, // Include generals here
             'incomeBreakdown' => $incomeBreakdown,
             'offenseBreakdown' => $offenseBreakdown,
             'defenseBreakdown' => $defenseBreakdown,
