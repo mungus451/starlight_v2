@@ -31,7 +31,7 @@
                     </ul>
                 </div>
                 <form action="/structures/upgrade" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                    <input type="hidden" name="csrf_token" value="" class="csrf-token-input">
                     <input type="hidden" name="structure_key" value="<?= htmlspecialchars($s['key']) ?>">
                     <button type="submit" class="btn" <?= $s['can_afford'] ? '' : 'disabled' ?>>
                         <i class="fas fa-arrow-alt-circle-up"></i> Upgrade

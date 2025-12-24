@@ -38,7 +38,8 @@ class StructureController extends BaseController
             'title' => 'Structures',
             'layoutMode' => 'full',
             'resources' => $rawData['resources'], 
-            'groupedStructures' => $groupedStructures
+            'groupedStructures' => $groupedStructures,
+            'csrf_token' => $this->csrfService->generateToken() // Ensure token for initial load
         ];
 
         if ($this->session->get('is_mobile')) {
@@ -50,12 +51,60 @@ class StructureController extends BaseController
 
     public function handleUpgrade(): void
     {
-        // ... (existing code is correct)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'structure_key' => 'required|string'
+        ]);
+
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/structures');
+            return;
+        }
+        
+        $userId = $this->session->get('user_id');
+        $response = $this->structureService->upgradeStructure($userId, $data['structure_key']);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
+        $this->redirect('/structures');
     }
 
     public function handleBatchUpgrade(): void
     {
-        // ... (existing code is correct)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'structure_keys' => 'required' 
+        ]);
+
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/structures');
+            return;
+        }
+        
+        $keys = json_decode($_POST['structure_keys'], true);
+        
+        if (!is_array($keys) || empty($keys)) {
+             $this->session->setFlash('error', 'No structures selected for batch upgrade.');
+             $this->redirect('/structures');
+             return;
+        }
+
+        $userId = $this->session->get('user_id');
+        $response = $this->structureService->processBatchUpgrade($userId, $keys);
+        
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        
+        $this->redirect('/structures');
     }
 
     public function getMobileStructureTabData(array $params): void
@@ -71,26 +120,22 @@ class StructureController extends BaseController
         $rawData = $this->structureService->getStructureData($userId);
         $groupedStructures = $this->presenter->present($rawData);
 
-        // Find the correct category key by matching slugs
         $categoryData = null;
-        $originalCategoryKey = null;
         foreach (array_keys($groupedStructures) as $key) {
-            if ($this->slugify($key) === $categorySlug) {
-                $originalCategoryKey = $key;
+            if (strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $key))) === $categorySlug) {
+                $categoryData = $groupedStructures[$key];
                 break;
             }
         }
 
-        if (!$originalCategoryKey) {
+        if (is_null($categoryData)) {
             $this->jsonResponse(['error' => 'Invalid category specified'], 404);
             return;
         }
-        
-        $categoryData = $groupedStructures[$originalCategoryKey];
 
+        // Pass only the necessary data to the partial view
         $viewData = [
-            'structures' => $categoryData,
-            'csrf_token' => $this->csrfService->generateToken()
+            'structures' => $categoryData
         ];
         
         ob_start();
@@ -99,10 +144,5 @@ class StructureController extends BaseController
         $html = ob_get_clean();
 
         $this->jsonResponse(['html' => $html]);
-    }
-
-    private function slugify(string $text): string
-    {
-        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $text)));
     }
 }
