@@ -138,6 +138,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
     
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
+    $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
     $r->addRoute('POST', '/structures/batch-upgrade', [StructureController::class, 'handleBatchUpgrade']);
 

@@ -44,12 +44,13 @@
             </div>
         </div>
 
-        <div class="mobile-tabs">
-            <a href="#" class="tab-link active" data-tab="overview">Overview</a>
-            <a href="#" class="tab-link" data-tab="economics">Economics</a>
-            <a href="#" class="tab-link" data-tab="military">Military</a>
-            <a href="#" class="tab-link" data-tab="structures">Structures</a>
-        </div>
+<!-- Tab Navigation -->
+<div id="dashboard-tabs" class="mobile-tabs">
+    <a href="#" class="tab-link active" data-tab="overview">Overview</a>
+    <a href="#" class="tab-link" data-tab="economics">Economics</a>
+    <a href="#" class="tab-link" data-tab="military">Military</a>
+    <a href="#" class="tab-link" data-tab="structures">Structures</a>
+</div>
 
         <div id="tab-content">
             <?php require __DIR__ . '/partials/_mobile_overview.php'; ?>

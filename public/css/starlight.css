@@ -1431,7 +1431,7 @@ details[open] .tier-summary::after {
     .key-stat .stat-value { font-size: 1.5em; font-weight: 800; color: var(--mobile-text-primary); font-family: "Orbitron", sans-serif; text-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
 
     /* --- TAB NAVIGATION --- */
-    .mobile-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; overflow-x: auto; border-bottom: 1px solid var(--mobile-border); padding-bottom: 0.5rem; }
+    .mobile-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--mobile-border); padding-bottom: 0.5rem; flex-wrap: wrap; }
     .tab-link { display: block; padding: 0.75rem 1rem; border-radius: 6px; color: var(--mobile-text-secondary); font-weight: 600; text-decoration: none; border-bottom: 3px solid transparent; transition: all 0.2s ease; }
     .tab-link:hover { color: var(--mobile-text-primary); }
     .tab-link.active { color: var(--mobile-text-primary); border-bottom-color: var(--mobile-text-primary); background: rgba(0, 229, 255, 0.08); text-shadow: 0 0 5px rgba(0, 229, 255, 0.3); }
@@ -1488,6 +1488,86 @@ details[open] .tier-summary::after {
     .btn:hover { filter: brightness(1.2); transform: translateY(-1px); box-shadow: 0 0 20px rgba(0, 229, 255, 0.5); }
     .btn-accent { background: linear-gradient(90deg, #ff3366 0%, #cc0033 100%); box-shadow: 0 0 15px rgba(255, 51, 102, 0.3); color: #fff; }
     .btn-accent:hover { filter: brightness(1.2); box-shadow: 0 0 20px rgba(255, 51, 102, 0.5); }
+
+    /* --- MOBILE STRUCTURES PAGE --- */
+    .mobile-category-header {
+        font-family: "Orbitron", sans-serif;
+        color: var(--mobile-text-primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 1.2rem;
+        border-bottom: 2px solid var(--mobile-border);
+        padding-bottom: 0.5rem;
+        margin: 2rem 0 1rem 0;
+        text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+    }
+    .structure-level {
+        font-family: "Orbitron", sans-serif;
+        font-weight: 700;
+        color: var(--mobile-text-secondary);
+        font-size: 0.9rem;
+    }
+    .structure-description {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0 0 1rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 1px dotted var(--mobile-border);
+    }
+    .structure-benefit {
+        background: rgba(0, 229, 255, 0.08);
+        border: 1px solid var(--mobile-border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        color: var(--mobile-text-primary);
+        font-size: 0.9rem;
+    }
+    .structure-benefit strong {
+        color: var(--mobile-text-secondary);
+        font-weight: 600;
+    }
+    .next-level-info {
+        margin-bottom: 1rem;
+    }
+    .next-level-benefit {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+    .next-level-benefit strong {
+        color: var(--mobile-text-secondary);
+        font-weight: 600;
+    }
+    .structure-costs {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-family: var(--mobile-font);
+        font-size: 0.9rem;
+    }
+    .structure-costs li {
+        color: var(--mobile-accent-yellow);
+    }
+    .structure-costs li.insufficient {
+        color: var(--mobile-accent-red);
+        text-decoration: line-through;
+    }
+    .max-level-notice {
+        background: rgba(51, 255, 153, 0.1);
+        border: 1px solid var(--mobile-accent-green);
+        color: var(--mobile-accent-green);
+        padding: 1rem;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 6px;
+    }
+    .btn:disabled {
+        background: #333;
+        color: #666;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
 
     /* --- Lightbox (ensure it uses mobile colors) --- */
     .image-lightbox { background-color: rgba(0, 0, 0, 0.95); }
