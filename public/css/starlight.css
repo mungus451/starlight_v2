@@ -1569,6 +1569,38 @@ details[open] .tier-summary::after {
         cursor: not-allowed;
     }
 
+    /* --- NESTED TABS --- */
+    .nested-tabs-container {
+        padding: 0.5rem;
+        background: rgba(0,0,0,0.2);
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+    .nested-tabs {
+        border-bottom: none;
+        justify-content: center;
+    }
+    .nested-tabs .tab-link {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 2px solid transparent;
+        color: var(--muted);
+        background: none;
+        border-radius: 4px;
+    }
+    .nested-tabs .tab-link.active {
+        color: var(--mobile-text-primary);
+        background: rgba(0, 229, 255, 0.1);
+        border-bottom-color: transparent;
+    }
+    .nested-tab-content {
+        display: none;
+        padding-top: 1rem;
+    }
+    .nested-tab-content.active {
+        display: block;
+    }
+
     /* --- Lightbox (ensure it uses mobile colors) --- */
     .image-lightbox { background-color: rgba(0, 0, 0, 0.95); }
     .lightbox-close { color: var(--mobile-text-primary); text-shadow: 0 0 10px var(--mobile-text-primary); }

@@ -27,22 +27,34 @@ class EmbassyController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $data = $this->embassyService->getEmbassyData($userId);
+        
+        // Always add csrf_token for forms
+        $data['csrf_token'] = $this->csrfService->generateToken();
 
-        $this->render('embassy/index.php', $data);
+        if ($this->session->get('is_mobile')) {
+            // Group edicts by type specifically for the mobile view's nested tabs
+            $groupedEdicts = [];
+            foreach ($data['available_edicts'] as $edict) {
+                $groupedEdicts[$edict->type][] = $edict;
+            }
+            $data['grouped_edicts'] = $groupedEdicts;
+            $this->render('embassy/mobile_index.php', $data);
+        } else {
+            $this->render('embassy/index.php', $data);
+        }
     }
 
     public function activate(array $vars = []): void
     {
         $userId = $this->session->get('user_id');
         
-        // Manual CSRF Check (BaseController doesn't auto-check unless validate() is used or manual)
         if (!$this->csrfService->validateToken($_POST['csrf_token'] ?? '')) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/embassy');
+            return;
         }
 
         $edictKey = $_POST['edict_key'] ?? '';
-
         $result = $this->embassyService->activateEdict($userId, $edictKey);
 
         if ($result->success) {
@@ -61,10 +73,10 @@ class EmbassyController extends BaseController
         if (!$this->csrfService->validateToken($_POST['csrf_token'] ?? '')) {
             $this->session->setFlash('error', 'Invalid security token.');
             $this->redirect('/embassy');
+            return;
         }
 
         $edictKey = $_POST['edict_key'] ?? '';
-
         $result = $this->embassyService->revokeEdict($userId, $edictKey);
 
         if ($result->success) {
