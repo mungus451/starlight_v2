@@ -10,6 +10,8 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\EffectRepository;
+use App\Models\Repositories\GeneralRepository;
+use App\Models\Services\ArmoryService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -25,6 +27,8 @@ class DashboardServiceTest extends TestCase
     private StructureRepository|Mockery\MockInterface $mockStructureRepo;
     private EffectRepository|Mockery\MockInterface $mockEffectRepo;
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalc;
+    private ArmoryService|Mockery\MockInterface $mockArmoryService;
+    private GeneralRepository|Mockery\MockInterface $mockGeneralRepo;
 
     protected function setUp(): void
     {
@@ -36,6 +40,8 @@ class DashboardServiceTest extends TestCase
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
         $this->mockEffectRepo = Mockery::mock(EffectRepository::class);
         $this->mockPowerCalc = Mockery::mock(PowerCalculatorService::class);
+        $this->mockArmoryService = Mockery::mock(ArmoryService::class);
+        $this->mockGeneralRepo = Mockery::mock(GeneralRepository::class);
 
         $this->service = new DashboardService(
             $this->mockUserRepo,
@@ -43,7 +49,9 @@ class DashboardServiceTest extends TestCase
             $this->mockStatsRepo,
             $this->mockStructureRepo,
             $this->mockEffectRepo,
-            $this->mockPowerCalc
+            $this->mockPowerCalc,
+            $this->mockArmoryService,
+            $this->mockGeneralRepo
         );
     }
 
@@ -62,6 +70,8 @@ class DashboardServiceTest extends TestCase
         $this->mockStatsRepo->shouldReceive('findByUserId')->with($userId)->andReturn($stats);
         $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($struct);
         $this->mockEffectRepo->shouldReceive('getAllActiveEffects')->with($userId)->andReturn([]);
+        $this->mockArmoryService->shouldReceive('getArmoryData')->with($userId)->andReturn(['loadouts' => [], 'itemLookup' => []]);
+        $this->mockGeneralRepo->shouldReceive('findByUserId')->with($userId)->andReturn([]);
 
         // Verify Calculations are called with correct Alliance ID
         $this->mockPowerCalc->shouldReceive('calculateIncomePerTurn')
@@ -77,6 +87,8 @@ class DashboardServiceTest extends TestCase
         $this->assertArrayHasKey('user', $result);
         $this->assertArrayHasKey('incomeBreakdown', $result);
         $this->assertArrayHasKey('offenseBreakdown', $result);
+        $this->assertArrayHasKey('armory_loadout', $result);
+        $this->assertArrayHasKey('generals', $result);
     }
 
     // --- Helpers ---
