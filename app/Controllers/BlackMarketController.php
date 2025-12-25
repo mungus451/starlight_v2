@@ -31,31 +31,44 @@ $this->converterService = $converterService;
 // --- Tab 1: The Exchange ---
 public function showExchange(): void
 {
-$userId = $this->session->get('user_id');
-$data = $this->converterService->getConverterPageData($userId);
-$data['active_tab'] = 'exchange';
-$this->render('black_market/exchange.php', $data + ['title' => 'Black Market - Exchange']);
+    $userId = $this->session->get('user_id');
+    $data = $this->converterService->getConverterPageData($userId);
+    $data['active_tab'] = 'exchange';
+    $data['csrf_token'] = $this->csrfService->generateToken();
+
+    if ($this->session->get('is_mobile')) {
+        $this->render('black_market/mobile_exchange.php', $data + ['title' => 'The Exchange']);
+    } else {
+        $this->render('black_market/exchange.php', $data + ['title' => 'Black Market - Exchange']);
+    }
 }
 
 // --- Tab 2: The Undermarket (Actions) ---
 public function showActions(): void
 {
-$userId = $this->session->get('user_id');
+    $userId = $this->session->get('user_id');
 
-// Use Service to get data, keeping Controller thin
-$data = $this->bmService->getUndermarketPageData($userId);
+    // Use Service to get data, keeping Controller thin
+    $data = $this->bmService->getUndermarketPageData($userId);
 
-// Load costs config to pass to view
-$bmConfig = require __DIR__ . '/../../config/black_market.php';
+    // Load costs config to pass to view
+    $bmConfig = require __DIR__ . '/../../config/black_market.php';
 
-$this->render('black_market/actions.php', [
-'title' => 'Black Market - Actions',
-'active_tab' => 'actions',
-'bounties' => $data['bounties'],
-'targets' => $data['targets'],
-'costs' => $bmConfig['costs'], // Pass costs array
-'layoutMode' => 'full'
-]);
+    $viewData = [
+        'title' => 'Black Market - Actions',
+        'active_tab' => 'actions',
+        'bounties' => $data['bounties'],
+        'targets' => $data['targets'],
+        'costs' => $bmConfig['costs'], // Pass costs array
+        'layoutMode' => 'full',
+        'csrf_token' => $this->csrfService->generateToken()
+    ];
+
+    if ($this->session->get('is_mobile')) {
+        $this->render('black_market/mobile_actions.php', $viewData);
+    } else {
+        $this->render('black_market/actions.php', $viewData);
+    }
 }
 
 // --- Purchase Handler (Stat, Energy, Citizens, Lootbox) ---
