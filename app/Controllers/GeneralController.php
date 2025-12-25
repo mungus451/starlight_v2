@@ -47,7 +47,7 @@ class GeneralController extends BaseController
         
         $weapons = $this->config->get('elite_weapons', []);
         
-        $this->render('generals/index.php', [
+        $viewData = [
             'title' => 'High Command',
             'generals' => $generals,
             'resources' => $resources,
@@ -55,11 +55,18 @@ class GeneralController extends BaseController
             'army_cap' => $cap,
             'elite_weapons' => $weapons,
             'layoutMode' => 'full'
-        ]);
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('generals/mobile_index.php', $viewData);
+        } else {
+            $this->render('generals/index.php', $viewData);
+        }
     }
 
     public function recruit(): void
     {
+        // ... (No changes needed)
         $rules = ['csrf_token' => 'required', 'name' => 'nullable|string|max:50'];
         $data = $this->validate($_POST, $rules);
         
@@ -82,6 +89,7 @@ class GeneralController extends BaseController
 
     public function equip(): void
     {
+        // ... (No changes needed)
         $rules = [
             'csrf_token' => 'required', 
             'general_id' => 'required|int',
@@ -121,13 +129,19 @@ class GeneralController extends BaseController
         $resources = $this->resourceRepo->findByUserId($userId);
         $weapons = $this->config->get('elite_weapons', []);
         
-        $this->render('generals/armory.php', [
+        $viewData = [
             'title' => 'Elite Armory: ' . $general['name'],
             'general' => $general,
             'resources' => $resources,
             'elite_weapons' => $weapons,
             'layoutMode' => 'full'
-        ]);
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('generals/mobile_armory.php', $viewData);
+        } else {
+            $this->render('generals/armory.php', $viewData);
+        }
     }
 
     public function decommission(): void
