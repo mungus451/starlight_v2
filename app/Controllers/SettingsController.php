@@ -48,7 +48,11 @@ class SettingsController extends BaseController
 
         $data['layoutMode'] = 'full';
 
-        $this->render('settings/show.php', $data + ['title' => 'Settings']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('settings/mobile_show.php', $data + ['title' => 'Settings']);
+        } else {
+            $this->render('settings/show.php', $data + ['title' => 'Settings']);
+        }
     }
 
     /**
