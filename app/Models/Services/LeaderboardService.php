@@ -35,10 +35,10 @@ class LeaderboardService
      * @param string $sortKey The column to sort by (e.g., 'net_worth', 'army', 'battles_won')
      * @return ServiceResponse
      */
-    public function getLeaderboardData(string $type, int $page, string $sortKey = 'net_worth'): ServiceResponse
+    public function getLeaderboardData(string $type, int $page, string $sortKey = 'net_worth', ?int $perPageOverride = null): ServiceResponse
     {
         // 1. Configuration
-        $perPage = $this->config->get('app.leaderboard.per_page', 25);
+        $perPage = $perPageOverride ?? $this->config->get('app.leaderboard.per_page', 25);
         $page = max(1, $page);
         $offset = ($page - 1) * $perPage;
 

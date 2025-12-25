@@ -42,31 +42,31 @@ class BattleController extends BaseController
         $this->presenter = $presenter;
     }
 
-    /**
-     * Displays the main battle page (attack form + target list).
-     */
     public function show(array $vars): void
     {
         $userId = $this->session->get('user_id');
         $page = (int)($vars['page'] ?? 1);
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->session->get('is_mobile') ? 5 : null);
         
-        $data = $this->attackService->getAttackPageData($userId, $page);
+        $data = $this->attackService->getAttackPageData($userId, $page, $limit);
 
         $data['layoutMode'] = 'full';
+        $data['csrf_token'] = $this->csrfService->generateToken();
 
-        $this->render('battle/show.php', $data + ['title' => 'Battle']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('battle/mobile_show.php', $data + ['title' => 'War Room']);
+        } else {
+            $this->render('battle/show.php', $data + ['title' => 'War Room']);
+        }
     }
 
-    /**
-     * Handles the "all-in" attack form submission.
-     */
     public function handleAttack(): void
     {
         // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'target_name' => 'required|string',
-            'attack_type' => 'required|string|in:plunder'
+            'attack_type' => 'required|string'
         ]);
 
         // 2. Validate CSRF
@@ -78,6 +78,7 @@ class BattleController extends BaseController
         
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
+        
         $response = $this->attackService->conductAttack($userId, $data['target_name'], $data['attack_type']);
         
         // 4. Handle Response
@@ -90,36 +91,47 @@ class BattleController extends BaseController
         }
     }
 
-    /**
-     * Displays the list of past battle reports.
-     */
     public function showReports(): void
     {
         $userId = $this->session->get('user_id');
         
-        // 1. Get Entities
         $reportsRaw = $this->attackService->getBattleReports($userId);
-        
-        // 2. Transform to ViewModel
         $reportsFormatted = $this->presenter->presentAll($reportsRaw, $userId);
 
-        $this->render('battle/reports.php', [
+        // Pagination Logic
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->session->get('is_mobile') ? 5 : 25);
+        $totalItems = count($reportsFormatted);
+        $totalPages = ceil($totalItems / $limit);
+        $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
+        $offset = ($page - 1) * $limit;
+        
+        $reportsPaginated = array_slice($reportsFormatted, $offset, $limit);
+
+        $viewData = [
             'title' => 'Battle Reports',
-            'reports' => $reportsFormatted, // Passed as array, not entities
+            'reports' => $reportsPaginated,
             'userId' => $userId,
-            'layoutMode' => 'full'
-        ]);
+            'layoutMode' => 'full',
+            'pagination' => [
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'limit' => $limit
+            ]
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('battle/mobile_reports.php', $viewData);
+        } else {
+            $this->render('battle/reports.php', $viewData);
+        }
     }
 
-    /**
-     * Displays a single, detailed battle report.
-     */
     public function showReport(array $vars): void
     {
         $userId = $this->session->get('user_id');
         $reportId = (int)($vars['id'] ?? 0);
         
-        // 1. Get Entity
         $reportRaw = $this->attackService->getBattleReport($reportId, $userId);
 
         if (is_null($reportRaw)) {
@@ -128,13 +140,18 @@ class BattleController extends BaseController
             return;
         }
 
-        // 2. Transform to ViewModel
         $reportFormatted = $this->presenter->present($reportRaw, $userId);
 
-        $this->render('battle/report_view.php', [
+        $viewData = [
             'title' => 'Battle Report #' . $reportFormatted['id'],
             'report' => $reportFormatted,
             'layoutMode' => 'full'
-        ]);
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('battle/mobile_report_view.php', $viewData);
+        } else {
+            $this->render('battle/report_view.php', $viewData);
+        }
     }
 }

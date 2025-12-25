@@ -79,13 +79,13 @@ class AttackService
         $this->effectService = $effectService;
     }
 
-    public function getAttackPageData(int $userId, int $page): array
+    public function getAttackPageData(int $userId, int $page, ?int $limit = null): array
     {
         $attackerResources = $this->resourceRepo->findByUserId($userId);
         $attackerStats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.attack', []);
 
-        $perPage = $this->config->get('app.leaderboard.per_page', 25);
+        $perPage = $limit ?? $this->config->get('app.leaderboard.per_page', 25);
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
         $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
@@ -100,7 +100,8 @@ class AttackService
             'targets' => $targets,
             'pagination' => [
                 'currentPage' => $page,
-                'totalPages' => $totalPages
+                'totalPages' => $totalPages,
+                'limit' => $perPage
             ],
             'perPage' => $perPage
         ];

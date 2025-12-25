@@ -4,6 +4,7 @@
 /* @var string $currentSort */
 /* @var array $data */
 /* @var array $pagination */
+/* @var int $currentLimit */
 
 $page = $pagination['currentPage'];
 $totalPages = $pagination['totalPages'];
@@ -12,6 +13,7 @@ $nextPage = $page < $totalPages ? $page + 1 : null;
 
 // Ensure currentSort has a default
 $currentSort = $currentSort ?? 'net_worth';
+$limitParam = "&limit={$currentLimit}";
 
 $sortOptions = [
     'net_worth' => ['icon' => 'fa-coins', 'label' => 'Net Worth'],
@@ -29,8 +31,8 @@ $sortOptions = [
 
     <!-- Type Tabs -->
     <div class="mobile-tabs" style="justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
-        <a href="/leaderboard/players" class="tab-link <?= $type === 'players' ? 'active' : '' ?>">Commanders</a>
-        <a href="/leaderboard/alliances" class="tab-link <?= $type === 'alliances' ? 'active' : '' ?>">Alliances</a>
+        <a href="/leaderboard/players<?= '?sort=' . $currentSort . $limitParam ?>" class="tab-link <?= $type === 'players' ? 'active' : '' ?>">Commanders</a>
+        <a href="/leaderboard/alliances<?= '?sort=' . $currentSort . $limitParam ?>" class="tab-link <?= $type === 'alliances' ? 'active' : '' ?>">Alliances</a>
     </div>
 
     <!-- Sort Options (Players Only) -->
@@ -41,7 +43,7 @@ $sortOptions = [
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
                 <?php foreach ($sortOptions as $key => $opt): ?>
-                    <a href="/leaderboard/players/1?sort=<?= $key ?>" 
+                    <a href="/leaderboard/players/1?sort=<?= $key . $limitParam ?>" 
                        class="btn <?= $currentSort === $key ? 'btn-accent' : '' ?>" 
                        style="font-size: 0.8rem; padding: 0.5rem 0.75rem; flex: 1 1 auto; text-align: center; min-width: 100px;">
                         <i class="fas <?= $opt['icon'] ?>"></i> <?= $opt['label'] ?>
@@ -50,6 +52,18 @@ $sortOptions = [
             </div>
         </div>
     <?php endif; ?>
+
+    <!-- Limit Options -->
+    <div class="mobile-tabs" style="justify-content: center; margin-bottom: 1rem; gap: 0.5rem;">
+        <span style="color: var(--muted); font-size: 0.9rem; align-self: center;">Show:</span>
+        <?php foreach ([5, 10, 25] as $opt): ?>
+            <a href="/leaderboard/<?= $type ?>/1?sort=<?= $currentSort ?>&limit=<?= $opt ?>" 
+               class="tab-link <?= $currentLimit == $opt ? 'active' : '' ?>"
+               style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+               <?= $opt ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
 
     <!-- Leaderboard List -->
     <div class="leaderboard-list">
@@ -115,7 +129,7 @@ $sortOptions = [
     <?php if ($totalPages > 1): ?>
     <div class="mobile-tabs" style="justify-content: space-between; margin-top: 1rem;">
         <?php if ($prevPage): ?>
-            <a href="/leaderboard/<?= $type ?>/<?= $prevPage ?>?sort=<?= $currentSort ?>" class="btn">
+            <a href="/leaderboard/<?= $type ?>/<?= $prevPage ?>?sort=<?= $currentSort . $limitParam ?>" class="btn">
                 <i class="fas fa-chevron-left"></i> Prev
             </a>
         <?php else: ?>
@@ -127,7 +141,7 @@ $sortOptions = [
         </span>
 
         <?php if ($nextPage): ?>
-            <a href="/leaderboard/<?= $type ?>/<?= $nextPage ?>?sort=<?= $currentSort ?>" class="btn">
+            <a href="/leaderboard/<?= $type ?>/<?= $nextPage ?>?sort=<?= $currentSort . $limitParam ?>" class="btn">
                 Next <i class="fas fa-chevron-right"></i>
             </a>
         <?php else: ?>

@@ -45,23 +45,27 @@ $this->presenter = $presenter;
 /**
 * Displays the main Armory page with all tabs and items.
 */
-public function show(): void
-{
-$userId = $this->session->get('user_id');
+    public function show(): void
+    {
+        $userId = $this->session->get('user_id');
 
-// 1. Get Raw Business Data (Service Layer)
-$rawData = $this->armoryService->getArmoryData($userId);
+        // 1. Get Raw Business Data (Service Layer)
+        $rawData = $this->armoryService->getArmoryData($userId);
 
-// 2. Transform to View Model (Presentation Layer)
-$viewModel = $this->presenter->present($rawData);
+        // 2. Transform to View Model (Presentation Layer)
+        $viewModel = $this->presenter->present($rawData);
 
-$viewModel['title'] = 'Armory';
-$viewModel['layoutMode'] = 'full';
+        $viewModel['title'] = 'Armory';
+        $viewModel['layoutMode'] = 'full';
+        $viewModel['csrf_token'] = $this->csrfService->generateToken();
 
-// 3. Render
-$this->render('armory/show.php', $viewModel);
-}
-
+        // 3. Render
+        if ($this->session->get('is_mobile')) {
+            $this->render('armory/mobile_show.php', $viewModel);
+        } else {
+            $this->render('armory/show.php', $viewModel);
+        }
+    }
 /**
 * Handles the "Manufacture / Upgrade" form submission.
 */

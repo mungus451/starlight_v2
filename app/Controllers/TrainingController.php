@@ -46,11 +46,18 @@ class TrainingController extends BaseController
         $userId = $this->session->get('user_id');
         
         $data = $this->trainingService->getTrainingData($userId);
-
-        $this->render('training/show.php', $data + [
+        
+        $viewData = $data + [
             'title' => 'Training',
-            'layoutMode' => 'full'
-        ]);
+            'layoutMode' => 'full',
+            'csrf_token' => $this->csrfService->generateToken()
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('training/mobile_show.php', $viewData);
+        } else {
+            $this->render('training/show.php', $viewData);
+        }
     }
 
     /**

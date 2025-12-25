@@ -39,10 +39,14 @@ class LeaderboardController extends BaseController
         $type = $vars['type'] ?? 'players';
         $page = (int)($vars['page'] ?? 1);
 
-        // 2. Parse Query Parameters (Sorting)
-        // We use $_GET directly here as the Validator class is built for POST payloads
-        // and simple string extraction is safe for whitelisting in Service.
+        // 2. Parse Query Parameters (Sorting & Limit)
         $sort = $_GET['sort'] ?? 'net_worth';
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : null;
+
+        // Mobile default limit logic
+        if ($this->session->get('is_mobile') && $limit === null) {
+            $limit = 5;
+        }
 
         // Sanitize type
         if (!in_array($type, ['players', 'alliances'])) {
@@ -50,7 +54,7 @@ class LeaderboardController extends BaseController
         }
 
         // 3. Call Service
-        $response = $this->leaderboardService->getLeaderboardData($type, $page, $sort);
+        $response = $this->leaderboardService->getLeaderboardData($type, $page, $sort, $limit);
 
         if (!$response->isSuccess()) {
             $this->session->setFlash('error', $response->message);
@@ -62,6 +66,7 @@ class LeaderboardController extends BaseController
         $viewData = $response->data;
         $viewData['layoutMode'] = 'full';
         $viewData['title'] = 'Leaderboard - ' . ucfirst($type);
+        $viewData['currentLimit'] = $limit ?? 25; // For UI controls
 
         if ($this->session->get('is_mobile')) {
             $this->render('leaderboard/mobile_show.php', $viewData);

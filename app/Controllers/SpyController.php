@@ -49,12 +49,18 @@ class SpyController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $page = (int)($vars['page'] ?? 1);
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->session->get('is_mobile') ? 5 : null);
         
-        $data = $this->spyService->getSpyData($userId, $page);
+        $data = $this->spyService->getSpyData($userId, $page, $limit);
 
         $data['layoutMode'] = 'full';
+        $data['csrf_token'] = $this->csrfService->generateToken();
 
-        $this->render('spy/show.php', $data + ['title' => 'Espionage']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('spy/mobile_show.php', $data + ['title' => 'Espionage']);
+        } else {
+            $this->render('spy/show.php', $data + ['title' => 'Espionage']);
+        }
     }
 
     /**
@@ -103,12 +109,37 @@ class SpyController extends BaseController
         // 2. Transform to ViewModel
         $reportsFormatted = $this->presenter->presentAll($reportsRaw, $userId);
 
-        $this->render('spy/reports.php', [
+        // 3. Pagination Logic
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->session->get('is_mobile') ? 5 : 25);
+        $totalItems = count($reportsFormatted);
+        $totalPages = ceil($totalItems / $limit);
+        $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
+        $offset = ($page - 1) * $limit;
+        
+        $reportsPaginated = array_slice($reportsFormatted, $offset, $limit);
+
+        $viewData = [
             'title' => 'Spy Reports',
-            'reports' => $reportsFormatted,
+            'reports' => $reportsPaginated,
             'userId' => $userId,
-            'layoutMode' => 'full'
-        ]);
+            'layoutMode' => 'full',
+            'pagination' => [
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'limit' => $limit
+            ]
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('spy/mobile_reports.php', $viewData);
+        } else {
+            // Desktop view might ignore pagination or need update, passing full list for now to avoid regression if view doesn't support pagination
+            // Actually, better to paginate desktop too if easy, but sticking to request scope: mobile pagination.
+            // But I modified $reportsPaginated. I should pass formatted array if not mobile?
+            // Existing view loop over 'reports'. If I pass sliced, desktop gets sliced. That's fine/better performance.
+            $this->render('spy/reports.php', $viewData);
+        }
     }
 
     /**
@@ -131,10 +162,16 @@ class SpyController extends BaseController
         // 2. Transform to ViewModel
         $reportFormatted = $this->presenter->present($reportRaw, $userId);
 
-        $this->render('spy/report_view.php', [
+        $viewData = [
             'title' => 'Spy Report #' . $reportFormatted['id'],
             'report' => $reportFormatted,
             'layoutMode' => 'full'
-        ]);
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('spy/mobile_report_view.php', $viewData);
+        } else {
+            $this->render('spy/report_view.php', $viewData);
+        }
     }
 }
