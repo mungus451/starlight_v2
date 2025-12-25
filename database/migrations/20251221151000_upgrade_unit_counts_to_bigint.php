@@ -16,7 +16,7 @@ use Phinx\Migration\AbstractMigration;
  * 
  * Affected Tables:
  * - user_resources: soldiers, guards, spies, sentries, workers, untrained_citizens
- * - spy_reports: soldiers_seen, guards_seen, spies_seen, sentries_seen, workers_seen
+ * - spy_reports: soldiers_seen, guards_seen, spies_seen, sentries_seen, workers_seen, defender_total_sentries
  * - battle_reports: soldiers_sent, attacker_soldiers_lost, defender_guards_lost, defender_total_guards
  * 
  * Decision Criteria:
@@ -182,20 +182,20 @@ final class UpgradeUnitCountsToBigint extends AbstractMigration
             $this->output->writeln('<info>Upgraded defender_total_guards column</info>');
         }
 
-        // Check if defender_total_sentries exists (added in migration 20251210224000)
-        if ($battleReportsTable->hasColumn('defender_total_sentries')) {
-            $battleReportsTable
+        $this->output->writeln('<info>Upgraded battle_reports unit counts</info>');
+
+        // Check if defender_total_sentries exists on spy_reports (added in migration 20251210224000)
+        if ($spyReportsTable->hasColumn('defender_total_sentries')) {
+            $spyReportsTable
                 ->changeColumn('defender_total_sentries', 'biginteger', [
                     'signed' => true,
                     'default' => 0,
                     'null' => false,
-                    'comment' => 'Snapshot of defender total sentries at battle time'
+                    'comment' => 'Snapshot of defender total sentries at start of operation'
                 ])
                 ->update();
-            $this->output->writeln('<info>Upgraded defender_total_sentries column</info>');
+            $this->output->writeln('<info>Upgraded defender_total_sentries column on spy_reports</info>');
         }
-
-        $this->output->writeln('<info>Upgraded battle_reports unit counts</info>');
         $this->output->writeln('<comment>Migration complete. Unit counts now support values up to ±9,223,372,036,854,775,807</comment>');
     }
 
@@ -271,15 +271,16 @@ final class UpgradeUnitCountsToBigint extends AbstractMigration
             ]);
         }
 
-        if ($battleReportsTable->hasColumn('defender_total_sentries')) {
-            $battleReportsTable->changeColumn('defender_total_sentries', 'integer', [
+        $battleReportsTable->update();
+
+        if ($spyReportsTable->hasColumn('defender_total_sentries')) {
+            $spyReportsTable->changeColumn('defender_total_sentries', 'integer', [
                 'signed' => true,
                 'default' => 0,
                 'null' => false
             ]);
+            $spyReportsTable->update();
         }
-
-        $battleReportsTable->update();
 
         $this->output->writeln('<info>Rollback complete</info>');
     }
