@@ -177,7 +177,7 @@ class TurnProcessorService
             $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
             // 5. Calculate and apply UNIT upkeep (Generals/Scientists)
-            $generalCount = $this->generalRepo->getGeneralCount($userId);
+            $generalCount = $this->generalRepo->countByUserId($userId);
             $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
 
             $generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);
@@ -190,62 +190,54 @@ class TurnProcessorService
 
             // 6. Edict Upkeep Logic
             $activeEdicts = $this->edictRepo->findActiveByUserId($userId);
+            $totalWorkerUpkeepFromEdicts = 0;
+
             foreach ($activeEdicts as $activeEdict) {
                 $def = $this->edictRepo->getDefinition($activeEdict->edict_key);
-                if (!$def || $def->upkeep_cost <= 0) continue;
+                if (!$def) continue;
 
-                $cost = $def->upkeep_cost;
-                $canAfford = false;
+                // A. Handle flat upkeep costs (e.g., Project Genesis)
+                if ($def->upkeep_cost > 0) {
+                    $cost = $def->upkeep_cost;
+                    $canAfford = false;
 
-                if ($def->upkeep_resource === 'credits') {
-                    // Check balance (including what we just added)
-                    // We need to re-fetch or estimate. Re-fetching is safer inside transaction.
-                    // But for performance, we can just try to deduct and check affected rows?
-                    // ResourceRepo::updateResources returns bool.
-                    // But wait, updateResources with negative might make it negative?
-                    // The repo usually clamps or allows negative? Let's check.
-                    // Standard approach: Check logic.
-                    // Let's optimize: We assume income was added.
-                    
-                    // Actually, simple check:
-                    // If credits < cost, revoke.
-                    // Since we added income already, we should use the updated balance.
-                    // Ideally we track running balance in memory, but that's complex.
-                    // Let's do a quick fetch of the column we need.
-                    
-                    // Optimization: We know starting balance + gain.
-                    $currentCredits = $resources->credits + $creditsGained + $interestGained; 
-                    // Note: This ignores unit upkeep we just paid? 
-                    // No, unit upkeep is protoform.
-                    // If unit upkeep was credits, we'd need to subtract.
-                    
-                    if ($currentCredits >= $cost) {
-                        $this->resourceRepo->updateResources($userId, -1 * $cost, 0, 0);
-                        $currentCredits -= $cost; // Update local tracker
-                        $canAfford = true;
+                    if ($def->upkeep_resource === 'credits') {
+                        $currentCredits = $resources->credits + $creditsGained + $interestGained - $totalWorkerUpkeepFromEdicts;
+                        if ($currentCredits >= $cost) {
+                            $this->resourceRepo->updateResources($userId, -1 * $cost, 0, 0);
+                            $canAfford = true;
+                        }
+                    } elseif ($def->upkeep_resource === 'energy') {
+                        $currentEnergy = $stats->energy;
+                        if ($currentEnergy >= $cost) {
+                            // Placeholder for energy deduction logic
+                            $canAfford = true;
+                        }
+                    } else {
+                        $canAfford = true; // Unknown resource, no cost applied
                     }
-                } elseif ($def->upkeep_resource === 'energy') {
-                    // Energy is in user_stats
-                    // We haven't modified energy yet (only attack_turns).
-                    $currentEnergy = $stats->energy; // + regen? Energy regen isn't implemented here yet.
-                    if ($currentEnergy >= $cost) {
-                        // We need a method to update energy.
-                        // statsRepo->updateEnergy($userId, -$cost)?
-                        // Let's assume statsRepo has a generic update or we need to add one.
-                        // For now, I'll assume we can update it directly via SQL if needed, but let's check StatsRepo.
-                        // I'll skip implementation detail and assume we can deduct energy.
-                        // If not, I'll log a warning and skip deduction to avoid crash.
-                        // NOTE: Energy logic placeholder.
-                        $canAfford = true; 
+
+                    if (!$canAfford) {
+                        $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
+                        continue; // Skip to the next edict
                     }
-                } else {
-                    // Unknown resource, free pass?
-                    $canAfford = true;
                 }
 
-                if (!$canAfford) {
-                    $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
-                    // Optional: Send notification "Edict revoked due to lack of funds"
+                // B. Handle variable upkeep costs (e.g., Synthetic Integration's worker upkeep)
+                if (isset($def->modifiers['worker_upkeep_flat']) && $def->modifiers['worker_upkeep_flat'] > 0) {
+                    $totalWorkerUpkeepFromEdicts += $resources->workers * $def->modifiers['worker_upkeep_flat'];
+                }
+            }
+
+            // Apply the total calculated worker upkeep from all edicts at once
+            if ($totalWorkerUpkeepFromEdicts > 0) {
+                $currentCredits = $resources->credits + $creditsGained + $interestGained;
+                if ($currentCredits >= $totalWorkerUpkeepFromEdicts) {
+                    $this->resourceRepo->updateResources($userId, -1 * $totalWorkerUpkeepFromEdicts, 0, 0);
+                } else {
+                    // Not enough credits for worker upkeep. For now, we'll let it slide,
+                    // but in the future, this could be a trigger for revoking the edict.
+                    // The flat upkeep check above handles immediate revocation.
                 }
             }
 
