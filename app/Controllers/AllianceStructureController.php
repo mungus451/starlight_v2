@@ -46,7 +46,11 @@ class AllianceStructureController extends BaseController
         $data = $response->data;
         $data['layoutMode'] = 'full';
 
-        $this->render('alliance/structures.php', $data + ['title' => 'Alliance Structures']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_structures.php', $data + ['title' => 'Alliance Structures']);
+        } else {
+            $this->render('alliance/structures.php', $data + ['title' => 'Alliance Structures']);
+        }
     }
 
     /**

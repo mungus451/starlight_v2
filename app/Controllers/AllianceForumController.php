@@ -52,7 +52,11 @@ class AllianceForumController extends BaseController
         $data = $this->forumPresenter->presentIndex($response->data);
         $data['layoutMode'] = 'full';
 
-        $this->render('alliance/forum_index.php', $data + ['title' => 'Alliance Forum']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_forum_index.php', $data + ['title' => 'Alliance Forum']);
+        } else {
+            $this->render('alliance/forum_index.php', $data + ['title' => 'Alliance Forum']);
+        }
     }
 
     /**
@@ -74,7 +78,11 @@ class AllianceForumController extends BaseController
         $data = $this->forumPresenter->presentTopic($response->data);
         $data['layoutMode'] = 'full';
 
-        $this->render('alliance/forum_topic.php', $data + ['title' => $data['topic']->title]);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_forum_topic.php', $data + ['title' => $data['topic']->title]);
+        } else {
+            $this->render('alliance/forum_topic.php', $data + ['title' => $data['topic']->title]);
+        }
     }
 
     /**
@@ -92,11 +100,17 @@ class AllianceForumController extends BaseController
             return;
         }
 
-        $this->render('alliance/forum_create.php', [
+        $viewData = [
             'title' => 'Create New Topic',
             'layoutMode' => 'full',
             'allianceId' => $allianceId
-        ]);
+        ];
+
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_forum_create.php', $viewData);
+        } else {
+            $this->render('alliance/forum_create.php', $viewData);
+        }
     }
 
     /**

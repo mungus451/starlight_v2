@@ -47,7 +47,11 @@ class WarController extends BaseController
         $data['layoutMode'] = 'full';
         $data['title'] = 'Alliance War Room';
 
-        $this->render('alliance/war.php', $data);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_war.php', $data);
+        } else {
+            $this->render('alliance/war.php', $data);
+        }
     }
 
     /**

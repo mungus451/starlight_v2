@@ -53,11 +53,17 @@ class AllianceController extends BaseController
     public function showList(array $vars): void
     {
         $page = (int)($vars['page'] ?? 1);
-        $data = $this->allianceService->getAlliancePageData($page);
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : ($this->session->get('is_mobile') ? 5 : null);
+        
+        $data = $this->allianceService->getAlliancePageData($page, $limit);
 
         $data['layoutMode'] = 'full';
 
-        $this->render('alliance/list.php', $data + ['title' => 'Alliances']);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_list.php', $data + ['title' => 'Alliances']);
+        } else {
+            $this->render('alliance/list.php', $data + ['title' => 'Alliances']);
+        }
     }
 
     /**
@@ -82,7 +88,11 @@ class AllianceController extends BaseController
         $viewModel = $this->profilePresenter->present($rawData);
 
         // 3. Render View
-        $this->render('alliance/profile.php', $viewModel);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_profile.php', $viewModel);
+        } else {
+            $this->render('alliance/profile.php', $viewModel);
+        }
     }
 
     /**

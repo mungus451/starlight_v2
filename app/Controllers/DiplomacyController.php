@@ -46,8 +46,13 @@ class DiplomacyController extends BaseController
         $data = $response->data;
         $data['layoutMode'] = 'full';
         $data['title'] = 'Alliance Diplomacy';
+        $data['csrf_token'] = $this->csrfService->generateToken();
 
-        $this->render('alliance/diplomacy.php', $data);
+        if ($this->session->get('is_mobile')) {
+            $this->render('alliance/mobile_diplomacy.php', $data);
+        } else {
+            $this->render('alliance/diplomacy.php', $data);
+        }
     }
 
     /**

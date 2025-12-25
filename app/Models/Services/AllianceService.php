@@ -56,21 +56,22 @@ class AllianceService
     /**
      * Gets all data needed for the paginated alliance list page.
      */
-    public function getAlliancePageData(int $page): array
+    public function getAlliancePageData(int $page, ?int $limit = null): array
     {
-        $perPage = $this->config->get('app.alliance_list.per_page', 25);
+        $perPage = $limit ?? $this->config->get('app.alliance_list.per_page', 25);
         $totalAlliances = $this->allianceRepo->getTotalCount();
         $totalPages = (int)ceil($totalAlliances / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
         $offset = ($page - 1) * $perPage;
 
-        $alliances = $this->allianceRepo->getPaginatedAlliances($perPage, $offset);
+        $alliances = $this->allianceRepo->getPaginatedAlliances($perPage, offset: $offset);
 
         return [
             'alliances' => $alliances,
             'pagination' => [
                 'currentPage' => $page,
-                'totalPages' => $totalPages
+                'totalPages' => $totalPages,
+                'limit' => $perPage
             ],
             'perPage' => $perPage
         ];

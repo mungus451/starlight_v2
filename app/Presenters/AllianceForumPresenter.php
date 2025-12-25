@@ -33,6 +33,14 @@ class AllianceForumPresenter
             }
             $data['topics'] = $presentedTopics;
         }
+
+        // Nest permissions for consistent view logic
+        $data['permissions'] = (object)[
+            'can_manage_forum' => $data['canManageForum'] ?? false,
+            'can_create_topic' => true // Assumed if you can see the forum
+        ];
+        unset($data['canManageForum']);
+
         return $data;
     }
 
@@ -63,6 +71,12 @@ class AllianceForumPresenter
             }
             $data['posts'] = $presentedPosts;
         }
+
+        // Nest permissions for consistent view logic
+        $data['permissions'] = (object)[
+            'can_manage_forum' => $data['canManageForum'] ?? false
+        ];
+        unset($data['canManageForum']);
 
         return $data;
     }
