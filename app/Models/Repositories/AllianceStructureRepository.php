@@ -59,15 +59,23 @@ class AllianceStructureRepository
      */
     public function createOrUpgrade(int $allianceId, string $structureKey, int $newLevel): bool
     {
+        // Using named parameters ensures PDO correctly maps the values 
+        // and avoids the 'Invalid parameter number' error common with 
+        // ON DUPLICATE KEY UPDATE on some MariaDB/PHP configurations.
         $sql = "
             INSERT INTO alliance_structures (alliance_id, structure_key, level)
-            VALUES (?, ?, ?)
+            VALUES (:aid, :key, :lvl)
             ON DUPLICATE KEY UPDATE
-                level = VALUES(level)
+                level = :lvl_update
         ";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$allianceId, $structureKey, $newLevel]);
+        return $stmt->execute([
+            'aid' => $allianceId,
+            'key' => $structureKey,
+            'lvl' => $newLevel,
+            'lvl_update' => $newLevel
+        ]);
     }
 
     /**
