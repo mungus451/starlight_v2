@@ -67,6 +67,20 @@ class AllianceStructuresTest extends TestCase
         // Link User to Alliance & Role
         $stmt = $this->db->prepare("UPDATE users SET alliance_id = ?, alliance_role_id = ? WHERE id = ?");
         $stmt->execute([$this->allianceId, $this->roleId, $this->userId]);
+
+        // 5. Insert Structure Definition (Essential for test isolation)
+        $stmt = $this->db->prepare("INSERT IGNORE INTO alliance_structures_definitions 
+            (structure_key, name, description, base_cost, cost_multiplier, bonus_text, bonuses_json) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            'citadel_shield', 
+            'Citadel Shield Array', 
+            'Test Desc', 
+            100000000, 
+            1.5, 
+            '+10% Defense', 
+            json_encode([['type' => 'defense_bonus_percent', 'value' => 0.1]])
+        ]);
     }
 
     protected function tearDown(): void
@@ -81,15 +95,13 @@ class AllianceStructuresTest extends TestCase
             $this->db->exec("DELETE FROM alliance_roles WHERE alliance_id = {$this->allianceId}");
             
             // Delete Alliance first (now safe because users don't point to it)
-            // But wait, Alliance points to Leader (User). 
-            // We must delete Alliance first? No, Alliance.leader_id -> Users.id.
-            // If we delete User, Alliance complains.
-            // If we delete Alliance, User complains (if User.alliance_id has FK).
-            // We just NULLed User.alliance_id. So we can delete Alliance.
             $this->db->exec("DELETE FROM alliances WHERE id = {$this->allianceId}");
             
             // Finally delete User
             $this->db->exec("DELETE FROM users WHERE id = {$this->userId}");
+            
+            // Clean up definition
+            $this->db->exec("DELETE FROM alliance_structures_definitions WHERE structure_key = 'citadel_shield'");
         }
     }
 
