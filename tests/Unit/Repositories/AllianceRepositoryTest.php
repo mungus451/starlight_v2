@@ -80,13 +80,13 @@ class AllianceRepositoryTest extends TestCase
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with(['absAmount' => 500, 'id' => $allianceId])
+            ->with(['absAmount1' => 500, 'absAmount2' => 500, 'id' => $allianceId])
             ->andReturn(true);
 
         // Verify SQL contains logic for negative amount (no casting)
         $this->mockDb->shouldReceive('prepare')
             ->once()
-            ->with(Mockery::pattern('/UPDATE alliances SET bank_credits = IF\(bank_credits < :absAmount, 0, bank_credits - :absAmount\) WHERE id = :id/'))
+            ->with(Mockery::pattern('/UPDATE alliances SET bank_credits = IF\(bank_credits < :absAmount1, 0, bank_credits - :absAmount2\) WHERE id = :id/'))
             ->andReturn($mockStmt);
 
         $this->repository->updateBankCreditsRelative($allianceId, $amount);
