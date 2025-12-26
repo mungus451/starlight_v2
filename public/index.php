@@ -212,6 +212,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceFundingController::class, 'handleLoanApprove']);
     $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceFundingController::class, 'handleLoanDeny']);
     $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceFundingController::class, 'handleLoanRepay']);
+    $r->addRoute('POST', '/alliance/loan/forgive/{id:\d+}', [AllianceFundingController::class, 'handleForgiveLoan']);
     
     // Refactored: Settings -> AllianceSettingsController
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
