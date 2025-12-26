@@ -37,10 +37,20 @@ class NaquadahFeatureTest extends TestCase
         $mockConfig = Mockery::mock(Config::class);
         $mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $mockStructureRepo = Mockery::mock(StructureRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
 
-        $service = new StructureService($mockDb, $mockConfig, $mockResourceRepo, $mockStructureRepo);
+        $service = new StructureService(
+            $mockDb,
+            $mockConfig,
+            $mockResourceRepo,
+            $mockStructureRepo,
+            $mockEdictRepo
+        );
 
         $userId = 1;
+        
+        // Mock Edicts (Return empty array for this test)
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->with($userId)->andReturn([]);
         
         // Mock Config
         $mockConfig->shouldReceive('get')
@@ -115,9 +125,18 @@ class NaquadahFeatureTest extends TestCase
         $mockConfig = Mockery::mock(Config::class);
         $mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $mockStructureRepo = Mockery::mock(StructureRepository::class);
+        $mockEdictRepo = Mockery::mock(EdictRepository::class);
 
-        $service = new StructureService($mockDb, $mockConfig, $mockResourceRepo, $mockStructureRepo);
+        $service = new StructureService(
+            $mockDb,
+            $mockConfig,
+            $mockResourceRepo,
+            $mockStructureRepo,
+            $mockEdictRepo
+        );
         $userId = 1;
+        
+        $mockEdictRepo->shouldReceive('findActiveByUserId')->with($userId)->andReturn([]);
 
         $mockConfig->shouldReceive('get')->andReturn([
             'name' => 'Naquadah Mining Complex',
@@ -328,7 +347,7 @@ class NaquadahFeatureTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(0);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(0);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(0);
 
         // Mock DB Transaction

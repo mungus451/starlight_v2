@@ -22,9 +22,9 @@ if (php_sapi_name() !== 'cli') {
 
 // Configuration
 $tests = [
-    'Alliance Structure Math' => __DIR__ . '/AllianceStructureBonusTest.php',
-    'Battle Logic Simulation' => __DIR__ . '/BattleSimulationTest.php',
-    'War Integration (E2E)'   => __DIR__ . '/verify_refactor.php',
+    'Alliance Structure Math' => __DIR__ . '/AllianceStructureBonusCheck.php',
+    'Battle Logic Simulation' => __DIR__ . '/../Simulations/BattleSimulation.php',
+    'War Integration (E2E)'   => __DIR__ . '/../Compliance/verify_refactor.php',
 ];
 
 $startTime = microtime(true);

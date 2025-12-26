@@ -153,4 +153,19 @@ class GeneralService
             return ServiceResponse::error("Decommission failed: " . $e->getMessage());
         }
     }
+
+    public function getGeneralsByUserId(int $userId): array
+    {
+        return $this->generalRepo->findByUserId($userId);
+    }
+
+    public function getResourcesByUserId(int $userId): ?\App\Models\Entities\UserResource
+    {
+        return $this->resourceRepo->findByUserId($userId);
+    }
+
+    public function getGeneralById(int $generalId): ?array
+    {
+        return $this->generalRepo->findById($generalId);
+    }
 }

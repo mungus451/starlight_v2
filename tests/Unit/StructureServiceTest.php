@@ -7,6 +7,7 @@ use App\Models\Entities\UserStructure;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Services\StructureService;
+use App\Models\Repositories\EdictRepository;
 use Mockery;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +18,7 @@ class StructureServiceTest extends TestCase
     private $config;
     private $resourceRepo;
     private $structureRepo;
+    private $edictRepo;
     private $service;
 
     protected function setUp(): void
@@ -25,13 +27,17 @@ class StructureServiceTest extends TestCase
         $this->config = Mockery::mock(Config::class);
         $this->resourceRepo = Mockery::mock(ResourceRepository::class);
         $this->structureRepo = Mockery::mock(StructureRepository::class);
+        $this->edictRepo = Mockery::mock(EdictRepository::class);
 
         $this->service = new StructureService(
             $this->db,
             $this->config,
             $this->resourceRepo,
-            $this->structureRepo
+            $this->structureRepo,
+            $this->edictRepo
         );
+        
+        $this->edictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
     }
 
     protected function tearDown(): void

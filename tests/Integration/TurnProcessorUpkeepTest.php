@@ -112,7 +112,6 @@ class TurnProcessorUpkeepTest extends TestCase
 
         // 3. Run the turn processor for the user by making the private method accessible
         $method = new ReflectionMethod(TurnProcessorService::class, 'processTurnForUser');
-        $method->setAccessible(true);
         $method->invoke($this->turnProcessorService, $userId);
     }
 }

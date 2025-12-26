@@ -8,6 +8,7 @@ use App\Core\Config;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\EdictRepository;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
 use Mockery;
@@ -26,6 +27,7 @@ class StructureServiceTest extends TestCase
     private Config|Mockery\MockInterface $mockConfig;
     private ResourceRepository|Mockery\MockInterface $mockResourceRepo;
     private StructureRepository|Mockery\MockInterface $mockStructureRepo;
+    private EdictRepository|Mockery\MockInterface $mockEdictRepo;
 
     protected function setUp(): void
     {
@@ -36,14 +38,19 @@ class StructureServiceTest extends TestCase
         $this->mockConfig = Mockery::mock(Config::class);
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
+        $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
 
         // Instantiate service
         $this->service = new StructureService(
             $this->mockDb,
             $this->mockConfig,
             $this->mockResourceRepo,
-            $this->mockStructureRepo
+            $this->mockStructureRepo,
+            $this->mockEdictRepo
         );
+        
+        // Default expectation for edicts
+        $this->mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
     }
 
     /**

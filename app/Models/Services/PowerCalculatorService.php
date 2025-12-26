@@ -224,6 +224,7 @@ class PowerCalculatorService
         // 4. Edict Bonuses
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonusPercent = $edictBonuses['defense_power_percent'] ?? 0.0;
+        $edictBonusPercent += $edictBonuses['prime_directive_defense_bonus'] ?? 0.0;
 
         // 5. Final Total Power
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
@@ -299,6 +300,7 @@ class PowerCalculatorService
         $edictCitizenMultiplicative = $edictBonuses['citizen_growth_mult'] ?? 1.0;
         $edictResourceMultiplier = 1.0 + ($edictBonuses['resource_production_percent'] ?? 0.0);
         $edictInterestMultiplier = $edictBonuses['bank_interest_mult'] ?? 1.0;
+        $citizenGenerationModifier = $edictBonuses['citizen_generation_modifier'] ?? 1.0;
         
         // 5. Total Credit Income
         // Multipliers are additive: 1 + Stat% + Alliance% + Accounting% + Edict%
@@ -340,6 +342,7 @@ class PowerCalculatorService
         $baseCitizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
         $totalCitizenIncome = $baseCitizenIncome + $allianceCitizenFlat;
         $totalCitizenIncome = (int)floor($totalCitizenIncome * $edictCitizenMultiplier * $edictCitizenMultiplicative);
+        $totalCitizenIncome = (int)floor($totalCitizenIncome * $citizenGenerationModifier);
 
         // 8. Research Data
         $researchDataIncome = $structures->quantum_research_lab_level * ($config['research_data_per_lab_level'] ?? 0);
@@ -554,14 +557,14 @@ class PowerCalculatorService
 
     // ... (rest of the file) ...
 
-    public function calculateShieldPower(UserStructure $structures): array
+    public function calculateShieldPower(int $userId, UserStructure $structures): array
     {
         $config = $this->config->get('game_balance.attack');
         $hpPerLevel = $config['shield_hp_per_level'] ?? 0;
         
-        $userId = $structures->user_id;
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonusPct = $edictBonuses['shield_hp_percent'] ?? 0.0;
+        $edictBonusPct += $edictBonuses['prime_directive_shield_bonus'] ?? 0.0;
         
         // General Bonus
         $genBonuses = $this->calculateGeneralBonuses($userId);
@@ -570,7 +573,7 @@ class PowerCalculatorService
         $totalHp = ($structures->planetary_shield_level * $hpPerLevel);
         $totalHp += $flatShield; 
         
-        $totalHp = $totalHp * (1 + $edictBonusPct);
+        $totalHp *= (1 + $edictBonusPct);
 
         return [
             'total_shield_hp' => (int)$totalHp,

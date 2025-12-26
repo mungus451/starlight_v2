@@ -7,21 +7,15 @@ use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\GeneralService;
 use App\Models\Services\ViewContextService;
-use App\Models\Repositories\GeneralRepository;
-use App\Models\Repositories\ResourceRepository;
 use App\Core\Config;
 
 class GeneralController extends BaseController
 {
     private GeneralService $generalService;
-    private GeneralRepository $generalRepo;
-    private ResourceRepository $resourceRepo;
     private Config $config;
 
     public function __construct(
         GeneralService $generalService,
-        GeneralRepository $generalRepo,
-        ResourceRepository $resourceRepo,
         Config $config,
         Session $session,
         CSRFService $csrfService,
@@ -30,16 +24,14 @@ class GeneralController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->generalService = $generalService;
-        $this->generalRepo = $generalRepo;
-        $this->resourceRepo = $resourceRepo;
         $this->config = $config;
     }
 
     public function index(): void
     {
         $userId = $this->session->get('user_id');
-        $generals = $this->generalRepo->findByUserId($userId);
-        $resources = $this->resourceRepo->findByUserId($userId);
+        $generals = $this->generalService->getGeneralsByUserId($userId);
+        $resources = $this->generalService->getResourcesByUserId($userId);
         
         $count = count($generals);
         $nextCost = $this->generalService->getRecruitmentCost($count);
@@ -119,14 +111,14 @@ class GeneralController extends BaseController
         $generalId = (int)($params['id'] ?? 0);
         $userId = $this->session->get('user_id');
         
-        $general = $this->generalRepo->findById($generalId);
+        $general = $this->generalService->getGeneralById($generalId);
         if (!$general || $general['user_id'] != $userId) {
             $this->session->setFlash('error', 'General not found.');
             $this->redirect('/generals');
             return;
         }
         
-        $resources = $this->resourceRepo->findByUserId($userId);
+        $resources = $this->generalService->getResourcesByUserId($userId);
         $weapons = $this->config->get('elite_weapons', []);
         
         $viewData = [

@@ -6,6 +6,7 @@ use App\Core\Config;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\EdictRepository;
 use PDO;
 use Throwable;
 
@@ -20,17 +21,20 @@ class StructureService
     private Config $config;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
+    private EdictRepository $edictRepo;
 
     public function __construct(
         PDO $db,
         Config $config,
         ResourceRepository $resourceRepo,
-        StructureRepository $structureRepo
+        StructureRepository $structureRepo,
+        EdictRepository $edictRepo
     ) {
         $this->db = $db;
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
+        $this->edictRepo = $edictRepo;
     }
 
     /**
@@ -229,6 +233,17 @@ class StructureService
         $creditCost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
         $crystalCost = 0;
         $darkMatterCost = 0;
+
+        // Apply Edict Modifiers
+        $activeEdicts = $this->edictRepo->findActiveByUserId($userId);
+        foreach ($activeEdicts as $edict) {
+            if ($edict->edict_key === 'matter_reorganization') {
+                $definition = $this->edictRepo->getDefinition('matter_reorganization');
+                if ($definition && isset($definition->modifiers['structure_cost_modifier'])) {
+                    $creditCost *= (1 - $definition->modifiers['structure_cost_modifier']);
+                }
+            }
+        }
 
         if (isset($structureConfig['base_crystal_cost'])) {
             $crystalCost = $this->calculateCost($structureConfig['base_crystal_cost'], $structureConfig['multiplier'], $currentLevel);

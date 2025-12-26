@@ -187,7 +187,7 @@ class AttackService
         $defensePower = $defensePowerBreakdown['total'];
 
         // --- NEW: Planetary Shield Logic ---
-        $shieldPowerBreakdown = $this->powerCalculatorService->calculateShieldPower($defenderStructures);
+        $shieldPowerBreakdown = $this->powerCalculatorService->calculateShieldPower($defender->id, $defenderStructures);
         $shieldHp = $shieldPowerBreakdown['total_shield_hp'];
         $damageToShield = 0;
 
