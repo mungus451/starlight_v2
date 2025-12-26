@@ -134,7 +134,7 @@ class TurnProcessorServiceTest extends TestCase
                         ->once()
                         ->with($userId, 1);
         
-                    $this->mockGeneralRepo->shouldReceive('getGeneralCount')
+                    $this->mockGeneralRepo->shouldReceive('countByUserId')
                         ->once()
                         ->with($userId)
                         ->andReturn(0);

@@ -177,7 +177,7 @@ class TurnProcessorService
             $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
             // 5. Calculate and apply UNIT upkeep (Generals/Scientists)
-            $generalCount = $this->generalRepo->getGeneralCount($userId);
+            $generalCount = $this->generalRepo->countByUserId($userId);
             $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
 
             $generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);

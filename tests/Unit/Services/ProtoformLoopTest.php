@@ -159,7 +159,7 @@ class ProtoformLoopTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(1);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(1);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(2);
 
         // Mock DB Transaction

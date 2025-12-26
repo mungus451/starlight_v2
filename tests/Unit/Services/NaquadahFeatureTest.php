@@ -328,7 +328,7 @@ class NaquadahFeatureTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(0);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(0);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(0);
 
         // Mock DB Transaction

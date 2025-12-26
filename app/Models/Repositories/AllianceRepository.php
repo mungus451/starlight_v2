@@ -159,14 +159,26 @@ class AllianceRepository
      */
     public function updateBankCreditsRelative(int $allianceId, int $amountChange): bool
     {
-        $sql = "
-            UPDATE alliances 
-            SET bank_credits = GREATEST(0, CAST(bank_credits AS SIGNED) + CAST(? AS SIGNED)) 
-            WHERE id = ?
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$amountChange, $allianceId]);
+        if ($amountChange === 0) {
+            return true;
+        }
+
+        // Hard Cap: 9 Quintillion (Safe limit for Signed BIGINT and PHP 64-bit int)
+        // 9,000,000,000,000,000,000
+        $safeCap = 9000000000000000000;
+
+        if ($amountChange > 0) {
+            // Addition: Cap at safe limit
+            $sql = "UPDATE alliances SET bank_credits = LEAST(:cap, bank_credits + :amount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['cap' => $safeCap, 'amount' => $amountChange, 'id' => $allianceId]);
+        } else {
+            // Subtraction: Prevent dropping below zero
+            $absChange = abs($amountChange);
+            $sql = "UPDATE alliances SET bank_credits = IF(bank_credits < :absAmount, 0, bank_credits - :absAmount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['absAmount' => $absChange, 'id' => $allianceId]);
+        }
     }
 
     /**
