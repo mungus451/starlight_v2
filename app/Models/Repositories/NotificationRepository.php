@@ -82,6 +82,52 @@ class NotificationRepository
     }
 
     /**
+     * Gets paginated notifications for a user.
+     *
+     * @param int $userId
+     * @param int $page Current page (1-indexed)
+     * @param int $perPage Number of items per page
+     * @return Notification[]
+     */
+    public function getPaginated(int $userId, int $page = 1, int $perPage = 20): array
+    {
+        $offset = ($page - 1) * $perPage;
+        
+        $sql = "
+            SELECT * FROM notifications 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $userId, PDO::PARAM_INT);
+        $stmt->bindParam(2, $perPage, PDO::PARAM_INT);
+        $stmt->bindParam(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $results = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $results[] = $this->hydrate($row);
+        }
+        return $results;
+    }
+
+    /**
+     * Gets the total count of notifications for a user.
+     *
+     * @param int $userId
+     * @return int
+     */
+    public function getTotalCount(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    }
+
+    /**
      * Marks a single notification as read.
      * Verifies ownership via userId to prevent unauthorized updates.
      *

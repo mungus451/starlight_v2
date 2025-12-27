@@ -4,6 +4,7 @@ namespace Tests\Unit\Services;
 
 use Tests\Unit\TestCase;
 use App\Models\Services\SettingsService;
+use App\Models\Services\NotificationService;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\SecurityRepository;
@@ -18,6 +19,7 @@ class SettingsServiceTest extends TestCase
     private PDO|Mockery\MockInterface $mockDb;
     private UserRepository|Mockery\MockInterface $mockUserRepo;
     private SecurityRepository|Mockery\MockInterface $mockSecurityRepo;
+    private NotificationService|Mockery\MockInterface $mockNotificationService;
 
     protected function setUp(): void
     {
@@ -26,11 +28,13 @@ class SettingsServiceTest extends TestCase
         $this->mockDb = Mockery::mock(PDO::class);
         $this->mockUserRepo = Mockery::mock(UserRepository::class);
         $this->mockSecurityRepo = Mockery::mock(SecurityRepository::class);
+        $this->mockNotificationService = Mockery::mock(NotificationService::class);
 
         $this->service = new SettingsService(
             $this->mockDb,
             $this->mockUserRepo,
-            $this->mockSecurityRepo
+            $this->mockSecurityRepo,
+            $this->mockNotificationService
         );
     }
 
@@ -193,6 +197,52 @@ class SettingsServiceTest extends TestCase
 
         $response = $this->service->updateSecurityQuestions($userId, 'Q', 'A', 'Q', 'A', 'wrong');
         $this->assertFalse($response->isSuccess());
+    }
+
+    public function testUpdateNotificationPreferencesSucceeds(): void
+    {
+        $userId = 1;
+        $successResponse = ServiceResponse::success('Preferences updated');
+
+        $this->mockNotificationService->shouldReceive('updatePreferences')
+            ->once()
+            ->with($userId, true, false, true, false, true)
+            ->andReturn($successResponse);
+
+        $response = $this->service->updateNotificationPreferences(
+            $userId,
+            attackEnabled: true,
+            spyEnabled: false,
+            allianceEnabled: true,
+            systemEnabled: false,
+            pushEnabled: true
+        );
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertEquals('Preferences updated', $response->message);
+    }
+
+    public function testUpdateNotificationPreferencesFailure(): void
+    {
+        $userId = 1;
+        $errorResponse = ServiceResponse::error('Failed to update');
+
+        $this->mockNotificationService->shouldReceive('updatePreferences')
+            ->once()
+            ->with($userId, false, false, false, false, false)
+            ->andReturn($errorResponse);
+
+        $response = $this->service->updateNotificationPreferences(
+            $userId,
+            attackEnabled: false,
+            spyEnabled: false,
+            allianceEnabled: false,
+            systemEnabled: false,
+            pushEnabled: false
+        );
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertEquals('Failed to update', $response->message);
     }
 
     // --- Helpers ---

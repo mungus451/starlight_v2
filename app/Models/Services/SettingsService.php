@@ -18,6 +18,7 @@ class SettingsService
     private PDO $db;
     private UserRepository $userRepo;
     private SecurityRepository $securityRepo;
+    private NotificationService $notificationService;
     private string $storageRoot;
 
     /**
@@ -27,15 +28,18 @@ class SettingsService
      * @param PDO $db
      * @param UserRepository $userRepo
      * @param SecurityRepository $securityRepo
+     * @param NotificationService $notificationService
      */
     public function __construct(
         PDO $db,
         UserRepository $userRepo,
-        SecurityRepository $securityRepo
+        SecurityRepository $securityRepo,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
         $this->securityRepo = $securityRepo;
+        $this->notificationService = $notificationService;
 
         // Define storage root relative to this file
         $this->storageRoot = realpath(__DIR__ . '/../../../storage');
@@ -45,16 +49,18 @@ class SettingsService
      * Gets all data needed to render the settings page.
      *
      * @param int $userId
-     * @return array Contains 'user' (entity) and 'security' (entity or null)
+     * @return array Contains 'user' (User entity), 'security' (SecurityEntity or null), and 'notification_prefs' (UserNotificationPreferences entity)
      */
     public function getSettingsData(int $userId): array
     {
         $user = $this->userRepo->findById($userId);
         $security = $this->securityRepo->findByUserId($userId);
+        $notificationPrefs = $this->notificationService->getPreferences($userId);
 
         return [
             'user' => $user,
-            'security' => $security
+            'security' => $security,
+            'notification_prefs' => $notificationPrefs
         ];
     }
 
@@ -266,5 +272,34 @@ class SettingsService
         }
 
         return ['success' => true, 'message' => null, 'user' => $user];
+    }
+
+    /**
+     * Updates the user's notification preferences.
+     *
+     * @param int $userId
+     * @param bool $attackEnabled
+     * @param bool $spyEnabled
+     * @param bool $allianceEnabled
+     * @param bool $systemEnabled
+     * @param bool $pushEnabled
+     * @return ServiceResponse
+     */
+    public function updateNotificationPreferences(
+        int $userId,
+        bool $attackEnabled,
+        bool $spyEnabled,
+        bool $allianceEnabled,
+        bool $systemEnabled,
+        bool $pushEnabled
+    ): ServiceResponse {
+        return $this->notificationService->updatePreferences(
+            $userId,
+            $attackEnabled,
+            $spyEnabled,
+            $allianceEnabled,
+            $systemEnabled,
+            $pushEnabled
+        );
     }
 }
