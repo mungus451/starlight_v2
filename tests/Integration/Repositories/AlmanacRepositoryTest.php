@@ -105,87 +105,92 @@ class AlmanacRepositoryTest extends TestCase
         ]);
     }
 
-    public function testPvpAggregate()
+    public function testGetPlayerDossier()
     {
         $p1 = $this->createUser('PlayerOne');
         $p2 = $this->createUser('PlayerTwo');
 
-        // P1 Attacks P2: 2 wins, 1 loss
-        $this->createBattle($p1, $p2, 'victory', 100, 200, 5000); // P1 wins
-        $this->createBattle($p1, $p2, 'victory', 50, 150, 3000);  // P1 wins
-        $this->createBattle($p1, $p2, 'defeat', 300, 50, 0);     // P1 loses
+        // P1 Attacks P2: 2 wins (P1), 1 loss (P1)
+        $this->createBattle($p1, $p2, 'victory', 100, 200, 5000); // P1 wins, plunder 5000, 200 guards killed
+        $this->createBattle($p1, $p2, 'victory', 50, 150, 3000);  // P1 wins, plunder 3000, 150 guards killed
+        $this->createBattle($p1, $p2, 'defeat', 300, 50, 0);     // P1 loses, 300 soldiers lost
 
-        // P2 Attacks P1: 1 win
-        $this->createBattle($p2, $p1, 'victory', 80, 120, 2000); // P2 wins
+        // P2 Attacks P1: 1 win (P2), meaning P1 lost (defending)
+        // P2 attacks P1, P2 wins. P1 loses 120 guards (defending casualties)
+        // P1 kills 80 soldiers (defending kills)
+        $this->createBattle($p2, $p1, 'victory', 80, 120, 2000); 
 
-        // Spies
-        $this->createSpy($p1, $p2, 'success');
-        $this->createSpy($p1, $p2, 'failure');
-        $this->createSpy($p2, $p1, 'success');
-
-        $stats = $this->repo->getPvpAggregate($p1, $p2);
-
-        $this->assertEquals($p1, $stats->player1Id);
-        $this->assertEquals($p2, $stats->player2Id);
+        // P1 Stats Expected:
+        // Wins: 2 (Attacking)
+        // Losses: 1 (Attacking) + 1 (Defending) = 2
+        // Total Battles: 4
         
-        // Wins
-        $this->assertEquals(2, $stats->battlesWonByP1);
-        $this->assertEquals(1, $stats->battlesWonByP2);
-        $this->assertEquals(4, $stats->totalBattles);
+        // Kills: 
+        //  - Attacking: 200 + 150 = 350 guards
+        //  - Defending: 80 soldiers
+        //  - Total Kills: 430
+        
+        // Casualties (Units Lost):
+        //  - Attacking: 100 + 50 + 300 = 450 soldiers
+        //  - Defending: 120 guards
+        //  - Total Lost: 570
+        
+        // Largest Plunder: 5000 (from first battle)
+        // Deadliest Attack: 200 kills (from first battle)
 
-        // Resources
-        $this->assertEquals(8000, $stats->resourcesPlunderedByP1); // 5000 + 3000
-        $this->assertEquals(2000, $stats->resourcesPlunderedByP2);
+        $dossier = $this->repo->getPlayerDossier($p1);
 
-        // Units Killed by P1 (Guards killed when attacking P2 + Soldiers killed when defending against P2)
-        // P1 attacking P2: killed 200 + 150 + 50 = 400 guards
-        // P1 defending vs P2: killed 80 soldiers (P2's loss)
-        // Total P1 Kills = 480
-        $this->assertEquals(480, $stats->unitsKilledByP1);
-
-        // Units Killed by P2 (Guards killed when attacking P1 + Soldiers killed when defending against P1)
-        // P2 attacking P1: killed 120 guards
-        // P2 defending vs P1: killed 100 + 50 + 300 = 450 soldiers
-        // Total P2 Kills = 570
-        $this->assertEquals(570, $stats->unitsKilledByP2);
-
-        // Spies
-        $this->assertEquals(2, $stats->spyAttemptsByP1);
-        $this->assertEquals(1, $stats->spySuccessesByP1);
-        $this->assertEquals(1, $stats->spyAttemptsByP2);
-        $this->assertEquals(1, $stats->spySuccessesByP2);
+        $this->assertEquals(2, $dossier['battles_won']);
+        $this->assertEquals(2, $dossier['battles_lost']);
+        $this->assertEquals(4, $dossier['total_battles']);
+        
+        $this->assertEquals(480, $dossier['units_killed']);
+        $this->assertEquals(570, $dossier['units_lost']);
+        
+        $this->assertEquals(5000, $dossier['largest_plunder']);
+        $this->assertEquals(200, $dossier['deadliest_attack']);
     }
 
-    public function testAllianceAggregate()
+    public function testGetAllianceDossier()
     {
         $p1 = $this->createUser('AllyLeaderOne');
         $p2 = $this->createUser('AllyLeaderTwo');
+        $p3 = $this->createUser('AllyMemberOne');
 
         $a1 = $this->createAlliance('Alpha Team', $p1);
         $a2 = $this->createAlliance('Beta Squad', $p2);
 
-        // War 1: A1 declares on A2, A1 wins
-        $this->createWar($a1, $a2, 'concluded', $a1, 1000, 500);
+        // Assign P1 (Leader) to A1
+        $this->db->prepare("UPDATE users SET alliance_id = ? WHERE id = ?")->execute([$a1, $p1]);
+        
+        // Add P3 to A1
+        $this->db->prepare("UPDATE users SET alliance_id = ? WHERE id = ?")->execute([$a1, $p3]);
 
-        // War 2: A2 declares on A1, A2 wins
-        $this->createWar($a2, $a1, 'concluded', $a2, 2000, 100);
+        // Battle 1: P1 (A1 Leader) attacks P2 (A2 Leader) - P1 Wins
+        $this->createBattle($p1, $p2, 'victory', 0, 0, 5000);
 
-        // War 3: A1 declares on A2, Active
-        $this->createWar($a1, $a2, 'active', null, 50, 50);
+        // Battle 2: P3 (A1 Member) attacks P2 (A2 Leader) - P3 Wins
+        $this->createBattle($p3, $p2, 'victory', 0, 0, 2000);
 
-        $stats = $this->repo->getAllianceAggregate($a1, $a2);
+        // Battle 3: P2 (A2 Leader) attacks P3 (A1 Member) - P2 Wins (P3 Loses)
+        $this->createBattle($p2, $p3, 'victory', 0, 0, 1000);
 
-        $this->assertEquals($a1, $stats->alliance1Id);
-        $this->assertEquals($a2, $stats->alliance2Id);
+        // War 1: A1 vs A2 (Active)
+        $this->createWar($a1, $a2, 'active', null, 0, 0);
 
-        $this->assertEquals(1, $stats->warsWonByA1);
-        $this->assertEquals(1, $stats->warsWonByA2);
-        $this->assertEquals(1, $stats->activeConflicts);
+        // A1 Stats Expected:
+        // Members: P1, P3
+        // Total Wins: 2 (P1 attack win + P3 attack win)
+        // Total Losses: 1 (P3 defense loss)
+        // Total Plundered: 5000 (P1) + 2000 (P3) = 7000
+        // Wars Participated: 1
 
-        // Damage (Scores)
-        // A1 Score: 1000 (War 1 Declarer) + 100 (War 2 Defender) + 50 (War 3 Declarer) = 1150
-        // A2 Score: 500 (War 1 Defender) + 2000 (War 2 Declarer) + 50 (War 3 Defender) = 2550
-        $this->assertEquals(1150, $stats->totalDamageDealtByA1);
-        $this->assertEquals(2550, $stats->totalDamageDealtByA2);
+        $dossier = $this->repo->getAllianceDossier($a1);
+
+        $this->assertEquals(2, $dossier['member_count']); // Leader + 1 Member
+        $this->assertEquals(2, $dossier['total_wins']);
+        $this->assertEquals(1, $dossier['total_losses']);
+        $this->assertEquals(7000, $dossier['total_plundered']);
+        $this->assertEquals(1, $dossier['wars_participated']);
     }
 }
