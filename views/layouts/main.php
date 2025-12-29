@@ -41,6 +41,7 @@
                         <!-- <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li> -->
                         <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
                         <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+                        <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
                     </ul>
                 </li>
 
@@ -148,6 +149,9 @@
     <?php if ($isLoggedIn): ?>
         <script src="/js/notifications.js"></script>
     <?php endif; ?>
+
+    <!-- Bootstrap JS (Required for Tabs/Dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

@@ -29,6 +29,30 @@ class AllianceRepository
     }
 
     /**
+     * Searches for alliances by name (partial match).
+     * Used for Autocomplete.
+     * 
+     * @return array Array of ['id', 'name', 'tag', 'profile_picture_url']
+     */
+    public function searchByName(string $query, int $limit = 10): array
+    {
+        $sql = "
+            SELECT id, name, tag, profile_picture_url 
+            FROM alliances 
+            WHERE name LIKE ? 
+            ORDER BY name ASC 
+            LIMIT ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $term = '%' . $query . '%';
+        $stmt->bindParam(1, $term, PDO::PARAM_STR);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Finds an alliance by its ID.
      */
     public function findById(int $id): ?Alliance
@@ -204,6 +228,18 @@ class AllianceRepository
             $alliances[] = $this->hydrate($row);
         }
         return $alliances;
+    }
+
+    /**
+     * Retrieves a lightweight list of ID and Name/Tag for all alliances.
+     * Used for Almanac Dropdowns.
+     * 
+     * @return array Array of ['id', 'name', 'tag']
+     */
+    public function getAllAlliancesSimple(): array
+    {
+        $stmt = $this->db->query("SELECT id, name, tag FROM alliances ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Models\Services;
+
+use App\Models\Repositories\AlmanacRepository;
+use App\Models\Repositories\UserRepository;
+use App\Models\Repositories\AllianceRepository;
+
+/**
+ * Business logic for the Almanac (Dossier System).
+ * Prepares aggregated statistics for single-entity visualization.
+ */
+class AlmanacService
+{
+    public function __construct(
+        private AlmanacRepository $almanacRepo,
+        private UserRepository $userRepo,
+        private AllianceRepository $allianceRepo
+    ) {}
+
+    /**
+     * Prepares the full dossier for a single player.
+     */
+    public function getPlayerDossier(int $playerId): ?array
+    {
+        $player = $this->userRepo->findById($playerId);
+        if (!$player) {
+            return null;
+        }
+
+        $stats = $this->almanacRepo->getPlayerDossier($playerId);
+
+        // Chart Data: Wins vs Losses
+        $chartWinLoss = [
+            'labels' => ['Wins', 'Losses'],
+            'datasets' => [[
+                'data' => [$stats['battles_won'], $stats['battles_lost']],
+                'backgroundColor' => ['#198754', '#dc3545'] // Green, Red
+            ]]
+        ];
+
+        // Chart Data: Units Killed vs Lost
+        $chartUnits = [
+            'labels' => ['Units Killed', 'Casualties'],
+            'datasets' => [[
+                'label' => 'Count',
+                'data' => [$stats['units_killed'], $stats['units_lost']],
+                'backgroundColor' => ['#0dcaf0', '#fd7e14'] // Cyan, Orange
+            ]]
+        ];
+
+        return [
+            'player' => $player,
+            'stats' => $stats,
+            'charts' => [
+                'win_loss' => $chartWinLoss,
+                'units' => $chartUnits
+            ]
+        ];
+    }
+
+    /**
+     * Prepares the full dossier for an alliance.
+     */
+    public function getAllianceDossier(int $allianceId): ?array
+    {
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if (!$alliance) {
+            return null;
+        }
+
+        $stats = $this->almanacRepo->getAllianceDossier($allianceId);
+        $members = $this->userRepo->findAllByAllianceId($allianceId);
+
+        // Chart Data: Total Member Wins vs Losses
+        $chartWinLoss = [
+            'labels' => ['Member Victories', 'Member Defeats'],
+            'datasets' => [[
+                'data' => [$stats['total_wins'], $stats['total_losses']],
+                'backgroundColor' => ['#ffc107', '#dc3545'] // Warning (Yellow), Red
+            ]]
+        ];
+
+        return [
+            'alliance' => $alliance,
+            'members' => $members,
+            'stats' => $stats,
+            'charts' => [
+                'win_loss' => $chartWinLoss
+            ]
+        ];
+    }
+
+    /**
+     * Searches for players for the Autocomplete dropdown.
+     */
+    public function searchPlayers(string $query): array
+    {
+        if (strlen($query) < 2) {
+            return [];
+        }
+        return $this->userRepo->searchByCharacterName($query, 10);
+    }
+
+    /**
+     * Searches for alliances for the Autocomplete dropdown.
+     */
+    public function searchAlliances(string $query): array
+    {
+        if (strlen($query) < 2) {
+            return [];
+        }
+        return $this->allianceRepo->searchByName($query, 10);
+    }
+
+    /**
+     * Gets a simple list of all players for the dropdown.
+     */
+    public function getAllPlayersList(): array
+    {
+        return $this->userRepo->getAllPlayersSimple();
+    }
+
+    /**
+     * Gets a simple list of all alliances for the dropdown.
+     */
+    public function getAllAlliancesList(): array
+    {
+        return $this->allianceRepo->getAllAlliancesSimple();
+    }
+}

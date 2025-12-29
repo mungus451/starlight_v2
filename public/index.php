@@ -36,6 +36,7 @@ use App\Controllers\AllianceSettingsController;
 use App\Controllers\AllianceRoleController;
 use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
+use App\Controllers\AlmanacController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Controllers\CurrencyConverterController;
@@ -245,6 +246,13 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
     $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
 
+    // --- Almanac ---
+    $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);
+    $r->addRoute('GET', '/almanac/search_players', [AlmanacController::class, 'searchPlayers']);
+    $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
+    $r->addRoute('GET', '/almanac/get_player_dossier', [AlmanacController::class, 'getPlayerDossier']);
+    $r->addRoute('GET', '/almanac/get_alliance_dossier', [AlmanacController::class, 'getAllianceDossier']);
+
     // --- Notification System ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
     $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
@@ -284,7 +292,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy', '/generals'
+                '/leaderboard', '/embassy', '/generals', '/almanac'
             ];
             
             $isProtected = false;
