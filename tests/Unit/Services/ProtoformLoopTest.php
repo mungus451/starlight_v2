@@ -34,15 +34,20 @@ class ProtoformLoopTest extends TestCase
         $mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
         $mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
+        $mockGeneralRepo->shouldReceive('findByUserId')->andReturn([]);
+        $mockGeneralRepo->shouldReceive('countByUserId')->andReturn(0);
+        $mockConfig->shouldReceive('get')->with('game_balance.generals', [])->andReturn([]);
 
         $service = new PowerCalculatorService(
             $mockConfig,
             $mockArmoryService,
             $mockAllianceStructRepo,
             $mockStructDefRepo,
-            $mockEdictRepo
+            $mockEdictRepo,
+            $mockGeneralRepo
         );
 
         $userId = 1;
@@ -154,7 +159,7 @@ class ProtoformLoopTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(1);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(1);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(2);
 
         // Mock DB Transaction

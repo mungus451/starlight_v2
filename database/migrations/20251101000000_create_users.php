@@ -23,6 +23,7 @@ final class CreateUsers extends AbstractMigration
         if (!$this->hasTable('users')) {
             $table = $this->table('users', [
                 'signed' => false,
+                'engine' => 'InnoDB',
                 'collation' => 'utf8mb4_unicode_ci',
                 'encoding' => 'utf8mb4',
             ]);

@@ -87,7 +87,8 @@ $currentLevels = [];
 // 4. Calculate Costs
 foreach ($definitions as $def) {
 $key = $def->structure_key;
-$currentLevel = $ownedStructures[$key]->level ?? 0;
+// Fixed: Null-safe check to handle missing keys in $ownedStructures
+$currentLevel = ($ownedStructures[$key] ?? null)?->level ?? 0;
 $nextLevel = $currentLevel + 1;
 
 // Calculate cost for the next level
@@ -131,7 +132,8 @@ return ServiceResponse::error('Invalid structure selected.');
 $alliance = $this->allianceRepo->findById($allianceId);
 $ownedStructure = $this->allianceStructRepo->findByAllianceAndKey($allianceId, $structureKey);
 
-$currentLevel = $ownedStructure->level ?? 0;
+// Fixed: Null-safe check for new structure purchases
+$currentLevel = $ownedStructure?->level ?? 0;
 $nextLevel = $currentLevel + 1;
 $cost = $this->calculateCost($definition->base_cost, $definition->cost_multiplier, $nextLevel);
 
@@ -183,10 +185,9 @@ error_log('Alliance Structure Upgrade Error: ' . $e->getMessage());
 
 if (!$transactionStartedByMe) throw $e; // Re-throw for tests
 
-return ServiceResponse::error('A database error occurred. Please try again.');
-}
-}
-
+            return ServiceResponse::error('A database error occurred. Please try again.');
+        }
+    }
 /**
 * Calculates the cost of a structure at a given level.
 */

@@ -282,5 +282,11 @@ return [
             'spy_caught' => 10,          // Caught
             'defense_caught_spy' => 75   // Successfully catching an enemy spy
         ]
+    ],
+
+    // --- Generals ---
+    'generals' => [
+        'base_capacity' => 5000000,
+        'capacity_per_general' => 10000
     ]
 ];

@@ -50,6 +50,7 @@ use App\Models\Services\BankService;
 use App\Models\Services\TrainingService;
 use App\Models\Services\StructureService;
 use App\Models\Services\ArmoryService;
+use App\Models\Services\GeneralService;
 use App\Models\Services\SettingsService;
 use App\Models\Services\SpyService;
 use App\Models\Services\AttackService;

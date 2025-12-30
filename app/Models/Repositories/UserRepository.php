@@ -16,22 +16,87 @@ private PDO $db
 ) {
 }
 
-/**
-* Finds a user by their email address.
-*/
-public function findByEmail(string $email): ?User
-{
-$stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
-$stmt->execute([$email]);
-$data = $stmt->fetch(PDO::FETCH_ASSOC);
+    /**
 
-return $data ? $this->hydrate($data) : null;
-}
+     * Finds a user by their email address.
 
-/**
-* Finds a user by their character name.
-*/
-public function findByCharacterName(string $charName): ?User
+     */
+
+    public function findByEmail(string $email): ?User
+
+    {
+
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = ?");
+
+        $stmt->execute([$email]);
+
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+
+        return $data ? $this->hydrate($data) : null;
+
+    }
+
+
+
+    /**
+
+     * Searches for users by character name (partial match).
+
+     * Used for Autocomplete.
+
+     * 
+
+     * @return array Array of ['id', 'character_name', 'profile_picture_url']
+
+     */
+
+    public function searchByCharacterName(string $query, int $limit = 10): array
+
+    {
+
+        $sql = "
+
+            SELECT id, character_name, profile_picture_url 
+
+            FROM users 
+
+            WHERE character_name LIKE ? 
+
+            ORDER BY character_name ASC 
+
+            LIMIT ?
+
+        ";
+
+        $stmt = $this->db->prepare($sql);
+
+        $term = '%' . $query . '%';
+
+        $stmt->bindParam(1, $term, PDO::PARAM_STR);
+
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    }
+
+
+
+    /**
+
+     * Finds a user by their character name.
+
+     */
+
+    public function findByCharacterName(string $charName): ?User
+
+
 {
 $stmt = $this->db->prepare("SELECT * FROM users WHERE character_name = ?");
 $stmt->execute([$charName]);
@@ -177,20 +242,49 @@ $npcs[] = $this->hydrate($row);
 return $npcs;
 }
 
-/**
-* Retrieves a simple list of all non-NPC characters.
-* Used for dropdowns (e.g. Bounty Board, Shadow Contracts).
-*
-* @return array Array of ['character_name' => 'Name']
-*/
-public function findAllNonNpcs(): array
-{
-$stmt = $this->db->query("SELECT character_name FROM users WHERE is_npc = 0 ORDER BY character_name ASC");
-return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+    /**
+     * Retrieves a simple list of all non-NPC characters.
+     * Used for dropdowns (e.g. Bounty Board, Shadow Contracts).
+     *
+     * @return array Array of ['character_name' => 'Name']
+     */
+    public function findAllNonNpcs(): array
+    {
+        $stmt = $this->db->query("SELECT character_name FROM users WHERE is_npc = 0 ORDER BY character_name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-// --- END NPC METHODS ---
+    /**
+     * Retrieves a lightweight list of ID and Name for all players.
+     * Used for Almanac Dropdowns.
+     * 
+     * @return array Array of ['id', 'character_name']
+     */
+    public function getAllPlayersSimple(): array
+    {
+        $stmt = $this->db->query("SELECT id, character_name FROM users WHERE is_npc = 0 ORDER BY character_name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
+    /**
+     * Sums the Net Worth of all users belonging to a specific alliance.
+     * Relies on the `user_stats` table joined via `users.id`.
+     */
+    public function sumNetWorthByAllianceId(int $allianceId): int
+    {
+        $sql = "
+            SELECT SUM(us.net_worth) 
+            FROM users u
+            JOIN user_stats us ON u.id = us.user_id
+            WHERE u.alliance_id = ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        return (int)$stmt->fetchColumn();
+    }
+
+    // --- END NPC METHODS ---
 /**
 * Helper method to convert a database row (array) into a User entity.
 */

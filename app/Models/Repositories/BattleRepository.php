@@ -150,6 +150,46 @@ class BattleRepository
     }
 
     /**
+     * Retrieves paginated battle reports for a user (either attacker or defender).
+     */
+    public function getPaginatedUserBattles(int $userId, int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.attacker_id = ? OR r.defender_id = ?
+            ORDER BY r.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(3, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(4, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
+     * Counts total battles for a user.
+     */
+    public function countUserBattles(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) FROM battle_reports WHERE attacker_id = ? OR defender_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId, $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * Helper method to convert a database row into a BattleReport entity.
      */
     private function hydrate(array $data): BattleReport

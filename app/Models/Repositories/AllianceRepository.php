@@ -29,6 +29,30 @@ class AllianceRepository
     }
 
     /**
+     * Searches for alliances by name (partial match).
+     * Used for Autocomplete.
+     * 
+     * @return array Array of ['id', 'name', 'tag', 'profile_picture_url']
+     */
+    public function searchByName(string $query, int $limit = 10): array
+    {
+        $sql = "
+            SELECT id, name, tag, profile_picture_url 
+            FROM alliances 
+            WHERE name LIKE ? 
+            ORDER BY name ASC 
+            LIMIT ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $term = '%' . $query . '%';
+        $stmt->bindParam(1, $term, PDO::PARAM_STR);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Finds an alliance by its ID.
      */
     public function findById(int $id): ?Alliance
@@ -159,14 +183,34 @@ class AllianceRepository
      */
     public function updateBankCreditsRelative(int $allianceId, int $amountChange): bool
     {
-        $sql = "
-            UPDATE alliances 
-            SET bank_credits = GREATEST(0, CAST(bank_credits AS SIGNED) + CAST(? AS SIGNED)) 
-            WHERE id = ?
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$amountChange, $allianceId]);
+        if ($amountChange === 0) {
+            return true;
+        }
+
+        // Hard Cap: 9 Quintillion (Safe limit for Signed BIGINT and PHP 64-bit int)
+        $safeCap = 9000000000000000000;
+
+        if ($amountChange > 0) {
+            // Addition: Cap at safe limit
+            $sql = "UPDATE alliances SET bank_credits = LEAST(:cap, bank_credits + :amount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'cap' => $safeCap, 
+                'amount' => $amountChange, 
+                'id' => $allianceId
+            ]);
+        } else {
+            // Subtraction: Prevent dropping below zero
+            // FIX: Use distinct parameter names for each placeholder to prevent PDO HY093 errors
+            $absChange = abs($amountChange);
+            $sql = "UPDATE alliances SET bank_credits = IF(bank_credits < :absAmount1, 0, bank_credits - :absAmount2) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'absAmount1' => $absChange, 
+                'absAmount2' => $absChange, 
+                'id' => $allianceId
+            ]);
+        }
     }
 
     /**
@@ -187,6 +231,18 @@ class AllianceRepository
     }
 
     /**
+     * Retrieves a lightweight list of ID and Name/Tag for all alliances.
+     * Used for Almanac Dropdowns.
+     * 
+     * @return array Array of ['id', 'name', 'tag']
+     */
+    public function getAllAlliancesSimple(): array
+    {
+        $stmt = $this->db->query("SELECT id, name, tag FROM alliances ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Updates an alliance's last_compound_at timestamp.
      * Used by the TurnProcessorService after applying interest.
      *
@@ -199,6 +255,22 @@ class AllianceRepository
             "UPDATE alliances SET last_compound_at = NOW() WHERE id = ?"
         );
         return $stmt->execute([$allianceId]);
+    }
+
+    /**
+     * Updates an alliance's total net worth.
+     * Used by the TurnProcessorService after aggregating member stats.
+     *
+     * @param int $allianceId
+     * @param int $netWorth
+     * @return bool
+     */
+    public function updateNetWorth(int $allianceId, int $netWorth): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE alliances SET net_worth = ? WHERE id = ?"
+        );
+        return $stmt->execute([$netWorth, $allianceId]);
     }
 
     /**

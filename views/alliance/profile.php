@@ -274,6 +274,13 @@
                                             <button type="submit" class="btn-submit" style="width: auto; margin: 0;">Pay</button>
                                         </form>
                                     <?php endif; ?>
+                                    
+                                    <?php if ($state['is_leader']): ?>
+                                        <form action="/alliance/loan/forgive/<?= $loan['id'] ?>" method="POST" onsubmit="return confirm('Are you sure you want to forgive this loan? This action cannot be undone.');" style="margin-top: 0.5rem; text-align: right;">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                            <button class="btn-submit btn-reject" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; width: auto;">Forgive Loan</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
