@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Player Logic ---
     const playerSelect = document.getElementById('player-select');
     
+    // Init Custom Dropdown for Players
+    initCustomDropdown('player-custom-select', 'player-select', (val) => {
+        if(val) loadPlayerDossier(val);
+    });
+
+    // We keep this for backward compatibility if native select changes manually (unlikely but safe)
     if (playerSelect) {
         playerSelect.addEventListener('change', (e) => {
             const playerId = e.target.value;
@@ -69,6 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Alliance Logic ---
     const allianceSelect = document.getElementById('alliance-select');
+
+    // Init Custom Dropdown for Alliances
+    initCustomDropdown('alliance-custom-select', 'alliance-select', (val) => {
+        if(val) loadAllianceDossier(val);
+    });
 
     if (allianceSelect) {
         allianceSelect.addEventListener('change', (e) => {
@@ -174,6 +185,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    /**
+     * Initializes a custom dropdown logic.
+     * @param {string} wrapperId - ID of the .custom-select-wrapper
+     * @param {string} selectId - ID of the hidden <select>
+     * @param {function} callback - Function to run on selection (value) => {}
+     */
+    function initCustomDropdown(wrapperId, selectId, callback) {
+        const wrapper = document.getElementById(wrapperId);
+        const nativeSelect = document.getElementById(selectId);
+        if (!wrapper || !nativeSelect) return;
+
+        const trigger = wrapper.querySelector('.custom-select-trigger');
+        const optionsContainer = wrapper.querySelector('.custom-options');
+        const options = wrapper.querySelectorAll('.custom-option');
+        const triggerText = wrapper.querySelector('.trigger-text');
+
+        // Toggle Open/Close
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close others
+            document.querySelectorAll('.custom-select-trigger').forEach(el => {
+                if(el !== trigger) el.classList.remove('open');
+            });
+            document.querySelectorAll('.custom-options').forEach(el => {
+                if(el !== optionsContainer) el.classList.remove('open');
+            });
+            
+            trigger.classList.toggle('open');
+            optionsContainer.classList.toggle('open');
+        });
+
+        // Option Click
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                if (!value) return; // Disabled items
+
+                // Update UI
+                triggerText.textContent = option.textContent;
+                options.forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Close
+                trigger.classList.remove('open');
+                optionsContainer.classList.remove('open');
+
+                // Sync Native Select
+                nativeSelect.value = value;
+                
+                // Trigger Callback
+                if(callback) callback(value);
+            });
+        });
+
+        // Click Outside to Close
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) {
+                trigger.classList.remove('open');
+                optionsContainer.classList.remove('open');
+            }
+        });
+    }
 
     // --- Helpers ---
 

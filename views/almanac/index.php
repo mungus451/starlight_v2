@@ -26,16 +26,26 @@
                 <div class="row justify-content-center">
                     <div class="col-md-6">
                         <label class="form-label text-neon-blue text-uppercase fw-bold small">Select Commander</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-neon-blue"><i class="fas fa-search"></i></span>
-                            <select id="player-select" class="form-select bg-dark text-light border-secondary">
+                        <div class="custom-select-wrapper" id="player-custom-select">
+                            <div class="custom-select-trigger bg-dark border-secondary text-light border-neon-blue">
+                                <span class="trigger-text">-- Choose a Pilot --</span>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="custom-options border-neon-blue">
+                                <?php if (!empty($players)): ?>
+                                    <?php foreach ($players as $p): ?>
+                                        <span class="custom-option" data-value="<?= $p['id'] ?>"><?= htmlspecialchars($p['character_name']) ?></span>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <span class="custom-option disabled">No players found.</span>
+                                <?php endif; ?>
+                            </div>
+                            <select id="player-select" style="display:none;">
                                 <option value="" selected disabled>-- Choose a Pilot --</option>
                                 <?php if (!empty($players)): ?>
                                     <?php foreach ($players as $p): ?>
                                         <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['character_name']) ?></option>
                                     <?php endforeach; ?>
-                                <?php else: ?>
-                                    <option value="" disabled>No players found.</option>
                                 <?php endif; ?>
                             </select>
                         </div>
@@ -165,20 +175,29 @@
                 <div class="row justify-content-center">
                     <div class="col-md-6">
                         <label class="form-label text-warning text-uppercase fw-bold small">Select Faction</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-dark border-secondary text-warning"><i class="fas fa-flag"></i></span>
-                            <select id="alliance-select" class="form-select bg-dark text-light border-secondary">
-                                <option value="" selected disabled>-- Choose an Alliance --</option>
-                                <?php if (!empty($alliances)): ?>
-                                    <?php foreach ($alliances as $a): ?>
-                                        <option value="<?= $a['id'] ?>">[<?= htmlspecialchars($a['tag']) ?>] <?= htmlspecialchars($a['name']) ?></option>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <option value="" disabled>No alliances found.</option>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                    </div>
+                                                <div class="custom-select-wrapper" id="alliance-custom-select">
+                                                    <div class="custom-select-trigger bg-dark border-secondary text-light border-warning">
+                                                        <span class="trigger-text">-- Choose an Alliance --</span>
+                                                        <div class="arrow"></div>
+                                                    </div>
+                                                    <div class="custom-options border-warning">
+                                                        <?php if (!empty($alliances)): ?>
+                                                            <?php foreach ($alliances as $a): ?>
+                                                                <span class="custom-option" data-value="<?= $a['id'] ?>">[<?= htmlspecialchars($a['tag']) ?>] <?= htmlspecialchars($a['name']) ?></span>
+                                                            <?php endforeach; ?>
+                                                        <?php else: ?>
+                                                            <span class="custom-option disabled">No alliances found.</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <select id="alliance-select" style="display:none;">
+                                                        <option value="" selected disabled>-- Choose an Alliance --</option>
+                                                        <?php if (!empty($alliances)): ?>
+                                                            <?php foreach ($alliances as $a): ?>
+                                                                <option value="<?= $a['id'] ?>">[<?= htmlspecialchars($a['tag']) ?>] <?= htmlspecialchars($a['name']) ?></option>
+                                                            <?php endforeach; ?>
+                                                        <?php endif; ?>
+                                                    </select>
+                                                </div>                    </div>
                 </div>
             </div>
         </div>
@@ -400,5 +419,128 @@
     .display-4 { font-size: 2.5rem; }
     .structures-grid { grid-template-columns: 1fr; } 
     .tabs-nav { justify-content: space-around; } 
+}
+/* Refined Dropdown Style (Custom) */
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 100%;
+    max-width: 400px; /* Centered width constraint */
+    margin: 0 auto;
+}
+
+.custom-select-trigger {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+    background: rgba(13, 17, 23, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Color Variants */
+.custom-select-trigger.border-neon-blue { border-color: #00f3ff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
+.custom-select-trigger.border-warning { border-color: #ffc107; box-shadow: 0 0 10px rgba(255, 193, 7, 0.1); }
+
+.custom-select-trigger:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.custom-select-trigger.open {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background: #000;
+}
+
+.arrow {
+    width: 0; 
+    height: 0; 
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #fff;
+    transition: transform 0.3s ease;
+}
+
+.custom-select-trigger.open .arrow {
+    transform: rotate(180deg);
+}
+
+.custom-options {
+    position: absolute;
+    display: block;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid #333;
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    background: rgba(5, 7, 10, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.custom-options.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.custom-options.border-neon-blue { border-color: #00f3ff; }
+.custom-options.border-warning { border-color: #ffc107; }
+
+.custom-option {
+    position: relative;
+    display: block;
+    padding: 10px 16px;
+    font-size: 0.95rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.custom-option:last-child { border-bottom: none; }
+
+.custom-option:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    padding-left: 20px; /* Slide effect */
+}
+
+.custom-option.selected {
+    color: #fff;
+    font-weight: 700;
+    background: rgba(255,255,255,0.05);
+}
+
+/* Scrollbar for options */
+.custom-options::-webkit-scrollbar { width: 6px; }
+.custom-options::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+.custom-options::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+.custom-options.border-neon-blue::-webkit-scrollbar-thumb { background: #00f3ff; }
+.custom-options.border-warning::-webkit-scrollbar-thumb { background: #ffc107; }
+
+.almanac-label {
+    display: block;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
 }
 </style>
