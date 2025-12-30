@@ -49,12 +49,29 @@ class AlmanacService
             ]]
         ];
 
+        // Chart Data: Casualty Breakdown (Detailed)
+        $chartCasualtyBreakdown = [
+            'labels' => ['Enemies Killed', 'Lost (Attacking)', 'Lost (Defending)'],
+            'datasets' => [[
+                'label' => 'Units',
+                'data' => [
+                    $stats['units_killed'],
+                    $stats['units_lost_attacking'] ?? 0,
+                    $stats['units_lost_defending'] ?? 0
+                ],
+                'backgroundColor' => ['#0dcaf0', '#fd7e14', '#dc3545'], // Cyan, Orange, Red
+                'borderColor' => '#222',
+                'borderWidth' => 2
+            ]]
+        ];
+
         return [
             'player' => $player,
             'stats' => $stats,
             'charts' => [
                 'win_loss' => $chartWinLoss,
-                'units' => $chartUnits
+                'units' => $chartUnits,
+                'casualty_breakdown' => $chartCasualtyBreakdown
             ]
         ];
     }

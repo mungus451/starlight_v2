@@ -59,15 +59,18 @@ class AlmanacRepository
         $stmt->execute([$userId, $userId]);
         $unitsKilled = (int)$stmt->fetchColumn();
 
-        // Casualties: Soldiers I lost when Attacking + Guards I lost when Defending
-        $sqlLost = "
-            SELECT 
-                (SELECT COALESCE(SUM(attacker_soldiers_lost), 0) FROM battle_reports WHERE attacker_id = ?) +
-                (SELECT COALESCE(SUM(defender_guards_lost), 0) FROM battle_reports WHERE defender_id = ?)
-        ";
-        $stmt = $this->db->prepare($sqlLost);
-        $stmt->execute([$userId, $userId]);
-        $unitsLost = (int)$stmt->fetchColumn();
+        // Casualties Split
+        // Attacking: Soldiers lost
+        $sqlLostAttacking = "SELECT COALESCE(SUM(attacker_soldiers_lost), 0) FROM battle_reports WHERE attacker_id = ?";
+        $stmt = $this->db->prepare($sqlLostAttacking);
+        $stmt->execute([$userId]);
+        $unitsLostAttacking = (int)$stmt->fetchColumn();
+
+        // Defending: Guards lost (Citizens killed)
+        $sqlLostDefending = "SELECT COALESCE(SUM(defender_guards_lost), 0) FROM battle_reports WHERE defender_id = ?";
+        $stmt = $this->db->prepare($sqlLostDefending);
+        $stmt->execute([$userId]);
+        $unitsLostDefending = (int)$stmt->fetchColumn();
 
         // 3. Records (Max Plunder, Deadliest Attack)
         $sqlRecords = "
@@ -84,9 +87,11 @@ class AlmanacRepository
         return [
             'battles_won' => $wins,
             'battles_lost' => $losses,
-            'total_battles' => $wins + $losses, // Ignoring stalemates for simplicity, or we can add them
+            'total_battles' => $wins + $losses,
             'units_killed' => $unitsKilled,
-            'units_lost' => $unitsLost,
+            'units_lost' => $unitsLostAttacking + $unitsLostDefending,
+            'units_lost_attacking' => $unitsLostAttacking,
+            'units_lost_defending' => $unitsLostDefending,
             'largest_plunder' => (int)($records['largest_plunder'] ?? 0),
             'deadliest_attack' => (int)($records['deadliest_attack'] ?? 0)
         ];

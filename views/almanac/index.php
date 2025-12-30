@@ -111,6 +111,16 @@
                     </div>
                 </div>
 
+                <!-- Card 6: Casualty Analysis (Bar Chart) -->
+                <div class="structure-card" style="grid-column: span 1;">
+                    <div class="card-header-main justify-content-center">
+                        <h3 class="card-title">Casualty Analysis</h3>
+                    </div>
+                    <div class="card-body-main p-0 position-relative" style="height: 200px;">
+                        <canvas id="player-casualty-chart"></canvas>
+                    </div>
+                </div>
+
                 <!-- Card 5: Combat Log (Span 2 cols on desktop if possible, or just regular card) -->
                 <div class="structure-card" style="grid-row: span 2;">
                     <div class="card-header-main">
@@ -131,8 +141,11 @@
                             <li class="list-group-item bg-transparent text-light d-flex justify-content-between border-secondary">
                                 <span>Kills</span> <span id="stat-killed" class="text-info fw-bold">0</span>
                             </li>
-                            <li class="list-group-item bg-transparent text-light d-flex justify-content-between border-none">
+                            <li class="list-group-item bg-transparent text-light d-flex justify-content-between border-secondary">
                                 <span>Deaths</span> <span id="stat-lost" class="text-warning fw-bold">0</span>
+                            </li>
+                            <li class="list-group-item bg-transparent text-light d-flex justify-content-between border-none">
+                                <span>Citizens Lost (Def)</span> <span id="stat-lost-defensive" class="text-danger fw-bold">0</span>
                             </li>
                         </ul>
                     </div>
