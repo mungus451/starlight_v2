@@ -120,6 +120,26 @@ class AttackService
         return $allReports;
     }
 
+    public function getPaginatedReports(int $userId, int $page, int $limit = 10): array
+    {
+        $total = $this->battleRepo->countUserBattles($userId);
+        $totalPages = (int)ceil($total / $limit);
+        $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
+        $offset = ($page - 1) * $limit;
+
+        $reports = $this->battleRepo->getPaginatedUserBattles($userId, $limit, $offset);
+
+        return [
+            'reports' => $reports,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_records' => $total,
+                'limit' => $limit
+            ]
+        ];
+    }
+
     public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport
     {
         return $this->battleRepo->findReportById($reportId, $viewerId);

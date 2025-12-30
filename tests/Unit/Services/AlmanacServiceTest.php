@@ -78,6 +78,8 @@ class AlmanacServiceTest extends MockeryTestCase
             'total_battles' => 60,
             'units_killed' => 1000,
             'units_lost' => 200,
+            'units_lost_attacking' => 150,
+            'units_lost_defending' => 50,
             'largest_plunder' => 50000,
             'deadliest_attack' => 150
         ];
@@ -91,6 +93,8 @@ class AlmanacServiceTest extends MockeryTestCase
         $this->assertEquals(50, $result['stats']['battles_won']);
         // Check Chart Data Structure
         $this->assertEquals([50, 10], $result['charts']['win_loss']['datasets'][0]['data']);
+        // Check New Chart
+        $this->assertEquals([1000, 150, 50], $result['charts']['casualty_breakdown']['datasets'][0]['data']);
     }
 
     public function testGetPlayerDossierNotFound()

@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Avatar Logic
         const avatarUrl = p.profile_picture_url 
             ? `/serve/avatar/${p.profile_picture_url}` 
-            : 'https://via.placeholder.com/120?text=Pilot';
+            : '/img/default_avatar.png';
         document.getElementById('player-avatar').src = avatarUrl;
 
         // Records
@@ -54,10 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stat-losses').textContent = s.battles_lost;
         document.getElementById('stat-killed').textContent = parseInt(s.units_killed).toLocaleString();
         document.getElementById('stat-lost').textContent = parseInt(s.units_lost).toLocaleString();
+        document.getElementById('stat-lost-defensive').textContent = parseInt(s.units_lost_defending).toLocaleString();
 
         // Charts
         renderChart('player-wl-chart', 'doughnut', data.charts.win_loss.labels, data.charts.win_loss.datasets[0].data, data.charts.win_loss.datasets[0].backgroundColor);
         renderChart('player-kd-chart', 'pie', data.charts.units.labels, data.charts.units.datasets[0].data, data.charts.units.datasets[0].backgroundColor);
+        
+        // Casualty Breakdown (Bar Chart)
+        if (data.charts.casualty_breakdown) {
+             renderChart('player-casualty-chart', 'bar', data.charts.casualty_breakdown.labels, data.charts.casualty_breakdown.datasets[0].data, data.charts.casualty_breakdown.datasets[0].backgroundColor);
+        }
     }
 
 
@@ -95,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Alliance Avatar Logic
         const allyAvatarUrl = a.profile_picture_url 
             ? `/serve/alliance_avatar/${a.profile_picture_url}` 
-            : 'https://via.placeholder.com/150?text=Alliance';
+            : '/img/default_alliance.png';
         document.getElementById('alliance-avatar').src = allyAvatarUrl;
 
         // Stats
@@ -130,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Member Avatar Logic
                 const memberAvatarUrl = m.profile_picture_url 
                     ? `/serve/avatar/${m.profile_picture_url}` 
-                    : 'https://via.placeholder.com/30';
+                    : '/img/default_avatar.png';
                 
                 tr.innerHTML = `
                     <td>
