@@ -276,61 +276,60 @@ return false;
 }
 }
 
-/**
-* Processes turn-based interest for all alliances.
-*
-* @return int The number of alliances successfully processed.
-*/
-private function processAllAlliances(): int
-{
-$alliances = $this->allianceRepo->getAllAlliances();
-$interestRate = $this->treasuryConfig['bank_interest_rate'] ?? 0;
-$processedCount = 0;
+    /**
+     * Processes turn-based interest AND Net Worth updates for all alliances.
+     *
+     * @return int The number of alliances successfully processed.
+     */
+    private function processAllAlliances(): int
+    {
+        $alliances = $this->allianceRepo->getAllAlliances();
+        $interestRate = $this->treasuryConfig['bank_interest_rate'] ?? 0;
+        $processedCount = 0;
 
-if ($interestRate <= 0) {
-return 0; // Interest is disabled
-}
+        foreach ($alliances as $alliance) {
+            $transactionStartedByMe = false;
+            try {
+                if (!$this->db->inTransaction()) {
+                    $this->db->beginTransaction();
+                    $transactionStartedByMe = true;
+                }
 
-foreach ($alliances as $alliance) {
-// Ensure we have a valid bank balance to calculate on
-if ($alliance->bank_credits <= 0) {
-continue;
-}
+                // --- 1. Net Worth Calculation (FIX) ---
+                // Calculate total net worth of all members
+                $totalNetWorth = $this->userRepo->sumNetWorthByAllianceId($alliance->id);
+                $this->allianceRepo->updateNetWorth($alliance->id, $totalNetWorth);
 
-$interestGained = (int)floor($alliance->bank_credits * $interestRate);
+                // --- 2. Bank Interest Logic ---
+                if ($interestRate > 0 && $alliance->bank_credits > 0) {
+                    $interestGained = (int)floor($alliance->bank_credits * $interestRate);
 
-if ($interestGained > 0) {
-$transactionStartedByMe = false;
-try {
-if (!$this->db->inTransaction()) {
-$this->db->beginTransaction();
-$transactionStartedByMe = true;
-}
+                    if ($interestGained > 0) {
+                        // Add interest to bank
+                        $this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
 
-// 1. Add interest to bank
-$this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
+                        // Log the transaction
+                        $message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
+                        $this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
 
-// 2. Log the transaction
-$message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
-$this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
+                        // Update compound timestamp
+                        $this->allianceRepo->updateLastCompoundAt($alliance->id);
+                    }
+                }
 
-// 3. Update compound timestamp
-$this->allianceRepo->updateLastCompoundAt($alliance->id);
+                if ($transactionStartedByMe) {
+                    $this->db->commit();
+                }
+                $processedCount++;
 
-if ($transactionStartedByMe) {
-$this->db->commit();
-}
-$processedCount++;
+            } catch (Throwable $e) {
+                if ($transactionStartedByMe && $this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                error_log("Failed to process turn for alliance {$alliance->id}: " . $e->getMessage());
+            }
+        }
 
-} catch (Throwable $e) {
-if ($transactionStartedByMe && $this->db->inTransaction()) {
-$this->db->rollBack();
-}
-error_log("Failed to process turn for alliance {$alliance->id}: " . $e->getMessage());
-}
-}
-}
-
-return $processedCount;
-}
+        return $processedCount;
+    }
 }

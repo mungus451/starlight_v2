@@ -266,6 +266,24 @@ return $npcs;
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Sums the Net Worth of all users belonging to a specific alliance.
+     * Relies on the `user_stats` table joined via `users.id`.
+     */
+    public function sumNetWorthByAllianceId(int $allianceId): int
+    {
+        $sql = "
+            SELECT SUM(us.net_worth) 
+            FROM users u
+            JOIN user_stats us ON u.id = us.user_id
+            WHERE u.alliance_id = ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        return (int)$stmt->fetchColumn();
+    }
+
     // --- END NPC METHODS ---
 /**
 * Helper method to convert a database row (array) into a User entity.

@@ -258,6 +258,22 @@ class AllianceRepository
     }
 
     /**
+     * Updates an alliance's total net worth.
+     * Used by the TurnProcessorService after aggregating member stats.
+     *
+     * @param int $allianceId
+     * @param int $netWorth
+     * @return bool
+     */
+    public function updateNetWorth(int $allianceId, int $netWorth): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE alliances SET net_worth = ? WHERE id = ?"
+        );
+        return $stmt->execute([$netWorth, $allianceId]);
+    }
+
+    /**
      * Helper method to convert a database row into an Alliance entity.
      */
     private function hydrate(array $data): Alliance
