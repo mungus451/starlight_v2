@@ -161,6 +161,75 @@
                     </div>
                 </div>
 
+                <!-- NEW: Espionage Stats Section (Full Width Header) -->
+                <div class="structure-category" style="margin-top: 2rem;">
+                    <h2><i class="fas fa-user-secret"></i> Intelligence Directorate</h2>
+                </div>
+
+                <!-- Card 7: Spy Success Rate Chart -->
+                <div class="structure-card">
+                    <div class="card-header-main justify-content-center">
+                        <h3 class="card-title">Mission Success Rate</h3>
+                    </div>
+                    <div class="card-body-main p-0 position-relative" style="height: 200px;">
+                        <canvas id="player-spy-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Card 9: Spy K/D Chart -->
+                <div class="structure-card">
+                    <div class="card-header-main justify-content-center">
+                        <h3 class="card-title">Intel Efficiency (K/D)</h3>
+                    </div>
+                    <div class="card-body-main p-0 position-relative" style="height: 200px;">
+                        <canvas id="player-spy-kd-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Card 8: Espionage Operations Log -->
+                <div class="structure-card" style="grid-column: span 2;">
+                    <div class="card-header-main">
+                        <span class="card-icon"><i class="fas fa-file-contract"></i></span>
+                        <h3 class="card-title">Espionage Operations</h3>
+                    </div>
+                    <div class="card-body-main p-0">
+                         <div class="table-responsive w-100">
+                            <table class="table table-dark table-hover mb-0 align-middle small">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted ps-3">Missions Launched</td>
+                                        <td class="text-end pe-3 fw-bold" id="spy-missions-total">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3">Successful Infiltrations</td>
+                                        <td class="text-end pe-3 fw-bold text-success" id="spy-missions-success">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3">Spies Lost (M.I.A.)</td>
+                                        <td class="text-end pe-3 fw-bold text-danger" id="spy-lost">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3">Enemy Sentries Neutralized</td>
+                                        <td class="text-end pe-3 fw-bold text-info" id="sentry-killed">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3 border-top border-secondary">Defensive Interceptions</td>
+                                        <td class="text-end pe-3 fw-bold border-top border-secondary text-warning" id="spy-intercepted">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3">Enemy Spies Caught</td>
+                                        <td class="text-end pe-3 fw-bold text-success" id="enemy-spy-caught">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted ps-3">Sentries Lost (K.I.A.)</td>
+                                        <td class="text-end pe-3 fw-bold text-danger" id="sentry-lost">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div> <!-- End Grid -->
 
         </div> <!-- End Player Dossier -->

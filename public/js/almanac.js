@@ -62,6 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stat-lost').textContent = parseInt(s.units_lost).toLocaleString();
         document.getElementById('stat-lost-defensive').textContent = parseInt(s.units_lost_defending).toLocaleString();
 
+        // Espionage Stats
+        document.getElementById('spy-missions-total').textContent = parseInt(s.spy_missions_total).toLocaleString();
+        document.getElementById('spy-missions-success').textContent = parseInt(s.spy_missions_success).toLocaleString();
+        document.getElementById('spy-lost').textContent = parseInt(s.spies_lost).toLocaleString();
+        document.getElementById('sentry-killed').textContent = parseInt(s.enemy_sentries_killed).toLocaleString();
+        
+        document.getElementById('spy-intercepted').textContent = parseInt(s.spy_defenses_intercepted).toLocaleString();
+        document.getElementById('enemy-spy-caught').textContent = parseInt(s.enemy_spies_caught).toLocaleString();
+        document.getElementById('sentry-lost').textContent = parseInt(s.sentries_lost).toLocaleString();
+
         // Charts
         renderChart('player-wl-chart', 'doughnut', data.charts.win_loss.labels, data.charts.win_loss.datasets[0].data, data.charts.win_loss.datasets[0].backgroundColor);
         renderChart('player-kd-chart', 'pie', data.charts.units.labels, data.charts.units.datasets[0].data, data.charts.units.datasets[0].backgroundColor);
@@ -69,6 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Casualty Breakdown (Bar Chart)
         if (data.charts.casualty_breakdown) {
              renderChart('player-casualty-chart', 'bar', data.charts.casualty_breakdown.labels, data.charts.casualty_breakdown.datasets[0].data, data.charts.casualty_breakdown.datasets[0].backgroundColor);
+        }
+
+        // Spy Success Rate (Doughnut)
+        if (data.charts.spy_success) {
+             renderChart('player-spy-chart', 'doughnut', data.charts.spy_success.labels, data.charts.spy_success.datasets[0].data, data.charts.spy_success.datasets[0].backgroundColor);
+        }
+
+        // Spy K/D (Pie)
+        if (data.charts.spy_kd) {
+             renderChart('player-spy-kd-chart', 'pie', data.charts.spy_kd.labels, data.charts.spy_kd.datasets[0].data, data.charts.spy_kd.datasets[0].backgroundColor);
         }
     }
 

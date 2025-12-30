@@ -84,6 +84,36 @@ class AlmanacRepository
         $stmt->execute([$userId]);
         $records = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // 4. Espionage Statistics (NEW)
+        // Missions I launched
+        $sqlSpyMissions = "
+            SELECT 
+                COUNT(*) as total_missions,
+                SUM(CASE WHEN operation_result = 'success' THEN 1 ELSE 0 END) as successful_missions,
+                SUM(CASE WHEN operation_result = 'failure' THEN 1 ELSE 0 END) as failed_missions,
+                COALESCE(SUM(spies_lost_attacker), 0) as spies_lost_attacking,
+                COALESCE(SUM(sentries_lost_defender), 0) as enemy_sentries_killed
+            FROM spy_reports
+            WHERE attacker_id = ?
+        ";
+        $stmt = $this->db->prepare($sqlSpyMissions);
+        $stmt->execute([$userId]);
+        $spyStatsAttacker = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Missions against me
+        $sqlSpyDefense = "
+            SELECT 
+                COUNT(*) as total_defenses,
+                SUM(CASE WHEN operation_result = 'failure' THEN 1 ELSE 0 END) as intercepted_missions,
+                COALESCE(SUM(sentries_lost_defender), 0) as sentries_lost_defending,
+                COALESCE(SUM(spies_lost_attacker), 0) as enemy_spies_caught
+            FROM spy_reports
+            WHERE defender_id = ?
+        ";
+        $stmt = $this->db->prepare($sqlSpyDefense);
+        $stmt->execute([$userId]);
+        $spyStatsDefender = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return [
             'battles_won' => $wins,
             'battles_lost' => $losses,
@@ -93,7 +123,17 @@ class AlmanacRepository
             'units_lost_attacking' => $unitsLostAttacking,
             'units_lost_defending' => $unitsLostDefending,
             'largest_plunder' => (int)($records['largest_plunder'] ?? 0),
-            'deadliest_attack' => (int)($records['deadliest_attack'] ?? 0)
+            'deadliest_attack' => (int)($records['deadliest_attack'] ?? 0),
+            // Espionage
+            'spy_missions_total' => (int)($spyStatsAttacker['total_missions'] ?? 0),
+            'spy_missions_success' => (int)($spyStatsAttacker['successful_missions'] ?? 0),
+            'spy_missions_failed' => (int)($spyStatsAttacker['failed_missions'] ?? 0),
+            'spies_lost' => (int)($spyStatsAttacker['spies_lost_attacking'] ?? 0),
+            'enemy_sentries_killed' => (int)($spyStatsAttacker['enemy_sentries_killed'] ?? 0),
+            'spy_defenses_total' => (int)($spyStatsDefender['total_defenses'] ?? 0),
+            'spy_defenses_intercepted' => (int)($spyStatsDefender['intercepted_missions'] ?? 0),
+            'sentries_lost' => (int)($spyStatsDefender['sentries_lost_defending'] ?? 0),
+            'enemy_spies_caught' => (int)($spyStatsDefender['enemy_spies_caught'] ?? 0)
         ];
     }
 

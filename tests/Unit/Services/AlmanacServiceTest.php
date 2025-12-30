@@ -81,7 +81,17 @@ class AlmanacServiceTest extends MockeryTestCase
             'units_lost_attacking' => 150,
             'units_lost_defending' => 50,
             'largest_plunder' => 50000,
-            'deadliest_attack' => 150
+            'deadliest_attack' => 150,
+            // Spy Stats Mock
+            'spy_missions_total' => 10,
+            'spy_missions_success' => 7,
+            'spy_missions_failed' => 3,
+            'spies_lost' => 100,
+            'enemy_sentries_killed' => 50,
+            'spy_defenses_total' => 5,
+            'spy_defenses_intercepted' => 4,
+            'sentries_lost' => 20,
+            'enemy_spies_caught' => 30
         ];
 
         $this->almanacRepo->shouldReceive('getPlayerDossier')->with($playerId)->andReturn($stats);
@@ -93,8 +103,12 @@ class AlmanacServiceTest extends MockeryTestCase
         $this->assertEquals(50, $result['stats']['battles_won']);
         // Check Chart Data Structure
         $this->assertEquals([50, 10], $result['charts']['win_loss']['datasets'][0]['data']);
-        // Check New Chart
-        $this->assertEquals([1000, 150, 50], $result['charts']['casualty_breakdown']['datasets'][0]['data']);
+        // Check New Chart (5 datasets now)
+        $this->assertEquals([1000, 150, 50, 100, 20], $result['charts']['casualty_breakdown']['datasets'][0]['data']);
+        // Check Spy Chart
+        $this->assertEquals([7, 3], $result['charts']['spy_success']['datasets'][0]['data']);
+        // Check Spy KD Chart (Kills: 50+30=80, Deaths: 100+20=120)
+        $this->assertEquals([80, 120], $result['charts']['spy_kd']['datasets'][0]['data']);
     }
 
     public function testGetPlayerDossierNotFound()

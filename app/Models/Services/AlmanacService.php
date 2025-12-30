@@ -51,15 +51,45 @@ class AlmanacService
 
         // Chart Data: Casualty Breakdown (Detailed)
         $chartCasualtyBreakdown = [
-            'labels' => ['Enemies Killed', 'Lost (Attacking)', 'Lost (Defending)'],
+            'labels' => ['Enemies Killed', 'Army Lost (Att)', 'Army Lost (Def)', 'Spies Lost', 'Sentries Lost'],
             'datasets' => [[
                 'label' => 'Units',
                 'data' => [
                     $stats['units_killed'],
                     $stats['units_lost_attacking'] ?? 0,
-                    $stats['units_lost_defending'] ?? 0
+                    $stats['units_lost_defending'] ?? 0,
+                    $stats['spies_lost'] ?? 0,
+                    $stats['sentries_lost'] ?? 0
                 ],
-                'backgroundColor' => ['#0dcaf0', '#fd7e14', '#dc3545'], // Cyan, Orange, Red
+                'backgroundColor' => ['#0dcaf0', '#fd7e14', '#dc3545', '#d63384', '#6610f2'], // Cyan, Orange, Red, Pink, Purple
+                'borderColor' => '#222',
+                'borderWidth' => 2
+            ]]
+        ];
+
+        // Chart Data: Espionage Success Rate
+        $chartSpySuccess = [
+            'labels' => ['Success', 'Failed'],
+            'datasets' => [[
+                'data' => [
+                    $stats['spy_missions_success'] ?? 0,
+                    $stats['spy_missions_failed'] ?? 0
+                ],
+                'backgroundColor' => ['#0d6efd', '#6c757d'], // Blue, Grey
+                'borderColor' => '#222',
+                'borderWidth' => 2
+            ]]
+        ];
+
+        // Chart Data: Spy K/D (Intel Efficiency)
+        $intelKills = ($stats['enemy_sentries_killed'] ?? 0) + ($stats['enemy_spies_caught'] ?? 0);
+        $intelDeaths = ($stats['spies_lost'] ?? 0) + ($stats['sentries_lost'] ?? 0);
+
+        $chartSpyKD = [
+            'labels' => ['Intel Kills', 'Intel Deaths'],
+            'datasets' => [[
+                'data' => [$intelKills, $intelDeaths],
+                'backgroundColor' => ['#0dcaf0', '#dc3545'], // Cyan (Kills), Red (Deaths)
                 'borderColor' => '#222',
                 'borderWidth' => 2
             ]]
@@ -71,7 +101,9 @@ class AlmanacService
             'charts' => [
                 'win_loss' => $chartWinLoss,
                 'units' => $chartUnits,
-                'casualty_breakdown' => $chartCasualtyBreakdown
+                'casualty_breakdown' => $chartCasualtyBreakdown,
+                'spy_success' => $chartSpySuccess,
+                'spy_kd' => $chartSpyKD
             ]
         ];
     }
