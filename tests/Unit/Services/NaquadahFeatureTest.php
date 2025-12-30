@@ -152,15 +152,20 @@ class NaquadahFeatureTest extends TestCase
         $mockAllianceStructRepo = Mockery::mock(AllianceStructureRepository::class);
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
         $mockEdictRepo = Mockery::mock(EdictRepository::class);
+        $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
+        $mockGeneralRepo->shouldReceive('findByUserId')->andReturn([]);
+        $mockGeneralRepo->shouldReceive('countByUserId')->andReturn(0);
+        $mockConfig->shouldReceive('get')->with('game_balance.generals', [])->andReturn([]); // Fix missing config too
 
         $service = new PowerCalculatorService(
             $mockConfig,
             $mockArmoryService,
             $mockAllianceStructRepo,
             $mockStructDefRepo,
-            $mockEdictRepo
+            $mockEdictRepo,
+            $mockGeneralRepo
         );
 
         $userId = 1;
@@ -323,7 +328,7 @@ class NaquadahFeatureTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(0);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(0);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(0);
 
         // Mock DB Transaction

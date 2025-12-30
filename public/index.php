@@ -21,6 +21,7 @@ use App\Controllers\BankController;
 use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\ArmoryController;
+use App\Controllers\GeneralController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
@@ -35,6 +36,7 @@ use App\Controllers\AllianceSettingsController;
 use App\Controllers\AllianceRoleController;
 use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
+use App\Controllers\AlmanacController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Controllers\CurrencyConverterController;
@@ -143,6 +145,13 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/armory/batch-manufacture', [ArmoryController::class, 'handleBatchManufacture']);
     $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
 
+    // Generals
+    $r->addRoute('GET', '/generals', [GeneralController::class, 'index']);
+    $r->addRoute('POST', '/generals/recruit', [GeneralController::class, 'recruit']);
+    $r->addRoute('POST', '/generals/equip', [GeneralController::class, 'equip']);
+    $r->addRoute('GET', '/generals/armory/{id:\d+}', [GeneralController::class, 'armory']);
+    $r->addRoute('POST', '/generals/decommission', [GeneralController::class, 'decommission']);
+
     // --- User Settings ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
     $r->addRoute('POST', '/settings/profile', [SettingsController::class, 'handleProfile']);
@@ -202,6 +211,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceFundingController::class, 'handleLoanApprove']);
     $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceFundingController::class, 'handleLoanDeny']);
     $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceFundingController::class, 'handleLoanRepay']);
+    $r->addRoute('POST', '/alliance/loan/forgive/{id:\d+}', [AllianceFundingController::class, 'handleForgiveLoan']);
     
     // Refactored: Settings -> AllianceSettingsController
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
@@ -236,6 +246,13 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     
     $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
     $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
+
+    // --- Almanac ---
+    $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);
+    $r->addRoute('GET', '/almanac/search_players', [AlmanacController::class, 'searchPlayers']);
+    $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
+    $r->addRoute('GET', '/almanac/get_player_dossier', [AlmanacController::class, 'getPlayerDossier']);
+    $r->addRoute('GET', '/almanac/get_alliance_dossier', [AlmanacController::class, 'getAllianceDossier']);
 
     // --- Notification System ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
@@ -277,7 +294,7 @@ try {
                 '/dashboard', '/bank', '/training', '/structures', '/armory',
                 '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
                 '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy'
+                '/leaderboard', '/embassy', '/generals', '/almanac'
             ];
             
             $isProtected = false;

@@ -41,6 +41,7 @@
                         <!-- <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li> -->
                         <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
                         <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+                        <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
                     </ul>
                 </li>
 
@@ -57,6 +58,7 @@
                 <li class="nav-item">
                     <span class="nav-link"><i class="fas fa-crosshairs"></i> Military <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
+                        <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
                         <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
                         <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
                         <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy Network</a></li>
@@ -147,6 +149,9 @@
     <?php if ($isLoggedIn): ?>
         <script src="/js/notifications.js"></script>
     <?php endif; ?>
+
+    <!-- Bootstrap JS (Required for Tabs/Dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

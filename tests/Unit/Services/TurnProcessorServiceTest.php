@@ -134,7 +134,7 @@ class TurnProcessorServiceTest extends TestCase
                         ->once()
                         ->with($userId, 1);
         
-                    $this->mockGeneralRepo->shouldReceive('getGeneralCount')
+                    $this->mockGeneralRepo->shouldReceive('countByUserId')
                         ->once()
                         ->with($userId)
                         ->andReturn(0);
@@ -192,19 +192,30 @@ class TurnProcessorServiceTest extends TestCase
                     created_at: '2024-01-01'
                 );
         
-                $this->mockAllianceRepo->shouldReceive('getAllAlliances')
-                    ->once()
-                    ->andReturn([$mockAlliance]);
-        
-                // 3. Mock Transaction
-                $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
-                $this->mockDb->shouldReceive('beginTransaction')->once();
-                $this->mockDb->shouldReceive('commit')->once();
-        
-                // 4. Mock Updates
-                $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')
-                    ->once()
-                    ->with($allianceId, 5000);
+        $this->mockAllianceRepo->shouldReceive('getAllAlliances')
+            ->once()
+            ->andReturn([$mockAlliance]);
+
+        // Fix: Add expectation for Net Worth Aggregation
+        $this->mockUserRepo->shouldReceive('sumNetWorthByAllianceId')
+            ->with(5)
+            ->once()
+            ->andReturn(100000); // Mock total net worth
+            
+        $this->mockAllianceRepo->shouldReceive('updateNetWorth')
+            ->with(5, 100000)
+            ->once()
+            ->andReturn(true);
+
+        // Transaction expectations
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
+        $this->mockDb->shouldReceive('beginTransaction')->once();
+        $this->mockDb->shouldReceive('commit')->once();
+
+        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')
+            ->with(5, 5000) // 5% of 100,000
+            ->once()
+            ->andReturn(true);
         
                 $this->mockBankLogRepo->shouldReceive('createLog')
                     ->once()

@@ -700,6 +700,47 @@ class AllianceManagementService
         return ServiceResponse::success($msg);
     }
 
+    public function forgiveLoan(int $adminUserId, int $loanId): ServiceResponse
+    {
+        $loan = $this->loanRepo->findById($loanId);
+        if (!$loan) {
+            return ServiceResponse::error('Loan not found.');
+        }
+
+        // Strict Check: Only the Alliance Leader can forgive loans
+        $alliance = $this->allianceRepo->findById($loan->alliance_id);
+        if (!$alliance || $alliance->leader_id !== $adminUserId) {
+            return ServiceResponse::error('Only the Alliance Leader can forgive loans.');
+        }
+
+        if ($loan->status !== 'active') {
+            return ServiceResponse::error('This loan is not active.');
+        }
+
+        $borrower = $this->userRepo->findById($loan->user_id);
+        if (!$borrower) {
+            return ServiceResponse::error('Borrower not found.');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Update loan to paid, 0 debt
+            $this->loanRepo->updateLoan($loanId, 'paid', 0);
+            
+            // Log the forgiveness (Amount 0 as no credits moved)
+            $message = "Loan for {$borrower->characterName} forgiven by leader.";
+            $this->bankLogRepo->createLog($loan->alliance_id, $adminUserId, 'loan_forgiveness', 0, $message);
+            
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            $this->logger->error('Alliance Loan Forgive Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred.');
+        }
+
+        return ServiceResponse::success("Loan for {$borrower->characterName} has been forgiven.");
+    }
+
     private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
     {
         $user = $this->userRepo->findById($userId);

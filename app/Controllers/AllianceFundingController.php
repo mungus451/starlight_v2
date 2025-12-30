@@ -203,4 +203,37 @@ class AllianceFundingController extends BaseController
         
         $this->redirect('/alliance/profile/' . $allianceId);
     }
+
+    /**
+     * Handles an alliance leader forgiving a loan.
+     */
+    public function handleForgiveLoan(array $vars): void
+    {
+        // 1. Validate Input (CSRF only)
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required'
+        ]);
+
+        $allianceId = $this->session->get('alliance_id');
+
+        // 2. Validate CSRF
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid security token.');
+            $this->redirect('/alliance/profile/' . $allianceId);
+            return;
+        }
+
+        $adminId = $this->session->get('user_id');
+        $loanId = (int)($vars['id'] ?? 0);
+
+        $response = $this->mgmtService->forgiveLoan($adminId, $loanId);
+
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+
+        $this->redirect('/alliance/profile/' . $allianceId);
+    }
 }
