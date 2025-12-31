@@ -54,15 +54,14 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
      */
     protected function considerCrystalPurchase(int $userId, int $currentCredits, int $neededCrystals): void
     {
-        // 5% chance to check the market to simulate "occasional" interest
-        if (mt_rand(1, 100) > 5) return;
+        // 10% chance to check the market
+        if (mt_rand(1, 100) > 10) return;
 
-        // Simple logic: If we have tons of cash (> 100M) and need crystals, buy.
-        // Or if the market price is low (requires MarketService visibility, skipping complexity for now).
-        // For now, we assume standard Black Market exchange.
-        
-        // This is a placeholder for the requested feature.
-        // Implementation depends on BlackMarketService methods (e.g., buyCrystals).
+        // If we have > 10M credits and fewer than 100 crystals, convert some credits.
+        if ($currentCredits > 10000000) {
+            $amountToConvert = $currentCredits * 0.1; // Convert 10% of liquid cash
+            $this->converterService->convertCreditsToCrystals($userId, $amountToConvert);
+        }
     }
 
     /**

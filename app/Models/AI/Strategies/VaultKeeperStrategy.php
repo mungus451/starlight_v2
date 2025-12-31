@@ -40,6 +40,9 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         // Occasional Tech Upgrade
         $this->attemptUpgrade($npc->id, 'research_lab', $resources);
 
+        // Occasional Black Market Crystal Buy
+        $this->considerCrystalPurchase($npc->id, $resources->credits, 1000);
+
         return $actions;
     }
 }

@@ -63,6 +63,9 @@ class ReaverStrategy extends BaseNpcStrategy
                 break;
         }
 
+        // Occasional Black Market Crystal Buy
+        $this->considerCrystalPurchase($npc->id, $resources->credits, 1000);
+
         return $actions;
     }
 }

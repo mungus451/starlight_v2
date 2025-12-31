@@ -72,7 +72,11 @@ use App\Models\Services\BlackMarketService;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
 use App\Models\Services\TurnProcessorService;
-use App\Models\Services\EffectService; // --- NEW ---
+use App\Models\Services\EffectService;
+use App\Models\Services\NpcDirectorService; // --- NEW ---
+use App\Models\AI\Strategies\IndustrialistStrategy; // --- NEW ---
+use App\Models\AI\Strategies\ReaverStrategy;       // --- NEW ---
+use App\Models\AI\Strategies\VaultKeeperStrategy;  // --- NEW ---
 
 // Core & Events
 use App\Core\Events\EventDispatcher;
@@ -259,6 +263,42 @@ NotificationService::class => function (ContainerInterface $c) {
 return new NotificationService($c->get(NotificationRepository::class));
 },
 
+StructureService::class => function (ContainerInterface $c) {
+    return new StructureService(
+        $c->get(PDO::class),
+        $c->get(Config::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StructureRepository::class)
+    );
+},
+
+TrainingService::class => function (ContainerInterface $c) {
+    return new TrainingService(
+        $c->get(Config::class),
+        $c->get(ResourceRepository::class),
+        $c->get(GeneralService::class)
+    );
+},
+
+ArmoryService::class => function (ContainerInterface $c) {
+    return new ArmoryService(
+        $c->get(PDO::class),
+        $c->get(Config::class),
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(ArmoryRepository::class),
+        $c->get(StatsRepository::class)
+    );
+},
+
+GeneralService::class => function (ContainerInterface $c) {
+    return new GeneralService(
+        $c->get(PDO::class),
+        $c->get(GeneralRepository::class),
+        $c->get(ResourceRepository::class)
+    );
+},
+
 // Event Dispatcher (The Hub)
 EventDispatcher::class => function (ContainerInterface $c) {
 $dispatcher = new EventDispatcher();
@@ -289,12 +329,57 @@ return new Logger($logPath, false);
 
 // Specific NPC Logger (Writes to npc_actions.log AND stdout for CLI)
 'NpcLogger' => function (ContainerInterface $c) {
-$logPath = __DIR__ . '/../../logs/npc_actions.log';
-return new Logger($logPath, true); // True = Echo to Stdout (CLI)
-},
+        $logPath = __DIR__ . '/../../logs/npc_actions.log';
+        return new Logger($logPath, true); // True = Echo to Stdout (CLI)
+    },
 
-TurnProcessorService::class => function (ContainerInterface $c) {
-    return new TurnProcessorService(
+    // --- NEW NPC AI ARCHITECTURE ---
+    IndustrialistStrategy::class => function (ContainerInterface $c) {
+        return new IndustrialistStrategy(
+            $c->get(StructureService::class),
+            $c->get(TrainingService::class),
+            $c->get(ArmoryService::class),
+            $c->get(BlackMarketService::class),
+            $c->get(CurrencyConverterService::class),
+            $c->get(Config::class)
+        );
+    },
+
+    ReaverStrategy::class => function (ContainerInterface $c) {
+        return new ReaverStrategy(
+            $c->get(StructureService::class),
+            $c->get(TrainingService::class),
+            $c->get(ArmoryService::class),
+            $c->get(BlackMarketService::class),
+            $c->get(CurrencyConverterService::class),
+            $c->get(Config::class)
+        );
+    },
+
+    VaultKeeperStrategy::class => function (ContainerInterface $c) {
+        return new VaultKeeperStrategy(
+            $c->get(StructureService::class),
+            $c->get(TrainingService::class),
+            $c->get(ArmoryService::class),
+            $c->get(BlackMarketService::class),
+            $c->get(CurrencyConverterService::class),
+            $c->get(Config::class)
+        );
+    },
+
+    NpcDirectorService::class => function (ContainerInterface $c) {
+        return new NpcDirectorService(
+            $c->get(UserRepository::class),
+            $c->get(ResourceRepository::class),
+            $c->get(StructureRepository::class),
+            $c->get(StatsRepository::class),
+            $c->get(IndustrialistStrategy::class),
+            $c->get(ReaverStrategy::class),
+            $c->get(VaultKeeperStrategy::class)
+        );
+    },
+
+    TurnProcessorService::class => function (ContainerInterface $c) {    return new TurnProcessorService(
         $c->get(PDO::class),
         $c->get(Config::class),
         $c->get(UserRepository::class),
