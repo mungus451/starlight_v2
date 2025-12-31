@@ -46,6 +46,9 @@ class IndustrialistStrategy extends BaseNpcStrategy
             "Income/Turn: " . number_format($income['total_credit_income']) . " Cr | " . number_format($income['naquadah_income']) . " Nq | " . number_format($income['dark_matter_income']) . " DM | " . number_format($income['total_citizens']) . " Pop"
         ];
 
+        // Infrastructure Baseline Check
+        $this->ensureResourceProduction($npc->id, $resources, $structures, $actions);
+
         switch ($state) {
             case self::STATE_GROWTH:
                 // Prioritize: 1. Population (Worker Capacity), 2. Mining Complex (Income), 3. Workers

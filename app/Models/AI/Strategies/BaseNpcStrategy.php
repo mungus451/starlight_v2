@@ -61,6 +61,32 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     }
 
     /**
+     * Checks if resource production is sufficient. If not, attempts to upgrade infrastructure.
+     * Returns true if an upgrade was attempted/performed.
+     */
+    protected function ensureResourceProduction(int $userId, UserResource $res, UserStructure $structures, array &$actions): bool
+    {
+        // 1. Dark Matter Check
+        // If DM income is effectively zero (level < 1) or very low compared to needs
+        if ($structures->dark_matter_siphon_level < 5) {
+            $actions[] = "Priority: Establishing Dark Matter Production...";
+            if ($this->attemptUpgrade($userId, 'dark_matter_siphon', $res, $actions)) {
+                return true;
+            }
+        }
+
+        // 2. Naquadah Check
+        if ($structures->naquadah_mining_complex_level < 5) {
+            $actions[] = "Priority: Establishing Naquadah Production...";
+            if ($this->attemptUpgrade($userId, 'naquadah_mining_complex', $res, $actions)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Tries to buy citizens if the NPC is running low and has crystals.
      */
     protected function considerCitizenPurchase(int $userId, UserResource $res, array &$actions): void
