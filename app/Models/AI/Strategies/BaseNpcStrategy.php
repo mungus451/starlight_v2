@@ -57,6 +57,21 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     }
 
     /**
+     * Tries to buy citizens if the NPC is running low and has crystals.
+     */
+    protected function considerCitizenPurchase(int $userId, UserResource $res): bool
+    {
+        // Cost: 25 Crystals for 500 Citizens (Default)
+        $cost = $this->config->get('black_market.costs.citizen_package', 25);
+        
+        if ($res->untrained_citizens < 100 && $res->naquadah_crystals >= $cost) {
+            $response = $this->blackMarketService->purchaseCitizens($userId);
+            return $response->isSuccess();
+        }
+        return false;
+    }
+
+    /**
      * Tries to buy crystals from the Black Market if the price is right
      * or if the NPC is desperate.
      */

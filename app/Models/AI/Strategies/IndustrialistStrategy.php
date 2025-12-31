@@ -57,6 +57,12 @@ class IndustrialistStrategy extends BaseNpcStrategy
                         $actions[] = "Trained " . (int)$affordable . " Workers";
                     } else {
                         $actions[] = "Failed to train workers: " . $response->message;
+                        // specific handling for citizen shortage
+                        if (str_contains($response->message, 'untrained citizens')) {
+                            if ($this->considerCitizenPurchase($npc->id, $resources)) {
+                                $actions[] = "Bought Smuggled Citizens from Black Market";
+                            }
+                        }
                     }
                 }
                 break;

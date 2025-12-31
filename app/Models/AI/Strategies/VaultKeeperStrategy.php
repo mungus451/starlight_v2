@@ -35,10 +35,18 @@ class VaultKeeperStrategy extends BaseNpcStrategy
 
         // Train Guards & Sentries
         $respG = $this->trainingService->trainUnits($npc->id, 'guards', 20);
-        if ($respG->isSuccess()) $actions[] = "Trained Guards";
+        if ($respG->isSuccess()) {
+            $actions[] = "Trained Guards";
+        } elseif (str_contains($respG->message, 'untrained citizens')) {
+            if ($this->considerCitizenPurchase($npc->id, $resources)) $actions[] = "Bought Citizens";
+        }
 
         $respS = $this->trainingService->trainUnits($npc->id, 'sentries', 10);
-        if ($respS->isSuccess()) $actions[] = "Trained Sentries";
+        if ($respS->isSuccess()) {
+            $actions[] = "Trained Sentries";
+        } elseif (str_contains($respS->message, 'untrained citizens')) {
+            if ($this->considerCitizenPurchase($npc->id, $resources)) $actions[] = "Bought Citizens";
+        }
         
         // Occasional Tech Upgrade
         $this->attemptUpgrade($npc->id, 'research_lab', $resources);

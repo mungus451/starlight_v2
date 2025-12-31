@@ -52,6 +52,11 @@ class ReaverStrategy extends BaseNpcStrategy
                         $actions[] = "Trained " . (int)$amount . " Soldiers";
                     } else {
                         $actions[] = "Failed to train soldiers: " . $response->message;
+                        if (str_contains($response->message, 'untrained citizens')) {
+                            if ($this->considerCitizenPurchase($npc->id, $resources)) {
+                                $actions[] = "Bought Smuggled Citizens from Black Market";
+                            }
+                        }
                     }
                 }
                 
