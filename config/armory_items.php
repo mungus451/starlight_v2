@@ -56,6 +56,12 @@ return [
                     'energy_blade' => ['name' => 'Energy Blade', 'attack' => 40, 'cost' => 60000, 'notes' => 'Ignores armor.', 'requires' => 'shock_baton', 'armory_level_req' => 18],
                     'vibro_axe' => ['name' => 'Vibro Axe', 'attack' => 80, 'cost' => 80000, 'notes' => 'Heavy, great vs. fortifications.', 'requires' => 'energy_blade', 'armory_level_req' => 28],
                     'plasma_sword' => ['name' => 'Plasma Sword', 'attack' => 160, 'cost' => 100000, 'notes' => 'High damage, rare.', 'requires' => 'vibro_axe', 'armory_level_req' => 38],
+                    // Tier 6-10 Expansion
+                    'monomolecular_blade' => ['name' => 'Monomolecular Blade', 'attack' => 320, 'cost' => 120000, 'cost_crystals' => 10, 'notes' => 'Sharp enough to cut atoms.', 'requires' => 'plasma_sword', 'armory_level_req' => 48],
+                    'void_edge' => ['name' => 'Void Edge', 'attack' => 640, 'cost' => 140000, 'cost_crystals' => 50, 'notes' => 'Consume light around the blade.', 'requires' => 'monomolecular_blade', 'armory_level_req' => 58],
+                    'singularity_dagger' => ['name' => 'Singularity Dagger', 'attack' => 1280, 'cost' => 160000, 'cost_crystals' => 250, 'cost_dark_matter' => 1, 'notes' => 'Heavy as a star.', 'requires' => 'void_edge', 'armory_level_req' => 68],
+                    'temporal_sword' => ['name' => 'Temporal Sword', 'attack' => 2560, 'cost' => 180000, 'cost_crystals' => 1000, 'cost_dark_matter' => 10, 'notes' => 'Strikes in the past and future.', 'requires' => 'singularity_dagger', 'armory_level_req' => 78],
+                    'entropy_blade' => ['name' => 'Entropy Blade', 'attack' => 5120, 'cost' => 200000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'notes' => 'Unmakes whatever it touches.', 'requires' => 'temporal_sword', 'armory_level_req' => 88],
                 ]
             ],
             'headgear' => [
@@ -67,6 +73,12 @@ return [
                     'heavy_helmet' => ['name' => 'Heavy Helmet', 'attack' => 20, 'cost' => 30000, 'notes' => 'Defense bonus, slight weight penalty.', 'requires' => 'scout_visor', 'armory_level_req' => 17],
                     'neural_uplink' => ['name' => 'Neural Uplink', 'attack' => 40, 'cost' => 40000, 'notes' => 'Faster reactions, boosts all attacks slightly.', 'requires' => 'heavy_helmet', 'armory_level_req' => 27],
                     'cloak_hood' => ['name' => 'Cloak Hood', 'attack' => 80, 'cost' => 50000, 'notes' => 'Stealth advantage, minimal armor.', 'requires' => 'neural_uplink', 'armory_level_req' => 37],
+                    // Tier 6-10 Expansion
+                    'target_link_hud' => ['name' => 'Target Link HUD', 'attack' => 160, 'cost' => 60000, 'cost_crystals' => 5, 'notes' => 'Auto-aim assist.', 'requires' => 'cloak_hood', 'armory_level_req' => 47],
+                    'predator_visor' => ['name' => 'Predator Visor', 'attack' => 320, 'cost' => 70000, 'cost_crystals' => 25, 'notes' => 'Thermal and heartbeat sensors.', 'requires' => 'target_link_hud', 'armory_level_req' => 57],
+                    'omni_sight' => ['name' => 'Omni-Sight', 'attack' => 640, 'cost' => 80000, 'cost_crystals' => 100, 'cost_dark_matter' => 1, 'notes' => 'See through walls.', 'requires' => 'predator_visor', 'armory_level_req' => 67],
+                    'temporal_eye' => ['name' => 'Temporal Eye', 'attack' => 1280, 'cost' => 90000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Predicts enemy movements.', 'requires' => 'omni_sight', 'armory_level_req' => 77],
+                    'reality_scanner' => ['name' => 'Reality Scanner', 'attack' => 2560, 'cost' => 100000, 'cost_crystals' => 2500, 'cost_dark_matter' => 50, 'notes' => 'See the code of the universe.', 'requires' => 'temporal_eye', 'armory_level_req' => 87],
                 ]
             ],
             'explosives' => [
@@ -77,7 +89,13 @@ return [
                     'plasma_grenade' => ['name' => 'Plasma Grenade', 'attack' => 60, 'cost' => 120000, 'notes' => 'Sticks to targets.', 'requires' => 'frag_grenade', 'armory_level_req' => 6],
                     'emp_charge' => ['name' => 'EMP Charge', 'attack' => 120, 'cost' => 180000, 'notes' => 'Weakens shields/tech.', 'requires' => 'plasma_grenade', 'armory_level_req' => 16],
                     'nano_cluster_bomb' => ['name' => 'Nano Cluster Bomb', 'attack' => 240, 'cost' => 240000, 'notes' => 'Drone swarms shred troops.', 'requires' => 'emp_charge', 'armory_level_req' => 26],
-                    'void_charge' => ['name' => 'Void Charge', 'attack' => 580, 'cost' => 300000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 36],
+                    'void_charge' => ['name' => 'Void Charge', 'attack' => 480, 'cost' => 300000, 'notes' => 'Creates a gravity implosion, devastating AoE.', 'requires' => 'nano_cluster_bomb', 'armory_level_req' => 36],
+                    // Tier 6-10 Expansion
+                    'antimatter_grenade' => ['name' => 'Antimatter Grenade', 'attack' => 960, 'cost' => 360000, 'cost_crystals' => 20, 'notes' => 'Pure destruction.', 'requires' => 'void_charge', 'armory_level_req' => 46],
+                    'black_hole_bomb' => ['name' => 'Black Hole Bomb', 'attack' => 1920, 'cost' => 420000, 'cost_crystals' => 100, 'notes' => 'Miniature event horizon.', 'requires' => 'antimatter_grenade', 'armory_level_req' => 56],
+                    'dimensional_charge' => ['name' => 'Dimensional Charge', 'attack' => 3840, 'cost' => 480000, 'cost_crystals' => 500, 'cost_dark_matter' => 2, 'notes' => 'Rips space-time.', 'requires' => 'black_hole_bomb', 'armory_level_req' => 66],
+                    'time_bomb' => ['name' => 'Time Bomb', 'attack' => 7680, 'cost' => 540000, 'cost_crystals' => 2000, 'cost_dark_matter' => 20, 'notes' => 'Detonates in the past.', 'requires' => 'dimensional_charge', 'armory_level_req' => 76],
+                    'reality_bomb' => ['name' => 'Reality Bomb', 'attack' => 15360, 'cost' => 600000, 'cost_crystals' => 10000, 'cost_dark_matter' => 200, 'notes' => 'Ends everything.', 'requires' => 'time_bomb', 'armory_level_req' => 86],
                 ]
             ]
         ]
@@ -112,6 +130,12 @@ return [
                     'deflector_module' => ['name' => 'Deflector Module', 'defense' => 60, 'cost' => 90000, 'notes' => 'Partial shield that recharges slowly.', 'requires' => 'energy_diffuser', 'armory_level_req' => 14],
                     'auto_turret_drone' => ['name' => 'Auto-Turret Drone', 'defense' => 120, 'cost' => 120000, 'notes' => 'Assists defense, counters attackers.', 'requires' => 'deflector_module', 'armory_level_req' => 24],
                     'nano_healing_pod' => ['name' => 'Nano-Healing Pod', 'defense' => 240, 'cost' => 150000, 'notes' => 'Heals user periodically during battle.', 'requires' => 'auto_turret_drone', 'armory_level_req' => 34],
+                    // Tier 6-10 Expansion
+                    'hard_light_shield' => ['name' => 'Hard Light Shield', 'defense' => 480, 'cost' => 180000, 'cost_crystals' => 5, 'notes' => 'Solid photon barrier.', 'requires' => 'nano_healing_pod', 'armory_level_req' => 44],
+                    'void_dampener' => ['name' => 'Void Dampener', 'defense' => 960, 'cost' => 210000, 'cost_crystals' => 25, 'notes' => 'Reduces all incoming damage.', 'requires' => 'hard_light_shield', 'armory_level_req' => 54],
+                    'singularity_sink' => ['name' => 'Singularity Sink', 'defense' => 1920, 'cost' => 240000, 'cost_crystals' => 100, 'cost_dark_matter' => 1, 'notes' => 'Absorbs projectile mass.', 'requires' => 'void_dampener', 'armory_level_req' => 64],
+                    'temporal_buffer' => ['name' => 'Temporal Buffer', 'defense' => 3840, 'cost' => 270000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Delays damage intake.', 'requires' => 'singularity_sink', 'armory_level_req' => 74],
+                    'entropy_negator' => ['name' => 'Entropy Negator', 'defense' => 7680, 'cost' => 300000, 'cost_crystals' => 2500, 'cost_dark_matter' => 50, 'notes' => 'Prevents matter decay.', 'requires' => 'temporal_buffer', 'armory_level_req' => 84],
                 ]
             ],
             'melee_counter' => [
@@ -123,6 +147,12 @@ return [
                     'vibro_blade_guard' => ['name' => 'Vibro Blade Guard', 'defense' => 40, 'cost' => 60000, 'notes' => 'Defensive melee stance, reduces melee damage.', 'requires' => 'shock_shield', 'armory_level_req' => 13],
                     'energy_buckler' => ['name' => 'Energy Buckler', 'defense' => 80, 'cost' => 80000, 'notes' => 'Small but strong energy shield.', 'requires' => 'vibro_blade_guard', 'armory_level_req' => 23],
                     'photon_barrier_blade' => ['name' => 'Photon Barrier Blade', 'defense' => 160, 'cost' => 100000, 'notes' => 'Creates a light shield, blocks most melee hits.', 'requires' => 'energy_buckler', 'armory_level_req' => 33],
+                    // Tier 6-10 Expansion
+                    'plasma_shield_spike' => ['name' => 'Plasma Shield Spike', 'defense' => 320, 'cost' => 120000, 'cost_crystals' => 5, 'notes' => 'Damages attacker on block.', 'requires' => 'photon_barrier_blade', 'armory_level_req' => 43],
+                    'void_parry_module' => ['name' => 'Void Parry Module', 'defense' => 640, 'cost' => 140000, 'cost_crystals' => 25, 'notes' => 'Auto-parries using gravity.', 'requires' => 'plasma_shield_spike', 'armory_level_req' => 53],
+                    'gravity_deflector' => ['name' => 'Gravity Deflector', 'defense' => 1280, 'cost' => 160000, 'cost_crystals' => 100, 'cost_dark_matter' => 1, 'notes' => 'Bends attacks around you.', 'requires' => 'void_parry_module', 'armory_level_req' => 63],
+                    'time_riposte_system' => ['name' => 'Time Riposte System', 'defense' => 2560, 'cost' => 180000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Counters before the strike.', 'requires' => 'gravity_deflector', 'armory_level_req' => 73],
+                    'reality_anchor' => ['name' => 'Reality Anchor', 'defense' => 5120, 'cost' => 200000, 'cost_crystals' => 2500, 'cost_dark_matter' => 50, 'notes' => 'Cannot be moved or broken.', 'requires' => 'time_riposte_system', 'armory_level_req' => 83],
                 ]
             ],
             'defensive_headgear' => [
@@ -134,6 +164,12 @@ return [
                     'reinforced_helmet' => ['name' => 'Reinforced Helmet', 'defense' => 20, 'cost' => 30000, 'notes' => 'Excellent impact resistance.', 'requires' => 'carbon_fiber_visor', 'armory_level_req' => 12],
                     'neural_guard_mask' => ['name' => 'Neural Guard Mask', 'defense' => 40, 'cost' => 40000, 'notes' => 'Protects against psychic/EMP effects.', 'requires' => 'reinforced_helmet', 'armory_level_req' => 22],
                     'aegis_helm' => ['name' => 'Aegis Helm', 'defense' => 80, 'cost' => 50000, 'notes' => 'High-tier head defense.', 'requires' => 'neural_guard_mask', 'armory_level_req' => 32],
+                    // Tier 6-10 Expansion
+                    'nano_weave_helm' => ['name' => 'Nano-Weave Helm', 'defense' => 160, 'cost' => 60000, 'cost_crystals' => 5, 'notes' => 'Self-repairing helmet.', 'requires' => 'aegis_helm', 'armory_level_req' => 42],
+                    'void_gaze_helm' => ['name' => 'Void Gaze Helm', 'defense' => 320, 'cost' => 70000, 'cost_crystals' => 25, 'notes' => 'See into the void.', 'requires' => 'nano_weave_helm', 'armory_level_req' => 52],
+                    'singularity_crown' => ['name' => 'Singularity Crown', 'defense' => 640, 'cost' => 80000, 'cost_crystals' => 100, 'cost_dark_matter' => 1, 'notes' => 'Absorbs headshots.', 'requires' => 'void_gaze_helm', 'armory_level_req' => 62],
+                    'temporal_guard_helm' => ['name' => 'Temporal Guard Helm', 'defense' => 1280, 'cost' => 90000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Time slows on impact.', 'requires' => 'singularity_crown', 'armory_level_req' => 72],
+                    'eternal_helm' => ['name' => 'Eternal Helm', 'defense' => 2560, 'cost' => 100000, 'cost_crystals' => 2500, 'cost_dark_matter' => 50, 'notes' => 'Indestructible.', 'requires' => 'temporal_guard_helm', 'armory_level_req' => 82],
                 ]
             ],
             'defensive_deployable' => [
@@ -145,6 +181,12 @@ return [
                     'emp_scrambler' => ['name' => 'EMP Scrambler', 'defense' => 120, 'cost' => 180000, 'notes' => 'Nullifies enemy EMP attacks.', 'requires' => 'plasma_wall_projector', 'armory_level_req' => 21],
                     'nano_repair_beacon' => ['name' => 'Nano Repair Beacon', 'defense' => 240, 'cost' => 240000, 'notes' => 'Repairs nearby allies and structures.', 'requires' => 'emp_scrambler', 'armory_level_req' => 31],
                     'fortress_dome_generator' => ['name' => 'Fortress Dome Generator', 'defense' => 480, 'cost' => 300000, 'notes' => 'Creates a temporary invulnerable dome.', 'requires' => 'nano_repair_beacon', 'armory_level_req' => 41],
+                    // Tier 6-10 Expansion
+                    'hard_light_wall' => ['name' => 'Hard Light Wall', 'defense' => 960, 'cost' => 360000, 'cost_crystals' => 20, 'notes' => 'Impassable barrier.', 'requires' => 'fortress_dome_generator', 'armory_level_req' => 51],
+                    'void_bunker_projector' => ['name' => 'Void Bunker Projector', 'defense' => 1920, 'cost' => 420000, 'cost_crystals' => 100, 'notes' => 'Instant heavy cover.', 'requires' => 'hard_light_wall', 'armory_level_req' => 61],
+                    'singularity_barrier' => ['name' => 'Singularity Barrier', 'defense' => 3840, 'cost' => 480000, 'cost_crystals' => 500, 'cost_dark_matter' => 2, 'notes' => 'Consumes incoming fire.', 'requires' => 'void_bunker_projector', 'armory_level_req' => 71],
+                    'stasis_field' => ['name' => 'Stasis Field', 'defense' => 7680, 'cost' => 540000, 'cost_crystals' => 2000, 'cost_dark_matter' => 20, 'notes' => 'Freezes area in time.', 'requires' => 'singularity_barrier', 'armory_level_req' => 81],
+                    'invincible_bastion' => ['name' => 'Invincible Bastion', 'defense' => 15360, 'cost' => 600000, 'cost_crystals' => 10000, 'cost_dark_matter' => 200, 'notes' => 'The ultimate defense.', 'requires' => 'stasis_field', 'armory_level_req' => 91],
                 ]
             ]
         ]
