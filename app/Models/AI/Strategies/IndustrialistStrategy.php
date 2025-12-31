@@ -49,12 +49,17 @@ class IndustrialistStrategy extends BaseNpcStrategy
 
                 // Spend remaining cash on workers
                 // Logic: Calculate max affordable workers and hire 50% of them (save some cash)
-                // Placeholder: $this->trainingService->trainWorkers(...)
+                $workerCost = $this->config->get('game_balance.training.workers.credits', 500); // Fallback 500
+                $affordable = floor($resources->credits * 0.5 / $workerCost);
+                if ($affordable > 0) {
+                    $this->trainingService->trainUnits($npc->id, 'workers', (int)$affordable);
+                    $actions[] = "Trained " . (int)$affordable . " Workers";
+                }
                 break;
 
             case self::STATE_DEFENSIVE:
                 // Train Guards
-                // Placeholder: $this->trainingService->trainUnit($npc->id, 'guard', 50)
+                $this->trainingService->trainUnits($npc->id, 'guards', 50);
                 $actions[] = "Trained Guards for defense";
                 break;
             

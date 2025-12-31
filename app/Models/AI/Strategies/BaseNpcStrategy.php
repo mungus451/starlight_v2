@@ -76,7 +76,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         // We will rely on the service's return value for simplicity in this base class.
         
         try {
-            $response = $this->structureService->purchaseStructure($userId, $structureKey);
+            $response = $this->structureService->upgradeStructure($userId, $structureKey);
             return $response->isSuccess();
         } catch (\Throwable $e) {
             return false;

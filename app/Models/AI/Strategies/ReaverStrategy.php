@@ -41,8 +41,15 @@ class ReaverStrategy extends BaseNpcStrategy
         switch ($state) {
             case self::STATE_AGGRESSIVE:
                 // Train Soldiers with all available credits
-                // Placeholder: $this->trainingService->trainUnit(...)
-                $actions[] = "Trained Mass Soldiers";
+                $soldierCost = $this->config->get('game_balance.training.soldiers.credits', 1000);
+                $maxSoldiers = floor($resources->credits / $soldierCost);
+                // Cap at 1000 per turn to be safe/realistic
+                $amount = min($maxSoldiers, 1000); 
+                
+                if ($amount > 0) {
+                    $this->trainingService->trainUnits($npc->id, 'soldiers', (int)$amount);
+                    $actions[] = "Trained " . (int)$amount . " Soldiers";
+                }
                 
                 // Attack Logic (Requires AttackService injection or delegation)
                 // "Find target, Attack target"

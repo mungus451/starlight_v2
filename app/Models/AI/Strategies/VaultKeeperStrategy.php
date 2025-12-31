@@ -25,7 +25,8 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         $actions = [];
         
         // Always deposit excess credits (BankService logic)
-        // Placeholder: $this->bankService->deposit(...)
+        // Note: BankService is not yet injected, assuming future implementation or direct repo call
+        // $this->bankService->deposit(...)
 
         // Prioritize Defensive Structures
         if ($this->attemptUpgrade($npc->id, 'shield_generator', $resources)) {
@@ -33,7 +34,8 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         }
 
         // Train Guards & Sentries
-        // Placeholder: $this->trainingService->trainUnit(...)
+        $this->trainingService->trainUnits($npc->id, 'guards', 20);
+        $this->trainingService->trainUnits($npc->id, 'sentries', 10);
         
         // Occasional Tech Upgrade
         $this->attemptUpgrade($npc->id, 'research_lab', $resources);
