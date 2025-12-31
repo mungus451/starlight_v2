@@ -18,7 +18,7 @@ class IndustrialistStrategy extends BaseNpcStrategy
     {
         // 1. Check Income Threshold (e.g., 50M/turn logic, simplified here)
         // If workers < 5000 or Mines < 10, keep growing.
-        if ($resources->workers < 5000 || $structures->crystal_mine_level < 10 || $structures->fusion_reactor_level < 10) {
+        if ($resources->workers < 5000 || $structures->naquadah_mining_complex_level < 10 || $structures->population_level < 10) {
             return self::STATE_GROWTH;
         }
 
@@ -38,13 +38,13 @@ class IndustrialistStrategy extends BaseNpcStrategy
 
         switch ($state) {
             case self::STATE_GROWTH:
-                // Prioritize: 1. Fusion Reactor (Worker Capacity), 2. Crystal Mine (Income), 3. Workers
-                if ($this->attemptUpgrade($npc->id, 'fusion_reactor', $resources)) {
-                    $actions[] = "Upgraded Fusion Reactor";
+                // Prioritize: 1. Population (Worker Capacity), 2. Mining Complex (Income), 3. Workers
+                if ($this->attemptUpgrade($npc->id, 'population', $resources)) {
+                    $actions[] = "Upgraded Population Structure";
                 }
                 
-                if ($this->attemptUpgrade($npc->id, 'crystal_mine', $resources)) {
-                    $actions[] = "Upgraded Crystal Mine";
+                if ($this->attemptUpgrade($npc->id, 'naquadah_mining_complex', $resources)) {
+                    $actions[] = "Upgraded Naquadah Mining Complex";
                 }
 
                 // Spend remaining cash on workers

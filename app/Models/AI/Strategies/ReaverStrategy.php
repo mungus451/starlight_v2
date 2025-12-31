@@ -59,7 +59,7 @@ class ReaverStrategy extends BaseNpcStrategy
             case self::STATE_RECOVERY:
             case self::STATE_GROWTH:
                 // Minimal eco upgrades to fund the war machine
-                $this->attemptUpgrade($npc->id, 'crystal_mine', $resources);
+                $this->attemptUpgrade($npc->id, 'naquadah_mining_complex', $resources);
                 break;
         }
 
