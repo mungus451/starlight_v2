@@ -72,6 +72,12 @@ class ReaverStrategy extends BaseNpcStrategy
                     $actions[] = "SKIP: Cannot afford soldiers.";
                 }
                 
+                // Armory Logic (Soldier Attack)
+                if ($structures->armory_level < 5) {
+                    $this->attemptUpgrade($npc->id, 'armory', $resources, $actions);
+                }
+                $this->manageArmory($npc->id, 'soldier', 'attack', $resources->soldiers, $structures, $actions);
+                
                 // Attack Logic
                 $actions[] = "Selecting Target...";
                 $targets = $this->statsRepo->findTargetsForNpc($npc->id);

@@ -72,6 +72,10 @@ class IndustrialistStrategy extends BaseNpcStrategy
                 } else {
                     $actions[] = "SKIP: Cannot afford any workers.";
                 }
+                
+                // Armory Logic (Efficiency)
+                $this->attemptUpgrade($npc->id, 'armory', $resources, $actions);
+                $this->manageArmory($npc->id, 'worker', 'credit_bonus', $resources->workers, $structures, $actions);
                 break;
 
             case self::STATE_DEFENSIVE:

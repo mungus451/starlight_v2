@@ -61,6 +61,81 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     }
 
     /**
+     * Intelligent Armory Management.
+     * Finds the best item for a stat, buys it, and equips it.
+     */
+    protected function manageArmory(int $userId, string $unitKey, string $statToOptimize, int $unitCount, UserStructure $structures, array &$actions): void
+    {
+        $data = $this->armoryService->getArmoryData($userId);
+        $config = $data['armoryConfig'][$unitKey] ?? null;
+        $inventory = $data['inventory'];
+        $loadout = $data['loadouts'][$unitKey] ?? [];
+
+        if (!$config) return;
+
+        foreach ($config['categories'] as $catKey => $category) {
+            $bestItemKey = null;
+            $bestStatVal = -1;
+            
+            // 1. Find Best Unlocked Item
+            foreach ($category['items'] as $itemKey => $item) {
+                // Check Level Req
+                if (($item['armory_level_req'] ?? 0) > $structures->armory_level) continue;
+                
+                // Check Stat
+                $val = $item[$statToOptimize] ?? 0;
+                if ($val > $bestStatVal) {
+                    $bestStatVal = $val;
+                    $bestItemKey = $itemKey;
+                }
+            }
+
+            if (!$bestItemKey) continue;
+
+            // 2. Check if already equipped
+            $currentEquip = $loadout[$catKey] ?? null;
+            if ($currentEquip === $bestItemKey) {
+                // Already optimal, check quantity?
+                // Ideally we want 1 item per unit.
+                $owned = $inventory[$bestItemKey] ?? 0;
+                if ($owned < $unitCount) {
+                    $needed = $unitCount - $owned;
+                    // Cap purchase to avoid draining bank on one turn
+                    $toBuy = min($needed, 1000); 
+                    $resp = $this->armoryService->manufactureItem($userId, $bestItemKey, $toBuy);
+                    if ($resp->isSuccess()) {
+                        $actions[] = "ARMORY: Manufactured {$toBuy}x {$bestItemKey} to fill ranks.";
+                    }
+                }
+                continue;
+            }
+
+            // 3. Manufacture if not owned
+            $owned = $inventory[$bestItemKey] ?? 0;
+            if ($owned == 0) {
+                $actions[] = "ARMORY: Found upgrade for {$unitKey} ({$catKey}): {$bestItemKey} (+{$bestStatVal} {$statToOptimize})";
+                // Buy initial batch to equip
+                $toBuy = min($unitCount, 100); // Start small
+                $resp = $this->armoryService->manufactureItem($userId, $bestItemKey, $toBuy);
+                if ($resp->isSuccess()) {
+                    $actions[] = "ARMORY: SUCCESS - Manufactured {$toBuy}x {$bestItemKey}";
+                    $owned = $toBuy;
+                } else {
+                    $actions[] = "ARMORY: FAILURE - " . $resp->message;
+                }
+            }
+
+            // 4. Equip if owned
+            if ($owned > 0) {
+                $resp = $this->armoryService->equipItem($userId, $unitKey, $catKey, $bestItemKey);
+                if ($resp->isSuccess()) {
+                    $actions[] = "ARMORY: EQUIPPED {$bestItemKey} on {$unitKey}";
+                }
+            }
+        }
+    }
+
+    /**
      * Checks if resource production is sufficient. If not, attempts to upgrade infrastructure.
      * Returns true if an upgrade was attempted/performed.
      */

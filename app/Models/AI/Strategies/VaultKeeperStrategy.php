@@ -43,6 +43,7 @@ class VaultKeeperStrategy extends BaseNpcStrategy
 
         // Prioritize Defensive Structures
         $this->attemptUpgrade($npc->id, 'planetary_shield', $resources, $actions);
+        $this->attemptUpgrade($npc->id, 'armory', $resources, $actions); // Ensure armory access
 
         // Train Guards & Sentries
         $actions[] = "Evaluating Training: Guards & Sentries...";
@@ -59,6 +60,10 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         } elseif (str_contains($respS->message, 'untrained citizens')) {
             $this->considerCitizenPurchase($npc->id, $resources, $actions);
         }
+        
+        // Armory Logic (Defense)
+        $this->manageArmory($npc->id, 'guard', 'defense', $resources->guards, $structures, $actions);
+        $this->manageArmory($npc->id, 'sentry', 'defense', $resources->sentries, $structures, $actions);
         
         // Occasional Tech Upgrade
         $this->attemptUpgrade($npc->id, 'quantum_research_lab', $resources, $actions);
