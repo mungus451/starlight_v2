@@ -293,9 +293,10 @@ ArmoryService::class => function (ContainerInterface $c) {
 
 GeneralService::class => function (ContainerInterface $c) {
     return new GeneralService(
-        $c->get(PDO::class),
+        $c->get(Config::class),
         $c->get(GeneralRepository::class),
-        $c->get(ResourceRepository::class)
+        $c->get(ResourceRepository::class),
+        $c->get(PDO::class)
     );
 },
 
