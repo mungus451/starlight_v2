@@ -51,9 +51,15 @@ class ReaverStrategy extends BaseNpcStrategy
                     $actions[] = "Trained " . (int)$amount . " Soldiers";
                 }
                 
-                // Attack Logic (Requires AttackService injection or delegation)
-                // "Find target, Attack target"
-                $actions[] = "Hunting for targets...";
+                // Attack Logic
+                $targets = $this->statsRepo->findTargetsForNpc($npc->id);
+                if (!empty($targets)) {
+                    $target = $targets[array_rand($targets)];
+                    $response = $this->attackService->conductAttack($npc->id, $target['character_name'], 'plunder');
+                    $actions[] = "Attacked {$target['character_name']}: " . $response->message;
+                } else {
+                    $actions[] = "No suitable targets found.";
+                }
                 break;
 
             case self::STATE_RECOVERY:
