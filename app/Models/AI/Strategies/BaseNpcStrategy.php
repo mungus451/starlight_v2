@@ -11,9 +11,10 @@ use App\Models\Services\TrainingService;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\BlackMarketService;
 use App\Models\Services\CurrencyConverterService;
-use App\Models\Services\AttackService; // --- NEW ---
-use App\Models\Services\PowerCalculatorService; // --- NEW ---
-use App\Models\Repositories\StatsRepository; // --- NEW ---
+use App\Models\Services\AttackService; 
+use App\Models\Services\PowerCalculatorService; 
+use App\Models\Services\AllianceStructureService; // --- NEW ---
+use App\Models\Repositories\StatsRepository; 
 use App\Core\Config;
 
 /**
@@ -27,9 +28,10 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     protected ArmoryService $armoryService;
     protected BlackMarketService $blackMarketService;
     protected CurrencyConverterService $converterService;
-    protected AttackService $attackService; // --- NEW ---
-    protected StatsRepository $statsRepo;  // --- NEW ---
-    protected PowerCalculatorService $powerCalcService; // --- NEW ---
+    protected AttackService $attackService; 
+    protected StatsRepository $statsRepo; 
+    protected PowerCalculatorService $powerCalcService;
+    protected AllianceStructureService $allianceStructService; // --- NEW ---
     protected Config $config;
 
     // Common States
@@ -44,9 +46,10 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         ArmoryService $armoryService,
         BlackMarketService $blackMarketService,
         CurrencyConverterService $converterService,
-        AttackService $attackService, // --- NEW ---
-        StatsRepository $statsRepo,   // --- NEW ---
-        PowerCalculatorService $powerCalcService, // --- NEW ---
+        AttackService $attackService, 
+        StatsRepository $statsRepo,
+        PowerCalculatorService $powerCalcService, 
+        AllianceStructureService $allianceStructService, // --- NEW ---
         Config $config
     ) {
         $this->structureService = $structureService;
@@ -54,9 +57,10 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         $this->armoryService = $armoryService;
         $this->blackMarketService = $blackMarketService;
         $this->converterService = $converterService;
-        $this->attackService = $attackService; // --- NEW ---
-        $this->statsRepo = $statsRepo;         // --- NEW ---
-        $this->powerCalcService = $powerCalcService; // --- NEW ---
+        $this->attackService = $attackService; 
+        $this->statsRepo = $statsRepo;
+        $this->powerCalcService = $powerCalcService;
+        $this->allianceStructService = $allianceStructService; // --- NEW ---
         $this->config = $config;
     }
 
@@ -131,6 +135,65 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
                 if ($resp->isSuccess()) {
                     $actions[] = "ARMORY: EQUIPPED {$bestItemKey} on {$unitKey}";
                 }
+            }
+        }
+    }
+
+    /**
+     * Manages Alliance Structures if the NPC is a leader.
+     * Maintains a 200T safety buffer.
+     */
+    protected function manageAlliance(int $userId, array &$actions): void
+    {
+        // 1. Get Data & Check Permissions
+        $response = $this->allianceStructService->getStructurePageData($userId);
+        if (!$response->isSuccess() || !$response->data['canManage']) {
+            return; // Not a leader or not in alliance
+        }
+
+        $alliance = $response->data['alliance'];
+        $bankBalance = $alliance->bank_credits;
+        $safetyMargin = 200000000000000; // 200 Trillion
+
+        if ($bankBalance < $safetyMargin) {
+            // $actions[] = "ALLIANCE: Bank balance too low for upgrades (" . number_format($bankBalance) . " < 200T)";
+            return;
+        }
+
+        $availableFunds = $bankBalance - $safetyMargin;
+        $costs = $response->data['costs'];
+        $currentLevels = $response->data['currentLevels'];
+
+        // 2. Select Upgrade
+        // Priority: Command Nexus -> Warlord's Throne -> Lowest Level Structure
+        $targetKey = null;
+        
+        // Priority 1: Command Nexus (Member Cap)
+        if (($currentLevels['command_nexus'] ?? 0) < 10 && $costs['command_nexus'] <= $availableFunds) {
+            $targetKey = 'command_nexus';
+        }
+        // Priority 2: Warlord's Throne (Bonus Multiplier)
+        elseif (($currentLevels['warlords_throne'] ?? 0) < 10 && $costs['warlords_throne'] <= $availableFunds) {
+            $targetKey = 'warlords_throne';
+        }
+        // Priority 3: Anything affordable, prefer lowest level
+        else {
+            asort($currentLevels); // Sort by level ASC
+            foreach ($currentLevels as $key => $level) {
+                if (($costs[$key] ?? PHP_INT_MAX) <= $availableFunds) {
+                    $targetKey = $key;
+                    break;
+                }
+            }
+        }
+
+        // 3. Execute
+        if ($targetKey) {
+            $resp = $this->allianceStructService->purchaseOrUpgradeStructure($userId, $targetKey);
+            if ($resp->isSuccess()) {
+                $actions[] = "ALLIANCE: " . $resp->message;
+            } else {
+                $actions[] = "ALLIANCE: Upgrade Failed - " . $resp->message;
             }
         }
     }

@@ -37,6 +37,9 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         // Infrastructure Baseline Check
         $this->ensureResourceProduction($npc->id, $resources, $structures, $actions);
 
+        // Alliance Management Check
+        $this->manageAlliance($npc->id, $actions);
+
         // Always deposit excess credits (BankService logic)
         // Note: BankService is not yet injected, assuming future implementation or direct repo call
         // $this->bankService->deposit(...)

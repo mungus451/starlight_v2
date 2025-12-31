@@ -50,6 +50,9 @@ class ReaverStrategy extends BaseNpcStrategy
         // Infrastructure Baseline Check
         $this->ensureResourceProduction($npc->id, $resources, $structures, $actions);
 
+        // Alliance Management Check
+        $this->manageAlliance($npc->id, $actions);
+
         switch ($state) {
             case self::STATE_AGGRESSIVE:
                 // Train Soldiers with all available credits

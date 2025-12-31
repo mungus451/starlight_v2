@@ -29,8 +29,8 @@ return [
         ],
         'offense_upgrade' => [
             'name' => 'Offense Upgrade',
-            'base_cost' => 500,
-            'multiplier' => 1.25,
+            'base_cost' => 5600,
+            'multiplier' => 1.51,
             'category' => 'Offense',
             'description' => 'Increases the base power of your Soldiers in offensive operations.'
         ],
@@ -64,8 +64,8 @@ return [
         ],
         'armory' => [
             'name' => 'Armory',
-            'base_cost' => 1200,
-            'multiplier' => 1.33,
+            'base_cost' => 4200,
+            'multiplier' => 1.51,
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
