@@ -22,6 +22,12 @@ return [
                     'plasma_minigun' => ['name' => 'Plasma Minigun', 'attack' => 160, 'cost' => 240000, 'notes' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
                     'arc_cannon' => ['name' => 'Arc Cannon', 'attack' => 320, 'cost' => 320000, 'notes' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 30],
                     'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'attack' => 640, 'cost' => 400000, 'notes' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 40],
+                    // Tier 6-10 Expansion
+                    'photon_lance' => ['name' => 'Photon Lance', 'attack' => 1280, 'cost' => 480000, 'cost_crystals' => 10, 'notes' => 'Pierces through multiple targets.', 'requires' => 'antimatter_launcher', 'armory_level_req' => 50],
+                    'singularity_cannon' => ['name' => 'Singularity Cannon', 'attack' => 2560, 'cost' => 560000, 'cost_crystals' => 50, 'notes' => 'Creates mini black holes.', 'requires' => 'photon_lance', 'armory_level_req' => 60],
+                    'void_disintegrator' => ['name' => 'Void Disintegrator', 'attack' => 5120, 'cost' => 640000, 'cost_crystals' => 250, 'cost_dark_matter' => 1, 'notes' => 'Erases targets from existence.', 'requires' => 'singularity_cannon', 'armory_level_req' => 70],
+                    'temporal_blaster' => ['name' => 'Temporal Blaster', 'attack' => 10240, 'cost' => 720000, 'cost_crystals' => 1000, 'cost_dark_matter' => 10, 'notes' => 'Hits targets before you fire.', 'requires' => 'void_disintegrator', 'armory_level_req' => 80],
+                    'reality_shatter_gun' => ['name' => 'Reality Shatter Gun', 'attack' => 20480, 'cost' => 1000000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'notes' => 'Breaks the laws of physics.', 'requires' => 'temporal_blaster', 'armory_level_req' => 90],
                 ]
             ],
             'sidearm' => [
@@ -33,6 +39,12 @@ return [
                     'needler_pistol' => ['name' => 'Needler Pistol', 'attack' => 100, 'cost' => 150000, 'notes' => 'Seeking rounds, bonus vs. light armor.', 'requires' => 'stun_blaster', 'armory_level_req' => 19],
                     'compact_rail_smg' => ['name' => 'Compact Rail SMG', 'attack' => 200, 'cost' => 200000, 'notes' => 'Burst damage, close range.', 'requires' => 'needler_pistol', 'armory_level_req' => 29],
                     'photon_revolver' => ['name' => 'Photon Revolver', 'attack' => 400, 'cost' => 250000, 'notes' => 'High crit chance, slower reload.', 'requires' => 'compact_rail_smg', 'armory_level_req' => 39],
+                    // Tier 6-10 Expansion
+                    'plasma_sidearm' => ['name' => 'Plasma Sidearm', 'attack' => 640, 'cost' => 300000, 'cost_crystals' => 5, 'notes' => 'Hot enough to melt steel.', 'requires' => 'photon_revolver', 'armory_level_req' => 49],
+                    'nano_stinger' => ['name' => 'Nano Stinger', 'attack' => 1280, 'cost' => 350000, 'cost_crystals' => 25, 'notes' => 'Injects deadly nanobots.', 'requires' => 'plasma_sidearm', 'armory_level_req' => 59],
+                    'phase_pistol' => ['name' => 'Phase Pistol', 'attack' => 2560, 'cost' => 400000, 'cost_crystals' => 100, 'cost_dark_matter' => 1, 'notes' => 'Shoots through walls.', 'requires' => 'nano_stinger', 'armory_level_req' => 69],
+                    'neutron_blaster' => ['name' => 'Neutron Blaster', 'attack' => 5120, 'cost' => 450000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Radiates enemies.', 'requires' => 'phase_pistol', 'armory_level_req' => 79],
+                    'entropy_hand_cannon' => ['name' => 'Entropy Hand Cannon', 'attack' => 10240, 'cost' => 600000, 'cost_crystals' => 2500, 'cost_dark_matter' => 50, 'notes' => 'Decays matter on impact.', 'requires' => 'neutron_blaster', 'armory_level_req' => 89],
                 ]
             ],
             'melee' => [
@@ -83,6 +95,12 @@ return [
                     'reactive_nano_suit' => ['name' => 'Reactive Nano Suit', 'defense' => 160, 'cost' => 240000, 'notes' => 'Reduces energy damage, self-repairs slowly.', 'requires' => 'titanium_plated_armor', 'armory_level_req' => 15],
                     'bulwark_exo_frame' => ['name' => 'Bulwark Exo-Frame', 'defense' => 240, 'cost' => 320000, 'notes' => 'Heavy, extreme damage reduction.', 'requires' => 'reactive_nano_suit', 'armory_level_req' => 25],
                     'aegis_shield_suit' => ['name' => 'Aegis Shield Suit', 'defense' => 320, 'cost' => 400000, 'notes' => 'Generates energy shield, top-tier defense.', 'requires' => 'bulwark_exo_frame', 'armory_level_req' => 35],
+                    // Tier 6-10 Expansion
+                    'neutronium_plate' => ['name' => 'Neutronium Plate', 'defense' => 1280, 'cost' => 480000, 'cost_crystals' => 10, 'notes' => 'Ultra-dense protection.', 'requires' => 'aegis_shield_suit', 'armory_level_req' => 45],
+                    'quantum_barrier_suit' => ['name' => 'Quantum Barrier Suit', 'defense' => 2560, 'cost' => 560000, 'cost_crystals' => 50, 'notes' => 'Phases in and out of reality to dodge.', 'requires' => 'neutronium_plate', 'armory_level_req' => 55],
+                    'dark_matter_weave' => ['name' => 'Dark Matter Weave', 'defense' => 5120, 'cost' => 640000, 'cost_crystals' => 250, 'cost_dark_matter' => 1, 'notes' => 'Absorbs nearly all energy.', 'requires' => 'quantum_barrier_suit', 'armory_level_req' => 65],
+                    'temporal_shield_armor' => ['name' => 'Temporal Shield Armor', 'defense' => 10240, 'cost' => 720000, 'cost_crystals' => 1000, 'cost_dark_matter' => 10, 'notes' => 'Reverses damage taken.', 'requires' => 'dark_matter_weave', 'armory_level_req' => 75],
+                    'event_horizon_vest' => ['name' => 'Event Horizon Vest', 'defense' => 20480, 'cost' => 1000000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'notes' => 'Nothing escapes its protection.', 'requires' => 'temporal_shield_armor', 'armory_level_req' => 85],
                 ]
             ],
             'secondary_defense' => [
@@ -266,6 +284,12 @@ return [
                     'plasma_cutter' => ['name' => 'Plasma Cutter', 'credit_bonus' => 320, 'cost' => 120000, 'notes' => 'Can cut through almost anything.', 'requires' => 'heavy_drill', 'armory_level_req' => 5],
                     'seismic_charge' => ['name' => 'Seismic Charge', 'credit_bonus' => 640, 'cost' => 160000, 'notes' => 'Can create powerful explosions.', 'requires' => 'plasma_cutter', 'armory_level_req' => 10],
                     'terraforming_beam' => ['name' => 'Terraforming Beam', 'credit_bonus' => 800, 'cost' => 220000, 'notes' => 'Can reshape the very earth.', 'requires' => 'seismic_charge', 'armory_level_req' => 15],
+                    // Tier 6-10 Expansion
+                    'antimatter_drill' => ['name' => 'Antimatter Drill', 'credit_bonus' => 1000, 'cost' => 480000, 'cost_crystals' => 20, 'notes' => 'Drills through anything.', 'requires' => 'terraforming_beam', 'armory_level_req' => 25],
+                    'matter_condenser' => ['name' => 'Matter Condenser', 'credit_bonus' => 1200, 'cost' => 560000, 'cost_crystals' => 100, 'notes' => 'Condenses rare elements.', 'requires' => 'antimatter_drill', 'armory_level_req' => 35],
+                    'gravity_well_extractor' => ['name' => 'Gravity Well Extractor', 'credit_bonus' => 1500, 'cost' => 640000, 'cost_crystals' => 500, 'cost_dark_matter' => 5, 'notes' => 'Pulls resources from deep space.', 'requires' => 'matter_condenser', 'armory_level_req' => 45],
+                    'quantum_synthesizer' => ['name' => 'Quantum Synthesizer', 'credit_bonus' => 1800, 'cost' => 720000, 'cost_crystals' => 2000, 'cost_dark_matter' => 20, 'notes' => 'Synthesizes gold from nothing.', 'requires' => 'gravity_well_extractor', 'armory_level_req' => 55],
+                    'reality_fabricator' => ['name' => 'Reality Fabricator', 'credit_bonus' => 2500, 'cost' => 1000000, 'cost_crystals' => 10000, 'cost_dark_matter' => 200, 'notes' => 'Prints resources into existence.', 'requires' => 'quantum_synthesizer', 'armory_level_req' => 65],
                 ]
             ],
             'resource_enhancement' => [
