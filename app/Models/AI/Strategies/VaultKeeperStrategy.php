@@ -34,8 +34,11 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         }
 
         // Train Guards & Sentries
-        $this->trainingService->trainUnits($npc->id, 'guards', 20);
-        $this->trainingService->trainUnits($npc->id, 'sentries', 10);
+        $respG = $this->trainingService->trainUnits($npc->id, 'guards', 20);
+        if ($respG->isSuccess()) $actions[] = "Trained Guards";
+
+        $respS = $this->trainingService->trainUnits($npc->id, 'sentries', 10);
+        if ($respS->isSuccess()) $actions[] = "Trained Sentries";
         
         // Occasional Tech Upgrade
         $this->attemptUpgrade($npc->id, 'research_lab', $resources);

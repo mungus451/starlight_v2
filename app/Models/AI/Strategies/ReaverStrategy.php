@@ -47,8 +47,12 @@ class ReaverStrategy extends BaseNpcStrategy
                 $amount = min($maxSoldiers, 1000); 
                 
                 if ($amount > 0) {
-                    $this->trainingService->trainUnits($npc->id, 'soldiers', (int)$amount);
-                    $actions[] = "Trained " . (int)$amount . " Soldiers";
+                    $response = $this->trainingService->trainUnits($npc->id, 'soldiers', (int)$amount);
+                    if ($response->isSuccess()) {
+                        $actions[] = "Trained " . (int)$amount . " Soldiers";
+                    } else {
+                        $actions[] = "Failed to train soldiers: " . $response->message;
+                    }
                 }
                 
                 // Attack Logic

@@ -52,8 +52,12 @@ class IndustrialistStrategy extends BaseNpcStrategy
                 $workerCost = $this->config->get('game_balance.training.workers.credits', 500); // Fallback 500
                 $affordable = floor($resources->credits * 0.5 / $workerCost);
                 if ($affordable > 0) {
-                    $this->trainingService->trainUnits($npc->id, 'workers', (int)$affordable);
-                    $actions[] = "Trained " . (int)$affordable . " Workers";
+                    $response = $this->trainingService->trainUnits($npc->id, 'workers', (int)$affordable);
+                    if ($response->isSuccess()) {
+                        $actions[] = "Trained " . (int)$affordable . " Workers";
+                    } else {
+                        $actions[] = "Failed to train workers: " . $response->message;
+                    }
                 }
                 break;
 
