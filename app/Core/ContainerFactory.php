@@ -342,8 +342,9 @@ return new Logger($logPath, false);
             $c->get(ArmoryService::class),
             $c->get(BlackMarketService::class),
             $c->get(CurrencyConverterService::class),
-            $c->get(AttackService::class), // --- NEW ---
-            $c->get(StatsRepository::class), // --- NEW ---
+            $c->get(AttackService::class), 
+            $c->get(StatsRepository::class), 
+            $c->get(PowerCalculatorService::class), // --- NEW ---
             $c->get(Config::class)
         );
     },
@@ -355,8 +356,9 @@ return new Logger($logPath, false);
             $c->get(ArmoryService::class),
             $c->get(BlackMarketService::class),
             $c->get(CurrencyConverterService::class),
-            $c->get(AttackService::class), // --- NEW ---
-            $c->get(StatsRepository::class), // --- NEW ---
+            $c->get(AttackService::class), 
+            $c->get(StatsRepository::class), 
+            $c->get(PowerCalculatorService::class), // --- NEW ---
             $c->get(Config::class)
         );
     },
@@ -368,8 +370,9 @@ return new Logger($logPath, false);
             $c->get(ArmoryService::class),
             $c->get(BlackMarketService::class),
             $c->get(CurrencyConverterService::class),
-            $c->get(AttackService::class), // --- NEW ---
-            $c->get(StatsRepository::class), // --- NEW ---
+            $c->get(AttackService::class), 
+            $c->get(StatsRepository::class), 
+            $c->get(PowerCalculatorService::class), // --- NEW ---
             $c->get(Config::class)
         );
     },

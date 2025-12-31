@@ -12,6 +12,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\BlackMarketService;
 use App\Models\Services\CurrencyConverterService;
 use App\Models\Services\AttackService; // --- NEW ---
+use App\Models\Services\PowerCalculatorService; // --- NEW ---
 use App\Models\Repositories\StatsRepository; // --- NEW ---
 use App\Core\Config;
 
@@ -28,6 +29,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     protected CurrencyConverterService $converterService;
     protected AttackService $attackService; // --- NEW ---
     protected StatsRepository $statsRepo;  // --- NEW ---
+    protected PowerCalculatorService $powerCalcService; // --- NEW ---
     protected Config $config;
 
     // Common States
@@ -44,6 +46,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         CurrencyConverterService $converterService,
         AttackService $attackService, // --- NEW ---
         StatsRepository $statsRepo,   // --- NEW ---
+        PowerCalculatorService $powerCalcService, // --- NEW ---
         Config $config
     ) {
         $this->structureService = $structureService;
@@ -53,6 +56,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         $this->converterService = $converterService;
         $this->attackService = $attackService; // --- NEW ---
         $this->statsRepo = $statsRepo;         // --- NEW ---
+        $this->powerCalcService = $powerCalcService; // --- NEW ---
         $this->config = $config;
     }
 

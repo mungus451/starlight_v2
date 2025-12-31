@@ -34,10 +34,16 @@ class IndustrialistStrategy extends BaseNpcStrategy
     public function execute(User $npc, UserResource $resources, UserStats $stats, UserStructure $structures): array
     {
         $state = $this->determineState($resources, $stats, $structures);
+        
+        // Calculate Income
+        $income = $this->powerCalcService->calculateIncomePerTurn($npc->id, $resources, $stats, $structures, $npc->alliance_id);
+        
         $actions = [
             "Strategy: INDUSTRIALIST (Eco-Boomer)",
             "Active State: " . strtoupper($state),
-            "Current Assets: " . number_format($resources->credits) . " Credits | " . number_format($resources->naquadah_crystals) . " Crystals"
+            "Current Assets: " . number_format($resources->credits) . " Cr | " . number_format($resources->naquadah_crystals) . " Nq | " . number_format($resources->dark_matter) . " DM",
+            "Unit Composition: Sol: {$resources->soldiers} | Grd: {$resources->guards} | Spy: {$resources->spies} | Sen: {$resources->sentries} | Wrk: {$resources->workers}",
+            "Income/Turn: " . number_format($income['total_credit_income']) . " Cr | " . number_format($income['naquadah_income']) . " Nq | " . number_format($income['dark_matter_income']) . " DM | " . number_format($income['total_citizens']) . " Pop"
         ];
 
         switch ($state) {
