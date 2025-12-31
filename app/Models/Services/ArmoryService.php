@@ -137,6 +137,8 @@ class ArmoryService
 
         // 2. Validate & Calculate Logic
         $totalCost = 0;
+        $totalCrystalCost = 0;
+        $totalDarkMatterCost = 0;
         $simulatedInventory = $inventory; // Use to track consumption within batch
         $opsToPerform = []; // ['item_key' => qty]
 
@@ -165,10 +167,14 @@ class ArmoryService
                 return ServiceResponse::error("Armory level too low for {$item['name']}.");
             }
 
-            // Cost
+            // Cost (Credits)
             $baseCost = $item['cost'];
             $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
             $totalCost += ($effectiveUnitCost * $quantity);
+
+            // Cost (Rare Resources) - No discount on materials
+            $totalCrystalCost += ($item['cost_crystals'] ?? 0) * $quantity;
+            $totalDarkMatterCost += ($item['cost_dark_matter'] ?? 0) * $quantity;
 
             // Prereqs
             $prereqKey = $item['requires'] ?? null;
@@ -185,9 +191,15 @@ class ArmoryService
             $opsToPerform[$itemKey] = $quantity;
         }
 
-        // 3. Check Credits
+        // 3. Check Resources
         if ($userResources->credits < $totalCost) {
             return ServiceResponse::error('Insufficient credits for batch. Total cost: ' . number_format($totalCost));
+        }
+        if ($userResources->naquadah_crystals < $totalCrystalCost) {
+            return ServiceResponse::error('Insufficient Naquadah Crystals. Need: ' . number_format($totalCrystalCost));
+        }
+        if ($userResources->dark_matter < $totalDarkMatterCost) {
+            return ServiceResponse::error('Insufficient Dark Matter. Need: ' . number_format($totalDarkMatterCost));
         }
 
         // 4. Execute Transaction
@@ -196,8 +208,13 @@ class ArmoryService
         }
 
         try {
-            // Deduct Credits
-            $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
+            // Deduct All Resources
+            $this->resourceRepo->updateResources(
+                $userId, 
+                -$totalCost, 
+                -$totalCrystalCost, 
+                -$totalDarkMatterCost
+            );
             
             // Process Items
             foreach ($opsToPerform as $key => $qty) {
@@ -264,9 +281,17 @@ class ArmoryService
         $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
         
         $totalCost = $effectiveUnitCost * $quantity;
+        $totalCrystalCost = ($item['cost_crystals'] ?? 0) * $quantity;
+        $totalDarkMatterCost = ($item['cost_dark_matter'] ?? 0) * $quantity;
         
         if ($userResources->credits < $totalCost) {
             return ServiceResponse::error('You do not have enough credits.');
+        }
+        if ($userResources->naquadah_crystals < $totalCrystalCost) {
+            return ServiceResponse::error('You do not have enough Naquadah Crystals.');
+        }
+        if ($userResources->dark_matter < $totalDarkMatterCost) {
+            return ServiceResponse::error('You do not have enough Dark Matter.');
         }
 
         $prereqKey = $item['requires'] ?? null;
@@ -290,9 +315,14 @@ class ArmoryService
         $newOwned = 0;
 
         try {
-            // Deduct Credits
+            // Deduct All Resources
             $newCredits = $userResources->credits - $totalCost;
-            $this->resourceRepo->updateCredits($userId, $newCredits);
+            $this->resourceRepo->updateResources(
+                $userId, 
+                -$totalCost, 
+                -$totalCrystalCost, 
+                -$totalDarkMatterCost
+            );
 
             // Deduct Prerequisite Item
             if ($prereqKey) {
