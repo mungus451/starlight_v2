@@ -35,51 +35,55 @@ class ReaverStrategy extends BaseNpcStrategy
 
     public function execute(User $npc, UserResource $resources, UserStats $stats, UserStructure $structures): array
     {
-        $actions = [];
         $state = $this->determineState($resources, $stats, $structures);
+        $actions = [
+            "Strategy: REAVER (Rush Aggro)",
+            "Active State: " . strtoupper($state),
+            "Current Assets: " . number_format($resources->credits) . " Credits | " . number_format($resources->naquadah_crystals) . " Crystals"
+        ];
 
         switch ($state) {
             case self::STATE_AGGRESSIVE:
                 // Train Soldiers with all available credits
+                $actions[] = "Evaluating Training: Soldiers...";
                 $soldierCost = $this->config->get('game_balance.training.soldiers.credits', 1000);
                 $maxSoldiers = floor($resources->credits / $soldierCost);
-                // Cap at 1000 per turn to be safe/realistic
                 $amount = min($maxSoldiers, 1000); 
                 
                 if ($amount > 0) {
                     $response = $this->trainingService->trainUnits($npc->id, 'soldiers', (int)$amount);
                     if ($response->isSuccess()) {
-                        $actions[] = "Trained " . (int)$amount . " Soldiers";
+                        $actions[] = "SUCCESS: Trained " . (int)$amount . " Soldiers";
                     } else {
-                        $actions[] = "Failed to train soldiers: " . $response->message;
+                        $actions[] = "FAILURE: " . $response->message;
                         if (str_contains($response->message, 'untrained citizens')) {
-                            if ($this->considerCitizenPurchase($npc->id, $resources)) {
-                                $actions[] = "Bought Smuggled Citizens from Black Market";
-                            }
+                            $this->considerCitizenPurchase($npc->id, $resources, $actions);
                         }
                     }
+                } else {
+                    $actions[] = "SKIP: Cannot afford soldiers.";
                 }
                 
                 // Attack Logic
+                $actions[] = "Selecting Target...";
                 $targets = $this->statsRepo->findTargetsForNpc($npc->id);
                 if (!empty($targets)) {
                     $target = $targets[array_rand($targets)];
+                    $actions[] = "Engaging: {$target['character_name']}...";
                     $response = $this->attackService->conductAttack($npc->id, $target['character_name'], 'plunder');
-                    $actions[] = "Attacked {$target['character_name']}: " . $response->message;
+                    $actions[] = "RESULT: " . $response->message;
                 } else {
-                    $actions[] = "No suitable targets found.";
+                    $actions[] = "SKIP: No suitable targets in range.";
                 }
                 break;
 
             case self::STATE_RECOVERY:
             case self::STATE_GROWTH:
-                // Minimal eco upgrades to fund the war machine
-                $this->attemptUpgrade($npc->id, 'naquadah_mining_complex', $resources);
+                $this->attemptUpgrade($npc->id, 'naquadah_mining_complex', $resources, $actions);
                 break;
         }
 
-        // Occasional Black Market Crystal Buy
-        $this->considerCrystalPurchase($npc->id, $resources->credits, 1000);
+        $this->considerCrystalPurchase($npc->id, $resources->credits, $resources->naquadah_crystals, $actions);
 
         return $actions;
     }

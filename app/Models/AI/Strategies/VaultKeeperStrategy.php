@@ -22,37 +22,40 @@ class VaultKeeperStrategy extends BaseNpcStrategy
 
     public function execute(User $npc, UserResource $resources, UserStats $stats, UserStructure $structures): array
     {
-        $actions = [];
+        $state = $this->determineState($resources, $stats, $structures);
+        $actions = [
+            "Strategy: VAULT KEEPER (Turtle/Banker)",
+            "Active State: " . strtoupper($state),
+            "Current Assets: " . number_format($resources->credits) . " Credits | " . number_format($resources->naquadah_crystals) . " Crystals"
+        ];
         
         // Always deposit excess credits (BankService logic)
         // Note: BankService is not yet injected, assuming future implementation or direct repo call
         // $this->bankService->deposit(...)
 
         // Prioritize Defensive Structures
-        if ($this->attemptUpgrade($npc->id, 'shield_generator', $resources)) {
-            $actions[] = "Upgraded Shield Generator";
-        }
+        $this->attemptUpgrade($npc->id, 'planetary_shield', $resources, $actions);
 
         // Train Guards & Sentries
+        $actions[] = "Evaluating Training: Guards & Sentries...";
         $respG = $this->trainingService->trainUnits($npc->id, 'guards', 20);
         if ($respG->isSuccess()) {
-            $actions[] = "Trained Guards";
+            $actions[] = "SUCCESS: Trained Guards";
         } elseif (str_contains($respG->message, 'untrained citizens')) {
-            if ($this->considerCitizenPurchase($npc->id, $resources)) $actions[] = "Bought Citizens";
+            $this->considerCitizenPurchase($npc->id, $resources, $actions);
         }
 
         $respS = $this->trainingService->trainUnits($npc->id, 'sentries', 10);
         if ($respS->isSuccess()) {
-            $actions[] = "Trained Sentries";
+            $actions[] = "SUCCESS: Trained Sentries";
         } elseif (str_contains($respS->message, 'untrained citizens')) {
-            if ($this->considerCitizenPurchase($npc->id, $resources)) $actions[] = "Bought Citizens";
+            $this->considerCitizenPurchase($npc->id, $resources, $actions);
         }
         
         // Occasional Tech Upgrade
-        $this->attemptUpgrade($npc->id, 'research_lab', $resources);
+        $this->attemptUpgrade($npc->id, 'quantum_research_lab', $resources, $actions);
 
-        // Occasional Black Market Crystal Buy
-        $this->considerCrystalPurchase($npc->id, $resources->credits, 1000);
+        $this->considerCrystalPurchase($npc->id, $resources->credits, $resources->naquadah_crystals, $actions);
 
         return $actions;
     }

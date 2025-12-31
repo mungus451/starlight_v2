@@ -59,48 +59,72 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     /**
      * Tries to buy citizens if the NPC is running low and has crystals.
      */
-    protected function considerCitizenPurchase(int $userId, UserResource $res): bool
+    protected function considerCitizenPurchase(int $userId, UserResource $res, array &$actions): void
     {
-        // Cost: 25 Crystals for 500 Citizens (Default)
+        $actions[] = "Evaluating Black Market for Citizens...";
+        
         $cost = $this->config->get('black_market.costs.citizen_package', 25);
         
-        if ($res->untrained_citizens < 100 && $res->naquadah_crystals >= $cost) {
-            $response = $this->blackMarketService->purchaseCitizens($userId);
-            return $response->isSuccess();
+        if ($res->untrained_citizens < 100) {
+            if ($res->naquadah_crystals >= $cost) {
+                $response = $this->blackMarketService->purchaseCitizens($userId);
+                if ($response->isSuccess()) {
+                    $actions[] = "SUCCESS: Bought Smuggled Citizens from Black Market";
+                } else {
+                    $actions[] = "FAILURE: Black Market rejected purchase: " . $response->message;
+                }
+            } else {
+                $actions[] = "SKIP: Cannot afford citizens (Need {$cost} Crystals, have " . floor($res->naquadah_crystals) . ")";
+            }
+        } else {
+            $actions[] = "SKIP: Citizens sufficient (" . $res->untrained_citizens . ")";
         }
-        return false;
     }
 
     /**
      * Tries to buy crystals from the Black Market if the price is right
-     * or if the NPC is desperate.
      */
-    protected function considerCrystalPurchase(int $userId, int $currentCredits, int $neededCrystals): void
+    protected function considerCrystalPurchase(int $userId, int $currentCredits, float $currentCrystals, array &$actions): void
     {
-        // 10% chance to check the market
-        if (mt_rand(1, 100) > 10) return;
+        $actions[] = "Checking Currency Exchange...";
+        
+        // 20% chance to check the market (increased for visibility)
+        if (mt_rand(1, 100) > 20) {
+            $actions[] = "SKIP: Decided not to trade this turn.";
+            return;
+        }
 
-        // If we have > 10M credits and fewer than 100 crystals, convert some credits.
         if ($currentCredits > 10000000) {
-            $amountToConvert = $currentCredits * 0.1; // Convert 10% of liquid cash
-            $this->converterService->convertCreditsToCrystals($userId, $amountToConvert);
+            $amountToConvert = $currentCredits * 0.1; 
+            $response = $this->converterService->convertCreditsToCrystals($userId, $amountToConvert);
+            if ($response->isSuccess()) {
+                $actions[] = "SUCCESS: " . $response->message;
+            } else {
+                $actions[] = "FAILURE: Exchange failed: " . $response->message;
+            }
+        } else {
+            $actions[] = "SKIP: Credit balance too low for exchange (" . number_format($currentCredits) . ")";
         }
     }
 
     /**
      * Helper to upgrade a structure if affordable.
      */
-    protected function attemptUpgrade(int $userId, string $structureKey, UserResource $res): bool
+    protected function attemptUpgrade(int $userId, string $structureKey, UserResource $res, array &$actions): bool
     {
-        // Check cost via Config (mocking logic here, actual implementation needs StructureService::getCost)
-        // For MVP, we simply try calling the service. The service handles affordability checks.
-        // However, smart AI shouldn't "try and fail", it should check first.
-        // We will rely on the service's return value for simplicity in this base class.
+        $actions[] = "Attempting Upgrade: {$structureKey}...";
         
         try {
             $response = $this->structureService->upgradeStructure($userId, $structureKey);
-            return $response->isSuccess();
+            if ($response->isSuccess()) {
+                $actions[] = "SUCCESS: " . $response->message;
+                return true;
+            } else {
+                $actions[] = "FAILURE: " . $response->message;
+                return false;
+            }
         } catch (\Throwable $e) {
+            $actions[] = "CRITICAL: Upgrade logic error for {$structureKey}";
             return false;
         }
     }
