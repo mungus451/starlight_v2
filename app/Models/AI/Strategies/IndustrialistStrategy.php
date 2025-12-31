@@ -78,7 +78,7 @@ class IndustrialistStrategy extends BaseNpcStrategy
                 $actions[] = "Priority: Rebuilding Defense...";
                 $response = $this->trainingService->trainUnits($npc->id, 'guards', 50);
                 if ($response->isSuccess()) {
-                    $actions[] = "SUCCESS: Trained Guards";
+                    $actions[] = "SUCCESS: Trained 50 Guards";
                 } else {
                     $actions[] = "FAILURE: " . $response->message;
                     if (str_contains($response->message, 'untrained citizens')) {

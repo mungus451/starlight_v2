@@ -48,14 +48,14 @@ class VaultKeeperStrategy extends BaseNpcStrategy
         $actions[] = "Evaluating Training: Guards & Sentries...";
         $respG = $this->trainingService->trainUnits($npc->id, 'guards', 20);
         if ($respG->isSuccess()) {
-            $actions[] = "SUCCESS: Trained Guards";
+            $actions[] = "SUCCESS: Trained 20 Guards";
         } elseif (str_contains($respG->message, 'untrained citizens')) {
             $this->considerCitizenPurchase($npc->id, $resources, $actions);
         }
 
         $respS = $this->trainingService->trainUnits($npc->id, 'sentries', 10);
         if ($respS->isSuccess()) {
-            $actions[] = "SUCCESS: Trained Sentries";
+            $actions[] = "SUCCESS: Trained 10 Sentries";
         } elseif (str_contains($respS->message, 'untrained citizens')) {
             $this->considerCitizenPurchase($npc->id, $resources, $actions);
         }

@@ -96,6 +96,12 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         $cost = $this->config->get('black_market.costs.citizen_package', 25);
         
         if ($res->untrained_citizens < 100) {
+            // 50% chance to actually go through with it
+            if (mt_rand(1, 100) > 50) {
+                $actions[] = "SKIP: Decided to wait for natural growth (50% chance).";
+                return;
+            }
+
             if ($res->naquadah_crystals >= $cost) {
                 $response = $this->blackMarketService->purchaseCitizens($userId);
                 if ($response->isSuccess()) {
