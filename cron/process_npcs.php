@@ -41,6 +41,7 @@ try {
     $results = $service->processAllNpcs();
 
     // Output summary for CLI
+    echo "[" . date('Y-m-d H:i:s') . "] NPC Cycle Started\n";
     foreach ($results as $npcName => $actions) {
         if (empty($actions)) {
             echo "[-] {$npcName}: No actions taken.\n";
@@ -51,6 +52,7 @@ try {
             }
         }
     }
+    echo "[" . date('Y-m-d H:i:s') . "] NPC Cycle Finished\n";
     
 } catch (\RuntimeException $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
