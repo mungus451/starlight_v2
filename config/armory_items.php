@@ -226,7 +226,7 @@ return [
                     'singularity_cloak' => ['name' => 'Singularity Cloak', 'attack' => 70, 'cost' => 140000, 'cost_crystals' => 50, 'notes' => 'Bends light and gravity around user.', 'requires' => 'void_shroud', 'armory_level_req' => 62],
                     'temporal_displacement' => ['name' => 'Temporal Displacement', 'attack' => 80, 'cost' => 160000, 'cost_crystals' => 250, 'cost_dark_matter' => 1, 'notes' => 'Moves user through time.', 'requires' => 'singularity_cloak', 'armory_level_req' => 72],
                     'reality_disguise' => ['name' => 'Reality Disguise', 'attack' => 90, 'cost' => 180000, 'cost_crystals' => 1000, 'cost_dark_matter' => 10, 'notes' => 'Can perfectly mimic anyone.', 'requires' => 'temporal_displacement', 'armory_level_req' => 82],
-                    'entropy_cloak' => ['name' => 'Entropy Cloak', 'attack' => 100, 'cost' => 200000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'notes' => 'Erases user's presence from all records.', 'requires' => 'reality_disguise', 'armory_level_req' => 92],
+                    'entropy_cloak' => ['name' => 'Entropy Cloak', 'attack' => 100, 'cost' => 200000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'notes' => 'Erases users presence from all records.', 'requires' => 'reality_disguise', 'armory_level_req' => 92],
                 ]
             ],
             'concealed_blades' => [
@@ -243,7 +243,7 @@ return [
                     'void_fang' => ['name' => 'Void Fang', 'attack' => 105, 'cost' => 210000, 'cost_crystals' => 75, 'notes' => 'Drains life from target.', 'requires' => 'neural_blade', 'armory_level_req' => 63],
                     'singularity_edge' => ['name' => 'Singularity Edge', 'attack' => 120, 'cost' => 240000, 'cost_crystals' => 300, 'cost_dark_matter' => 1, 'notes' => 'Creates miniature gravitational fields.', 'requires' => 'void_fang', 'armory_level_req' => 73],
                     'temporal_shiv' => ['name' => 'Temporal Shiv', 'attack' => 135, 'cost' => 270000, 'cost_crystals' => 1500, 'cost_dark_matter' => 10, 'notes' => 'Wounds echo through time.', 'requires' => 'singularity_edge', 'armory_level_req' => 83],
-                    'reality_rend' => ['name' => 'Reality Rend', 'attack' => 150, 'cost' => 300000, 'cost_crystals' => 7500, 'cost_dark_matter' => 150, 'notes' => 'Tears target's molecular bonds.', 'requires' => 'temporal_shiv', 'armory_level_req' => 93],
+                    'reality_rend' => ['name' => 'Reality Rend', 'attack' => 150, 'cost' => 300000, 'cost_crystals' => 7500, 'cost_dark_matter' => 150, 'notes' => 'Tears targets molecular bonds.', 'requires' => 'temporal_shiv', 'armory_level_req' => 93],
                 ]
             ],
             'intel_suite' => [
