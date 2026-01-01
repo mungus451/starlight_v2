@@ -4,8 +4,8 @@
 /* @var int $userId */
 /* @var array $pagination */
 
-$page = $pagination['currentPage'];
-$totalPages = $pagination['totalPages'];
+$page = $pagination['current_page'];
+$totalPages = $pagination['total_pages'];
 $limit = $pagination['limit'];
 $prevPage = $page > 1 ? $page - 1 : null;
 $nextPage = $page < $totalPages ? $page + 1 : null;
