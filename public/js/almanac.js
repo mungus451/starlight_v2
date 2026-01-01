@@ -95,6 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Alliance Logic ---
     const allianceSelect = document.getElementById('alliance-select');
+    if (allianceSelect) {
+        allianceSelect.addEventListener('change', (e) => {
+            const allianceId = e.target.value;
+            if (allianceId) {
+                loadAllianceDossier(allianceId);
+            }
+        });
+    }
 
     // Init Custom Dropdown for Alliances
     initCustomDropdown('alliance-custom-select', 'alliance-select', (val) => {
