@@ -335,9 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 })
-                .catch(err => {
-                    tabContent.innerHTML = '<div class="error-message">Failed to load content.</div>';
-                });
         });
     }
 });
