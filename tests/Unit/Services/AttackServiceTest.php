@@ -69,6 +69,7 @@ class AttackServiceTest extends TestCase
         $this->mockEffectService = Mockery::mock(EffectService::class);
 
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
+        $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
 
         $this->service = new AttackService(
             $this->mockDb,
@@ -151,21 +152,26 @@ class AttackServiceTest extends TestCase
     public function testConductAttackBlockedByPeaceShield(): void
     {
         $attackerId = 1;
-        $defenderName = 'Defender';
         $defenderId = 2;
+        $targetName = 'TargetUser';
 
-        $defender = $this->createMockUser($defenderId, $defenderName, null);
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with($defenderName)->andReturn($defender);
+        $this->mockUserRepo->shouldReceive('findByCharacterName')
+            ->with($targetName)
+            ->andReturn($this->createMockUser($defenderId, 'TargetUser', null));
 
-        $this->mockEffectService->shouldReceive('hasActiveEffect')
-            ->once()
+        // Mock Effect Details with future expiry (1 hour from now)
+        $future = (new \DateTime())->modify('+1 hour')->format('Y-m-d H:i:s');
+        $this->mockEffectService->shouldReceive('getEffectDetails')
             ->with($defenderId, 'peace_shield')
-            ->andReturn(true);
+            ->once()
+            ->andReturn(['expires_at' => $future]);
 
-        $response = $this->service->conductAttack($attackerId, $defenderName, 'plunder');
+        $response = $this->service->conductAttack($attackerId, $targetName, 'plunder');
 
         $this->assertFalse($response->isSuccess());
-        $this->assertStringContainsString('Safehouse protection', $response->message);
+        // Message should contain "1h" or "59m" roughly
+        $this->assertStringContainsString('Target is under Safehouse protection for another', $response->message);
+        $this->assertStringContainsString('Attack prevented.', $response->message);
     }
 
     public function testConductAttackCalculatesAllianceTaxesOnVictory(): void

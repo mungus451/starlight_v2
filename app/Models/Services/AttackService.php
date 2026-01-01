@@ -164,9 +164,27 @@ class AttackService
         }
 
         // Check Active Effects
-        if ($this->effectService->hasActiveEffect($defender->id, 'peace_shield')) {
-            return ServiceResponse::error("Target is under Safehouse protection. Attack prevented.");
+        $shieldEffect = $this->effectService->getEffectDetails($defender->id, 'peace_shield');
+        if ($shieldEffect) {
+            $expiresAt = new \DateTime($shieldEffect['expires_at']);
+            $now = new \DateTime();
+            $diff = $now->diff($expiresAt);
+            
+            $timeRemaining = [];
+            if ($diff->d > 0) $timeRemaining[] = $diff->d . 'd';
+            if ($diff->h > 0) $timeRemaining[] = $diff->h . 'h';
+            if ($diff->i > 0) $timeRemaining[] = $diff->i . 'm';
+            
+            // If less than a minute, show seconds or just "< 1m"
+            if (empty($timeRemaining)) {
+                $timeStr = "less than a minute";
+            } else {
+                $timeStr = implode(' ', $timeRemaining);
+            }
+
+            return ServiceResponse::error("Target is under Safehouse protection for another {$timeStr}. Attack prevented.");
         }
+
         if ($this->effectService->hasActiveEffect($attackerId, 'peace_shield')) {
             $this->effectService->breakEffect($attackerId, 'peace_shield'); 
         }

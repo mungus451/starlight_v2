@@ -137,6 +137,35 @@ class StatsRepository
     }
 
     /**
+     * Finds viable targets for NPC aggression.
+     * Excludes the NPC itself. Prioritizes high net worth targets within a reasonable range.
+     *
+     * @param int $npcId
+     * @param int $limit
+     * @return array
+     */
+    public function findTargetsForNpc(int $npcId, int $limit = 5): array
+    {
+        // Simple logic: Find top N richest players who are not this NPC.
+        // Future enhancement: Add power range logic (e.g. +/- 50% power)
+        $sql = "
+            SELECT u.id, u.character_name, s.net_worth, r.credits, r.soldiers
+            FROM users u
+            JOIN user_stats s ON u.id = s.user_id
+            JOIN user_resources r ON u.id = r.user_id
+            WHERE u.id != ? AND u.is_npc = 0
+            ORDER BY s.net_worth DESC
+            LIMIT ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $npcId, PDO::PARAM_INT);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Retrieves Leaderboard with dynamic sorting.
      * Supports: Net Worth, Prestige, Army Size, Population, Battles Won, Spy Success
      *
