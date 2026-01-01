@@ -33,7 +33,49 @@
     </div>
 
     <!-- Stats Grid -->
-    <div class="structures-grid">
-        <!-- Stats Cards here... -->
+    <div>
+        <div class="mobile-card">
+            <div class="mobile-card-header"><h3><i class="fas fa-coins text-warning"></i> Total Plunder</h3></div>
+            <div class="mobile-card-content text-center">
+                <div id="alliance-plunder" class="fs-2 fw-bold text-light">0</div>
+                <p class="small text-muted mt-1">Credits stolen by all members.</p>
+            </div>
+        </div>
+        <div class="mobile-card">
+            <div class="mobile-card-header"><h3><i class="fas fa-trophy text-success"></i> Victories</h3></div>
+            <div class="mobile-card-content text-center">
+                <div id="alliance-wins" class="fs-2 fw-bold text-light">0</div>
+                <p class="small text-muted mt-1">Total member battles won.</p>
+            </div>
+        </div>
+        <div class="mobile-card">
+            <div class="mobile-card-header"><h3><i class="fas fa-times-circle text-danger"></i> Defeats</h3></div>
+            <div class="mobile-card-content text-center">
+                <div id="alliance-losses" class="fs-2 fw-bold text-light">0</div>
+                <p class="small text-muted mt-1">Total member battles lost.</p>
+            </div>
+        </div>
+        <div class="mobile-card">
+            <div class="mobile-card-header"><h3><i class="fas fa-chart-pie"></i> Win Distribution</h3></div>
+            <div class="mobile-card-content" style="height: 250px;"><canvas id="alliance-wl-chart"></canvas></div>
+        </div>
+        <div class="mobile-card">
+            <div class="mobile-card-header"><h3><i class="fas fa-id-card"></i> Active Roster</h3></div>
+            <div class="mobile-card-content p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle small">
+                        <thead class="small text-muted text-uppercase">
+                            <tr>
+                                <th class="ps-3">Name</th>
+                                <th class="text-end pe-3">Role</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alliance-roster">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
