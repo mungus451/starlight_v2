@@ -44,7 +44,7 @@
                 <div class="mobile-card">
                     <div class="mobile-card-header"><h3><i class="fas fa-users"></i> Import Citizens</h3></div>
                     <div class="mobile-card-content" style="display: block;">
-                        <p class="structure-description">Adds 500 citizens to your population.</p>
+                        <p class="structure-description">Adds 50,000 citizens to your population.</p>
                         <form action="/black-market/buy/citizens" method="POST">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                             <button type="submit" class="btn" style="width: 100%;">
@@ -118,6 +118,38 @@
 
             <!-- Operations Tab -->
             <div id="tab-ops" class="nested-tab-content">
+                <!-- High Risk Protocol -->
+                <div class="mobile-card">
+                    <div class="mobile-card-header"><h3><i class="fas fa-skull"></i> High Risk Protocol</h3></div>
+                    <div class="mobile-card-content" style="display: block;">
+                        <p class="structure-description">+50% Income, -10% Attacker Casualties. Disables Safehouse. Duration: 24h.</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="background: var(--mobile-accent-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Aggressive</span>
+                            <span style="color: var(--mobile-text-secondary);"><?= number_format($costs['high_risk_buff'] ?? 50000000) ?> 💎</span>
+                        </div>
+
+                        <?php if (!empty($isHighRiskActive)): ?>
+                            <div style="text-align: center; padding: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--mobile-accent-red); background: rgba(255, 0, 0, 0.1); color: var(--mobile-accent-red); border-radius: 4px;">
+                                <i class="fas fa-radiation"></i> Protocol Active
+                            </div>
+                            <form action="/black-market/buy/terminate_high_risk" method="POST" style="margin-top: 1rem;">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                <button type="submit" class="btn btn-danger" style="width: 100%;">
+                                    <i class="fas fa-stop-circle"></i> Terminate Early
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <form action="/black-market/buy/high_risk" method="POST" style="margin-top: 1rem;">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                <button type="submit" class="btn btn-danger" style="width: 100%;">
+                                    Initiate Protocol
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
                 <!-- Place Bounty -->
                 <div class="mobile-card">
                     <div class="mobile-card-header"><h3><i class="fas fa-crosshairs"></i> Place Bounty</h3></div>
