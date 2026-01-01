@@ -253,8 +253,9 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
     $r->addRoute('GET', '/almanac/get_player_dossier', [AlmanacController::class, 'getPlayerDossier']);
     $r->addRoute('GET', '/almanac/get_alliance_dossier', [AlmanacController::class, 'getAllianceDossier']);
+    $r->addRoute('GET', '/almanac/mobile_tab', [AlmanacController::class, 'getMobileTabData']);
 
-    // --- Notification System ---
+    // --- Embassy (Directives) ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
     $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
     $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
