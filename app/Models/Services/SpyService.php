@@ -191,7 +191,14 @@ class SpyService
         $defenderXp = $isCaught ? ($xpConfig['defense_caught_spy'] ?? 75) : 0;
         $operation_result = $isSuccess ? 'success' : 'failure';
         
+        $stolen_naquadah = $isSuccess ? ($defenderResources->naquadah_crystals * ($config['crystal_steal_rate'] ?? 0.05)) : 0;
+        $stolen_dark_matter = $isSuccess ? (int)floor($defenderResources->dark_matter * ($config['dark_matter_steal_rate'] ?? 0.02)) : 0;
+        $stolen_protoform = $isSuccess ? ($defenderResources->protoform * ($config['protoform_steal_rate'] ?? 0.01)) : 0;
+
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
+        $intel_naquadah = $isSuccess ? $defenderResources->naquadah_crystals : null;
+        $intel_dark_matter = $isSuccess ? $defenderResources->dark_matter : null;
+        $intel_protoform = $isSuccess ? $defenderResources->protoform : null;
         $intel_gemstones = $isSuccess ? $defenderResources->gemstones : null;
         $intel_workers = $isSuccess ? $defenderResources->workers : null;
         $intel_soldiers = $isSuccess ? $defenderResources->soldiers : null;
@@ -215,7 +222,8 @@ class SpyService
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
             $creditCost, $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
-            $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
+            $stolen_naquadah, $stolen_dark_matter, $stolen_protoform,
+            $intel_credits, $intel_naquadah, $intel_dark_matter, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
             $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
         ) {
@@ -223,6 +231,11 @@ class SpyService
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
             $this->statsRepo->incrementSpyStats($attackerId, $isSuccess);
+
+            if ($isSuccess && ($stolen_naquadah > 0 || $stolen_dark_matter > 0 || $stolen_protoform > 0)) {
+                $this->resourceRepo->updateResources($attackerId, 0, $stolen_naquadah, $stolen_dark_matter, $stolen_protoform);
+                $this->resourceRepo->updateResources($defender->id, 0, -$stolen_naquadah, -$stolen_dark_matter, -$stolen_protoform);
+            }
 
             if ($isCaught) {
                 if ($sentriesLost > 0) $this->resourceRepo->updateSpyDefender($defender->id, max(0, $defenderResources->sentries - $sentriesLost));
@@ -232,8 +245,11 @@ class SpyService
             $reportId = $this->spyRepo->createReport(
                 $attackerId, $defender->id, $operation_result, $spiesSent, $spiesLost, $sentriesLost,
                 $defenderTotalSentriesSnapshot,
-                $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-                $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel
+                $intel_credits, 
+                $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
+                $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
+                $stolen_naquadah, $stolen_dark_matter, $intel_naquadah, $intel_dark_matter,
+                $stolen_protoform, $intel_protoform
             );
 
             if ($isCaught) {
@@ -246,6 +262,16 @@ class SpyService
         });
 
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
+        if ($isSuccess) {
+            if ($stolen_naquadah > 0 || $stolen_dark_matter > 0 || $stolen_protoform > 0) {
+                $message .= " Your spies managed to steal ";
+                $stolenParts = [];
+                if ($stolen_naquadah > 0) $stolenParts[] = number_format($stolen_naquadah, 2) . " crystals";
+                if ($stolen_dark_matter > 0) $stolenParts[] = $stolen_dark_matter . " dark matter";
+                if ($stolen_protoform > 0) $stolenParts[] = number_format($stolen_protoform, 2) . " protoform";
+                $message .= implode(", ", $stolenParts) . ".";
+            }
+        }
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         
         return ServiceResponse::success($message, ['report_id' => $reportId, 'result' => $operation_result]);
