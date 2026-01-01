@@ -48,7 +48,7 @@
                     <label>Mission Profile</label>
                     <div style="display: flex; gap: 0.5rem;">
                         <label class="btn btn-outline" style="flex: 1; margin-top: 0;">
-                            <input type="radio" name="attack_type" value="raid" checked style="display:none;" onchange="this.parentElement.classList.add('active'); this.parentElement.nextElementSibling.classList.remove('active');">
+                            <input type="radio" name="attack_type" value="plunder" checked style="display:none;" onchange="this.parentElement.classList.add('active'); this.parentElement.nextElementSibling.classList.remove('active');">
                             Raid
                         </label>
                         <label class="btn btn-outline" style="flex: 1; margin-top: 0;">
