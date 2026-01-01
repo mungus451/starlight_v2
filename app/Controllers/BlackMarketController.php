@@ -37,63 +37,69 @@ $data['active_tab'] = 'exchange';
 $this->render('black_market/exchange.php', $data + ['title' => 'Black Market - Exchange']);
 }
 
-// --- Tab 2: The Undermarket (Actions) ---
-public function showActions(): void
-{
-$userId = $this->session->get('user_id');
+    // --- Tab 2: The Undermarket (Actions) ---
+    public function showActions(): void
+    {
+        $userId = $this->session->get('user_id');
+        
+        // Use Service to get data, keeping Controller thin
+        $data = $this->bmService->getUndermarketPageData($userId);
+        
+        // Load costs config to pass to view
+        $bmConfig = require __DIR__ . '/../../config/black_market.php';
 
-// Use Service to get data, keeping Controller thin
-$data = $this->bmService->getUndermarketPageData($userId);
+        $this->render('black_market/actions.php', [
+            'title' => 'Black Market - Actions',
+            'active_tab' => 'actions',
+            'bounties' => $data['bounties'],
+            'targets' => $data['targets'],
+            'isHighRiskActive' => $data['isHighRiskActive'] ?? false,
+            'isSafehouseCooldown' => $data['isSafehouseCooldown'] ?? false,
+            'costs' => $bmConfig['costs'], // Pass costs array
+            'layoutMode' => 'full'
+        ]);
+    }    
+    // --- Purchase Handler (Stat, Energy, Citizens, Lootbox) ---
+    public function handlePurchase(array $vars): void
+    {
+        $action = $vars['action'] ?? '';
 
-// Load costs config to pass to view
-$bmConfig = require __DIR__ . '/../../config/black_market.php';
+        $this->validate($_POST, ['csrf_token' => 'required']);
+        if (!$this->csrfService->validateToken($_POST['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid token.');
+            $this->redirect('/black-market/actions');
+            return;
+        }
 
-$this->render('black_market/actions.php', [
-'title' => 'Black Market - Actions',
-'active_tab' => 'actions',
-'bounties' => $data['bounties'],
-'targets' => $data['targets'],
-'costs' => $bmConfig['costs'], // Pass costs array
-'layoutMode' => 'full'
-]);
-}
+        $userId = $this->session->get('user_id');
+        $response = null;
 
-// --- Purchase Handler (Stat, Energy, Citizens, Lootbox) ---
-public function handlePurchase(array $vars): void
-{
-$action = $vars['action'] ?? '';
-
-$this->validate($_POST, ['csrf_token' => 'required']);
-if (!$this->csrfService->validateToken($_POST['csrf_token'])) {
-$this->session->setFlash('error', 'Invalid token.');
-$this->redirect('/black-market/actions');
-return;
-}
-
-$userId = $this->session->get('user_id');
-$response = null;
-
-switch ($action) {
-case 'respec':
-$response = $this->bmService->purchaseStatRespec($userId);
-break;
-case 'refill':
-$response = $this->bmService->purchaseTurnRefill($userId);
-break;
-case 'citizens':
-$response = $this->bmService->purchaseCitizens($userId);
-break;
-case 'lootbox':
-$response = $this->bmService->openVoidContainer($userId);
-break;
-case 'radar_jamming':
-$response = $this->bmService->purchaseRadarJamming($userId);
-break;
-case 'safehouse':
-$response = $this->bmService->purchaseSafehouse($userId);
-break;
-default:
-$this->session->setFlash('error', 'Invalid action.');
+        switch ($action) {
+            case 'respec':
+                $response = $this->bmService->purchaseStatRespec($userId);
+                break;
+            case 'refill':
+                $response = $this->bmService->purchaseTurnRefill($userId);
+                break;
+            case 'citizens':
+                $response = $this->bmService->purchaseCitizens($userId);
+                break;
+            case 'lootbox':
+                $response = $this->bmService->openVoidContainer($userId);
+                break;
+            case 'radar_jamming':
+                $response = $this->bmService->purchaseRadarJamming($userId);
+                break;
+            case 'safehouse':
+                $response = $this->bmService->purchaseSafehouse($userId);
+                break;
+            case 'high_risk':
+                $response = $this->bmService->purchaseHighRiskBuff($userId);
+                break;
+            case 'terminate_high_risk':
+                $response = $this->bmService->terminateHighRiskProtocol($userId);
+                break;
+            default:$this->session->setFlash('error', 'Invalid action.');
 $this->redirect('/black-market/actions');
 return;
 }

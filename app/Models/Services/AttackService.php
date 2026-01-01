@@ -297,6 +297,11 @@ class AttackService
             $defenderGuardsLost = (int)ceil($defenderGuardsLost * (1 - $naniteReductionPercent));
         }
 
+        // --- NEW: High Risk Protocol Casualty Reduction (Attacker) ---
+        if ($this->effectService->hasActiveEffect($attackerId, 'high_risk_protocol')) {
+            $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * 0.90); // -10% Casualties
+        }
+
         // XP Calculation
         $attackerXpGain = match($attackResult) {
             'victory' => $xpConfig['battle_win'],
@@ -458,7 +463,7 @@ class AttackService
      * Calculates casualties for the WINNER of the battle.
      * Logic: The higher the ratio (more overwhelming), the fewer losses.
      */
-    private function calculateWinnerLosses(int $unitCount, float $ratio): int
+    protected function calculateWinnerLosses(int $unitCount, float $ratio): int
     {
         // Base loss factor: 5% at 1:1 ratio.
         // Formula: 0.05 / Ratio.
@@ -481,7 +486,7 @@ class AttackService
      * Logic: The higher the ratio (more overwhelmed), the higher the losses.
      * Wipeout Rule: If Ratio > 10, they lose everything.
      */
-    private function calculateLoserLosses(int $unitCount, float $ratio): int
+    protected function calculateLoserLosses(int $unitCount, float $ratio): int
     {
         if ($unitCount <= 0) return 0;
 
