@@ -13,6 +13,13 @@ foreach ($types as $type) {
 ?>
 
 <div class="container-full">
+    <div class="tabs-nav mb-4 justify-content-center">
+        <a href="/embassy" class="tab-link active">Planetary Directives</a>
+        <?php if (!empty($currentUserAllianceId)): ?>
+            <a href="/alliance/diplomacy" class="tab-link">Alliance Diplomacy</a>
+        <?php endif; ?>
+    </div>
+
     <h1>Planetary Directives</h1>
     <p class="subtitle" style="text-align: center; color: var(--muted); margin-top: -1rem; margin-bottom: 2rem;">
         Enact executive orders to specialize your empire's functionality.
