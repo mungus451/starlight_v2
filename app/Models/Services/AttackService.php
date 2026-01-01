@@ -100,7 +100,8 @@ class AttackService
             'targets' => $targets,
             'pagination' => [
                 'currentPage' => $page,
-                'totalPages' => $totalPages
+                'totalPages' => $totalPages,
+                'limit' => $perPage
             ],
             'perPage' => $perPage
         ];
