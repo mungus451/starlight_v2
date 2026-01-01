@@ -36,7 +36,7 @@
             <h3><i class="fas fa-skull"></i> Deploy Fleet</h3>
         </div>
         <div class="mobile-card-content" style="display: block;">
-            <form action="/battle/attack" method="POST">
+            <form action="/battle/attack" method="POST" id="attack-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                 
                 <div class="form-group">
@@ -100,7 +100,8 @@
                         <strong style="color: var(--mobile-text-primary); font-size: 1.1rem;"><?= htmlspecialchars($target['character_name']) ?></strong>
                         <div style="font-size: 0.8rem; color: var(--muted);">Rank #<?= $target['rank'] ?? '?' ?></div>
                     </div>
-                    <button class="btn btn-sm btn-danger" style="width: auto; padding: 0.5rem 1rem;" onclick="document.getElementById('target_name').value = '<?= htmlspecialchars($target['character_name']) ?>'; window.scrollTo(0,0);">
+                    <button class="btn btn-sm btn-danger" style="width: auto; padding: 0.5rem 1rem;" 
+                            onclick="if(confirm('Launch attack against <?= htmlspecialchars($target['character_name']) ?>?')) { document.getElementById('target_name').value = '<?= htmlspecialchars($target['character_name']) ?>'; document.getElementById('attack-form').submit(); }">
                         Target
                     </button>
                 </div>
