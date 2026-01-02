@@ -85,17 +85,11 @@ class SettingsControllerTest extends TestCase
             ->once()
             ->with('success', 'Preferences updated successfully');
 
-        // We can't easily test redirect without more infrastructure,
-        // but we can verify the method runs without exceptions
-        try {
-            $this->controller->handleNotifications();
-            $this->assertTrue(true); // Method executed without exception
-        } catch (\Exception $e) {
-            // Redirect will throw exception in test context, which is expected
-            if (strpos($e->getMessage(), 'redirect') === false) {
-                throw $e;
-            }
-        }
+        // Expect RedirectException to be thrown
+        $this->expectException(\App\Core\Exceptions\RedirectException::class);
+        $this->expectExceptionMessage('/settings');
+
+        $this->controller->handleNotifications();
     }
 
     public function testHandleNotificationsWithInvalidCsrf(): void
@@ -128,11 +122,11 @@ class SettingsControllerTest extends TestCase
         // Service should NOT be called
         $this->mockSettingsService->shouldNotReceive('updateNotificationPreferences');
 
-        try {
-            $this->controller->handleNotifications();
-        } catch (\Exception $e) {
-            // Expected redirect exception
-        }
+        // Expect RedirectException to be thrown
+        $this->expectException(\App\Core\Exceptions\RedirectException::class);
+        $this->expectExceptionMessage('/settings');
+
+        $this->controller->handleNotifications();
     }
 
     public function testHandleNotificationsConvertsCheckboxesToBooleans(): void
@@ -166,11 +160,11 @@ class SettingsControllerTest extends TestCase
 
         $this->mockSession->shouldReceive('setFlash');
 
-        try {
-            $this->controller->handleNotifications();
-        } catch (\Exception $e) {
-            // Expected redirect
-        }
+        // Expect RedirectException to be thrown
+        $this->expectException(\App\Core\Exceptions\RedirectException::class);
+        $this->expectExceptionMessage('/settings');
+
+        $this->controller->handleNotifications();
     }
 
     public function testHandleNotificationsWithServiceFailure(): void
@@ -204,10 +198,10 @@ class SettingsControllerTest extends TestCase
             ->once()
             ->with('error', 'Failed to update preferences');
 
-        try {
-            $this->controller->handleNotifications();
-        } catch (\Exception $e) {
-            // Expected redirect
-        }
+        // Expect RedirectException to be thrown
+        $this->expectException(\App\Core\Exceptions\RedirectException::class);
+        $this->expectExceptionMessage('/settings');
+
+        $this->controller->handleNotifications();
     }
 }
