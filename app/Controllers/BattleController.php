@@ -49,8 +49,9 @@ class BattleController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $page = (int)($vars['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 25);
         
-        $data = $this->attackService->getAttackPageData($userId, $page);
+        $data = $this->attackService->getAttackPageData($userId, $page, $limit);
 
         $data['layoutMode'] = 'full';
 

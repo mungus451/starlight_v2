@@ -44,19 +44,7 @@
                     <input type="text" name="target_name" id="target_name" class="mobile-input" placeholder="Enter Name" required style="width: 100%;">
                 </div>
 
-                <div class="form-group">
-                    <label>Mission Profile</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <label class="btn btn-outline" style="flex: 1; margin-top: 0;">
-                            <input type="radio" name="attack_type" value="plunder" checked style="display:none;" onchange="this.parentElement.classList.add('active'); this.parentElement.nextElementSibling.classList.remove('active');">
-                            Raid
-                        </label>
-                        <label class="btn btn-outline" style="flex: 1; margin-top: 0;">
-                            <input type="radio" name="attack_type" value="invasion" style="display:none;" onchange="this.parentElement.classList.add('active'); this.parentElement.previousElementSibling.classList.remove('active');">
-                            Invasion
-                        </label>
-                    </div>
-                </div>
+                
 
                 <button type="submit" class="btn btn-danger" style="width: 100%; margin-top: 1rem;">
                     <i class="fas fa-meteor"></i> Launch Attack
@@ -74,8 +62,6 @@
     <?php if (!empty($targets)): 
         $page = $pagination['currentPage'];
         $totalPages = $pagination['totalPages'];
-        $limit = $pagination['limit'];
-        $limitParam = "&limit={$limit}";
         $prevPage = $page > 1 ? $page - 1 : null;
         $nextPage = $page < $totalPages ? $page + 1 : null;
     ?>
@@ -85,8 +71,8 @@
         <div class="mobile-tabs" style="justify-content: center; margin-bottom: 1rem; gap: 0.5rem;">
             <span style="color: var(--muted); font-size: 0.9rem; align-self: center;">Show:</span>
             <?php foreach ([5, 10, 25, 100] as $opt): ?>
-                <a href="/battle?page=1&limit=<?= $opt ?>" 
-                   class="tab-link <?= $limit == $opt ? 'active' : '' ?>"
+                <a href="/battle/page/1?limit=<?= $opt ?>" 
+                   class="tab-link <?= $perPage == $opt ? 'active' : '' ?>"
                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
                    <?= $opt == 100 ? 'ALL' : $opt ?>
                 </a>
@@ -112,7 +98,7 @@
         <?php if ($totalPages > 1): ?>
         <div class="mobile-tabs" style="justify-content: space-between; margin-top: 1rem;">
             <?php if ($prevPage): ?>
-                <a href="/battle?page=<?= $prevPage . $limitParam ?>" class="btn">
+                <a href="/battle/page/<?= $prevPage ?>?limit=<?= $perPage ?>" class="btn">
                     <i class="fas fa-chevron-left"></i> Prev
                 </a>
             <?php else: ?>
@@ -124,7 +110,7 @@
             </span>
 
             <?php if ($nextPage): ?>
-                <a href="/battle?page=<?= $nextPage . $limitParam ?>" class="btn">
+                <a href="/battle/page/<?= $nextPage ?>?limit=<?= $perPage ?>" class="btn">
                     Next <i class="fas fa-chevron-right"></i>
                 </a>
             <?php else: ?>

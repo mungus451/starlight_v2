@@ -3,11 +3,11 @@
 /* @var array $alliances */
 /* @var array $pagination */
 /* @var int|null $currentUserAllianceId */
+/* @var int $perPage */
 
 $page = $pagination['currentPage'];
 $totalPages = $pagination['totalPages'];
-$limit = $pagination['limit'];
-$limitParam = "&limit={$limit}";
+$limitParam = "&limit={$perPage}";
 $prevPage = $page > 1 ? $page - 1 : null;
 $nextPage = $page < $totalPages ? $page + 1 : null;
 ?>
@@ -33,7 +33,7 @@ $nextPage = $page < $totalPages ? $page + 1 : null;
         <span style="color: var(--muted); font-size: 0.9rem; align-self: center;">Show:</span>
         <?php foreach ([5, 10, 25, 100] as $opt): ?>
             <a href="/alliance/list?page=1&limit=<?= $opt ?>" 
-               class="tab-link <?= $limit == $opt ? 'active' : '' ?>"
+               class="tab-link <?= $perPage == $opt ? 'active' : '' ?>"
                style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
                <?= $opt == 100 ? 'ALL' : $opt ?>
             </a>
