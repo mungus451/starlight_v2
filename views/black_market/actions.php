@@ -49,7 +49,7 @@
 
 <div class="item-card">
     <h4>Smuggled Citizens</h4>
-    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">Import 500 untrained citizens immediately.</p>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">Import 50,000 untrained citizens immediately.</p>
     <form action="/black-market/buy/citizens" method="POST" style="margin-top: 1rem;">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
         <button class="btn-submit" style="width: 100%;">Import (<?= number_format($costs['citizen_package']) ?> 💎)</button>

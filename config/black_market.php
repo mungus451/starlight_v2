@@ -9,11 +9,11 @@ return [
 'costs' => [
 'stat_respec' => 250000.0, // Crystals
 'turn_refill' => 10000.0, // Crystals
-'citizen_package' => 250000.0, // Crystals
-'void_container' => 10000.0, // Crystals
+'citizen_package' => 500000000.0, // Crystals
+'void_container' => 100000.0, // Crystals
 'shadow_contract' => 5000000.0, // Crystals
-'radar_jamming' => 50000.0, // Crystals
-'safehouse' => 100000.0, // Crystals
+'radar_jamming' => 50000000.0, // Crystals
+'safehouse' => 100000000.0, // Crystals
 ],
 
 'rates' => [
@@ -22,7 +22,7 @@ return [
 
 'quantities' => [
 'turn_refill_amount' => 50, // Turns restored
-'citizen_package_amount' => 500, // Citizens added
+'citizen_package_amount' => 50000, // Citizens added
 ],
 
 // Loot Box Probabilities (Weights determine rarity relative to total sum)

@@ -11,7 +11,7 @@ if (php_sapi_name() !== 'cli') {
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\ContainerFactory;
-use App\Models\Services\NpcService;
+use App\Models\Services\NpcDirectorService;
 
 try {
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
@@ -35,10 +35,24 @@ try {
     // 4. Resolve the Service
     // The container injects the Logger configured for CLI output,
     // so we don't need manual echos here anymore.
-    $service = $container->get(NpcService::class);
+    $service = $container->get(NpcDirectorService::class);
     
     // 5. Execute Logic
-    $service->runNpcCycle();
+    $results = $service->processAllNpcs();
+
+    // Output summary for CLI
+    echo "[" . date('Y-m-d H:i:s') . "] NPC Cycle Started\n";
+    foreach ($results as $npcName => $actions) {
+        if (empty($actions)) {
+            echo "[-] {$npcName}: No actions taken.\n";
+        } else {
+            echo "[+] {$npcName}:\n";
+            foreach ($actions as $action) {
+                echo "    - {$action}\n";
+            }
+        }
+    }
+    echo "[" . date('Y-m-d H:i:s') . "] NPC Cycle Finished\n";
     
 } catch (\RuntimeException $e) {
     echo "ERROR: " . $e->getMessage() . "\n";

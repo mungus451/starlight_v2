@@ -22,50 +22,50 @@ return [
         // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
         'fortification' => [
             'name' => 'Fortification',
-            'base_cost' => 1000,
-            'multiplier' => 1.8,
+            'base_cost' => 3400,
+            'multiplier' => 1.54,
             'category' => 'Defense',
             'description' => 'Increases the base power of your Guards and overall structural integrity.'
         ],
         'offense_upgrade' => [
             'name' => 'Offense Upgrade',
-            'base_cost' => 500,
-            'multiplier' => 2.0,
+            'base_cost' => 5600,
+            'multiplier' => 1.51,
             'category' => 'Offense',
             'description' => 'Increases the base power of your Soldiers in offensive operations.'
         ],
         'defense_upgrade' => [
             'name' => 'Defense Upgrade',
-            'base_cost' => 500,
-            'multiplier' => 2.0,
+            'base_cost' => 5500,
+            'multiplier' => 1.53,
             'category' => 'Defense',
             'description' => 'Increases the effectiveness of your Guards and Fortifications on defense.'
         ],
         'spy_upgrade' => [
             'name' => 'Spy Upgrade',
-            'base_cost' => 750,
-            'multiplier' => 1.9,
+            'base_cost' => 3500,
+            'multiplier' => 1.49,
             'category' => 'Intel',
             'description' => 'Improves spy success rates and counter-espionage capabilities.'
         ],
         'economy_upgrade' => [
             'name' => 'Economy Upgrade',
             'base_cost' => 2000,
-            'multiplier' => 1.7,
+            'multiplier' => 1.47,
             'category' => 'Economy',
             'description' => 'Increases your passive credit income generated each turn.'
         ],
         'population' => [
             'name' => 'Population',
             'base_cost' => 1500,
-            'multiplier' => 1.6,
+            'multiplier' => 1.52,
             'category' => 'Economy',
             'description' => 'Increases the number of untrained citizens that arrive each turn.'
         ],
         'armory' => [
             'name' => 'Armory',
-            'base_cost' => 1200,
-            'multiplier' => 2.1,
+            'base_cost' => 92000,
+            'multiplier' => 1.51,
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
@@ -73,7 +73,7 @@ return [
             'name' => 'Accounting Firm',
             'base_cost' => 1000, // 1,000 Credits
             'base_crystal_cost' => 250, // 250 Naquadah Crystals
-            'multiplier' => 1.9, // Cost Multiplier (e.g., Level 2 costs 1.9x Level 1)
+            'multiplier' => 1.47, // Cost Multiplier (e.g., Level 2 costs 1.9x Level 1)
             'category' => 'Economy',
             'description' => 'Increases passive credit income by 1% per level.'
         ],
@@ -88,9 +88,9 @@ return [
         ],
         'nanite_forge' => [
             'name' => 'Nanite Forge',
-            'base_cost' => 7500,
-            'base_crystal_cost' => 100,
-            'multiplier' => 1.8,
+            'base_cost' => 7500000,
+            'base_crystal_cost' => 20000,
+            'multiplier' => 1.48,
             'category' => 'Military',
             'description' => 'Reduces casualties in winning battles, making your armies more efficient.'
         ],
@@ -98,8 +98,8 @@ return [
         'dark_matter_siphon' => [
             'name' => 'Dark Matter Siphon',
             'base_cost' => 25000,
-            'base_crystal_cost' => 1000,
-            'multiplier' => 2.2,
+            'base_crystal_cost' => 100,
+            'multiplier' => 1.47,
             'category' => 'Advanced Industry',
             'description' => 'Generates rare Dark Matter used for constructing superstructures and advanced weaponry.'
         ],
@@ -107,7 +107,7 @@ return [
             'name' => 'Planetary Shield',
             'base_cost' => 50000,
             'base_dark_matter_cost' => 50,
-            'multiplier' => 2.5,
+            'multiplier' => 1.15,
             'category' => 'Super Defense',
             'description' => 'Creates a powerful shield that must be depleted before your assets can be plundered.'
         ],
@@ -115,7 +115,7 @@ return [
             'name' => 'Naquadah Mining Complex',
             'base_cost' => 10000,
             'base_dark_matter_cost' => 1,
-            'multiplier' => 2.0,
+            'multiplier' => 1.47,
             'category' => 'Advanced Industry',
             'description' => 'Generates Naquadah Crystals each turn.'
         ],
@@ -231,7 +231,7 @@ return [
         'credit_bonus_per_wealth_point' => 0.01, // 0.5% bonus to econ/worker income
         
         // New citizens per turn, per level of Population
-        'citizen_growth_per_pop_level' => 1,
+        'citizen_growth_per_pop_level' => 10,
 
         // New: Research Data Generation
         'research_data_per_lab_level' => 100, // 100 Research Data per QRL level per turn
