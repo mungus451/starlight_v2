@@ -55,11 +55,13 @@ class SettingsControllerTest extends TestCase
             'push_notifications_enabled' => '1'
         ];
 
-        // Mock validator
-        $mockValidation = Mockery::mock();
-        $mockValidation->shouldReceive('fails')->andReturn(false);
-        $mockValidation->shouldReceive('validated')->andReturn($_POST);
-        $this->mockValidator->shouldReceive('make')->andReturn($mockValidation);
+        // Mock validator to return a Validator instance
+        $mockValidatorInstance = Mockery::mock(Validator::class);
+        $mockValidatorInstance->shouldReceive('fails')->andReturn(false);
+        $mockValidatorInstance->shouldReceive('validated')->andReturn($_POST);
+        $this->mockValidator->shouldReceive('make')
+            ->with($_POST, Mockery::any())
+            ->andReturn($mockValidatorInstance);
 
         // Mock CSRF validation
         $this->mockCsrfService->shouldReceive('validateToken')
@@ -105,11 +107,13 @@ class SettingsControllerTest extends TestCase
             'attack_enabled' => '1'
         ];
 
-        // Mock validator
-        $mockValidation = Mockery::mock();
-        $mockValidation->shouldReceive('fails')->andReturn(false);
-        $mockValidation->shouldReceive('validated')->andReturn($_POST);
-        $this->mockValidator->shouldReceive('make')->andReturn($mockValidation);
+        // Mock validator to return a Validator instance
+        $mockValidatorInstance = Mockery::mock(Validator::class);
+        $mockValidatorInstance->shouldReceive('fails')->andReturn(false);
+        $mockValidatorInstance->shouldReceive('validated')->andReturn($_POST);
+        $this->mockValidator->shouldReceive('make')
+            ->with($_POST, Mockery::any())
+            ->andReturn($mockValidatorInstance);
 
         // Mock CSRF validation failure
         $this->mockCsrfService->shouldReceive('validateToken')
@@ -143,10 +147,13 @@ class SettingsControllerTest extends TestCase
             // Other checkboxes not present (unchecked)
         ];
 
-        $mockValidation = Mockery::mock();
-        $mockValidation->shouldReceive('fails')->andReturn(false);
-        $mockValidation->shouldReceive('validated')->andReturn($_POST);
-        $this->mockValidator->shouldReceive('make')->andReturn($mockValidation);
+        // Mock validator to return a Validator instance
+        $mockValidatorInstance = Mockery::mock(Validator::class);
+        $mockValidatorInstance->shouldReceive('fails')->andReturn(false);
+        $mockValidatorInstance->shouldReceive('validated')->andReturn($_POST);
+        $this->mockValidator->shouldReceive('make')
+            ->with($_POST, Mockery::any())
+            ->andReturn($mockValidatorInstance);
 
         $this->mockCsrfService->shouldReceive('validateToken')->andReturn(true);
         $this->mockSession->shouldReceive('get')->with('user_id')->andReturn($userId);
@@ -176,10 +183,13 @@ class SettingsControllerTest extends TestCase
             'attack_enabled' => '1'
         ];
 
-        $mockValidation = Mockery::mock();
-        $mockValidation->shouldReceive('fails')->andReturn(false);
-        $mockValidation->shouldReceive('validated')->andReturn($_POST);
-        $this->mockValidator->shouldReceive('make')->andReturn($mockValidation);
+        // Mock validator to return a Validator instance
+        $mockValidatorInstance = Mockery::mock(Validator::class);
+        $mockValidatorInstance->shouldReceive('fails')->andReturn(false);
+        $mockValidatorInstance->shouldReceive('validated')->andReturn($_POST);
+        $this->mockValidator->shouldReceive('make')
+            ->with($_POST, Mockery::any())
+            ->andReturn($mockValidatorInstance);
 
         $this->mockCsrfService->shouldReceive('validateToken')->andReturn(true);
         $this->mockSession->shouldReceive('get')->with('user_id')->andReturn($userId);

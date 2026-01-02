@@ -43,16 +43,31 @@ class SettingsServiceTest extends TestCase
         $userId = 1;
         $user = $this->createMockUser($userId);
         
+        // Create mock notification preferences
+        $notificationPrefs = new \App\Models\Entities\UserNotificationPreferences(
+            user_id: $userId,
+            attack_enabled: true,
+            spy_enabled: true,
+            alliance_enabled: true,
+            system_enabled: true,
+            push_notifications_enabled: false,
+            created_at: '2024-01-01 00:00:00',
+            updated_at: '2024-01-01 00:00:00'
+        );
+        
         // Mock Security Repo logic (returns null or object)
         $this->mockUserRepo->shouldReceive('findById')->with($userId)->andReturn($user);
         $this->mockSecurityRepo->shouldReceive('findByUserId')->with($userId)->andReturn(null);
+        $this->mockNotificationService->shouldReceive('getPreferences')->with($userId)->andReturn($notificationPrefs);
 
         $result = $this->service->getSettingsData($userId);
 
         $this->assertArrayHasKey('user', $result);
         $this->assertArrayHasKey('security', $result);
+        $this->assertArrayHasKey('notification_prefs', $result);
         $this->assertSame($user, $result['user']);
         $this->assertNull($result['security']);
+        $this->assertSame($notificationPrefs, $result['notification_prefs']);
     }
 
     public function testUpdateProfileUpdatesDescriptionOnly(): void
