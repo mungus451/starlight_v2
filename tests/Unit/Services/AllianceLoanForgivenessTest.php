@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use App\Core\Config;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
@@ -33,6 +34,7 @@ class AllianceLoanForgivenessTest extends TestCase
     private $bankLogRepo;
     private $loanRepo;
     private $logger;
+    private $notificationService;
     private $service;
 
     protected function setUp(): void
@@ -50,6 +52,7 @@ class AllianceLoanForgivenessTest extends TestCase
         $this->bankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->loanRepo = Mockery::mock(AllianceLoanRepository::class);
         $this->logger = Mockery::mock(Logger::class);
+        $this->notificationService = Mockery::mock(NotificationService::class);
 
         $this->service = new AllianceManagementService(
             $this->db,
@@ -62,7 +65,8 @@ class AllianceLoanForgivenessTest extends TestCase
             $this->resourceRepo,
             $this->bankLogRepo,
             $this->loanRepo,
-            $this->logger
+            $this->logger,
+            $this->notificationService
         );
     }
 
