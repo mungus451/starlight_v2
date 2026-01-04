@@ -16,11 +16,9 @@ $nextPage = $page < $totalPages ? $page + 1 : null;
         <p style="color: var(--mobile-text-secondary); font-size: 0.9rem; margin: 0.5rem 1rem 0 1rem; text-align: center;">Alliance communications.</p>
     </div>
 
-    <?php if ($permissions->can_create_topic): ?>
-        <a href="/alliance/forum/topic/create" class="btn btn-accent" style="margin-bottom: 1.5rem; text-align: center;">
-            <i class="fas fa-plus-circle"></i> New Topic
-        </a>
-    <?php endif; ?>
+    <a href="/alliance/forum/topic/create" class="btn btn-accent" style="margin-bottom: 1.5rem; text-align: center;">
+        <i class="fas fa-plus-circle"></i> New Topic
+    </a>
 
     <?php if (empty($topics)): ?>
         <p class="text-center text-muted" style="padding: 2rem;">No topics have been created yet.</p>

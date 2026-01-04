@@ -264,6 +264,8 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
+    $r->addRoute('GET', '/armory/mobile/manage/{unit:[a-zA-Z-]+}/{tier:\d+}', [ArmoryController::class, 'showMobileTierManagement']);
+    $r->addRoute('GET', '/armory/mobile/loadout/{unit:[a-zA-Z-]+}', [ArmoryController::class, 'showMobileLoadout']);
 });
 
 // 7. Dispatch

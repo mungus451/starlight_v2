@@ -77,7 +77,7 @@ $treatyTypes = [
                                     $proposingAllianceName = $getAllianceName($treaty->alliance1_id, $otherAlliances);
                                 ?>
                                 <div class="mobile-card">
-                                    <div class="mobile-card-header"><h3><?= htmlspecialchars($treatyTypes[$treaty->type] ?? ucfirst($treaty->type)) ?></h3></div>
+                                    <div class="mobile-card-header"><h3><?= htmlspecialchars($treatyTypes[$treaty->treaty_type] ?? ucfirst($treaty->treaty_type)) ?></h3></div>
                                     <div class="mobile-card-content" style="display: block;">
                                         <p class="structure-description">From: <strong style="color: #fff;"><?= $proposingAllianceName ?></strong></p>
                                         <p class="text-muted" style="font-size: 0.85rem;"><?= nl2br(htmlspecialchars($treaty->terms ?? 'No terms provided.')) ?></p>
@@ -108,7 +108,7 @@ $treatyTypes = [
                                     $otherAllianceName = $getAllianceName($otherAllianceId, $otherAlliances);
                                 ?>
                                 <div class="mobile-card">
-                                    <div class="mobile-card-header"><h3><?= htmlspecialchars($treatyTypes[$treaty->type] ?? ucfirst($treaty->type)) ?></h3></div>
+                                    <div class="mobile-card-header"><h3><?= htmlspecialchars($treatyTypes[$treaty->treaty_type] ?? ucfirst($treaty->treaty_type)) ?></h3></div>
                                     <div class="mobile-card-content" style="display: block;">
                                         <p class="structure-description">With: <strong style="color: #fff;"><?= $otherAllianceName ?></strong></p>
                                         <p class="text-muted" style="font-size: 0.85rem;"><?= nl2br(htmlspecialchars($treaty->terms ?? 'No terms provided.')) ?></p>
@@ -137,7 +137,7 @@ $treatyTypes = [
                         <?php else: ?>
                             <ul class="mobile-stats-list">
                                 <?php foreach ($rivalries as $rivalry): 
-                                    $rivalAllianceId = ($rivalry->alliance1_id === $allianceId) ? $rivalry->alliance2_id : $rivalry->alliance1_id;
+                                    $rivalAllianceId = ($rivalry->alliance_a_id === $allianceId) ? $rivalry->alliance_b_id : $rivalry->alliance_a_id;
                                     $rivalAllianceName = $getAllianceName($rivalAllianceId, $otherAlliances);
                                 ?>
                                     <li><span><i class="fas fa-skull"></i> <?= $rivalAllianceName ?></span> <strong style="color: var(--mobile-accent-red);">Rival</strong></li>

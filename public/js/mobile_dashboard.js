@@ -122,6 +122,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- Feature 5: Armory Page ---
+    const armoryTabContainer = document.getElementById('armory-tabs');
+    if (armoryTabContainer) {
+        const tabContent = document.getElementById('tab-content');
+        if (tabContent) {
+            armoryTabContainer.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const targetLink = e.target.closest('.tab-link');
+                if (targetLink && !targetLink.classList.contains('active')) {
+                    const unitKey = targetLink.dataset.unit;
+                    if (!unitKey) return;
+
+                    // Update UI immediately
+                    document.querySelectorAll('#armory-tabs .tab-link').forEach(link => link.classList.remove('active'));
+                    targetLink.classList.add('active');
+                    
+                    tabContent.style.opacity = 0.5;
+                    
+                    try {
+                        const response = await fetch(`/armory/mobile-tab/${unitKey}`);
+                        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                        const data = await response.json();
+                        
+                        if (!data.html) throw new Error('Invalid response from server.');
+                        
+                        tabContent.style.opacity = 0;
+                        setTimeout(() => {
+                            tabContent.innerHTML = data.html;
+                            tabContent.style.opacity = 1;
+                            
+                            // Re-init Armory logic for new DOM elements
+                            if (window.Armory) {
+                                window.Armory.init();
+                            }
+                        }, 150);
+                    } catch (error) {
+                        tabContent.innerHTML = `<div class="error-message">${error.message}</div>`;
+                        tabContent.style.opacity = 1;
+                    }
+                }
+            });
+        }
+    }
+
     // --- UNIVERSAL DELEGATED EVENT LISTENER FOR NESTED TABS ---
     document.body.addEventListener('click', function(e) {
         const nestedTabLink = e.target.closest('.nested-tabs .tab-link');

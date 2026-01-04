@@ -6,6 +6,10 @@ class CreateUserActiveEffects extends AbstractMigration
 {
     public function change()
     {
+        if ($this->hasTable('user_active_effects')) {
+            return;
+        }
+
         $table = $this->table('user_active_effects');
         $table->addColumn('user_id', 'integer', ['signed' => false])
               ->addColumn('effect_type', 'string', ['limit' => 50])
