@@ -1493,6 +1493,7 @@ details[open] .tier-summary::after {
         background-color: var(--mobile-bg);
         font-family: var(--mobile-font);
         color: var(--mobile-text-primary);
+        font-weight: 700; /* Make all text bold for readability */
     }
 
     a { color: var(--mobile-text-secondary); }
@@ -1517,7 +1518,7 @@ details[open] .tier-summary::after {
         align-items: center;
         padding: 0 1rem;
         height: 60px;
-        background: rgba(0, 0, 0, 0.7); /* Slightly transparent for depth */
+        background: rgba(0, 0, 0, 0.75); /* Increased opacity */
         backdrop-filter: blur(10px);
         border-bottom: 1px solid var(--mobile-border);
         position: fixed;
@@ -1543,7 +1544,7 @@ details[open] .tier-summary::after {
         border-left: 5px solid var(--mobile-text-primary); /* Neon border */
     }
     .mobile-nav.active { transform: translateX(0); }
-    .mobile-nav-header { display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; height: 60px; border-bottom: 1px solid var(--mobile-border); background: rgba(0,0,0,0.4); }
+    .mobile-nav-header { display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; height: 60px; border-bottom: 1px solid var(--mobile-border); background: rgba(0,0,0,0.45); }
     .mobile-nav .logo { font-size: 1.2rem; color: var(--mobile-text-primary); text-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
     .mobile-nav .close-btn { font-size: 2.5rem; font-weight: 300; cursor: pointer; color: var(--mobile-text-secondary); transition: color 0.2s ease; }
     .mobile-nav .close-btn:hover { color: var(--mobile-text-primary); }
@@ -1593,7 +1594,7 @@ details[open] .tier-summary::after {
 
     /* --- PLAYER HUB --- */
     .mobile-content { padding: 1rem; }
-    .player-hub { text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: rgba(0, 0, 0, 0.3); border-radius: 12px; border: 1px solid var(--mobile-border); box-shadow: 0 0 20px rgba(0, 229, 255, 0.1); }
+    .player-hub { text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: rgba(0, 0, 0, 0.35); border-radius: 12px; border: 1px solid var(--mobile-border); box-shadow: 0 0 20px rgba(0, 229, 255, 0.1); }
     .player-avatar.large { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mobile-text-primary); background-color: #000; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 0 25px rgba(0, 229, 255, 0.4); }
     .player-avatar.large:hover { transform: scale(1.05); box-shadow: 0 0 35px rgba(0, 229, 255, 0.6); }
     .player-name { margin: 1rem 0 0.25rem 0; font-size: 1.75em; font-weight: 700; font-family: "Orbitron", sans-serif; color: var(--mobile-text-primary); text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
@@ -1616,7 +1617,7 @@ details[open] .tier-summary::after {
 
     /* --- MOBILE CARDS (General Style) --- */
     .mobile-card {
-        background: rgba(0, 0, 0, 0.4); /* Darker, more transparent */
+        background: rgba(0, 0, 0, 0.45); /* Darker, more transparent */
         border: 1px solid var(--mobile-border);
         border-radius: 12px;
         margin-bottom: 1rem;
