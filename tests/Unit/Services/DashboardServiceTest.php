@@ -65,7 +65,12 @@ class DashboardServiceTest extends TestCase
 
         // Verify Calculations are called with correct Alliance ID
         $this->mockPowerCalc->shouldReceive('calculateIncomePerTurn')
-            ->once()->with($userId, $res, $stats, $struct, $allianceId)->andReturn([]);
+            ->once()->with($userId, $res, $stats, $struct, $allianceId)->andReturn([
+                'naquadah_income' => 0,
+                'total_credit_income' => 0,
+                'interest' => 0,
+                'total_citizens' => 0
+            ]);
         
         $this->mockPowerCalc->shouldReceive('calculateOffensePower')->once()->andReturn([]);
         $this->mockPowerCalc->shouldReceive('calculateDefensePower')->once()->andReturn([]);

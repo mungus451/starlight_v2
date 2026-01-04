@@ -75,6 +75,9 @@ echo "OK (Processed {$counts['users']} users)\n";
 $resAfter = $resRepo->findByUserId($uid);
 $statsAfter = $statsRepo->findByUserId($uid);
 
+// Dynamically calculate expectations based on Config
+$turnConfig = $config->get('game_balance.turn_processor');
+
 // Check Attack Turns (Should be +1)
 echo "Checking Attack Turns... ";
 if ($statsAfter->attack_turns !== 11) {
@@ -82,19 +85,18 @@ throw new Exception("Turn Fail: Expected 11 turns, got {$statsAfter->attack_turn
 }
 echo "OK\n";
 
-// Check Citizens (Base 1 * Lvl 10 = +10)
-// Default 250 + 10 = 260
+// Check Citizens (Base 10 * Lvl 10 = +100)
+// Default 250 + 100 = 350
 echo "Checking Citizen Growth... ";
-if ($resAfter->untrained_citizens !== 260) {
-throw new Exception("Turn Fail: Expected 260 citizens, got {$resAfter->untrained_citizens}");
+$expectedCitizens = 250 + ($turnConfig['citizen_growth_per_pop_level'] * 10);
+if ($resAfter->untrained_citizens !== $expectedCitizens) {
+throw new Exception("Turn Fail: Expected {$expectedCitizens} citizens, got {$resAfter->untrained_citizens}");
 }
 echo "OK\n";
 
 // Check Income & Interest
 echo "Checking Income/Interest... ";
 
-// Dynamically calculate expectations based on Config
-$turnConfig = $config->get('game_balance.turn_processor');
 $econIncome = $turnConfig['credit_income_per_econ_level'] * 10; // 1000 * 10 = 10,000
 $interestRate = $turnConfig['bank_interest_rate']; // 0.00005
 

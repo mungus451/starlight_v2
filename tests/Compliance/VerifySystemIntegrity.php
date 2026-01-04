@@ -50,7 +50,7 @@ class IntegrityTester
             'views'
         ];
         foreach ($requiredDirs as $dir) {
-            $this->checkFile("Directory: {$dir}", __DIR__ . '/../' . $dir);
+            $this->checkFile("Directory: {$dir}", __DIR__ . '/../../' . $dir);
         }
 
         // 3. Critical Class Existence (Refactor Artifacts)
