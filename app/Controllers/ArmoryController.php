@@ -298,19 +298,16 @@ $this->redirect('/armory');
         
         foreach ($categories as $catKey => $catData) {
             foreach ($catData['items'] as $itemKey => $itemDef) {
-                // Only include if user owns at least one, OR if it's the currently equipped item
                 $ownedCount = $inventory[$itemKey] ?? 0;
                 $isEquipped = ($viewModel['loadouts'][$unitKey][$catKey] ?? '') === $itemKey;
                 
-                if ($ownedCount > 0 || $isEquipped) {
-                    $eligibleItems[$catKey][] = [
-                        'key' => $itemKey,
-                        'name' => $itemDef['name'],
-                        'stats' => $itemDef, // Contains raw stats
-                        'owned' => $ownedCount,
-                        'is_equipped' => $isEquipped
-                    ];
-                }
+                $eligibleItems[$catKey][] = [
+                    'key' => $itemKey,
+                    'name' => $itemDef['name'],
+                    'stats' => $itemDef, // Contains raw stats
+                    'owned' => $ownedCount,
+                    'is_equipped' => $isEquipped
+                ];
             }
         }
 

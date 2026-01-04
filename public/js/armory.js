@@ -216,15 +216,15 @@ window.Armory = {
 
         forms.forEach(form => {
             // Support both select-based (desktop) and button-based (mobile) equip
-            const select = form.querySelector('.equip-select');
+            const selects = form.querySelectorAll('.equip-select');
             
-            if (select) {
+            selects.forEach(select => {
                 select.onchange = async () => {
                     const categoryKey = select.dataset.categoryKey;
                     const itemKey = select.value;
                     await this.submitEquip(form, categoryKey, itemKey);
                 };
-            }
+            });
 
             form.onsubmit = async (e) => {
                 e.preventDefault();

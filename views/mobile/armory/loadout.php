@@ -65,6 +65,7 @@
                     <!-- Item Options -->
                     <?php foreach ($availableOptions as $opt): 
                         if ($opt['is_equipped']) continue; // Skip currently equipped
+                        $isOwned = $opt['owned'] > 0;
                     ?>
                         <form action="/armory/equip" method="POST" class="equip-option">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
@@ -72,10 +73,12 @@
                             <input type="hidden" name="category_key" value="<?= htmlspecialchars($catKey) ?>">
                             <input type="hidden" name="item_key" value="<?= htmlspecialchars($opt['key']) ?>">
                             
-                            <button type="submit" class="btn-option">
+                            <button type="submit" class="btn-option" <?= !$isOwned ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' ?>>
                                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                     <span><?= htmlspecialchars($opt['name']) ?></span>
-                                    <span style="font-size: 0.8rem; color: #888;">Owned: <?= number_format($opt['owned']) ?></span>
+                                    <span style="font-size: 0.8rem; color: <?= $isOwned ? '#888' : '#ff4444' ?>;">
+                                        <?= $isOwned ? 'Owned: ' . number_format($opt['owned']) : 'Not Owned' ?>
+                                    </span>
                                 </div>
                                 <!-- Stats Mini-Badge -->
                                 <div style="font-size: 0.75rem; color: var(--mobile-text-secondary); margin-top: 4px;">
