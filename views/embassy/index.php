@@ -87,7 +87,7 @@ foreach ($types as $type) {
 
                     <div class="card-footer-actions">
                         <form action="/embassy/revoke" method="POST">
-                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                             <input type="hidden" name="edict_key" value="<?= $edict->key ?>">
                             <button type="submit" class="btn-submit btn-reject" style="width: 100%;">Revoke Order</button>
                         </form>
@@ -145,7 +145,7 @@ foreach ($types as $type) {
 
                     <div class="card-footer-actions">
                         <form action="/embassy/activate" method="POST">
-                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                             <input type="hidden" name="edict_key" value="<?= $edict->key ?>">
 
                             <?php if ($embassy_level < 1): ?>
