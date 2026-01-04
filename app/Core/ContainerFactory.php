@@ -264,7 +264,8 @@ $c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
 NotificationService::class => function (ContainerInterface $c) {
 return new NotificationService(
     $c->get(NotificationRepository::class),
-    $c->get(UserNotificationPreferencesRepository::class)
+    $c->get(UserNotificationPreferencesRepository::class),
+    $c->get(UserRepository::class)
 );
 },
 

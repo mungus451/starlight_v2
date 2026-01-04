@@ -81,6 +81,31 @@ class AllianceForumPostRepository
     }
 
     /**
+     * Gets the unique user IDs who have posted in a topic.
+     * Used for notifying only participants of new posts.
+     *
+     * @param int $topicId
+     * @return array Array of user IDs
+     */
+    public function getTopicParticipantIds(int $topicId): array
+    {
+        $sql = "
+            SELECT DISTINCT user_id 
+            FROM alliance_forum_posts 
+            WHERE topic_id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$topicId]);
+        
+        $userIds = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $userIds[] = (int)$row['user_id'];
+        }
+        return $userIds;
+    }
+
+    /**
      * Helper method to convert a database row into an AllianceForumPost entity.
      *
      * @param array $data

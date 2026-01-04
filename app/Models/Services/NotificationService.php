@@ -5,6 +5,7 @@ namespace App\Models\Services;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\NotificationRepository;
 use App\Models\Repositories\UserNotificationPreferencesRepository;
+use App\Models\Repositories\UserRepository;
 
 /**
  * Handles the creation and retrieval of user notifications.
@@ -16,19 +17,23 @@ class NotificationService
 {
     private NotificationRepository $notificationRepo;
     private UserNotificationPreferencesRepository $preferencesRepo;
+    private UserRepository $userRepo;
 
     /**
      * DI Constructor.
      *
      * @param NotificationRepository $notificationRepo
      * @param UserNotificationPreferencesRepository $preferencesRepo
+     * @param UserRepository $userRepo
      */
     public function __construct(
         NotificationRepository $notificationRepo,
-        UserNotificationPreferencesRepository $preferencesRepo
+        UserNotificationPreferencesRepository $preferencesRepo,
+        UserRepository $userRepo
     ) {
         $this->notificationRepo = $notificationRepo;
         $this->preferencesRepo = $preferencesRepo;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -214,6 +219,63 @@ class NotificationService
             return ServiceResponse::success('Notification preferences updated successfully.');
         } else {
             return ServiceResponse::error('Failed to update notification preferences.');
+        }
+    }
+
+    /**
+     * Sends a notification to all members of an alliance except the specified user.
+     * Useful for alliance-wide announcements (forum posts, structure purchases, etc).
+     * 
+     * @param int $allianceId
+     * @param int $excludeUserId The user who performed the action (won't receive notification)
+     * @param string $title
+     * @param string $message
+     * @param string|null $link
+     * @return void
+     */
+    public function notifyAllianceMembers(int $allianceId, int $excludeUserId, string $title, string $message, ?string $link = null): void
+    {
+        $members = $this->userRepo->findAllByAllianceId($allianceId);
+        
+        foreach ($members as $memberData) {
+            $memberId = (int)$memberData['id'];
+            // Don't notify the user who performed the action
+            if ($memberId !== $excludeUserId) {
+                $this->sendNotification(
+                    $memberId,
+                    'alliance',
+                    $title,
+                    $message,
+                    $link
+                );
+            }
+        }
+    }
+
+    /**
+     * Sends a notification to specific users in an alliance.
+     * Useful for notifying only users who have participated in a forum topic.
+     * 
+     * @param array $userIds Array of user IDs to notify
+     * @param int $excludeUserId The user who performed the action (won't receive notification)
+     * @param string $title
+     * @param string $message
+     * @param string|null $link
+     * @return void
+     */
+    public function notifySpecificUsers(array $userIds, int $excludeUserId, string $title, string $message, ?string $link = null): void
+    {
+        foreach ($userIds as $userId) {
+            // Don't notify the user who performed the action
+            if ($userId !== $excludeUserId) {
+                $this->sendNotification(
+                    $userId,
+                    'alliance',
+                    $title,
+                    $message,
+                    $link
+                );
+            }
         }
     }
 }

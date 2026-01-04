@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\Unit\TestCase;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
@@ -41,6 +42,7 @@ class AllianceManagementServiceTest extends TestCase
     private $mockBankLogRepo;
     private $mockLoanRepo;
     private Logger|Mockery\MockInterface $mockLogger;
+    private $mockNotificationService;
 
     protected function setUp(): void
     {
@@ -57,12 +59,16 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockLoanRepo = Mockery::mock(AllianceLoanRepository::class);
         $this->mockLogger = Mockery::mock(Logger::class);
+        $this->mockNotificationService = Mockery::mock(NotificationService::class);
 
         // Handle DB transactions in service
         $this->mockPdo->shouldReceive('beginTransaction')->byDefault();
         $this->mockPdo->shouldReceive('commit')->byDefault();
         $this->mockPdo->shouldReceive('rollBack')->byDefault();
         $this->mockPdo->shouldReceive('inTransaction')->andReturn(true)->byDefault();
+
+        // Allow notification service calls by default
+        $this->mockNotificationService->shouldReceive('notifyAllianceMembers')->byDefault();
 
         $this->service = new AllianceManagementService(
             $this->mockPdo,
@@ -75,7 +81,8 @@ class AllianceManagementServiceTest extends TestCase
             $this->mockResourceRepo,
             $this->mockBankLogRepo,
             $this->mockLoanRepo,
-            $this->mockLogger
+            $this->mockLogger,
+            $this->mockNotificationService
         );
     }
 

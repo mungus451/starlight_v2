@@ -8,6 +8,7 @@ use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\TreatyRepository;
 use App\Models\Repositories\RivalryRepository;
+use App\Models\Services\NotificationService;
 use PDO;
 
 /**
@@ -24,6 +25,7 @@ class DiplomacyService
     private AllianceRoleRepository $roleRepo;
     private TreatyRepository $treatyRepo;
     private RivalryRepository $rivalryRepo;
+    private NotificationService $notificationService;
 
     public function __construct(
         PDO $db,
@@ -31,7 +33,8 @@ class DiplomacyService
         AllianceRepository $allianceRepo,
         AllianceRoleRepository $roleRepo,
         TreatyRepository $treatyRepo,
-        RivalryRepository $rivalryRepo
+        RivalryRepository $rivalryRepo,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
@@ -39,6 +42,7 @@ class DiplomacyService
         $this->roleRepo = $roleRepo;
         $this->treatyRepo = $treatyRepo;
         $this->rivalryRepo = $rivalryRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -124,6 +128,19 @@ class DiplomacyService
         }
         
         $this->treatyRepo->createTreaty($proposerAllianceId, $targetAllianceId, $treatyType, $terms);
+        
+        // Notify the target alliance about the treaty proposal
+        $proposerAlliance = $this->allianceRepo->findById($proposerAllianceId);
+        if ($proposerAlliance) {
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                0, // No user to exclude since this is from another alliance
+                'Treaty Proposal',
+                "Alliance [{$proposerAlliance->tag}] {$proposerAlliance->name} proposed a {$treatyType} treaty",
+                "/alliance/diplomacy"
+            );
+        }
+        
         return ServiceResponse::success('Treaty proposed successfully.');
     }
 
@@ -152,6 +169,29 @@ class DiplomacyService
         }
 
         $this->treatyRepo->updateTreatyStatus($treatyId, 'active');
+        
+        // Notify both alliances about the treaty acceptance
+        $alliance1 = $this->allianceRepo->findById($treaty->alliance1_id);
+        $alliance2 = $this->allianceRepo->findById($treaty->alliance2_id);
+        
+        if ($alliance1 && $alliance2) {
+            $this->notificationService->notifyAllianceMembers(
+                $treaty->alliance1_id,
+                0,
+                'Treaty Accepted',
+                "Alliance [{$alliance2->tag}] {$alliance2->name} accepted the {$treaty->type} treaty",
+                "/alliance/diplomacy"
+            );
+            
+            $this->notificationService->notifyAllianceMembers(
+                $treaty->alliance2_id,
+                $adminUserId,
+                'Treaty Accepted',
+                "Your alliance accepted the {$treaty->type} treaty with [{$alliance1->tag}] {$alliance1->name}",
+                "/alliance/diplomacy"
+            );
+        }
+        
         return ServiceResponse::success('Treaty accepted and is now active.');
     }
 
@@ -177,9 +217,48 @@ class DiplomacyService
 
         if ($action === 'decline' && $treaty->status === 'proposed') {
             $this->treatyRepo->updateTreatyStatus($treatyId, 'declined');
+            
+            // Notify the proposing alliance about the rejection
+            $decliningAlliance = $this->allianceRepo->findById($adminUser->alliance_id);
+            $otherAllianceId = ($treaty->alliance1_id === $adminUser->alliance_id) ? $treaty->alliance2_id : $treaty->alliance1_id;
+            
+            if ($decliningAlliance) {
+                $this->notificationService->notifyAllianceMembers(
+                    $otherAllianceId,
+                    0,
+                    'Treaty Rejected',
+                    "Alliance [{$decliningAlliance->tag}] {$decliningAlliance->name} rejected the treaty proposal",
+                    "/alliance/diplomacy"
+                );
+            }
+            
             return ServiceResponse::success('Treaty proposal declined.');
         } elseif ($action === 'break' && $treaty->status === 'active') {
             $this->treatyRepo->updateTreatyStatus($treatyId, 'broken');
+            
+            // Notify both alliances about the treaty cancellation
+            $breakingAlliance = $this->allianceRepo->findById($adminUser->alliance_id);
+            $otherAllianceId = ($treaty->alliance1_id === $adminUser->alliance_id) ? $treaty->alliance2_id : $treaty->alliance1_id;
+            $otherAlliance = $this->allianceRepo->findById($otherAllianceId);
+            
+            if ($breakingAlliance && $otherAlliance) {
+                $this->notificationService->notifyAllianceMembers(
+                    $otherAllianceId,
+                    0,
+                    'Treaty Cancelled',
+                    "Alliance [{$breakingAlliance->tag}] {$breakingAlliance->name} cancelled the treaty",
+                    "/alliance/diplomacy"
+                );
+                
+                $this->notificationService->notifyAllianceMembers(
+                    $adminUser->alliance_id,
+                    $adminUserId,
+                    'Treaty Cancelled',
+                    "Your alliance cancelled the treaty with [{$otherAlliance->tag}] {$otherAlliance->name}",
+                    "/alliance/diplomacy"
+                );
+            }
+            
             return ServiceResponse::success('Treaty has been broken.');
         }
         
@@ -205,6 +284,29 @@ class DiplomacyService
         }
 
         $this->rivalryRepo->createOrUpdateRivalry($user->alliance_id, $targetAllianceId);
+        
+        // Notify both alliances about the rivalry declaration
+        $declaringAlliance = $this->allianceRepo->findById($user->alliance_id);
+        $targetAlliance = $this->allianceRepo->findById($targetAllianceId);
+        
+        if ($declaringAlliance && $targetAlliance) {
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                0,
+                'Rivalry Declared',
+                "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared a rivalry against you",
+                "/alliance/diplomacy"
+            );
+            
+            $this->notificationService->notifyAllianceMembers(
+                $user->alliance_id,
+                $userId,
+                'Rivalry Declared',
+                "Your alliance declared a rivalry against [{$targetAlliance->tag}] {$targetAlliance->name}",
+                "/alliance/diplomacy"
+            );
+        }
+        
         return ServiceResponse::success('Rivalry has been declared/updated.');
     }
 

@@ -10,6 +10,7 @@ use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -30,6 +31,7 @@ private UserRepository $userRepo;
 private AllianceRoleRepository $roleRepo;
 
 private AlliancePolicyService $policyService;
+private NotificationService $notificationService;
 
 public function __construct(
 PDO $db,
@@ -39,7 +41,8 @@ AllianceStructureRepository $allianceStructRepo,
 AllianceStructureDefinitionRepository $structDefRepo,
 UserRepository $userRepo,
 AllianceRoleRepository $roleRepo,
-AlliancePolicyService $policyService
+AlliancePolicyService $policyService,
+NotificationService $notificationService
 ) {
 $this->db = $db;
 
@@ -51,6 +54,7 @@ $this->userRepo = $userRepo;
 $this->roleRepo = $roleRepo;
 
 $this->policyService = $policyService;
+$this->notificationService = $notificationService;
 }
 
 /**
@@ -160,6 +164,15 @@ $this->allianceStructRepo->createOrUpgrade($allianceId, $structureKey, $nextLeve
 if ($transactionStartedByMe) {
 $this->db->commit();
 }
+
+// 5e. Notify alliance members after successful commit
+$this->notificationService->notifyAllianceMembers(
+    $allianceId,
+    $adminUserId,
+    'Alliance Structure Upgrade',
+    "{$adminUser->characterName} upgraded {$definition->name} to Level {$nextLevel}",
+    "/alliance/structures"
+);
 
 return ServiceResponse::success("{$definition->name} upgrade to Level {$nextLevel} complete!");
 
