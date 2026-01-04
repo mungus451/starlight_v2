@@ -289,7 +289,7 @@ return [
 
     // --- Generals ---
     'generals' => [
-        'base_capacity' => 5000000,
-        'capacity_per_general' => 10000
+        'base_capacity' => 50000000,
+        'capacity_per_general' => 250000
     ]
 ];
