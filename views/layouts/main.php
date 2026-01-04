@@ -23,7 +23,7 @@
 
     <!-- ======================= MOBILE NAVIGATION ======================= -->
     <header class="mobile-header">
-        <div class="logo">Starlight</div>
+        <a href="/dashboard" class="logo" style="text-decoration: none;">Starlight</a>
         <div class="hamburger-menu">
             <i class="fas fa-bars"></i>
         </div>
