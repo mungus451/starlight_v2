@@ -14,7 +14,7 @@
     <div class="player-hub" style="margin-bottom: 1rem; padding: 1rem;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <a href="/armory" style="color: var(--mobile-text-secondary); font-size: 1.2rem;"><i class="fas fa-arrow-left"></i></a>
-            <h1 style="font-family: 'Orbitron', sans-serif; font-size: 1.5rem; margin: 0;"><?= htmlspecialchars($unitName) ?> T<?= $tier ?></h1>
+            <h1 style="font-family: 'Orbitron', sans-serif; font-size: 1.5rem; margin: 0;"><?= htmlspecialchars($unitName) ?> T <?= $tier ?></h1>
             <div style="width: 20px;"></div>
         </div>
     </div>
