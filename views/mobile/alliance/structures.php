@@ -37,6 +37,10 @@
         <div class="mobile-card-content" style="display: block;">
             <p class="structure-description"><?= htmlspecialchars($def->description) ?></p>
 
+            <div class="structure-benefit">
+                <strong>Bonus:</strong> <?= htmlspecialchars($def->bonus_text) ?>
+            </div>
+
             <div class="next-level-info">
                 <ul class="structure-costs">
                     <li><i class="fas fa-coins"></i> <?= number_format($cost) ?> Credits</li>
