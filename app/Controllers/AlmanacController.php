@@ -105,4 +105,28 @@ class AlmanacController extends BaseController
 
         $this->jsonResponse($data);
     }
+
+    /**
+     * AJAX: Get Mobile Tab Content for Almanac.
+     */
+    public function getMobileTabData(): void
+    {
+        $tab = $_GET['tab'] ?? 'players';
+        $partial = '_alliances.php'; // Default to alliances, players is loaded initially
+
+        if ($tab === 'alliances') {
+            $data = ['alliances' => $this->almanacService->getAllAlliancesList()];
+            $partial = '_alliances.php';
+        } else {
+            $data = ['players' => $this->almanacService->getAllPlayersList()];
+            $partial = '_players.php';
+        }
+
+        ob_start();
+        extract($data);
+        require __DIR__ . '/../../views/mobile/almanac/partials/' . $partial;
+        $html = ob_get_clean();
+
+        $this->jsonResponse(['html' => $html]);
+    }
 }

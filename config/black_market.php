@@ -12,10 +12,10 @@ return [
 'citizen_package' => 500000000.0, // Crystals
 'void_container' => 100000.0, // Crystals
 'shadow_contract' => 5000000.0, // Crystals
-'radar_jamming' => 50000000.0, // Crystals
-'safehouse' => 100000000.0, // Crystals
-],
-
+        'radar_jamming' => 50000000.0, // Crystals
+        'safehouse' => 100000000.0, // Crystals
+        'high_risk_buff' => 50000000.0, // Crystals
+    ],
 'rates' => [
 'laundering' => 1.15, // 1.15 Credits per 1 Chip
 ],

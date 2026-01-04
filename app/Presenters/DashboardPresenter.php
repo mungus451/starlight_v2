@@ -24,16 +24,38 @@ class DashboardPresenter
         }
 
         // 2. Format Resources (Optional but cleaner)
-        // We can pass through the rest or format specific complex structures here.
-        // For now, we focus on the remediation of the specific violations (Effects Logic).
-
+        $data['formatted_naquadah_crystals'] = $this->abbreviateNumber($data['naquadah_crystals'] ?? 0);
+        $data['formatted_naquadah_per_turn'] = $this->abbreviateNumber($data['naquadah_per_turn'] ?? 0);        
         return $data;
-    }
-
-    /**
-     * Enriches the effects array with UI properties and formatted time strings.
-     */
-    private function presentEffects(array $effects): array
+        }
+        
+        /**
+        * Formats a number into a shorter, more readable representation
+        * (e.g., 1000 -> 1K, 1500000 -> 1.5M).
+        *
+        * @param int|float $number The number to format
+        * @return string The abbreviated number
+        */
+        private function abbreviateNumber($number): string
+        {
+        if ($number < 1000) {
+        return (string) number_format($number, 0);
+        }
+        
+        $suffixes = ['', 'K', 'M', 'B', 'T'];
+        $suffixIndex = 0;
+        
+        while ($number >= 1000 && $suffixIndex < count($suffixes) - 1) {
+        $number /= 1000;
+        $suffixIndex++;
+        }
+        
+        return sprintf('%.1f', $number) . $suffixes[$suffixIndex];
+        }
+        
+        /**
+        * Enriches the effects array with UI properties and formatted time strings.
+        */    private function presentEffects(array $effects): array
     {
         $now = new DateTime();
         $enriched = [];

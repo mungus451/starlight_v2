@@ -51,14 +51,15 @@ $this->logRepo = $logRepo;
 $this->effectService = $effectService;
 }
 
-public function getUndermarketPageData(int $userId): array
-{
-return [
-'bounties' => $this->bountyRepo->getActiveBounties(10),
-'targets' => $this->userRepo->findAllNonNpcs()
-];
-}
-
+    public function getUndermarketPageData(int $userId): array
+    {
+        return [
+            'bounties' => $this->bountyRepo->getActiveBounties(10),
+            'targets' => $this->userRepo->findAllNonNpcs(),
+            'isHighRiskActive' => $this->effectService->hasActiveEffect($userId, 'high_risk_protocol'),
+            'isSafehouseCooldown' => $this->effectService->hasActiveEffect($userId, 'safehouse_cooldown')
+        ];
+    }
 public function purchaseStatRespec(int $userId): ServiceResponse
 {
 $cost = $this->config->get('black_market.costs.stat_respec', 50);
@@ -181,18 +182,74 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
 });
 }
 
-public function purchaseSafehouse(int $userId): ServiceResponse
-{
-$cost = $this->config->get('black_market.costs.safehouse', 100000);
-return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
-$this->effectService->applyEffect($userId, 'peace_shield', 360);
-$this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'safehouse');
-return "You have vanished from the grid. You are safe for 6 hours.";
-});
-}
+    public function purchaseSafehouse(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.safehouse', 100000);
+        
+        // Prevent if High Risk Protocol is active
+        if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
+            return ServiceResponse::error("Cannot activate Safehouse while High Risk Protocol is active.");
+        }
 
-public function launderCredits(int $userId, int $amount): ServiceResponse
-{
+        // Prevent if Cooldown is active
+        if ($this->effectService->hasActiveEffect($userId, 'safehouse_cooldown')) {
+            $cooldown = $this->effectService->getEffectDetails($userId, 'safehouse_cooldown');
+            $expiresAt = new \DateTime($cooldown['expires_at']);
+            $diff = $expiresAt->diff(new \DateTime());
+            return ServiceResponse::error("Safehouse systems are rebooting. Cooldown active for " . $diff->i . "m.");
+        }
+
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
+            $this->effectService->applyEffect($userId, 'peace_shield', 360);
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'safehouse');
+            return "You have vanished from the grid. You are safe for 6 hours.";
+        });
+    }
+
+    public function purchaseHighRiskBuff(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.high_risk_buff', 50000000);
+
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
+            // Remove Safehouse if active
+            if ($this->effectService->hasActiveEffect($userId, 'peace_shield')) {
+                $this->effectService->breakEffect($userId, 'peace_shield');
+            }
+
+            // Duration: 24h
+            $this->effectService->applyEffect($userId, 'high_risk_protocol', 1440);
+            
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'high_risk_buff');
+            return "High Risk Protocol initiated. Income boosted, casualty protocols optimized. Safehouse disabled.";
+        });
+    }
+
+    public function terminateHighRiskProtocol(int $userId): ServiceResponse
+    {
+        if (!$this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
+            return ServiceResponse::error("High Risk Protocol is not active.");
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // 1. Remove the Buff
+            $this->effectService->breakEffect($userId, 'high_risk_protocol');
+            
+            // 2. Apply Safehouse Cooldown (1 Hour = 60 Minutes)
+            $this->effectService->applyEffect($userId, 'safehouse_cooldown', 60);
+
+            // 3. Log it (No cost, just an action)
+            $this->logRepo->log($userId, 'terminate', 'none', 0, 'high_risk_protocol');
+
+            $this->db->commit();
+            return ServiceResponse::success("Protocol terminated. Safehouse systems require 1 hour to reboot.");
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            return ServiceResponse::error("System Failure: " . $e->getMessage());
+        }
+    }
+
+    public function launderCredits(int $userId, int $amount): ServiceResponse{
 if ($amount <= 0) return ServiceResponse::error("Invalid amount.");
 $rate = $this->config->get('black_market.rates.laundering', 1.15);
 $chipAmount = (int)floor($amount / $rate);

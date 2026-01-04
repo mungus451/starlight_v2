@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\Unit\TestCase;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\ArmoryService;
+use App\Models\Services\EffectService; // Import EffectService
 use App\Core\Config;
 use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
@@ -26,6 +27,7 @@ class PowerCalculatorServiceTest extends TestCase
     private AllianceStructureDefinitionRepository|Mockery\MockInterface $mockStructDefRepo;
     private EdictRepository|Mockery\MockInterface $mockEdictRepo;
     private GeneralRepository|Mockery\MockInterface $mockGeneralRepo;
+    private EffectService|Mockery\MockInterface $mockEffectService; // Add Mock
 
     protected function setUp(): void
     {
@@ -37,6 +39,7 @@ class PowerCalculatorServiceTest extends TestCase
         $this->mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
         $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
         $this->mockGeneralRepo = Mockery::mock(GeneralRepository::class);
+        $this->mockEffectService = Mockery::mock(EffectService::class); // Instantiate Mock
 
         // Default: No active edicts
         $this->mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
@@ -53,13 +56,17 @@ class PowerCalculatorServiceTest extends TestCase
         // Default: Elite Weapons
         $this->mockConfig->shouldReceive('get')->with('elite_weapons', [])->andReturn([])->byDefault();
 
+        // Default: No active effects
+        $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
+
         $this->service = new PowerCalculatorService(
             $this->mockConfig,
             $this->mockArmoryService,
             $this->mockAllianceStructRepo,
             $this->mockStructDefRepo,
             $this->mockEdictRepo,
-            $this->mockGeneralRepo
+            $this->mockGeneralRepo,
+            $this->mockEffectService // Inject Mock
         );
     }
 

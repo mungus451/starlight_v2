@@ -91,65 +91,72 @@
                         </li>
                         <li>
                             <span>Dark Matter / Turn</span>
-                            <span class="value-green value-total">+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
-                        </li>
-                    </ul>
-                    
-                    <div class="card-breakdown" id="breakdown-income">
-                        <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
-                        <ul>
-                            <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
-                                <li>
-                                    <span><?= htmlspecialchars($item['label']) ?></span>
-                                    <?php if (is_numeric($item['value'])): ?>
-                                        <span>+ <?= number_format($item['value']) ?></span>
-                                    <?php else: ?>
-                                        <span><?= htmlspecialchars($item['value']) ?></span>
-                                    <?php endif; ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <br>
-                        <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
-                        <ul>
+                                <span class="value-green value-total">+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
+                            </li>
+                            <!-- NEW: Naquadah Crystals -->
                             <li>
-                                <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
-                                <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
+                                <span>Naquadah Crystals</span>
+                                <span><?= $formatted_naquadah_crystals ?></span>
                             </li>
-                        </ul>
-                        <br>
-                        <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
-                        <ul>
-                             <li>
-                                <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
-                                <span>+ <?= number_format($incomeBreakdown['base_citizen_income']) ?></span>
-                            </li>
-                            <!-- Alliance Citizen Bonus -->
-                            <?php if ($incomeBreakdown['alliance_citizen_bonus'] > 0): ?>
                             <li>
-                                <span style="color: var(--accent-2);">Alliance Structures</span>
-                                <span style="color: var(--accent-2);">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
-                            </li>
-                            <?php endif; ?>
-                        </ul>
-                        <br>
-                        <strong>Research Data Generation: + <?= number_format($incomeBreakdown['research_data_income']) ?></strong>
-                        <ul>
-                            <li>
-                                <span>Quantum Research Lab (Lvl <?= $incomeBreakdown['quantum_research_lab_level'] ?>)</span>
-                                <span>+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
-                            </li>
-                        </ul>
-                        <br>
-                        <strong>Dark Matter Generation: + <?= number_format($incomeBreakdown['dark_matter_income']) ?></strong>
-                        <ul>
-                            <li>
-                                <span>Dark Matter Siphon (Lvl <?= $incomeBreakdown['dark_matter_siphon_level'] ?>)</span>
-                                <span>+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                                <span>Naquadah / Turn</span>
+                                <span class="value-green value-total">+ <?= $formatted_naquadah_per_turn ?></span>
+                            </li>                    </ul>
+                                                
+                                                <div class="card-breakdown" id="breakdown-income">
+                                                    <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
+                                                    <ul>
+                                                        <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
+                                                            <li>
+                                                                <span><?= htmlspecialchars($item['label']) ?></span>
+                                                                <?php if (is_numeric($item['value'])): ?>
+                                                                    <span>+ <?= number_format($item['value']) ?></span>
+                                                                <?php else: ?>
+                                                                    <span><?= htmlspecialchars($item['value']) ?></span>
+                                                                <?php endif; ?>
+                                                            </li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                    <br>
+                                                    <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
+                                                    <ul>
+                                                        <li>
+                                                            <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
+                                                            <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
+                                                        </li>
+                                                    </ul>
+                                                    <br>
+                                                    <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
+                                                    <ul>
+                                                         <li>
+                                                            <span>Citizen Growth (Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
+                                                            <span>+ <?= number_format($incomeBreakdown['base_citizen_income']) ?></span>
+                                                        </li>
+                                                        <!-- Alliance Citizen Bonus -->
+                                                        <?php if ($incomeBreakdown['alliance_citizen_bonus'] > 0): ?>
+                                                        <li>
+                                                            <span style="color: var(--accent-2);">Alliance Structures</span>
+                                                            <span style="color: var(--accent-2);">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
+                                                        </li>
+                                                        <?php endif; ?>
+                                                    </ul>
+                                                    <br>
+                                                    <strong>Research Data Generation: + <?= number_format($incomeBreakdown['research_data_income']) ?></strong>
+                                                    <ul>
+                                                        <li>
+                                                            <span>Quantum Research Lab (Lvl <?= $incomeBreakdown['quantum_research_lab_level'] ?>)</span>
+                                                            <span>+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
+                                                        </li>
+                                                    </ul>
+                                                    <br>
+                                                    <strong>Dark Matter Generation: + <?= number_format($incomeBreakdown['dark_matter_income']) ?></strong>
+                                                    <ul>
+                                                        <li>
+                                                            <span>Dark Matter Siphon (Lvl <?= $incomeBreakdown['dark_matter_siphon_level'] ?>)</span>
+                                                            <span>+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
+                                                        </li>
+                                                    </ul>
+                                                </div>                </div>
                 
                 <div class="data-card grid-col-span-1">
                     <div class="card-header">

@@ -10,11 +10,13 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\GeneralRepository;
+use App\Models\Services\EffectService;
 
 /**
  * Handles all complex game logic calculations for power, income, etc.
  * * Refactored Phase 3: Added Edict Modifiers.
  * * Phase 4: Added General Modifiers.
+ * * Phase 5: Added Effect Modifiers (High Risk Protocol).
  */
 class PowerCalculatorService
 {
@@ -24,6 +26,7 @@ class PowerCalculatorService
     private AllianceStructureDefinitionRepository $structDefRepo;
     private EdictRepository $edictRepo;
     private GeneralRepository $generalRepo;
+    private EffectService $effectService;
     private array $generalConfig;
 
     /** @var array|null Cached structure definitions keyed by structure_key */
@@ -47,7 +50,8 @@ class PowerCalculatorService
         AllianceStructureRepository $allianceStructRepo,
         AllianceStructureDefinitionRepository $structDefRepo,
         EdictRepository $edictRepo,
-        GeneralRepository $generalRepo
+        GeneralRepository $generalRepo,
+        EffectService $effectService
     ) {
         $this->config = $config;
         $this->armoryService = $armoryService;
@@ -55,6 +59,7 @@ class PowerCalculatorService
         $this->structDefRepo = $structDefRepo;
         $this->edictRepo = $edictRepo;
         $this->generalRepo = $generalRepo;
+        $this->effectService = $effectService;
         $this->generalConfig = $this->config->get('game_balance.generals', []);
     }
 
@@ -318,19 +323,17 @@ class PowerCalculatorService
         
         // Apply "Total Income" scalar (e.g. Scorched Earth)
         $finalIncomeScalar = 1.0 + $edictTotalIncomeMultiplier;
+
+        // High Risk Protocol Bonus (+50%)
+        if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
+            $finalIncomeScalar += 0.5;
+            $detailedBreakdown[] = [ 'label' => "High Risk Protocol", 'value' => "+50%", 'type' => 'scalar' ];
+        }
+
         $totalCreditIncome = (int)floor($totalCreditIncome * $finalIncomeScalar);
         
-        $detailedBreakdown = [
-            [ 'label' => "Base from Economy", 'value' => $econIncome, 'type' => 'base' ],
-            [ 'label' => "Base from Workers", 'value' => $workerIncome, 'type' => 'base' ],
-            [ 'label' => "Base from Armory", 'value' => $armoryBonus, 'type' => 'base' ],
-            [ 'label' => "Subtotal (Base)", 'value' => $baseProduction, 'type' => 'subtotal' ],
-            [ 'label' => "Wealth Bonus", 'value' => $amountFromWealth, 'type' => 'bonus' ],
-            [ 'label' => "Accounting Firm", 'value' => $amountFromAccounting, 'type' => 'bonus' ],
-            [ 'label' => "Alliance Structures", 'value' => $amountFromAlliance, 'type' => 'bonus' ],
-            [ 'label' => "Edicts", 'value' => $amountFromEdicts, 'type' => 'bonus' ],
-            [ 'label' => "Total Scalar", 'value' => ($edictTotalIncomeMultiplier * 100) . "%", 'type' => 'scalar' ]
-        ];
+        $detailedBreakdown[] = [ 'label' => "Total Scalar", 'value' => (($finalIncomeScalar - 1) * 100) . "%", 'type' => 'scalar' ];
+
 
         // 6. Interest Income
         $rawInterest = (int)floor($resources->banked_credits * $config['bank_interest_rate']);

@@ -171,6 +171,9 @@ return [
         'spies_lost_percent_max' => 0.3,  // 30%
         'sentries_lost_percent_min' => 0.15, // 15%
         'sentries_lost_percent_max' => 0.35, // 35%
+        'crystal_steal_rate' => 0.05, // 5% of defender's naquadah_crystals
+        'dark_matter_steal_rate' => 0.02, // 2% of defender's dark_matter
+        'protoform_steal_rate' => 0.01, // 1% of defender's protoform
     ],
     // --- Phase 8 ---
     'attack' => [

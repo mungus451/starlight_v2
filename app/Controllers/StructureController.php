@@ -130,4 +130,48 @@ class StructureController extends BaseController
         
         $this->redirect('/structures');
     }
+
+    /**
+     * AJAX endpoint for fetching mobile structure category data.
+     */
+    public function getMobileStructureTabData(array $params): void
+    {
+        $categorySlug = $params['category'] ?? '';
+
+        $userId = $this->session->get('user_id');
+        if (is_null($userId)) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $rawData = $this->structureService->getStructureData($userId);
+        $groupedStructures = $this->presenter->present($rawData);
+
+        $categoryData = null;
+        foreach ($groupedStructures as $categoryName => $data) {
+            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $categoryName)));
+            if ($slug === $categorySlug) {
+                $categoryData = $data;
+                break;
+            }
+        }
+
+        if (is_null($categoryData)) {
+            $this->jsonResponse(['error' => 'Invalid category specified: ' . $categorySlug], 404);
+            return;
+        }
+
+        // Pass necessary data to the partial view
+        $viewData = [
+            'structures' => $categoryData,
+            'csrf_token' => $this->csrfService->generateToken()
+        ];
+        
+        ob_start();
+        extract($viewData);
+        require __DIR__ . '/../../views/mobile/structures/partials/structure_category.php';
+        $html = ob_get_clean();
+
+        $this->jsonResponse(['html' => $html]);
+    }
 }

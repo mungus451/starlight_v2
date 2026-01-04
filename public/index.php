@@ -45,6 +45,7 @@ use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\MobileViewMiddleware;
 
 use App\Core\Exceptions\RedirectException;
 use App\Core\Exceptions\TerminateException;
@@ -253,73 +254,144 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
     $r->addRoute('GET', '/almanac/get_player_dossier', [AlmanacController::class, 'getPlayerDossier']);
     $r->addRoute('GET', '/almanac/get_alliance_dossier', [AlmanacController::class, 'getAllianceDossier']);
+    $r->addRoute('GET', '/almanac/mobile_tab', [AlmanacController::class, 'getMobileTabData']);
 
-    // --- Notification System ---
+    // --- Embassy (Directives) ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
     $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
     $r->addRoute('GET', '/notifications/preferences', [NotificationController::class, 'getPreferences']);
     $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
     $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
+
+    // --- MOBILE AJAX ROUTES ---
+    $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
+    $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
+    $r->addRoute('GET', '/armory/mobile/manage/{unit:[a-zA-Z-]+}/{tier:\d+}', [ArmoryController::class, 'showMobileTierManagement']);
+    $r->addRoute('GET', '/armory/mobile/loadout/{unit:[a-zA-Z-]+}', [ArmoryController::class, 'showMobileLoadout']);
 });
 
 // 7. Dispatch
+
 try {
-    $httpMethod = $_SERVER['REQUEST_METHOD'];
-    $uri = $_SERVER['REQUEST_URI'];
 
-    if (false !== $pos = strpos($uri, '?')) {
-        $uri = substr($uri, 0, $pos);
-    }
-    $uri = rawurldecode($uri);
+    $container->get(MobileViewMiddleware::class)->handle(function() use ($container, $dispatcher) {
 
-    $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+        $httpMethod = $_SERVER['REQUEST_METHOD'];
 
-    switch ($routeInfo[0]) {
-        case FastRoute\Dispatcher::NOT_FOUND:
-            http_response_code(404);
-            echo '404 - Page Not Found';
-            break;
+        $uri = $_SERVER['REQUEST_URI'];
 
-        case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-            http_response_code(405);
-            echo '405 - Method Not Allowed';
-            break;
 
-        case FastRoute\Dispatcher::FOUND:
-            $handler = $routeInfo[1];
-            $vars = $routeInfo[2];
 
-            // --- Auth Middleware Logic ---
-            $protectedPrefixes = [
-                '/dashboard', '/bank', '/training', '/structures', '/armory',
-                '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy', '/generals', '/almanac'
-            ];
-            
-            $isProtected = false;
-            foreach ($protectedPrefixes as $prefix) {
-                if (str_starts_with($uri, $prefix)) {
-                    $isProtected = true;
-                    break;
+        if (false !== $pos = strpos($uri, '?')) {
+
+            $uri = substr($uri, 0, $pos);
+
+        }
+
+        $uri = rawurldecode($uri);
+
+
+
+        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+
+
+        switch ($routeInfo[0]) {
+
+            case FastRoute\Dispatcher::NOT_FOUND:
+
+                http_response_code(404);
+
+                echo '404 - Page Not Found';
+
+                break;
+
+
+
+            case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+
+                http_response_code(405);
+
+                echo '405 - Method Not Allowed';
+
+                break;
+
+
+
+            case FastRoute\Dispatcher::FOUND:
+
+                $handler = $routeInfo[1];
+
+                $vars = $routeInfo[2];
+
+
+
+                // --- Auth Middleware Logic ---
+
+                $protectedPrefixes = [
+
+                    '/dashboard', '/bank', '/training', '/structures', '/armory',
+
+                    '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
+
+                    '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
+
+                    '/leaderboard', '/embassy', '/generals', '/almanac'
+
+                ];
+
+                
+
+                $isProtected = false;
+
+                foreach ($protectedPrefixes as $prefix) {
+
+                    if (str_starts_with($uri, $prefix)) {
+
+                        $isProtected = true;
+
+                        break;
+
+                    }
+
                 }
-            }
 
-            if ($isProtected) {
-                $container->get(AuthMiddleware::class)->handle();
-            }
 
-            // --- Dispatch Controller ---
-            [$class, $method] = $handler;
-            
-            if ($container->has($class)) {
-                $controller = $container->get($class);
-                call_user_func_array([$controller, $method], [$vars]);
-            } else {
-                throw new Exception("Controller class $class not found in DI container.");
-            }
-            break;
-    }
+
+                if ($isProtected) {
+
+                    $container->get(AuthMiddleware::class)->handle();
+
+                }
+
+
+
+                // --- Dispatch Controller ---
+
+                [$class, $method] = $handler;
+
+                
+
+                if ($container->has($class)) {
+
+                    $controller = $container->get($class);
+
+                    call_user_func_array([$controller, $method], [$vars]);
+
+                } else {
+
+                    throw new Exception("Controller class $class not found in DI container.");
+
+                }
+
+                break;
+
+        }
+
+    }); // End MobileViewMiddleware handle closure
+
+
+
 } catch (RedirectException $e) {
     // Handle graceful redirect
     header("Location: " . $e->getMessage());

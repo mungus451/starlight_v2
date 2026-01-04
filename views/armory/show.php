@@ -133,6 +133,18 @@
                                                         <?php endif; ?>
                                                     </div>
                                                 </li>
+                                                <?php if ($item['cost_crystals'] > 0): ?>
+                                                <li>
+                                                    <span>Crystals:</span> 
+                                                    <strong><?= number_format($item['cost_crystals']) ?></strong>
+                                                </li>
+                                                <?php endif; ?>
+                                                <?php if ($item['cost_dark_matter'] > 0): ?>
+                                                <li>
+                                                    <span>Dark Matter:</span> 
+                                                    <strong><?= number_format($item['cost_dark_matter']) ?></strong>
+                                                </li>
+                                                <?php endif; ?>
                                                 <?php if ($item['armory_level_req'] > 0): ?>
                                                     <li>
                                                         <span>Armory:</span>

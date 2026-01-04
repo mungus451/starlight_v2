@@ -95,6 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Alliance Logic ---
     const allianceSelect = document.getElementById('alliance-select');
+    if (allianceSelect) {
+        allianceSelect.addEventListener('change', (e) => {
+            const allianceId = e.target.value;
+            if (allianceId) {
+                loadAllianceDossier(allianceId);
+            }
+        });
+    }
 
     // Init Custom Dropdown for Alliances
     initCustomDropdown('alliance-custom-select', 'alliance-select', (val) => {
@@ -299,6 +307,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+        });
+    }
+
+    // --- Mobile Tab Logic ---
+    const mobileTabs = document.getElementById('almanac-tabs');
+    if (mobileTabs) {
+        const tabContent = document.getElementById('tab-content');
+        mobileTabs.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetLink = e.target.closest('.tab-link');
+            if (!targetLink || targetLink.classList.contains('active')) return;
+
+            // Update active tab link
+            mobileTabs.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+            targetLink.classList.add('active');
+
+            const tabName = targetLink.dataset.tab;
+            tabContent.innerHTML = '<div class="loading-spinner" style="margin: 2rem auto;"></div>';
+
+            fetch(`/almanac/mobile_tab?tab=${tabName}`)
+                .then(res => res.json())
+                .then(data => {
+                    tabContent.innerHTML = data.html;
+                    // Re-initialize logic for the new content
+                    if (tabName === 'players') {
+                        const playerSelectElem = document.getElementById('player-select');
+                        if(playerSelectElem) {
+                           playerSelectElem.addEventListener('change', (e) => loadPlayerDossier(e.target.value));
+                        }
+                    } else if (tabName === 'alliances') {
+                        const allianceSelectElem = document.getElementById('alliance-select');
+                        if(allianceSelectElem) {
+                            allianceSelectElem.addEventListener('change', (e) => loadAllianceDossier(e.target.value));
+                        }
+                    }
+                })
         });
     }
 });

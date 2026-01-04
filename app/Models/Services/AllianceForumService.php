@@ -60,8 +60,7 @@ class AllianceForumService
 
         // 2. Determine Permissions
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        $canManage = ($role && $role->can_manage_forum);
-
+        
         // 3. Fetch Topics
         $perPage = $this->config->get('app.forum.topics_per_page', 25);
         $totalTopics = $this->topicRepo->getCountByAllianceId($user->alliance_id);
@@ -75,7 +74,7 @@ class AllianceForumService
         return ServiceResponse::success('Data retrieved', [
             'topics' => $topics,
             'allianceId' => $user->alliance_id,
-            'canManageForum' => $canManage,
+            'permissions' => $role, // Pass the whole role object as permissions
             'pagination' => [
                 'currentPage' => $page,
                 'totalPages' => $totalPages

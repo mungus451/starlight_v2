@@ -49,8 +49,9 @@ class SpyController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $page = (int)($vars['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 25);
         
-        $data = $this->spyService->getSpyData($userId, $page);
+        $data = $this->spyService->getSpyData($userId, $page, $limit);
 
         $data['layoutMode'] = 'full';
 

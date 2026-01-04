@@ -102,12 +102,53 @@
         Disappear from the grid. You are immune to attacks for 6 hours. 
         <span class="text-danger">Attacking or spying breaks this shield instantly.</span>
     </p>
-    <form action="/black-market/buy/safehouse" method="POST" style="margin-top: 1rem;">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-        <button class="btn-submit" style="width: 100%; background: #4a5568;">
-            Rent (<?= number_format($costs['safehouse'] ?? 100000) ?> 💎)
+    
+    <?php if (!empty($isSafehouseCooldown)): ?>
+        <div class="alert alert-warning text-center p-2 mb-2" style="font-size: 0.8rem;">
+            <i class="fas fa-lock"></i> Systems Rebooting (1h Cooldown)
+        </div>
+        <button class="btn-submit" style="width: 100%; background: #2d3748; color: #718096; cursor: not-allowed;" disabled>
+            Locked
         </button>
-    </form>
+    <?php else: ?>
+        <form action="/black-market/buy/safehouse" method="POST" style="margin-top: 1rem;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <button class="btn-submit" style="width: 100%; background: #4a5568;">
+                Rent (<?= number_format($costs['safehouse'] ?? 100000) ?> 💎)
+            </button>
+        </form>
+    <?php endif; ?>
+</div>
+
+<!-- NEW: High Risk Protocol -->
+<div class="item-card">
+    <h4><i class="fas fa-skull"></i> High Risk Protocol</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        +50% Income, -10% Attacker Casualties. Disables Safehouse. Duration: 24h.
+    </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <span class="badge" style="background: var(--accent-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Aggressive</span>
+        <span class="text-accent"><?= number_format($costs['high_risk_buff'] ?? 50000000) ?> 💎</span>
+    </div>
+
+    <?php if (!empty($isHighRiskActive)): ?>
+        <div class="alert alert-danger text-center p-2 mb-2" style="font-size: 0.8rem; border: 1px solid var(--accent-red); background: rgba(255, 0, 0, 0.1);">
+            <i class="fas fa-radiation"></i> Protocol Active
+        </div>
+        <form action="/black-market/buy/terminate_high_risk" method="POST" style="margin-top: 1rem;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <button class="btn-submit btn-reject" style="width: 100%; border: 1px solid var(--accent-red);">
+                <i class="fas fa-stop-circle"></i> Terminate Early
+            </button>
+        </form>
+    <?php else: ?>
+        <form action="/black-market/buy/high_risk" method="POST" style="margin-top: 1rem;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <button class="btn-submit btn-reject" style="width: 100%;">
+                Initiate Protocol
+            </button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <!-- NEW: Laundering -->

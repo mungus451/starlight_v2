@@ -226,16 +226,9 @@ class TurnProcessorService
                     }
                 } elseif ($def->upkeep_resource === 'energy') {
                     // Energy is in user_stats
-                    // We haven't modified energy yet (only attack_turns).
-                    $currentEnergy = $stats->energy; // + regen? Energy regen isn't implemented here yet.
+                    $currentEnergy = $stats->energy;
                     if ($currentEnergy >= $cost) {
-                        // We need a method to update energy.
-                        // statsRepo->updateEnergy($userId, -$cost)?
-                        // Let's assume statsRepo has a generic update or we need to add one.
-                        // For now, I'll assume we can update it directly via SQL if needed, but let's check StatsRepo.
-                        // I'll skip implementation detail and assume we can deduct energy.
-                        // If not, I'll log a warning and skip deduction to avoid crash.
-                        // NOTE: Energy logic placeholder.
+                        $this->statsRepo->updateEnergy($userId, -1 * $cost);
                         $canAfford = true; 
                     }
                 } else {

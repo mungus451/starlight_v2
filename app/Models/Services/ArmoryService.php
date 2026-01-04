@@ -441,6 +441,10 @@ class ArmoryService
         
         $baseCost = $item['cost'];
         $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
+
+        // --- NEW: Add special resource costs (no discounts apply) ---
+        $crystalCost = $item['cost_crystals'] ?? 0;
+        $darkMatterCost = $item['cost_dark_matter'] ?? 0;
         
         $reqLevel = $item['armory_level_req'] ?? 0;
         $hasLevel = $armoryLevel >= $reqLevel;
@@ -455,6 +459,10 @@ class ArmoryService
         $item['current_owned'] = (int)($inventory[$itemKey] ?? 0);
         $item['base_cost'] = $baseCost;
         $item['effective_cost'] = $effectiveCost;
+        $item['cost_crystals'] = $crystalCost;
+        $item['cost_crystals_formatted'] = number_format($crystalCost);
+        $item['cost_dark_matter'] = $darkMatterCost;
+        $item['cost_dark_matter_formatted'] = number_format($darkMatterCost);
         $item['armory_level_req'] = $reqLevel;
         $item['has_level'] = $hasLevel;
         $item['can_manufacture'] = $canManufacture;
@@ -473,6 +481,8 @@ class ArmoryService
                 $allItems[$itemKey] = $item;
             }
         }
+        
+        error_log("DEBUG: Armory - Unit: " . ($unitData['unit'] ?? 'unknown') . " - Total Items found: " . count($allItems));
 
         $tieredItems = [];
         foreach ($allItems as $key => $item) {

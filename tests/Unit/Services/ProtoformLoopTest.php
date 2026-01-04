@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\Unit\TestCase;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\TurnProcessorService;
+use App\Models\Services\EffectService; // Import EffectService
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
@@ -35,11 +36,15 @@ class ProtoformLoopTest extends TestCase
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
         $mockEdictRepo = Mockery::mock(EdictRepository::class);
         $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
+        $mockEffectService = Mockery::mock(EffectService::class); // Mock EffectService
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
         $mockGeneralRepo->shouldReceive('findByUserId')->andReturn([]);
         $mockGeneralRepo->shouldReceive('countByUserId')->andReturn(0);
         $mockConfig->shouldReceive('get')->with('game_balance.generals', [])->andReturn([]);
+
+        // Mock Effect Service
+        $mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false);
 
         $service = new PowerCalculatorService(
             $mockConfig,
@@ -47,7 +52,8 @@ class ProtoformLoopTest extends TestCase
             $mockAllianceStructRepo,
             $mockStructDefRepo,
             $mockEdictRepo,
-            $mockGeneralRepo
+            $mockGeneralRepo,
+            $mockEffectService // Inject
         );
 
         $userId = 1;

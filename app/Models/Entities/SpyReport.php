@@ -18,6 +18,12 @@ readonly class SpyReport
      * @param int $sentries_lost_defender
      * @param int $defender_total_sentries (NEW: Snapshot)
      * @param int|null $credits_seen
+     * @param float|null $naquadah_crystals_stolen
+     * @param int|null $dark_matter_stolen
+     * @param float|null $naquadah_crystals_seen
+     * @param int|null $dark_matter_seen
+     * @param float|null $protoform_stolen
+     * @param float|null $protoform_seen
      * @param int|null $gemstones_seen
      * @param int|null $workers_seen
      * @param int|null $soldiers_seen
@@ -58,6 +64,12 @@ readonly class SpyReport
         public readonly ?int $economy_upgrade_level_seen,
         public readonly ?int $population_level_seen,
         public readonly ?int $armory_level_seen,
+        public readonly ?float $naquadah_crystals_stolen = 0,
+        public readonly ?int $dark_matter_stolen = 0,
+        public readonly ?float $naquadah_crystals_seen = null,
+        public readonly ?int $dark_matter_seen = null,
+        public readonly ?float $protoform_stolen = 0,
+        public readonly ?float $protoform_seen = null,
         public readonly ?string $defender_name = null,
         public readonly ?string $attacker_name = null
     ) {

@@ -90,6 +90,14 @@ class StatsRepository
         return $stmt->execute([$newCharges, $userId]);
     }
 
+    public function updateEnergy(int $userId, int $delta): bool
+    {
+        // Prevent energy from dropping below 0 is handled by application logic usually, 
+        // but DB constraints might apply. For now, just simple arithmetic.
+        $stmt = $this->db->prepare("UPDATE user_stats SET energy = energy + ? WHERE user_id = ?");
+        return $stmt->execute([$delta, $userId]);
+    }
+
     public function regenerateDepositCharges(int $userId, int $chargesToRegen): bool
     {
         $stmt = $this->db->prepare("UPDATE user_stats SET deposit_charges = deposit_charges + ? WHERE user_id = ?");

@@ -70,4 +70,44 @@ class DashboardController extends BaseController
         // 2. Render the view
         $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);
     }
+
+    /**
+     * AJAX endpoint for fetching mobile tab content.
+     */
+    public function getMobileTabData(array $params): void
+    {
+        $tabName = $params['tabName'] ?? 'overview';
+
+        $userId = $this->session->get('user_id');
+        if (is_null($userId)) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        // 1. Get the full dataset
+        $data = $this->dashboardService->getDashboardData((int)$userId);
+        
+        // 2. Format it with the presenter
+        $data = $this->dashboardPresenter->present($data);
+
+        // 3. Determine which partial to render
+        // Note: BaseController logic doesn't apply to this specific manual require,
+        // so we point directly to the mobile views directory.
+        $partialView = 'mobile/dashboard/partials/' . basename($tabName) . '.php';
+        $viewPath = __DIR__ . '/../../views/' . $partialView;
+
+        if (!file_exists($viewPath)) {
+            $this->jsonResponse(['error' => 'Invalid tab specified: ' . $tabName], 404);
+            return;
+        }
+
+        // 4. Render the partial view to a string
+        ob_start();
+        extract($data);
+        require $viewPath;
+        $html = ob_get_clean();
+
+        // 5. Send it back as JSON
+        $this->jsonResponse(['html' => $html]);
+    }
 }
