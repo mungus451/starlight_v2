@@ -1774,10 +1774,6 @@ details[open] .tier-summary::after {
         display: block;
     }
 
-    /* --- Lightbox (ensure it uses mobile colors) --- */
-    .image-lightbox { background-color: rgba(0, 0, 0, 0.95); }
-    .lightbox-close { color: var(--mobile-text-primary); text-shadow: 0 0 10px var(--mobile-text-primary); }
-
     /* Hide desktop-only elements that might still be present */
     .dashboard-grid {
         display: block; /* Allows content to flow */
