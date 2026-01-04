@@ -46,6 +46,17 @@ $nextPage = $page < $totalPages ? $page + 1 : null;
         <?php else: ?>
             <?php foreach ($alliances as $alliance): ?>
                 <div class="mobile-card" style="padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="margin-right: 1rem;">
+                        <?php if ($alliance->profile_picture_url): ?>
+                            <img src="/serve/alliance_avatar/<?= htmlspecialchars($alliance->profile_picture_url) ?>" 
+                                 alt="Alliance Logo" 
+                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--mobile-accent-blue);">
+                        <?php else: ?>
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; border: 2px solid var(--muted);">
+                                <i class="fas fa-shield-alt" style="font-size: 1.5rem; color: var(--muted);"></i>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                     <div style="flex: 1;">
                         <h4 style="margin: 0; color: var(--mobile-text-primary); font-size: 1.1rem;">
                             <span style="color: var(--mobile-accent-blue);">[<?= htmlspecialchars($alliance->tag) ?>]</span> 

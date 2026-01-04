@@ -23,7 +23,7 @@
         <div class="mobile-card-content" style="display: block;">
             <div style="display: flex; justify-content: space-around; margin-bottom: 1rem;">
                 <?php if ($alliance['profile_picture_url']): ?>
-                    <img src="<?= htmlspecialchars($alliance['profile_picture_url']) ?>" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--mobile-accent-blue);">
+                    <img src="/serve/alliance_avatar/<?= htmlspecialchars($alliance['profile_picture_url']) ?>" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--mobile-accent-blue);">
                 <?php endif; ?>
                 <div style="text-align: left; display: flex; flex-direction: column; justify-content: center;">
                     <div style="font-size: 0.9rem; color: var(--muted);">Bank</div>
