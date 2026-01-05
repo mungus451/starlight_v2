@@ -80,6 +80,7 @@
                 </ul>
             </li>
             
+            <li><a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="nav-notification-badge-mobile" class="nav-badge" style="position: relative; top: 0; right: 0; margin-left: 5px;"></span></a></li>
             <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -219,6 +220,7 @@
 <?php if ($this->session->get('is_mobile') && $isLoggedIn): ?>
     
     <!-- Mobile-Specific Dashboard & Nav JS -->
+    <script src="/js/notifications.js"></script>
     <script src="/js/mobile_dashboard.js?v=<?= time(); ?>"></script>
 
 <?php elseif ($isLoggedIn): ?>

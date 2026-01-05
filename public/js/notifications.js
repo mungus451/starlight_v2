@@ -96,14 +96,18 @@ const NotificationSystem = {
     updateUI: function(count) {
         // 1. Update Navbar Badge
         const badge = document.getElementById('nav-notification-badge');
-        if (badge) {
-            badge.textContent = count > 0 ? count : '';
-            badge.style.display = count > 0 ? 'inline-block' : 'none';
-            
-            // Optional: Pulse animation class
-            if (count > 0) badge.classList.add('pulse');
-            else badge.classList.remove('pulse');
-        }
+        const mobileBadge = document.getElementById('nav-notification-badge-mobile');
+        
+        const updateElement = (el) => {
+            if (!el) return;
+            el.textContent = count > 0 ? count : '';
+            el.style.display = count > 0 ? 'inline-block' : 'none';
+            if (count > 0) el.classList.add('pulse');
+            else el.classList.remove('pulse');
+        };
+
+        updateElement(badge);
+        updateElement(mobileBadge);
 
         // 2. Update Tab Title (e.g., "(1) Starlight Dominion")
         if (count > 0) {
