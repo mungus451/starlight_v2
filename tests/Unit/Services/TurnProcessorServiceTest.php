@@ -16,6 +16,7 @@ use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Services\EmbassyService;
+use App\Models\Services\NetWorthCalculatorService; // NEW
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -40,6 +41,7 @@ class TurnProcessorServiceTest extends TestCase
     private ScientistRepository|Mockery\MockInterface $mockScientistRepo;
     private EdictRepository|Mockery\MockInterface $mockEdictRepo;
     private EmbassyService|Mockery\MockInterface $mockEmbassyService;
+    private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator; // NEW
 
     protected function setUp(): void
     {
@@ -58,6 +60,7 @@ class TurnProcessorServiceTest extends TestCase
         $this->mockScientistRepo = Mockery::mock(ScientistRepository::class);
         $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
         $this->mockEmbassyService = Mockery::mock(EmbassyService::class);
+        $this->mockNwCalculator = Mockery::mock(NetWorthCalculatorService::class); // NEW
 
         // Pre-load config in constructor
         $this->mockConfig->shouldReceive('get')
@@ -81,7 +84,8 @@ class TurnProcessorServiceTest extends TestCase
             $this->mockGeneralRepo,
             $this->mockScientistRepo,
             $this->mockEdictRepo,
-            $this->mockEmbassyService
+            $this->mockEmbassyService,
+            $this->mockNwCalculator // New dependency, cast to type
         );
     }
 
@@ -133,6 +137,16 @@ class TurnProcessorServiceTest extends TestCase
                     $this->mockStatsRepo->shouldReceive('applyTurnAttackTurn')
                         ->once()
                         ->with($userId, 1);
+
+                    // NEW: Expect Net Worth calculation and update
+                    $this->mockNwCalculator->shouldReceive('calculateTotalNetWorth')
+                        ->once()
+                        ->with($userId)
+                        ->andReturn(5000000); // Arbitrary new net worth
+
+                    $this->mockStatsRepo->shouldReceive('updateNetWorth')
+                        ->once()
+                        ->with($userId, 5000000);
         
                     $this->mockGeneralRepo->shouldReceive('countByUserId')
                         ->once()

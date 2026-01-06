@@ -284,6 +284,13 @@ return $npcs;
         return (int)$stmt->fetchColumn();
     }
 
+    public function getMemberIdsByAllianceId(int $allianceId): array
+    {
+        $stmt = $this->db->prepare("SELECT id FROM users WHERE alliance_id = ?");
+        $stmt->execute([$allianceId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
     // --- END NPC METHODS ---
 /**
 * Helper method to convert a database row (array) into a User entity.

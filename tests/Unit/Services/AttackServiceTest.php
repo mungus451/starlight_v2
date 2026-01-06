@@ -19,6 +19,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\EffectService;
+use App\Models\Services\NetWorthCalculatorService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -47,6 +48,7 @@ class AttackServiceTest extends TestCase
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
     private EventDispatcher|Mockery\MockInterface $mockDispatcher;
     private EffectService|Mockery\MockInterface $mockEffectService;
+    private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator;
 
     protected function setUp(): void
     {
@@ -67,9 +69,13 @@ class AttackServiceTest extends TestCase
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
         $this->mockDispatcher = Mockery::mock(EventDispatcher::class);
         $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockNwCalculator = $this->createMock(NetWorthCalculatorService::class);
 
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
         $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
+
+        // Mock NW Calculator to return a default value, as specific NW logic isn't central to most AttackService tests
+        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(1000000);
 
         $this->service = new AttackService(
             $this->mockDb,
@@ -86,7 +92,8 @@ class AttackServiceTest extends TestCase
             $this->mockPowerCalcService,
             $this->mockLevelUpService,
             $this->mockDispatcher,
-            $this->mockEffectService
+            $this->mockEffectService,
+            $this->mockNwCalculator // New dependency, cast to type
         );
     }
 

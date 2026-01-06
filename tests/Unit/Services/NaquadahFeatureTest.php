@@ -20,6 +20,7 @@ use App\Models\Repositories\EdictRepository;
 use App\Models\Services\EmbassyService;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\EffectService; // Import EffectService
+use App\Models\Services\NetWorthCalculatorService; // NEW
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
 use App\Models\Entities\UserStats;
@@ -31,6 +32,7 @@ class NaquadahFeatureTest extends TestCase
     /**
      * Test 1: StructureService should deduct Naquadah Crystals when upgrading
      */
+    private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator; // NEW
     public function testUpgradeStructure_DeductsNaquadah_WhenAffordable(): void
     {
         // 1. Arrange Dependencies
@@ -271,6 +273,9 @@ class NaquadahFeatureTest extends TestCase
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
+        $this->mockNwCalculator = Mockery::mock(NetWorthCalculatorService::class); // NEW
+        $this->mockNwCalculator->shouldReceive('calculateTotalNetWorth')->andReturn(100000); // Arbitrary value
+
         $service = new TurnProcessorService(
             $mockDb,
             $mockConfig,
@@ -284,7 +289,8 @@ class NaquadahFeatureTest extends TestCase
             $mockGeneralRepo,
             $mockScientistRepo,
             $mockEdictRepo,
-            $mockEmbassyService
+            $mockEmbassyService,
+            $this->mockNwCalculator // NEW, cast to type
         );
 
         $userId = 123;
@@ -358,6 +364,7 @@ class NaquadahFeatureTest extends TestCase
             ->andReturn(true);
 
         $mockStatsRepo->shouldReceive('applyTurnAttackTurn')->once()->andReturn(true);
+        $mockStatsRepo->shouldReceive('updateNetWorth')->once()->with($userId, 100000);
 
         // 3. Act
         $service->processAllUsers();

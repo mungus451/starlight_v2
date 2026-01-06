@@ -16,6 +16,7 @@ use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\EffectService;
+use App\Models\Services\NetWorthCalculatorService;
 use App\Core\Events\EventDispatcher;
 use App\Events\BattleConcludedEvent;
 use PDO;
@@ -44,6 +45,7 @@ class AttackService
     private LevelUpService $levelUpService;
     private EventDispatcher $dispatcher;
     private EffectService $effectService;
+    private NetWorthCalculatorService $nwCalculator;
 
     public function __construct(
         PDO $db,
@@ -60,7 +62,8 @@ class AttackService
         PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService,
         EventDispatcher $dispatcher,
-        EffectService $effectService
+        EffectService $effectService,
+        NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -77,6 +80,7 @@ class AttackService
         $this->levelUpService = $levelUpService;
         $this->dispatcher = $dispatcher;
         $this->effectService = $effectService;
+        $this->nwCalculator = $nwCalculator;
     }
 
     public function getAttackPageData(int $userId, int $page, int $limit = 25): array
@@ -339,7 +343,7 @@ class AttackService
 
         // Calculate Gains (Loot)
         $creditsPlundered = 0;
-        $netWorthStolen = 0;
+        $netWorthStolen = 0; // Deprecated: NW is now dynamic
         $warPrestigeGained = 0;
         $battleTaxAmount = 0;
         $tributeTaxAmount = 0;
@@ -347,7 +351,7 @@ class AttackService
 
         if ($attackResult === 'victory') {
             $creditsPlundered = (int)($defenderResources->credits * $config['plunder_percent']);
-            $netWorthStolen = (int)($defenderStats->net_worth * $config['net_worth_steal_percent']);
+            // $netWorthStolen logic removed
             $warPrestigeGained = $config['war_prestige_gain_base'];
 
             if ($attacker->alliance_id !== null && $creditsPlundered > 0) {
@@ -378,10 +382,14 @@ class AttackService
 
             // Update Attacker Stats
             $this->levelUpService->grantExperience($attackerId, $attackerXpGain);
+            
+            // Recalculate Net Worth dynamically
+            $attackerNewNW = $this->nwCalculator->calculateTotalNetWorth($attackerId);
+            
             $this->statsRepo->updateBattleAttackerStats(
                 $attackerId,
                 $attackerStats->attack_turns - $turnCost,
-                $attackerStats->net_worth + $netWorthStolen,
+                $attackerNewNW,
                 $attackerStats->experience + $attackerXpGain,
                 $attackerStats->war_prestige + $warPrestigeGained
             );
@@ -401,9 +409,13 @@ class AttackService
 
             // Update Defender Stats
             $this->levelUpService->grantExperience($defender->id, $defenderXpGain);
+            
+            // Recalculate Defender Net Worth
+            $defenderNewNW = $this->nwCalculator->calculateTotalNetWorth($defender->id);
+            
             $this->statsRepo->updateBattleDefenderStats(
                 $defender->id,
-                max(0, $defenderStats->net_worth - $netWorthStolen)
+                $defenderNewNW
             );
 
             // Create Battle Report
@@ -484,7 +496,7 @@ class AttackService
      * Calculates casualties for the WINNER of the battle.
      * Logic: The higher the ratio (more overwhelming), the fewer losses.
      */
-    protected function calculateWinnerLosses(int $unitCount, float $ratio): int
+    public function calculateWinnerLosses(int $unitCount, float $ratio): int
     {
         // Base loss factor: 5% at 1:1 ratio.
         // Formula: 0.05 / Ratio.
@@ -507,7 +519,7 @@ class AttackService
      * Logic: The higher the ratio (more overwhelmed), the higher the losses.
      * Wipeout Rule: If Ratio > 10, they lose everything.
      */
-    protected function calculateLoserLosses(int $unitCount, float $ratio): int
+    public function calculateLoserLosses(int $unitCount, float $ratio): int
     {
         if ($unitCount <= 0) return 0;
 

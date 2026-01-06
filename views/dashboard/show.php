@@ -167,6 +167,10 @@
                         <li><span>Points to Spend</span>
                             <span class="value-green"><?= number_format($stats->level_up_points) ?></span>
                         </li>
+                        <li>
+                            <span>Net Worth</span>
+                            <span class="value-total"><?= $formatted_net_worth ?></span>
+                        </li>
                         <li><span>Strength</span> <span><?= number_format($stats->strength_points) ?></span></li>
                         <li><span>Constitution</span> <span><?= number_format($stats->constitution_points) ?></span></li>
                         <li><span>Wealth</span> <span><?= number_format($stats->wealth_points) ?></span></li>

@@ -50,6 +50,16 @@ class StatsRepository
     }
 
     /**
+     * Updates only the net worth of a user.
+     * Used by the NetWorthCalculatorService in the turn processor.
+     */
+    public function updateNetWorth(int $userId, int $newNetWorth): bool
+    {
+        $stmt = $this->db->prepare("UPDATE user_stats SET net_worth = ? WHERE user_id = ?");
+        return $stmt->execute([$newNetWorth, $userId]);
+    }
+
+    /**
      * Atomically increments battle win/loss counters.
      */
     public function incrementBattleStats(int $userId, bool $isVictory): bool

@@ -205,7 +205,8 @@ $c->get(ArmoryService::class),
 $c->get(PowerCalculatorService::class),
 $c->get(LevelUpService::class),
 $c->get(EventDispatcher::class),
-$c->get(EffectService::class) // --- NEW ---
+$c->get(EffectService::class), // --- NEW ---
+$c->get(NetWorthCalculatorService::class)
 );
 },
 
@@ -262,14 +263,34 @@ $c->get(BlackMarketLogRepository::class) // Injected for Logging Phase
 );
 },
 
-// Notifications
-NotificationService::class => function (ContainerInterface $c) {
-return new NotificationService(
-    $c->get(NotificationRepository::class),
-    $c->get(UserNotificationPreferencesRepository::class),
-    $c->get(UserRepository::class)
-);
-},
+    LevelCalculatorService::class => function (ContainerInterface $c) {
+        return new LevelCalculatorService(
+            $c->get(Config::class)
+        );
+    },
+
+    NetWorthCalculatorService::class => function (ContainerInterface $c) {
+        return new NetWorthCalculatorService(
+            $c->get(Config::class),
+            $c->get(ResourceRepository::class),
+            $c->get(StructureRepository::class),
+            $c->get(StatsRepository::class),
+            $c->get(GeneralRepository::class),
+            $c->get(ScientistRepository::class),
+            $c->get(ArmoryRepository::class),
+            $c->get(PowerCalculatorService::class),
+            $c->get(UserRepository::class)
+        );
+    },
+
+    // Notifications
+    NotificationService::class => function (ContainerInterface $c) {
+        return new NotificationService(
+            $c->get(NotificationRepository::class),
+            $c->get(UserNotificationPreferencesRepository::class),
+            $c->get(UserRepository::class)
+        );
+    },
 
 StructureService::class => function (ContainerInterface $c) {
     return new StructureService(
@@ -413,7 +434,8 @@ return new Logger($logPath, false);
         $c->get(GeneralRepository::class),
         $c->get(ScientistRepository::class),
         $c->get(EdictRepository::class),
-        $c->get(EmbassyService::class)
+        $c->get(EmbassyService::class),
+        $c->get(NetWorthCalculatorService::class)
     );
 }
 ]);

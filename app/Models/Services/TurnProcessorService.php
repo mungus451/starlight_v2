@@ -14,6 +14,7 @@ use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Services\EmbassyService;
+use App\Models\Services\NetWorthCalculatorService;
 use PDO;
 use Throwable;
 
@@ -37,6 +38,7 @@ class TurnProcessorService
     private ScientistRepository $scientistRepo;
     private EdictRepository $edictRepo;
     private EmbassyService $embassyService;
+    private NetWorthCalculatorService $nwCalculator;
 
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
@@ -61,7 +63,8 @@ class TurnProcessorService
         GeneralRepository $generalRepo,
         ScientistRepository $scientistRepo,
         EdictRepository $edictRepo,
-        EmbassyService $embassyService
+        EmbassyService $embassyService,
+        NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -76,6 +79,7 @@ class TurnProcessorService
 
         $this->powerCalculatorService = $powerCalculatorService;
         $this->embassyService = $embassyService;
+        $this->nwCalculator = $nwCalculator;
 
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
@@ -242,7 +246,12 @@ class TurnProcessorService
                 }
             }
 
-            // 7. Commit if we own the transaction
+            // 7. Update Net Worth
+            // We calculate this after all income and expenses have been applied to get the accurate state.
+            $newNetWorth = $this->nwCalculator->calculateTotalNetWorth($userId);
+            $this->statsRepo->updateNetWorth($userId, $newNetWorth);
+
+            // 8. Commit if we own the transaction
             if ($transactionStartedByMe) {
                 $this->db->commit();
             }
