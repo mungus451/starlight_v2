@@ -27,6 +27,11 @@ return [
 'safehouse_cracker_amount' => 1, // Attacks allowed
 ],
 
+'durations' => [
+    'safehouse_active' => 240, // 4 Hours (Protection)
+    'safehouse_cooldown' => 720, // 12 Hours (Total cycle: 4h Safe + 8h Vuln)
+],
+
 // Loot Box Probabilities (Weights determine rarity relative to total sum)
 'void_container_loot' => [
 // --- GOOD OUTCOMES ---

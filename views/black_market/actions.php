@@ -99,13 +99,14 @@
 <div class="item-card">
     <h4><i class="fas fa-house-user"></i> Safehouse Access</h4>
     <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
-        Disappear from the grid. You are immune to attacks for 6 hours. 
-        <span class="text-danger">Attacking or spying breaks this shield instantly.</span>
+        Disappear from the grid. Immune to attacks for 4 hours. 
+        <br><strong class="text-warning">Reboot:</strong> 12-hour system cycle required (8 hours of vulnerability).
+        <br><span class="text-danger">Attacking or spying breaks this shield instantly.</span>
     </p>
     
     <?php if (!empty($isSafehouseCooldown)): ?>
         <div class="alert alert-warning text-center p-2 mb-2" style="font-size: 0.8rem;">
-            <i class="fas fa-lock"></i> Systems Rebooting (1h Cooldown)
+            <i class="fas fa-lock"></i> Systems Rebooting
         </div>
         <button class="btn-submit" style="width: 100%; background: #2d3748; color: #718096; cursor: not-allowed;" disabled>
             Locked
@@ -113,7 +114,7 @@
     <?php else: ?>
         <form action="/black-market/buy/safehouse" method="POST" style="margin-top: 1rem;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-            <button class="btn-submit" style="width: 100%; background: #4a5568;">
+            <button class="btn-submit btn-accent" style="width: 100%;">
                 Rent (<?= number_format($costs['safehouse'] ?? 100000) ?> 💎)
             </button>
         </form>

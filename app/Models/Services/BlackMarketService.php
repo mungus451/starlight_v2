@@ -185,6 +185,8 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
     public function purchaseSafehouse(int $userId): ServiceResponse
     {
         $cost = $this->config->get('black_market.costs.safehouse', 100000);
+        $duration = $this->config->get('black_market.durations.safehouse_active', 240); // 4 Hours
+        $cooldown = $this->config->get('black_market.durations.safehouse_cooldown', 720); // 12 Hours
         
         // Prevent if High Risk Protocol is active
         if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
@@ -193,16 +195,27 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
 
         // Prevent if Cooldown is active
         if ($this->effectService->hasActiveEffect($userId, 'safehouse_cooldown')) {
-            $cooldown = $this->effectService->getEffectDetails($userId, 'safehouse_cooldown');
-            $expiresAt = new \DateTime($cooldown['expires_at']);
+            $cdEffect = $this->effectService->getEffectDetails($userId, 'safehouse_cooldown');
+            $expiresAt = new \DateTime($cdEffect['expires_at']);
             $diff = $expiresAt->diff(new \DateTime());
-            return ServiceResponse::error("Safehouse systems are rebooting. Cooldown active for " . $diff->i . "m.");
+            
+            $hours = $diff->h + ($diff->d * 24);
+            $timeStr = $hours > 0 ? "{$hours}h {$diff->i}m" : "{$diff->i}m";
+
+            return ServiceResponse::error("Safehouse systems are rebooting. Cooldown active for {$timeStr}.");
         }
 
-        return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
-            $this->effectService->applyEffect($userId, 'peace_shield', 360);
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $duration, $cooldown) {
+            // 1. Apply Protection
+            $this->effectService->applyEffect($userId, 'peace_shield', $duration);
+            
+            // 2. Apply Cooldown (Overlaps with protection)
+            $this->effectService->applyEffect($userId, 'safehouse_cooldown', $cooldown);
+
             $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'safehouse');
-            return "You have vanished from the grid. You are safe for 6 hours.";
+            
+            $durationHours = round($duration / 60, 1);
+            return "You have vanished from the grid. You are safe for {$durationHours} hours.";
         });
     }
 
