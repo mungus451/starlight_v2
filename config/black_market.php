@@ -15,6 +15,7 @@ return [
         'radar_jamming' => 50000000.0, // Crystals
         'safehouse' => 100000000.0, // Crystals
         'high_risk_buff' => 50000000.0, // Crystals
+        'safehouse_cracker' => 75000000.0, // Crystals
     ],
 'rates' => [
 'laundering' => 1.15, // 1.15 Credits per 1 Chip
@@ -23,6 +24,7 @@ return [
 'quantities' => [
 'turn_refill_amount' => 50, // Turns restored
 'citizen_package_amount' => 50000, // Citizens added
+'safehouse_cracker_amount' => 1, // Attacks allowed
 ],
 
 // Loot Box Probabilities (Weights determine rarity relative to total sum)

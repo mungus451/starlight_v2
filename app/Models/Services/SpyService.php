@@ -104,8 +104,26 @@ class SpyService
         if ($defender->id === $attackerId) return ServiceResponse::error('You cannot spy on yourself.');
 
         // --- Active Effects Check ---
-        if ($this->effectService->hasActiveEffect($defender->id, 'peace_shield')) {
-            return ServiceResponse::error("Target is under Safehouse protection. Operation prevented.");
+        $shieldEffect = $this->effectService->getEffectDetails($defender->id, 'peace_shield');
+        if ($shieldEffect) {
+            // Check if Attacker has Breach Charges
+            $breachEffect = $this->effectService->getEffectDetails($attackerId, 'safehouse_breach');
+            $breachMeta = ($breachEffect && isset($breachEffect['metadata'])) ? json_decode($breachEffect['metadata'], true) : [];
+            $charges = $breachMeta['charges'] ?? 0;
+
+            if ($charges > 0) {
+                // CONSUME CHARGE
+                $newCharges = $charges - 1;
+                
+                if ($newCharges <= 0) {
+                    $this->effectService->breakEffect($attackerId, 'safehouse_breach');
+                } else {
+                    $this->effectService->updateMetadata($attackerId, 'safehouse_breach', ['charges' => $newCharges]);
+                }
+                // Safehouse Breached - Operation Proceeds
+            } else {
+                return ServiceResponse::error("Target is under Safehouse protection. Operation prevented.");
+            }
         }
         if ($this->effectService->hasActiveEffect($attackerId, 'peace_shield')) {
             $this->effectService->breakEffect($attackerId, 'peace_shield'); 

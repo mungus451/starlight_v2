@@ -61,4 +61,12 @@ class EffectService
     {
         $this->effectRepo->removeEffect($userId, $type);
     }
+
+    /**
+     * Updates the metadata of an active effect.
+     */
+    public function updateMetadata(int $userId, string $type, array $metadata): void
+    {
+        $this->effectRepo->updateMetadata($userId, $type, $metadata);
+    }
 }

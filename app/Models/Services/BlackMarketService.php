@@ -206,6 +206,36 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
         });
     }
 
+    public function purchaseSafehouseCracker(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.safehouse_cracker', 75000000.0);
+        $amount = $this->config->get('black_market.quantities.safehouse_cracker_amount', 1);
+
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $amount) {
+            
+            // Check for existing breach permit
+            $existing = $this->effectService->getEffectDetails($userId, 'safehouse_breach');
+            
+            if ($existing) {
+                // Add to existing charges
+                $meta = isset($existing['metadata']) ? json_decode($existing['metadata'], true) : [];
+                $currentCharges = $meta['charges'] ?? 0;
+                $newCharges = $currentCharges + $amount;
+                
+                // Update Metadata
+                $this->effectService->updateMetadata($userId, 'safehouse_breach', ['charges' => $newCharges]);
+                $msg = "Breach permit updated. You now have {$newCharges} safehouse bypasses authorized.";
+            } else {
+                // Create new effect (Duration: 2 days to use it)
+                $this->effectService->applyEffect($userId, 'safehouse_breach', 2880, ['charges' => $amount]);
+                $msg = "Breach permit acquired. You have {$amount} authorized safehouse bypass.";
+            }
+
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'safehouse_cracker', ['charges_gained' => $amount]);
+            return $msg;
+        });
+    }
+
     public function purchaseHighRiskBuff(int $userId): ServiceResponse
     {
         $cost = $this->config->get('black_market.costs.high_risk_buff', 50000000);

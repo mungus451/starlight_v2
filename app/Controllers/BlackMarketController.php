@@ -96,6 +96,9 @@ $this->render('black_market/exchange.php', $data + ['title' => 'Black Market - E
             case 'high_risk':
                 $response = $this->bmService->purchaseHighRiskBuff($userId);
                 break;
+            case 'safehouse_cracker':
+                $response = $this->bmService->purchaseSafehouseCracker($userId);
+                break;
             case 'terminate_high_risk':
                 $response = $this->bmService->terminateHighRiskProtocol($userId);
                 break;

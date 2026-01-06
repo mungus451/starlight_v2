@@ -120,6 +120,20 @@
     <?php endif; ?>
 </div>
 
+<!-- NEW: Safehouse Cracking -->
+<div class="item-card">
+    <h4><i class="fas fa-unlock"></i> Safehouse Cracking</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        Pay off the authorities for safehouse location. Allows one attack against a safehoused player.
+    </p>
+    <form action="/black-market/buy/safehouse_cracker" method="POST" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+        <button class="btn-submit btn-accent" style="width: 100%;">
+            Bribe (<?= number_format($costs['safehouse_cracker'] ?? 75000000) ?> 💎)
+        </button>
+    </form>
+</div>
+
 <!-- NEW: High Risk Protocol -->
 <div class="item-card">
     <h4><i class="fas fa-skull"></i> High Risk Protocol</h4>
