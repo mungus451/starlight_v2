@@ -73,6 +73,21 @@ class DashboardPresenter
                     $effect['ui_label'] = 'Peace Shield';
                     $effect['ui_color'] = 'text-success';
                     break;
+                case 'safehouse_cooldown':
+                    $effect['ui_icon'] = 'fa-user-clock';
+                    $effect['ui_label'] = 'Safehouse Cooldown';
+                    $effect['ui_color'] = 'text-warning';
+                    break;
+                case 'safehouse_breach':
+                    $effect['ui_icon'] = 'fa-key';
+                    $effect['ui_label'] = 'Breach Permit';
+                    $effect['ui_color'] = 'text-info';
+                    break;
+                case 'high_risk_protocol':
+                    $effect['ui_icon'] = 'fa-biohazard';
+                    $effect['ui_label'] = 'High Risk Protocol';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
                 case 'wounded':
                     $effect['ui_icon'] = 'fa-user-injured';
                     $effect['ui_label'] = 'Wounded';

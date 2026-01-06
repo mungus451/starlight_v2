@@ -13,6 +13,7 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
@@ -115,7 +116,8 @@ class HighRiskProtocolTest extends TestCase
             $this->createMock(BountyRepository::class),
             $this->createMock(AttackService::class), 
             $this->logRepo,
-            $this->effectService
+            $this->effectService,
+            $this->createMock(HouseFinanceRepository::class)
         );
 
         // Setup AttackService (Testing combat modifiers)
@@ -423,9 +425,11 @@ class HighRiskProtocolTest extends TestCase
         $res = $this->makeResource(1, ['naquadah_crystals' => 1000000]);
         $this->resourceRepo->method('findByUserId')->willReturn($res);
 
-        $this->effectRepo->expects($this->once())
+        $this->effectRepo->expects($this->exactly(2))
             ->method('addEffect')
-            ->with($userId, 'peace_shield', $this->anything());
+            ->willReturnCallback(function($uid, $type, $dur) {
+                return true;
+            });
 
         $result = $this->bmService->purchaseSafehouse($userId);
         $this->assertTrue($result->isSuccess());

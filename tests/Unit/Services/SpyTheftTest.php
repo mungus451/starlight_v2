@@ -56,6 +56,7 @@ class SpyTheftTest extends TestCase
         $this->mockEffectService = Mockery::mock(EffectService::class);
 
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
+        $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
 
         $this->service = new SpyService(
             $this->mockDb,

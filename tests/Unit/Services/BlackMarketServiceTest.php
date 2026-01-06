@@ -10,6 +10,7 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Services\EffectService;
 use App\Models\Services\AttackService;
 use Mockery;
@@ -27,6 +28,7 @@ class BlackMarketServiceTest extends TestCase
     private $mockAttackService;
     private $mockLogRepo;
     private $mockEffectService;
+    private $mockHouseFinanceRepo;
 
     protected function setUp(): void
     {
@@ -41,6 +43,7 @@ class BlackMarketServiceTest extends TestCase
         $this->mockAttackService = Mockery::mock(AttackService::class);
         $this->mockLogRepo = Mockery::mock(BlackMarketLogRepository::class);
         $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockHouseFinanceRepo = Mockery::mock(HouseFinanceRepository::class);
 
         $this->service = new BlackMarketService(
             $this->mockDb,
@@ -51,7 +54,8 @@ class BlackMarketServiceTest extends TestCase
             $this->mockBountyRepo,
             $this->mockAttackService,
             $this->mockLogRepo,
-            $this->mockEffectService
+            $this->mockEffectService,
+            $this->mockHouseFinanceRepo
         );
     }
 
