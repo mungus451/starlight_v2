@@ -9,6 +9,7 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
+use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Services\EffectService;
 use PDO;
 use Throwable;
@@ -28,6 +29,7 @@ private BountyRepository $bountyRepo;
 private AttackService $attackService;
 private BlackMarketLogRepository $logRepo;
 private EffectService $effectService;
+private HouseFinanceRepository $houseFinanceRepo;
 
 public function __construct(
 PDO $db,
@@ -38,7 +40,8 @@ UserRepository $userRepo,
 BountyRepository $bountyRepo,
 AttackService $attackService,
 BlackMarketLogRepository $logRepo,
-EffectService $effectService
+EffectService $effectService,
+HouseFinanceRepository $houseFinanceRepo
 ) {
 $this->db = $db;
 $this->config = $config;
@@ -49,6 +52,7 @@ $this->bountyRepo = $bountyRepo;
 $this->attackService = $attackService;
 $this->logRepo = $logRepo;
 $this->effectService = $effectService;
+$this->houseFinanceRepo = $houseFinanceRepo;
 }
 
     public function getUndermarketPageData(int $userId): array
@@ -387,14 +391,19 @@ return ServiceResponse::error($e->getMessage());
             // 1 Credit -> 0.00007 DM.
             if ($resources->credits < $creditsToSpend) return ServiceResponse::error("Insufficient Credits.");
             
-            $dmReceived = ($creditsToSpend / 10000) * 0.7;
+            $baseDM = $creditsToSpend / 10000;
+            $dmReceived = $baseDM * 0.7;
+            $dmTaxed = $baseDM * 0.3;
             
             $this->db->beginTransaction();
             try {
                 $this->resourceRepo->updateCredits($userId, $resources->credits - $creditsToSpend);
-                $this->resourceRepo->updateResources($userId, 0, 0, $dmReceived, 0); 
+                $this->resourceRepo->updateResources($userId, 0, 0, $dmReceived, 0);
                 
-                $this->logRepo->log($userId, 'synthesis', 'credits', $creditsToSpend, null, ['dark_matter_gained' => $dmReceived]);
+                // Track House Tax
+                $this->houseFinanceRepo->updateFinances(1, 0, 0, $dmTaxed);
+                
+                $this->logRepo->log($userId, 'synthesis', 'credits', $creditsToSpend, null, ['dark_matter_gained' => $dmReceived, 'dark_matter_taxed' => $dmTaxed]);
                 
                 $this->db->commit();
                 return ServiceResponse::success("Synthesis Complete. " . number_format($creditsToSpend) . " Credits converted to " . number_format($dmReceived, 9) . " Dark Matter.");
@@ -409,13 +418,18 @@ return ServiceResponse::error($e->getMessage());
             // House takes 30% -> 0.7 Dark Matter per 10 Crystals.
             if ($resources->naquadah_crystals < $quantity) return ServiceResponse::error("Insufficient Crystals.");
             
-            $dmReceived = ($quantity / 10) * 0.7;
+            $baseDM = $quantity / 10;
+            $dmReceived = $baseDM * 0.7;
+            $dmTaxed = $baseDM * 0.3;
             
             $this->db->beginTransaction();
             try {
                 $this->resourceRepo->updateResources($userId, 0, -$quantity, $dmReceived, 0);
                 
-                $this->logRepo->log($userId, 'synthesis', 'crystals', $quantity, null, ['dark_matter_gained' => $dmReceived]);
+                // Track House Tax
+                $this->houseFinanceRepo->updateFinances(1, 0, 0, $dmTaxed);
+                
+                $this->logRepo->log($userId, 'synthesis', 'crystals', $quantity, null, ['dark_matter_gained' => $dmReceived, 'dark_matter_taxed' => $dmTaxed]);
                 
                 $this->db->commit();
                 return ServiceResponse::success("Synthesis Complete. " . number_format($quantity, 4) . " Crystals converted to " . number_format($dmReceived, 9) . " Dark Matter.");

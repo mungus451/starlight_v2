@@ -32,6 +32,10 @@
                 <span style="color: var(--muted);">Naquadah Crystals:</span>
                 <span style="font-weight: 700;"><?= number_format($userResources->naquadah_crystals, 4) ?> 💎</span>
             </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <span style="color: var(--muted);">Dark Matter:</span>
+                <span style="font-weight: 700; color: #d8b4fe;"><?= number_format($userResources->dark_matter, 4) ?> DM</span>
+            </div>
         </div>
         <div class="balance-card">
             <h3 style="margin: 0 0 1rem 0; font-size: 1.2rem; color: var(--accent-2); border-bottom: 1px solid rgba(249, 199, 79, 0.2); padding-bottom: 0.5rem;">The House's Cut</h3>
@@ -42,6 +46,10 @@
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: var(--muted);">Crystals Taxed:</span>
                 <span style="font-weight: 700;"><?= number_format($houseFinances->crystals_taxed, 4) ?> 💎</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                <span style="color: var(--muted);">Dark Matter Taxed:</span>
+                <span style="font-weight: 700; color: #d8b4fe;"><?= number_format($houseFinances->dark_matter_taxed ?? 0, 4) ?> DM</span>
             </div>
         </div>
     </div>
