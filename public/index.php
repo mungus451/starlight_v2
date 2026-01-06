@@ -44,6 +44,7 @@ use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
+use App\Controllers\GlossaryController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MobileViewMiddleware;
 
@@ -111,6 +112,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Core Game Features ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
+    $r->addRoute('GET', '/glossary', [GlossaryController::class, 'index']);
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
     $r->addRoute('GET', '/serve/alliance_avatar/{filename}', [FileController::class, 'showAllianceAvatar']);
@@ -128,6 +130,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // The Undermarket (Actions)
     $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
     $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
     $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
     $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
     $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
@@ -336,7 +339,7 @@ try {
 
                     '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
 
-                    '/leaderboard', '/embassy', '/generals', '/almanac'
+                    '/leaderboard', '/embassy', '/generals', '/almanac', '/glossary'
 
                 ];
 

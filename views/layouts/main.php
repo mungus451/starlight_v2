@@ -81,6 +81,7 @@
             </li>
             
             <li><a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="nav-notification-badge-mobile" class="nav-badge" style="position: relative; top: 0; right: 0; margin-left: 5px;"></span></a></li>
+            <li><a href="/glossary"><i class="fas fa-book-open"></i> Game Glossary</a></li>
             <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -155,6 +156,11 @@
 
             <!-- Right Side: Account & Notifs -->
             <ul class="nav-list" style="margin-left: auto;">
+                <li class="nav-item">
+                    <a href="/glossary" class="nav-icon-link" title="Game Glossary">
+                        <i class="fas fa-book-open"></i>
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a href="/notifications" class="nav-icon-link position-relative" title="Notifications">
                         <i class="fas fa-bell"></i>
