@@ -29,7 +29,7 @@ readonly class Alliance
         public readonly bool $is_joinable,          
         public readonly int $leader_id,
         public readonly int $net_worth,
-        public readonly int $bank_credits,       
+        public readonly float $bank_credits,       
         public readonly ?string $last_compound_at, 
         public readonly string $created_at
     ) {

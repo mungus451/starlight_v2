@@ -53,13 +53,14 @@ class AllianceRepositoryTest extends TestCase
     public function testUpdateBankCreditsRelativeExecutesAtomicUpdate(): void
     {
         $allianceId = 1;
-        $amount = 500;
-        $cap = 9000000000000000000;
+        $amount = 500.0;
+        $cap = '18400000000000000000'; // 1.84e19 formatted as string
+        $amountStr = '500';
 
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with(['cap' => $cap, 'amount' => $amount, 'id' => $allianceId])
+            ->with(['cap' => $cap, 'amount' => $amountStr, 'id' => $allianceId])
             ->andReturn(true);
 
         // Verify SQL contains atomic update for positive amount with CAP
@@ -75,12 +76,13 @@ class AllianceRepositoryTest extends TestCase
     public function testUpdateBankCreditsRelativeHandlesNegativeUpdate(): void
     {
         $allianceId = 1;
-        $amount = -500;
+        $amount = -500.0;
+        $amountStr = '500';
 
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with(['absAmount1' => 500, 'absAmount2' => 500, 'id' => $allianceId])
+            ->with(['absAmount1' => $amountStr, 'absAmount2' => $amountStr, 'id' => $allianceId])
             ->andReturn(true);
 
         // Verify SQL contains logic for negative amount (no casting)

@@ -188,15 +188,15 @@ if (!$transactionStartedByMe) throw $e; // Re-throw for tests
             return ServiceResponse::error('A database error occurred. Please try again.');
         }
     }
-/**
-* Calculates the cost of a structure at a given level.
-*/
-private function calculateCost(int $baseCost, float $multiplier, int $level): int
-{
-// Cost for level 1 is just the base cost
-if ($level <= 1) {
-return $baseCost;
-}
-return (int)floor($baseCost * pow($multiplier, $level - 1));
-}
+    /**
+    * Calculates the cost of a structure at a given level.
+    */
+    private function calculateCost(int $baseCost, float $multiplier, int $level): float
+    {
+        // Cost for level 1 is just the base cost
+        if ($level <= 1) {
+            return (float)$baseCost;
+        }
+        return floor($baseCost * pow($multiplier, $level - 1));
+    }
 }

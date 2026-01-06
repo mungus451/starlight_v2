@@ -178,36 +178,42 @@ class AllianceRepository
      * (e.g., amountChange = +1000 or -500)
      *
      * @param int $allianceId
-     * @param int $amountChange The (positive or negative) amount to change the balance by.
+     * @param float $amountChange The (positive or negative) amount to change the balance by.
      * @return bool
      */
-    public function updateBankCreditsRelative(int $allianceId, int $amountChange): bool
+    public function updateBankCreditsRelative(int $allianceId, float $amountChange): bool
     {
-        if ($amountChange === 0) {
+        if ($amountChange === 0.0) {
             return true;
         }
 
-        // Hard Cap: 9 Quintillion (Safe limit for Signed BIGINT and PHP 64-bit int)
-        $safeCap = 9000000000000000000;
+        // Hard Cap: ~1.84 Quintillion (Safe limit for Unsigned BIGINT)
+        $safeCap = 1.84e19;
+
+        // Convert to string to ensure full precision and avoid scientific notation in SQL
+        $amountStr = number_format($amountChange, 0, '.', '');
+        $capStr = number_format($safeCap, 0, '.', '');
 
         if ($amountChange > 0) {
             // Addition: Cap at safe limit
             $sql = "UPDATE alliances SET bank_credits = LEAST(:cap, bank_credits + :amount) WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                'cap' => $safeCap, 
-                'amount' => $amountChange, 
+                'cap' => $capStr, 
+                'amount' => $amountStr, 
                 'id' => $allianceId
             ]);
         } else {
             // Subtraction: Prevent dropping below zero
             // FIX: Use distinct parameter names for each placeholder to prevent PDO HY093 errors
             $absChange = abs($amountChange);
+            $absStr = number_format($absChange, 0, '.', '');
+            
             $sql = "UPDATE alliances SET bank_credits = IF(bank_credits < :absAmount1, 0, bank_credits - :absAmount2) WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                'absAmount1' => $absChange, 
-                'absAmount2' => $absChange, 
+                'absAmount1' => $absStr, 
+                'absAmount2' => $absStr, 
                 'id' => $allianceId
             ]);
         }
@@ -287,7 +293,7 @@ class AllianceRepository
             is_joinable: (bool)$data['is_joinable'],
             leader_id: (int)$data['leader_id'],
             net_worth: (int)$data['net_worth'],
-            bank_credits: (int)$data['bank_credits'],
+            bank_credits: (float)$data['bank_credits'],
             last_compound_at: $data['last_compound_at'] ?? null,
             created_at: $data['created_at']
         );

@@ -29,7 +29,7 @@ class AllianceBankLogRepository
         int $allianceId,
         ?int $userId,
         string $logType,
-        int $amount,
+        float $amount,
         string $message
     ): bool {
         $sql = "
@@ -40,7 +40,9 @@ class AllianceBankLogRepository
         ";
         
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$allianceId, $userId, $logType, $amount, $message]);
+        // Bind amount as string for safety with large numbers
+        $amountStr = number_format($amount, 0, '.', '');
+        return $stmt->execute([$allianceId, $userId, $logType, $amountStr, $message]);
     }
 
     /**
@@ -89,7 +91,7 @@ class AllianceBankLogRepository
             alliance_id: (int)$data['alliance_id'],
             user_id: isset($data['user_id']) ? (int)$data['user_id'] : null,
             log_type: $data['log_type'],
-            amount: (int)$data['amount'],
+            amount: (float)$data['amount'],
             message: $data['message'],
             created_at: $data['created_at'],
             character_name: $data['character_name'] ?? null
