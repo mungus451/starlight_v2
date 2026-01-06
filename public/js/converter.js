@@ -110,4 +110,35 @@ document.addEventListener('DOMContentLoaded', () => {
         cry2cAfterFeeEl.textContent = `${afterFee.toFixed(4)} 💎`;
         cry2cReceiveEl.textContent = `${formatFloat(receive.toFixed(2))} Credits`;
     });
+
+    // --- Matter Synthesis Logic (Desktop & Mobile) ---
+    function setupSynthesisCalculator(displayId, hiddenId, baseId, feeId, receiveId, divisor) {
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
+        
+        if (!display || !hidden) return;
+
+        setupFloatInputMask(display, hidden, (val) => {
+            const base = val / divisor;
+            const fee = base * 0.3; // 30% Fee
+            const receive = base * 0.7; // User gets 70%
+
+            const baseEl = document.getElementById(baseId);
+            const feeEl = document.getElementById(feeId);
+            const recEl = document.getElementById(receiveId);
+
+            if (baseEl) baseEl.textContent = base.toFixed(4) + ' DM';
+            if (feeEl) feeEl.textContent = fee.toFixed(4) + ' DM';
+            if (recEl) recEl.textContent = receive.toFixed(4) + ' DM';
+        });
+    }
+
+    // Desktop
+    setupSynthesisCalculator('syn-credits-display', 'syn-credits-hidden', 'syn-credits-base', 'syn-credits-fee', 'syn-credits-receive', 10000);
+    setupSynthesisCalculator('syn-crystals-display', 'syn-crystals-hidden', 'syn-crystals-base', 'syn-crystals-fee', 'syn-crystals-receive', 10);
+
+    // Mobile
+    setupSynthesisCalculator('mob-syn-credits-display', 'mob-syn-credits-hidden', 'mob-syn-credits-base', 'mob-syn-credits-fee', 'mob-syn-credits-receive', 10000);
+    setupSynthesisCalculator('mob-syn-crystals-display', 'mob-syn-crystals-hidden', 'mob-syn-crystals-base', 'mob-syn-crystals-fee', 'mob-syn-crystals-receive', 10);
+
 });

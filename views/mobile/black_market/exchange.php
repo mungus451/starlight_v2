@@ -179,6 +179,7 @@ $maxSell = floor($userResources->naquadah_crystals);
     </div>
 </div>
 
+<script src="/js/converter.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Init Mobile Tabs
@@ -197,38 +198,5 @@ $maxSell = floor($userResources->naquadah_crystals);
                 document.getElementById(targetId).classList.add('active');
             });
         });
-
-        // Input Masks
-        if (typeof StarlightUtils !== 'undefined') {
-            const credDisplay = document.getElementById('mob-syn-credits-display');
-            const credHidden = document.getElementById('mob-syn-credits-hidden');
-            if (credDisplay && credHidden) {
-                StarlightUtils.setupInputMask(credDisplay, credHidden);
-                credDisplay.addEventListener('input', () => {
-                    const val = parseFloat(credHidden.value) || 0;
-                    const base = val / 10000;
-                    const fee = base * 0.3;
-                    const receive = base * 0.7;
-                    document.getElementById('mob-syn-credits-base').textContent = base.toFixed(4) + ' DM';
-                    document.getElementById('mob-syn-credits-fee').textContent = fee.toFixed(4) + ' DM';
-                    document.getElementById('mob-syn-credits-receive').textContent = receive.toFixed(4) + ' DM';
-                });
-            }
-
-            const cryDisplay = document.getElementById('mob-syn-crystals-display');
-            const cryHidden = document.getElementById('mob-syn-crystals-hidden');
-            if (cryDisplay && cryHidden) {
-                StarlightUtils.setupInputMask(cryDisplay, cryHidden);
-                cryDisplay.addEventListener('input', () => {
-                    const val = parseFloat(cryHidden.value) || 0;
-                    const base = val / 10;
-                    const fee = base * 0.3;
-                    const receive = base * 0.7;
-                    document.getElementById('mob-syn-crystals-base').textContent = base.toFixed(4) + ' DM';
-                    document.getElementById('mob-syn-crystals-fee').textContent = fee.toFixed(4) + ' DM';
-                    document.getElementById('mob-syn-crystals-receive').textContent = receive.toFixed(4) + ' DM';
-                });
-            }
-        }
     });
 </script>
