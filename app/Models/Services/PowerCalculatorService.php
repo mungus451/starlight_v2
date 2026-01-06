@@ -167,6 +167,13 @@ class PowerCalculatorService
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['offense_mult'];
         
+        // Void Buff Check
+        $voidBuffMultiplier = 1.0;
+        if ($this->effectService->hasActiveEffect($userId, 'void_offense_boost')) {
+            $voidBuffMultiplier = 1.10; // +10%
+            $totalMultiplier *= $voidBuffMultiplier;
+        }
+
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -180,6 +187,7 @@ class PowerCalculatorService
             'edict_bonus_pct' => $edictBonusPercent,
             'general_flat' => $genBonuses['flat_offense'],
             'general_mult' => $genBonuses['offense_mult'],
+            'void_buff_mult' => $voidBuffMultiplier,
             'structure_level' => $structures->offense_upgrade_level,
             'stat_points' => $stats->strength_points,
             'unit_count' => $soldiers,
@@ -234,6 +242,13 @@ class PowerCalculatorService
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['defense_mult'];
         
+        // Void Debuff Check
+        $voidDebuffMultiplier = 1.0;
+        if ($this->effectService->hasActiveEffect($userId, 'void_defense_penalty')) {
+            $voidDebuffMultiplier = 0.70; // -30%
+            $totalMultiplier *= $voidDebuffMultiplier;
+        }
+
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -247,6 +262,7 @@ class PowerCalculatorService
             'edict_bonus_pct' => $edictBonusPercent,
             'general_flat' => $genBonuses['flat_defense'],
             'general_mult' => $genBonuses['defense_mult'],
+            'void_debuff_mult' => $voidDebuffMultiplier,
             'fort_level' => $structures->fortification_level,
             'def_level' => $structures->defense_upgrade_level,
             'stat_points' => $stats->constitution_points,
@@ -330,6 +346,12 @@ class PowerCalculatorService
             $detailedBreakdown[] = [ 'label' => "High Risk Protocol", 'value' => "+50%", 'type' => 'scalar' ];
         }
 
+        // Radiation Sickness Debuff (-20%)
+        if ($this->effectService->hasActiveEffect($userId, 'radiation_sickness')) {
+            $finalIncomeScalar -= 0.2;
+            $detailedBreakdown[] = [ 'label' => "Radiation Sickness", 'value' => "-20%", 'type' => 'scalar' ];
+        }
+
         $totalCreditIncome = (int)floor($totalCreditIncome * $finalIncomeScalar);
         
         $detailedBreakdown[] = [ 'label' => "Total Scalar", 'value' => (($finalIncomeScalar - 1) * 100) . "%", 'type' => 'scalar' ];
@@ -365,6 +387,21 @@ class PowerCalculatorService
 
         // 11. Protoform (Affected by Edict Resource Multiplier)
         $protoformIncome = $structures->protoform_vat_level * ($config['protoform_per_vat_level'] ?? 0) * $edictResourceMultiplier;
+
+        // --- VOID BUFF: Resource Boost (+25%) ---
+        if ($this->effectService->hasActiveEffect($userId, 'void_resource_boost')) {
+            $boost = 1.25;
+            $totalCreditIncome = (int)floor($totalCreditIncome * $boost);
+            // $interestIncome usually excluded from resource boosts? User said "Resource Generation". Interest is passive. I'll include it for now to be generous.
+            $interestIncome = (int)floor($interestIncome * $boost); 
+            $totalCitizenIncome = (int)floor($totalCitizenIncome * $boost);
+            $researchDataIncome = (int)floor($researchDataIncome * $boost);
+            $darkMatterIncome *= $boost;
+            $naquadahIncome *= $boost;
+            $protoformIncome *= $boost;
+            
+            $detailedBreakdown[] = [ 'label' => "Void Resource Buff", 'value' => "+25%", 'type' => 'scalar' ];
+        }
 
         return [
             'total_credit_income' => $totalCreditIncome,
@@ -439,6 +476,11 @@ class PowerCalculatorService
 
         $total = $totalBase * (1 + $structBonus + $edictBonus);
         
+        // Quantum Scrambler (+50%)
+        if ($this->effectService->hasActiveEffect($userId, 'quantum_scrambler')) {
+            $total = (int)ceil($total * 1.5);
+        }
+
         return [
             'total' => (int)$total,
             'base_unit_power' => (int)$base,

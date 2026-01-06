@@ -88,6 +88,36 @@ class DashboardPresenter
                     $effect['ui_label'] = 'High Risk Protocol';
                     $effect['ui_color'] = 'text-danger';
                     break;
+                case 'void_offense_boost':
+                    $effect['ui_icon'] = 'fa-fist-raised';
+                    $effect['ui_label'] = 'Adrenaline Injectors';
+                    $effect['ui_color'] = 'text-success';
+                    break;
+                case 'void_resource_boost':
+                    $effect['ui_icon'] = 'fa-industry';
+                    $effect['ui_label'] = 'Nanite Overclock';
+                    $effect['ui_color'] = 'text-success';
+                    break;
+                case 'void_defense_penalty':
+                    $effect['ui_icon'] = 'fa-shield-virus';
+                    $effect['ui_label'] = 'Shield Virus';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'safehouse_block':
+                    $effect['ui_icon'] = 'fa-lock';
+                    $effect['ui_label'] = 'Safehouse Beacon';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'radiation_sickness':
+                    $effect['ui_icon'] = 'fa-radiation';
+                    $effect['ui_label'] = 'Radiation Sickness';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'quantum_scrambler':
+                    $effect['ui_icon'] = 'fa-satellite';
+                    $effect['ui_label'] = 'Quantum Scrambler';
+                    $effect['ui_color'] = 'text-info';
+                    break;
                 case 'wounded':
                     $effect['ui_icon'] = 'fa-user-injured';
                     $effect['ui_label'] = 'Wounded';

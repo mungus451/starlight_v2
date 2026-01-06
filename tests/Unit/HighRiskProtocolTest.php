@@ -117,7 +117,8 @@ class HighRiskProtocolTest extends TestCase
             $this->createMock(AttackService::class), 
             $this->logRepo,
             $this->effectService,
-            $this->createMock(HouseFinanceRepository::class)
+            $this->createMock(HouseFinanceRepository::class),
+            $this->createMock(LevelUpService::class)
         );
 
         // Setup AttackService (Testing combat modifiers)
@@ -395,8 +396,10 @@ class HighRiskProtocolTest extends TestCase
         $struct = $this->makeStructure(1, ['economy_upgrade_level' => 10]);
         
         $this->effectRepo->method('getActiveEffect')
-            ->with($userId, 'high_risk_protocol')
-            ->willReturn(['active' => true]);
+            ->willReturnMap([
+                [$userId, 'high_risk_protocol', ['active' => true]],
+                [$userId, 'void_resource_boost', null]
+            ]);
 
         $this->createMock(EdictRepository::class)->method('findActiveByUserId')->willReturn([]);
 

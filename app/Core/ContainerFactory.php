@@ -221,7 +221,8 @@ $c->get(BountyRepository::class),
 $c->get(AttackService::class),
 $c->get(BlackMarketLogRepository::class),
 $c->get(EffectService::class),
-$c->get(HouseFinanceRepository::class) // --- NEW ---
+$c->get(HouseFinanceRepository::class), // --- NEW ---
+$c->get(LevelUpService::class) // --- NEW ---
 );
 },
 

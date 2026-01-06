@@ -99,21 +99,23 @@ $stmt = $this->db->prepare($sql);
 return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);
 }
 
-public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null): bool
-{
-$updates = [];
-$params = [];
-if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
-if ($naquadahCrystalsChange !== null) { $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change"; $params[':naquadah_crystals_change'] = $naquadahCrystalsChange; }
-if ($darkMatterChange !== null) { $updates[] = "dark_matter = dark_matter + :dark_matter_change"; $params[':dark_matter_change'] = $darkMatterChange; }
-if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
-if (empty($updates)) return true;
-$params[':user_id'] = $userId;
-$sql = "UPDATE user_resources SET " . implode(', ', $updates) . " WHERE user_id = :user_id";
-$stmt = $this->db->prepare($sql);
-return $stmt->execute($params);
-}
-
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
+    {
+        $updates = [];
+        $params = [];
+        if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
+        if ($naquadahCrystalsChange !== null) { $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change"; $params[':naquadah_crystals_change'] = $naquadahCrystalsChange; }
+        if ($darkMatterChange !== null) { $updates[] = "dark_matter = dark_matter + :dark_matter_change"; $params[':dark_matter_change'] = $darkMatterChange; }
+        if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
+        if ($researchDataChange !== null) { $updates[] = "research_data = research_data + :research_data_change"; $params[':research_data_change'] = $researchDataChange; }
+        
+        if (empty($updates)) return true;
+        
+        $params[':user_id'] = $userId;
+        $sql = "UPDATE user_resources SET " . implode(', ', $updates) . " WHERE user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
 private function hydrate(array $data): UserResource
 {
 return new UserResource(

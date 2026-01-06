@@ -11,6 +11,7 @@ use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Services\EffectService;
+use App\Models\Services\LevelUpService;
 use PDO;
 use Throwable;
 
@@ -30,6 +31,7 @@ private AttackService $attackService;
 private BlackMarketLogRepository $logRepo;
 private EffectService $effectService;
 private HouseFinanceRepository $houseFinanceRepo;
+private LevelUpService $levelUpService;
 
 public function __construct(
 PDO $db,
@@ -41,7 +43,8 @@ BountyRepository $bountyRepo,
 AttackService $attackService,
 BlackMarketLogRepository $logRepo,
 EffectService $effectService,
-HouseFinanceRepository $houseFinanceRepo
+HouseFinanceRepository $houseFinanceRepo,
+LevelUpService $levelUpService
 ) {
 $this->db = $db;
 $this->config = $config;
@@ -53,6 +56,7 @@ $this->attackService = $attackService;
 $this->logRepo = $logRepo;
 $this->effectService = $effectService;
 $this->houseFinanceRepo = $houseFinanceRepo;
+$this->levelUpService = $levelUpService;
 }
 
     public function getUndermarketPageData(int $userId): array
@@ -105,90 +109,150 @@ return "Smuggling successful. {$amount} citizens have joined your empire.";
 });
 }
 
-public function openVoidContainer(int $userId): ServiceResponse
-{
-$cost = $this->config->get('black_market.costs.void_container', 100);
-$lootTable = $this->config->get('black_market.void_container_loot', []);
+    public function openVoidContainer(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.void_container', 100);
+        $lootTable = $this->config->get('black_market.void_container_loot', []);
 
-return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $lootTable) {
-$totalWeight = array_sum(array_column($lootTable, 'weight'));
-$roll = mt_rand(1, $totalWeight);
-$current = 0;
-$selected = null;
-$selectedKey = '';
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost, $lootTable) {
+            $totalWeight = array_sum(array_column($lootTable, 'weight'));
+            $roll = mt_rand(1, $totalWeight);
+            $current = 0;
+            $selected = null;
+            $selectedKey = '';
 
-foreach ($lootTable as $key => $item) {
-$current += $item['weight'];
-if ($roll <= $current) {
-$selected = $item;
-$selectedKey = $key;
-break;
-}
-}
+            foreach ($lootTable as $key => $item) {
+                $current += $item['weight'];
+                if ($roll <= $current) {
+                    $selected = $item;
+                    $selectedKey = $key;
+                    break;
+                }
+            }
 
-$qty = (isset($selected['min']) && isset($selected['max'])) ? mt_rand($selected['min'], $selected['max']) : 0;
-$msg = "";
-$outcomeType = 'success';
-$resources = $this->resourceRepo->findByUserId($userId);
+            $qty = (isset($selected['min']) && isset($selected['max'])) ? mt_rand($selected['min'], $selected['max']) : 0;
+            $msg = "";
+            $outcomeType = 'success';
+            $resources = $this->resourceRepo->findByUserId($userId);
 
-switch ($selected['type']) {
-case 'credits':
-$this->resourceRepo->updateCredits($userId, $resources->credits + $qty);
-$msg = "You found: " . number_format($qty) . " Credits!";
-break;
-case 'unit':
-$u = $selected['unit'];
-$newS = $resources->soldiers + ($u === 'soldiers' ? $qty : 0);
-$newG = $resources->guards + ($u === 'guards' ? $qty : 0);
-$newSp = $resources->spies + ($u === 'spies' ? $qty : 0);
-$newSe = $resources->sentries + ($u === 'sentries' ? $qty : 0);
-$this->resourceRepo->updateTrainedUnits($userId, $resources->credits, $resources->untrained_citizens, $resources->workers, $newS, $newG, $newSp, $newSe);
-$msg = "Reinforcements: " . number_format($qty) . " " . ucfirst($u);
-break;
-case 'crystals':
-$this->resourceRepo->updateResources($userId, 0, $qty);
-$msg = "JACKPOT! " . number_format($qty) . " Naquadah Crystals!";
-break;
-case 'dark_matter':
-$this->resourceRepo->updateResources($userId, 0, 0, $qty);
-$msg = "You found: " . number_format($qty) . " Dark Matter!";
-break;
-case 'neutral':
-$msg = $selected['text'] ?? "The container was empty.";
-break;
-case 'credits_loss':
-$newCredits = max(0, $resources->credits - $qty);
-$this->resourceRepo->updateCredits($userId, $newCredits);
-$msg = ($selected['text'] ?? "Trap triggered!") . " Lost Credits.";
-$outcomeType = 'negative';
-break;
-case 'unit_loss':
-$u = $selected['unit'];
-$newUnits = max(0, ($resources->{$u} ?? 0) - $qty);
-$newS = ($u === 'soldiers') ? $newUnits : $resources->soldiers;
-$newG = ($u === 'guards') ? $newUnits : $resources->guards;
-$newSp = ($u === 'spies') ? $newUnits : $resources->spies;
-$newSe = ($u === 'sentries') ? $newUnits : $resources->sentries;
-$this->resourceRepo->updateTrainedUnits($userId, $resources->credits, $resources->untrained_citizens, $resources->workers, $newS, $newG, $newSp, $newSe);
-$msg = ($selected['text'] ?? "Ambush!") . " Lost " . ucfirst($u) . ".";
-$outcomeType = 'negative';
-break;
-}
+            switch ($selected['type']) {
+                case 'credits':
+                    $this->resourceRepo->updateCredits($userId, $resources->credits + $qty);
+                    $msg = "You found: " . number_format($qty) . " Credits!";
+                    break;
+                case 'unit':
+                    $u = $selected['unit'];
+                    $newS = $resources->soldiers + ($u === 'soldiers' ? $qty : 0);
+                    $newG = $resources->guards + ($u === 'guards' ? $qty : 0);
+                    $newSp = $resources->spies + ($u === 'spies' ? $qty : 0);
+                    $newSe = $resources->sentries + ($u === 'sentries' ? $qty : 0);
+                    $this->resourceRepo->updateTrainedUnits($userId, $resources->credits, $resources->untrained_citizens, $resources->workers, $newS, $newG, $newSp, $newSe);
+                    $msg = "Reinforcements: " . number_format($qty) . " " . ucfirst($u);
+                    break;
+                case 'crystals':
+                    $this->resourceRepo->updateResources($userId, 0, $qty);
+                    $msg = "JACKPOT! " . number_format($qty) . " Naquadah Crystals!";
+                    break;
+                case 'dark_matter':
+                    $this->resourceRepo->updateResources($userId, 0, 0, $qty);
+                    $msg = "You found: " . number_format($qty) . " Dark Matter!";
+                    break;
+                case 'protoform':
+                    $this->resourceRepo->updateResources($userId, 0, 0, 0, $qty);
+                    $msg = "You found: " . number_format($qty) . " Protoform!";
+                    break;
+                case 'research_data':
+                    $this->resourceRepo->updateResources($userId, 0, 0, 0, 0, $qty);
+                    $msg = "You found: " . number_format($qty) . " Research Data!";
+                    break;
+                case 'xp':
+                    $this->levelUpService->grantExperience($userId, $qty);
+                    $msg = "Combat Data Decrypted: +" . number_format($qty) . " XP!";
+                    break;
+                case 'turns':
+                    $this->statsRepo->applyTurnAttackTurn($userId, $qty);
+                    $msg = "Neural Stim-Pack Used: +" . number_format($qty) . " Attack Turns!";
+                    break;
+                case 'cursed':
+                    // Grant Resource
+                    $resType = $selected['resource'];
+                    if ($resType === 'crystals') {
+                        $this->resourceRepo->updateResources($userId, 0, $qty);
+                        $resLabel = number_format($qty) . " Naquadah Crystals";
+                    } elseif ($resType === 'dark_matter') {
+                        $this->resourceRepo->updateResources($userId, 0, 0, $qty);
+                        $resLabel = number_format($qty) . " Dark Matter";
+                    } else {
+                        $resLabel = "Unknown Artifacts";
+                    }
 
-$this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'void_container', ['outcome_key' => $selectedKey, 'outcome_type' => $selected['type'], 'qty' => $qty, 'result_text' => $msg]);
-return ['message' => $msg, 'status' => $outcomeType];
-});
-}
+                    // Apply Debuff
+                    $key = $selected['debuff_key'];
+                    $dur = $selected['duration'];
+                    $this->effectService->applyEffect($userId, $key, $dur);
+                    
+                    $msg = "{$resLabel} secured... but at a cost! " . ($selected['text'] ?? "Debuff applied.");
+                    $outcomeType = 'warning'; // Special UI state? Or just success/negative. Let's stick to warning if handled by FE, or just success with text.
+                    break;
+                case 'buff':
+                    $key = $selected['buff_key'];
+                    
+                    if ($key === 'action_clear_safehouse') {
+                        if ($this->effectService->hasActiveEffect($userId, 'safehouse_cooldown')) {
+                            $this->effectService->breakEffect($userId, 'safehouse_cooldown');
+                            $msg = $selected['text'] ?? "Safehouse cooldown reset!";
+                        } else {
+                            $msg = "Safehouse systems checked. No cooldown was active.";
+                        }
+                    } else {
+                        $dur = $selected['duration'];
+                        $this->effectService->applyEffect($userId, $key, $dur);
+                        $msg = $selected['text'] ?? "Buff applied!";
+                    }
+                    break;
+                case 'debuff':
+                    $key = $selected['buff_key'];
+                    $dur = $selected['duration'];
+                    $this->effectService->applyEffect($userId, $key, $dur);
+                    $msg = $selected['text'] ?? "System Malfunction Detected!";
+                    $outcomeType = 'negative';
+                    break;
+                case 'neutral':
+                    $msg = $selected['text'] ?? "The container was empty.";
+                    break;
+                case 'credits_loss':
+                    $newCredits = max(0, $resources->credits - $qty);
+                    $this->resourceRepo->updateCredits($userId, $newCredits);
+                    $msg = ($selected['text'] ?? "Trap triggered!") . " Lost Credits.";
+                    $outcomeType = 'negative';
+                    break;
+                case 'unit_loss':
+                    $u = $selected['unit'];
+                    $newUnits = max(0, ($resources->{$u} ?? 0) - $qty);
+                    $newS = ($u === 'soldiers') ? $newUnits : $resources->soldiers;
+                    $newG = ($u === 'guards') ? $newUnits : $resources->guards;
+                    $newSp = ($u === 'spies') ? $newUnits : $resources->spies;
+                    $newSe = ($u === 'sentries') ? $newUnits : $resources->sentries;
+                    $this->resourceRepo->updateTrainedUnits($userId, $resources->credits, $resources->untrained_citizens, $resources->workers, $newS, $newG, $newSp, $newSe);
+                    $msg = ($selected['text'] ?? "Ambush!") . " Lost " . ucfirst($u) . ".";
+                    $outcomeType = 'negative';
+                    break;
+            }
 
-public function purchaseRadarJamming(int $userId): ServiceResponse
-{
-$cost = $this->config->get('black_market.costs.radar_jamming', 50000);
-return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
-$this->effectService->applyEffect($userId, 'jamming', 240);
-$this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'radar_jamming');
-return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
-});
-}
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'void_container', ['outcome_key' => $selectedKey, 'outcome_type' => $selected['type'], 'qty' => $qty, 'result_text' => $msg]);
+            return ['message' => $msg, 'status' => $outcomeType];
+        });
+    }
+
+    public function purchaseRadarJamming(int $userId): ServiceResponse
+    {
+        $cost = $this->config->get('black_market.costs.radar_jamming', 50000);
+        return $this->processPurchase($userId, $cost, function() use ($userId, $cost) {
+            $this->effectService->applyEffect($userId, 'jamming', 240);
+            $this->logRepo->log($userId, 'purchase', 'crystals', $cost, 'radar_jamming');
+            return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
+        });
+    }
 
     public function purchaseSafehouse(int $userId): ServiceResponse
     {
@@ -199,6 +263,11 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
         // Prevent if High Risk Protocol is active
         if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
             return ServiceResponse::error("Cannot activate Safehouse while High Risk Protocol is active.");
+        }
+
+        // Prevent if Safehouse Block (Void Debuff) is active
+        if ($this->effectService->hasActiveEffect($userId, 'safehouse_block')) {
+            return ServiceResponse::error("Safehouse beacon active. Location compromised. Cannot activate.");
         }
 
         // Prevent if Cooldown is active
@@ -226,7 +295,6 @@ return "Jamming signal broadcasted. Spies will be blind for 4 hours.";
             return "You have vanished from the grid. You are safe for {$durationHours} hours.";
         });
     }
-
     public function purchaseSafehouseCracker(int $userId): ServiceResponse
     {
         $cost = $this->config->get('black_market.costs.safehouse_cracker', 75000000.0);

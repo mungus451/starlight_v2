@@ -13,6 +13,7 @@ use App\Models\Repositories\BlackMarketLogRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Services\EffectService;
 use App\Models\Services\AttackService;
+use App\Models\Services\LevelUpService;
 use Mockery;
 use PDO;
 
@@ -29,6 +30,7 @@ class BlackMarketServiceTest extends TestCase
     private $mockLogRepo;
     private $mockEffectService;
     private $mockHouseFinanceRepo;
+    private $mockLevelUpService;
 
     protected function setUp(): void
     {
@@ -44,6 +46,7 @@ class BlackMarketServiceTest extends TestCase
         $this->mockLogRepo = Mockery::mock(BlackMarketLogRepository::class);
         $this->mockEffectService = Mockery::mock(EffectService::class);
         $this->mockHouseFinanceRepo = Mockery::mock(HouseFinanceRepository::class);
+        $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
 
         $this->service = new BlackMarketService(
             $this->mockDb,
@@ -55,7 +58,8 @@ class BlackMarketServiceTest extends TestCase
             $this->mockAttackService,
             $this->mockLogRepo,
             $this->mockEffectService,
-            $this->mockHouseFinanceRepo
+            $this->mockHouseFinanceRepo,
+            $this->mockLevelUpService
         );
     }
 
