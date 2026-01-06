@@ -54,7 +54,7 @@ class AllianceRepositoryTest extends TestCase
     {
         $allianceId = 1;
         $amount = 500.0;
-        $cap = '18400000000000000000'; // 1.84e19 formatted as string
+        $cap = '1000000000000000000000000000000000000000000000000000000000000'; // 1.0e60 formatted as string
         $amountStr = '500';
 
         $mockStmt = Mockery::mock(PDOStatement::class);

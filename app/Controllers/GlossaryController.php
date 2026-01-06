@@ -38,6 +38,8 @@ class GlossaryController extends BaseController
         $structures = $this->config->get('game_balance.structures');
         $training = $this->config->get('game_balance.training');
         $armory = $this->config->get('armory_items');
+        $edicts = $this->config->get('edicts');
+        $blackMarket = $this->config->get('black_market');
         
         // 2. Define Resources (Manual definition as they aren't strictly config-based in the same way)
         $resources = [
@@ -91,7 +93,9 @@ class GlossaryController extends BaseController
             'structures' => $structures,
             'units' => $training,
             'armory' => $armory,
-            'resources' => $resources
+            'resources' => $resources,
+            'edicts' => $edicts,
+            'blackMarket' => $blackMarket
         ]);
     }
 }

@@ -187,19 +187,19 @@ class AllianceRepository
             return true;
         }
 
-        // Hard Cap: ~1.84 Quintillion (Safe limit for Unsigned BIGINT)
-        $safeCap = 1.84e19;
+        // Hard Cap: 10^60 (Safe limit for DECIMAL(60,0))
+        // We use a string literal to avoid floating point imprecision at this scale
+        $safeCap = '1' . str_repeat('0', 60);
 
-        // Convert to string to ensure full precision and avoid scientific notation in SQL
+        // Convert amount to string to ensure full precision
         $amountStr = number_format($amountChange, 0, '.', '');
-        $capStr = number_format($safeCap, 0, '.', '');
 
         if ($amountChange > 0) {
             // Addition: Cap at safe limit
             $sql = "UPDATE alliances SET bank_credits = LEAST(:cap, bank_credits + :amount) WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                'cap' => $capStr, 
+                'cap' => $safeCap, 
                 'amount' => $amountStr, 
                 'id' => $allianceId
             ]);
