@@ -21,11 +21,20 @@ $maxSell = floor($userResources->naquadah_crystals);
             <h3 style="color: var(--mobile-accent-purple);"><i class="fas fa-sync-alt"></i> Market Rate</h3>
         </div>
         <div class="mobile-card-content" style="display: block;">
-            <div style="font-family: 'Orbitron', sans-serif; font-size: 2rem; color: var(--mobile-accent-purple); text-shadow: 0 0 15px rgba(189, 0, 255, 0.4);">
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 1.8rem; color: var(--mobile-accent-purple); text-shadow: 0 0 15px rgba(189, 0, 255, 0.4);">
                 1 💎 = <?= number_format($conversionRate) ?> ₡
             </div>
-            <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--muted);">
+            <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem;">
                 Transaction Fee: <strong style="color: var(--mobile-text-primary);"><?= $feeLabel ?></strong>
+            </div>
+
+            <div style="margin-top: 0.75rem;">
+                <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 1px;">Synthesis Rates</div>
+                <div style="display: flex; justify-content: center; gap: 1rem; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #d8b4fe;">
+                    <span>10k ₡ : 0.7 DM</span>
+                    <span style="color: rgba(255,255,255,0.2);">|</span>
+                    <span>10 💎 : 0.7 DM</span>
+                </div>
             </div>
         </div>
     </div>
@@ -92,6 +101,62 @@ $maxSell = floor($userResources->naquadah_crystals);
 
         </div>
     </div> <!-- End nested-tabs-container -->
+
+    <!-- MATTER SYNTHESIS -->
+    <div style="margin: 2rem 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+        <h3 style="text-align: center; color: var(--mobile-accent-purple); font-family: 'Orbitron', sans-serif; margin-bottom: 0.5rem;">Matter Synthesis</h3>
+        <p class="text-center text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Fuse raw materials into Dark Matter.</p>
+
+        <!-- Credits -> DM -->
+        <div class="mobile-card" style="border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);">
+            <div class="mobile-card-header" style="background: rgba(168, 85, 247, 0.1);">
+                <h4 style="margin: 0; color: #d8b4fe; font-size: 1rem;">Credits <i class="fas fa-arrow-right"></i> Dark Matter</h4>
+            </div>
+            <div class="mobile-card-content" style="display: block;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.85rem;">
+                    <span class="text-muted">Rate:</span>
+                    <strong style="color: #d8b4fe;">10,000 : 0.7</strong>
+                </div>
+
+                <form action="/black-market/synthesize/credits" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                    
+                    <div class="form-group">
+                        <label>Credits to Convert</label>
+                        <input type="text" id="mob-syn-credits-display" class="mobile-input" placeholder="e.g., 10,000" style="border-color: #a855f7;" required>
+                        <input type="hidden" name="amount" id="mob-syn-credits-hidden">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 0.5rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Crystals -> DM -->
+        <div class="mobile-card" style="border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);">
+            <div class="mobile-card-header" style="background: rgba(168, 85, 247, 0.1);">
+                <h4 style="margin: 0; color: #d8b4fe; font-size: 1rem;">Crystals <i class="fas fa-arrow-right"></i> Dark Matter</h4>
+            </div>
+            <div class="mobile-card-content" style="display: block;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.85rem;">
+                    <span class="text-muted">Rate:</span>
+                    <strong style="color: #d8b4fe;">10 : 0.7</strong>
+                </div>
+
+                <form action="/black-market/synthesize/crystals" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                    
+                    <div class="form-group">
+                        <label>Crystals to Convert</label>
+                        <input type="text" id="mob-syn-crystals-display" class="mobile-input" placeholder="e.g., 10" style="border-color: #a855f7;" required>
+                        <input type="hidden" name="amount" id="mob-syn-crystals-hidden">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 0.5rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
+                </form>
+            </div>
+        </div>
+    </div>
     
     <div style="margin-top: 2rem; text-align: center;">
         <a href="/black-market/actions" class="btn btn-outline" style="width: 100%;">
@@ -99,3 +164,35 @@ $maxSell = floor($userResources->naquadah_crystals);
         </a>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Init Mobile Tabs
+        const tabLinks = document.querySelectorAll('.nested-tabs .tab-link');
+        const tabContents = document.querySelectorAll('.nested-tab-content');
+
+        tabLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-tab-target');
+
+                tabLinks.forEach(l => l.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                link.classList.add('active');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // Input Masks
+        if (typeof StarlightUtils !== 'undefined') {
+            const credDisplay = document.getElementById('mob-syn-credits-display');
+            const credHidden = document.getElementById('mob-syn-credits-hidden');
+            if (credDisplay && credHidden) StarlightUtils.setupInputMask(credDisplay, credHidden);
+
+            const cryDisplay = document.getElementById('mob-syn-crystals-display');
+            const cryHidden = document.getElementById('mob-syn-crystals-hidden');
+            if (cryDisplay && cryHidden) StarlightUtils.setupInputMask(cryDisplay, cryHidden);
+        }
+    });
+</script>

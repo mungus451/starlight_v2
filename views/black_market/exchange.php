@@ -96,6 +96,77 @@
             </form>
         </div>
     </div>
+
+    <!-- Matter Synthesis -->
+    <h2 style="text-align: center; color: var(--accent); margin: 3rem 0 1rem 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">Matter Synthesis</h2>
+    <p style="text-align: center; color: var(--muted); margin-bottom: 2rem;">
+        Fuse raw materials into Dark Matter. <span class="text-danger">This process is irreversible.</span>
+    </p>
+
+    <div class="item-grid">
+        <!-- Credits -> DM -->
+        <div class="item-card" style="border-color: #a855f7; box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin: 0; color: #d8b4fe;">Credits <i class="fas fa-arrow-right"></i> Dark Matter</h4>
+                <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe;">10k : 0.7</span>
+            </div>
+            
+            <form action="/black-market/synthesize/credits" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                
+                <div class="form-group">
+                    <label>Amount of Credits to Convert</label>
+                    <input type="text" id="syn-credits-display" placeholder="e.g., 10,000" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #a855f7; padding: 0.5rem; color: white;" required>
+                    <input type="hidden" name="amount" id="syn-credits-hidden">
+                </div>
+                
+                <p style="font-size: 0.8rem; color: var(--muted);">
+                    Exchange Rate: <span class="text-accent">10,000 Credits -> 0.7 Dark Matter</span>
+                </p>
+
+                <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
+            </form>
+        </div>
+
+        <!-- Crystals -> DM -->
+        <div class="item-card" style="border-color: #a855f7; box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin: 0; color: #d8b4fe;">Crystals <i class="fas fa-arrow-right"></i> Dark Matter</h4>
+                <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe;">10 : 0.7</span>
+            </div>
+
+            <form action="/black-market/synthesize/crystals" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                
+                <div class="form-group">
+                    <label>Amount of Crystals to Convert</label>
+                    <input type="text" id="syn-crystals-display" placeholder="e.g., 10" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #a855f7; padding: 0.5rem; color: white;" required>
+                    <input type="hidden" name="amount" id="syn-crystals-hidden">
+                </div>
+
+                <p style="font-size: 0.8rem; color: var(--muted);">
+                    Exchange Rate: <span class="text-accent">10 Crystals -> 0.7 Dark Matter</span>
+                </p>
+
+                <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script src="/js/converter.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const creditsDisplay = document.getElementById('syn-credits-display');
+        const creditsHidden = document.getElementById('syn-credits-hidden');
+        if (creditsDisplay && creditsHidden) {
+            StarlightUtils.setupInputMask(creditsDisplay, creditsHidden);
+        }
+
+        const crystalsDisplay = document.getElementById('syn-crystals-display');
+        const crystalsHidden = document.getElementById('syn-crystals-hidden');
+        if (crystalsDisplay && crystalsHidden) {
+            StarlightUtils.setupInputMask(crystalsDisplay, crystalsHidden);
+        }
+    });
+</script>

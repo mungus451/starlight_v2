@@ -217,4 +217,31 @@ $this->session->setFlash('error', $response->message);
 }
 $this->redirect('/black-market/actions');
 }
+
+    // --- Synthesis (Dark Matter) ---
+    public function handleSynthesis(array $vars): void
+    {
+        $source = $vars['source'] ?? ''; // 'credits' or 'crystals'
+
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'amount' => 'required|numeric|min:0.000000001'
+        ]);
+
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid token.');
+            $this->redirect('/black-market/converter');
+            return;
+        }
+
+        $userId = $this->session->get('user_id');
+        $response = $this->bmService->synthesizeDarkMatter($userId, $source, $data['amount']);
+
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        $this->redirect('/black-market/converter');
+    }
 }

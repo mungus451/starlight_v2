@@ -128,10 +128,10 @@ soldiers: (int)$data['soldiers'],
 guards: (int)$data['guards'],
 spies: (int)$data['spies'],
 sentries: (int)$data['sentries'],
-untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
-research_data: (int)($data['research_data'] ?? 0),
-dark_matter: (int)($data['dark_matter'] ?? 0),
-protoform: (float)($data['protoform'] ?? 0.0)
-);
-}
+            untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
+            research_data: (int)($data['research_data'] ?? 0),
+            dark_matter: (float)($data['dark_matter'] ?? 0.0),
+            protoform: (float)($data['protoform'] ?? 0.0)
+        );
+    }
 }

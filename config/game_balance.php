@@ -240,8 +240,8 @@ return [
         'research_data_per_lab_level' => 100, // 100 Research Data per QRL level per turn
 
         // New: Dark Matter Generation
-        'dark_matter_per_siphon_level' => 0.5, // 0.5 Dark Matter per Siphon level per turn
-        'dark_matter_production_multiplier' => 1.02, // 2% boost per level
+        'dark_matter_per_siphon_level' => 5.0, // Was 0.5. Significantly boosted.
+        'dark_matter_production_multiplier' => 1.05, // Was 1.02. 5% boost per level.
 
         // New: Naquadah Generation
         'naquadah_per_mining_complex_level' => 10, // Base 10 Naquadah per level per turn

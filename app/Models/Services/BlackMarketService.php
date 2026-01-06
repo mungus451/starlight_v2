@@ -145,6 +145,10 @@ case 'crystals':
 $this->resourceRepo->updateResources($userId, 0, $qty);
 $msg = "JACKPOT! " . number_format($qty) . " Naquadah Crystals!";
 break;
+case 'dark_matter':
+$this->resourceRepo->updateResources($userId, 0, 0, $qty);
+$msg = "You found: " . number_format($qty) . " Dark Matter!";
+break;
 case 'neutral':
 $msg = $selected['text'] ?? "The container was empty.";
 break;
@@ -366,8 +370,65 @@ return ServiceResponse::error($e->getMessage());
 }
 }
 
-private function processPurchase(int $userId, float $cost, callable $action): ServiceResponse
-{
+    public function synthesizeDarkMatter(int $userId, string $sourceCurrency, float $quantity): ServiceResponse
+    {
+        if ($quantity <= 0) return ServiceResponse::error("Invalid quantity.");
+        
+        $resources = $this->resourceRepo->findByUserId($userId);
+        $dmReceived = 0;
+
+        if ($sourceCurrency === 'credits') {
+            // Credits are Integers. Floor the input.
+            $creditsToSpend = (int)floor($quantity);
+            if ($creditsToSpend < 1) return ServiceResponse::error("Minimum 1 Credit required.");
+
+            // Ratio: 10,000 Credits -> 1.0 Dark Matter (Base)
+            // House takes 30% -> 0.7 Dark Matter per 10,000 Credits.
+            // 1 Credit -> 0.00007 DM.
+            if ($resources->credits < $creditsToSpend) return ServiceResponse::error("Insufficient Credits.");
+            
+            $dmReceived = ($creditsToSpend / 10000) * 0.7;
+            
+            $this->db->beginTransaction();
+            try {
+                $this->resourceRepo->updateCredits($userId, $resources->credits - $creditsToSpend);
+                $this->resourceRepo->updateResources($userId, 0, 0, $dmReceived, 0); 
+                
+                $this->logRepo->log($userId, 'synthesis', 'credits', $creditsToSpend, null, ['dark_matter_gained' => $dmReceived]);
+                
+                $this->db->commit();
+                return ServiceResponse::success("Synthesis Complete. " . number_format($creditsToSpend) . " Credits converted to " . number_format($dmReceived, 9) . " Dark Matter.");
+            } catch (Throwable $e) {
+                $this->db->rollBack();
+                return ServiceResponse::error($e->getMessage());
+            }
+
+        } elseif ($sourceCurrency === 'crystals') {
+            // Crystals are Decimals. Use float directly.
+            // Ratio: 10 Crystals -> 1.0 Dark Matter (Base)
+            // House takes 30% -> 0.7 Dark Matter per 10 Crystals.
+            if ($resources->naquadah_crystals < $quantity) return ServiceResponse::error("Insufficient Crystals.");
+            
+            $dmReceived = ($quantity / 10) * 0.7;
+            
+            $this->db->beginTransaction();
+            try {
+                $this->resourceRepo->updateResources($userId, 0, -$quantity, $dmReceived, 0);
+                
+                $this->logRepo->log($userId, 'synthesis', 'crystals', $quantity, null, ['dark_matter_gained' => $dmReceived]);
+                
+                $this->db->commit();
+                return ServiceResponse::success("Synthesis Complete. " . number_format($quantity, 4) . " Crystals converted to " . number_format($dmReceived, 9) . " Dark Matter.");
+            } catch (Throwable $e) {
+                $this->db->rollBack();
+                return ServiceResponse::error($e->getMessage());
+            }
+        }
+
+        return ServiceResponse::error("Invalid currency source.");
+    }
+
+    private function processPurchase(int $userId, float $cost, callable $action): ServiceResponse{
 $resources = $this->resourceRepo->findByUserId($userId);
 if ($resources->naquadah_crystals < $cost) return ServiceResponse::error("Insufficient Naquadah Crystals.");
 

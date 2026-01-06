@@ -88,6 +88,13 @@ return [
 'max' => 100000000,
 'label' => 'JACKPOT! Naquadah Cache'
 ],
+'dark_matter_drop' => [
+'weight' => 5,
+'type' => 'dark_matter',
+'min' => 50,
+'max' => 500,
+'label' => 'Extracted Dark Matter'
+],
 
 // --- NEUTRAL OUTCOMES ---
 'space_dust' => [
