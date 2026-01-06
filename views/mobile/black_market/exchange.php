@@ -126,8 +126,15 @@ $maxSell = floor($userResources->naquadah_crystals);
                         <input type="text" id="mob-syn-credits-display" class="mobile-input" placeholder="e.g., 10,000" style="border-color: #a855f7;" required>
                         <input type="hidden" name="amount" id="mob-syn-credits-hidden">
                     </div>
+
+                    <div class="conversion-summary" style="margin-top: 1rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Base DM:</span> <span id="mob-syn-credits-base">0.0000 DM</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Fee (30%):</span> <span id="mob-syn-credits-fee">0.0000 DM</span></div>
+                        <hr style="border-color: rgba(255,255,255,0.05); margin: 0.5rem 0;">
+                        <div style="display: flex; justify-content: space-between; color: #d8b4fe; font-weight: 700;"><span>You will receive:</span> <span id="mob-syn-credits-receive">0.0000 DM</span></div>
+                    </div>
                     
-                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 0.5rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
+                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 1rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
                 </form>
             </div>
         </div>
@@ -151,8 +158,15 @@ $maxSell = floor($userResources->naquadah_crystals);
                         <input type="text" id="mob-syn-crystals-display" class="mobile-input" placeholder="e.g., 10" style="border-color: #a855f7;" required>
                         <input type="hidden" name="amount" id="mob-syn-crystals-hidden">
                     </div>
+
+                    <div class="conversion-summary" style="margin-top: 1rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Base DM:</span> <span id="mob-syn-crystals-base">0.0000 DM</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;"><span>Fee (30%):</span> <span id="mob-syn-crystals-fee">0.0000 DM</span></div>
+                        <hr style="border-color: rgba(255,255,255,0.05); margin: 0.5rem 0;">
+                        <div style="display: flex; justify-content: space-between; color: #d8b4fe; font-weight: 700;"><span>You will receive:</span> <span id="mob-syn-crystals-receive">0.0000 DM</span></div>
+                    </div>
                     
-                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 0.5rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
+                    <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 1rem; background: #7e22ce; border-color: #7e22ce;">Synthesize</button>
                 </form>
             </div>
         </div>
@@ -188,11 +202,33 @@ $maxSell = floor($userResources->naquadah_crystals);
         if (typeof StarlightUtils !== 'undefined') {
             const credDisplay = document.getElementById('mob-syn-credits-display');
             const credHidden = document.getElementById('mob-syn-credits-hidden');
-            if (credDisplay && credHidden) StarlightUtils.setupInputMask(credDisplay, credHidden);
+            if (credDisplay && credHidden) {
+                StarlightUtils.setupInputMask(credDisplay, credHidden);
+                credDisplay.addEventListener('input', () => {
+                    const val = parseFloat(credHidden.value) || 0;
+                    const base = val / 10000;
+                    const fee = base * 0.3;
+                    const receive = base * 0.7;
+                    document.getElementById('mob-syn-credits-base').textContent = base.toFixed(4) + ' DM';
+                    document.getElementById('mob-syn-credits-fee').textContent = fee.toFixed(4) + ' DM';
+                    document.getElementById('mob-syn-credits-receive').textContent = receive.toFixed(4) + ' DM';
+                });
+            }
 
             const cryDisplay = document.getElementById('mob-syn-crystals-display');
             const cryHidden = document.getElementById('mob-syn-crystals-hidden');
-            if (cryDisplay && cryHidden) StarlightUtils.setupInputMask(cryDisplay, cryHidden);
+            if (cryDisplay && cryHidden) {
+                StarlightUtils.setupInputMask(cryDisplay, cryHidden);
+                cryDisplay.addEventListener('input', () => {
+                    const val = parseFloat(cryHidden.value) || 0;
+                    const base = val / 10;
+                    const fee = base * 0.3;
+                    const receive = base * 0.7;
+                    document.getElementById('mob-syn-crystals-base').textContent = base.toFixed(4) + ' DM';
+                    document.getElementById('mob-syn-crystals-fee').textContent = fee.toFixed(4) + ' DM';
+                    document.getElementById('mob-syn-crystals-receive').textContent = receive.toFixed(4) + ' DM';
+                });
+            }
         }
     });
 </script>

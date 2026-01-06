@@ -127,11 +127,14 @@
                     <input type="text" id="syn-credits-display" placeholder="e.g., 10,000" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #a855f7; padding: 0.5rem; color: white;" required>
                     <input type="hidden" name="amount" id="syn-credits-hidden">
                 </div>
-                
-                <p style="font-size: 0.8rem; color: var(--muted);">
-                    Exchange Rate: <span class="text-accent">10,000 Credits -> 0.7 Dark Matter</span>
-                </p>
 
+                <div class="conversion-summary" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between;"><span>Potential DM:</span> <span id="syn-credits-base">0.0000 DM</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Fee (30%):</span> <span id="syn-credits-fee">0.0000 DM</span></div>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="syn-credits-receive">0.0000 DM</span></div>
+                </div>
+                
                 <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
             </form>
         </div>
@@ -152,9 +155,12 @@
                     <input type="hidden" name="amount" id="syn-crystals-hidden">
                 </div>
 
-                <p style="font-size: 0.8rem; color: var(--muted);">
-                    Exchange Rate: <span class="text-accent">10 Crystals -> 0.7 Dark Matter</span>
-                </p>
+                <div class="conversion-summary" style="margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between;"><span>Potential DM:</span> <span id="syn-crystals-base">0.0000 DM</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Fee (30%):</span> <span id="syn-crystals-fee">0.0000 DM</span></div>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="syn-crystals-receive">0.0000 DM</span></div>
+                </div>
 
                 <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
             </form>
@@ -169,12 +175,34 @@
         const creditsHidden = document.getElementById('syn-credits-hidden');
         if (creditsDisplay && creditsHidden) {
             StarlightUtils.setupInputMask(creditsDisplay, creditsHidden);
+            
+            creditsDisplay.addEventListener('input', () => {
+                const val = parseFloat(creditsHidden.value) || 0;
+                const base = val / 10000;
+                const fee = base * 0.3;
+                const receive = base * 0.7;
+                
+                document.getElementById('syn-credits-base').textContent = base.toFixed(4) + ' DM';
+                document.getElementById('syn-credits-fee').textContent = fee.toFixed(4) + ' DM';
+                document.getElementById('syn-credits-receive').textContent = receive.toFixed(4) + ' DM';
+            });
         }
 
         const crystalsDisplay = document.getElementById('syn-crystals-display');
         const crystalsHidden = document.getElementById('syn-crystals-hidden');
         if (crystalsDisplay && crystalsHidden) {
             StarlightUtils.setupInputMask(crystalsDisplay, crystalsHidden);
+            
+            crystalsDisplay.addEventListener('input', () => {
+                const val = parseFloat(crystalsHidden.value) || 0;
+                const base = val / 10;
+                const fee = base * 0.3;
+                const receive = base * 0.7;
+                
+                document.getElementById('syn-crystals-base').textContent = base.toFixed(4) + ' DM';
+                document.getElementById('syn-crystals-fee').textContent = fee.toFixed(4) + ' DM';
+                document.getElementById('syn-crystals-receive').textContent = receive.toFixed(4) + ' DM';
+            });
         }
     });
 </script>
