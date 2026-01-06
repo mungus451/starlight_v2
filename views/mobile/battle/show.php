@@ -38,6 +38,7 @@
         <div class="mobile-card-content" style="display: block;">
             <form action="/battle/attack" method="POST" id="attack-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                <input type="hidden" name="attack_type" value="plunder">
                 
                 <div class="form-group">
                     <label for="target_name">Target Commander</label>
