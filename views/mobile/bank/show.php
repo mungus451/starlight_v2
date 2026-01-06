@@ -33,6 +33,14 @@ $depositLimit = floor($resources->credits * ($bankConfig['deposit_percent_limit'
                     <strong style="<?= $stats->deposit_charges > 0 ? 'color: var(--mobile-accent-green);' : 'color: var(--mobile-accent-green);' ?>">
                         <?= $stats->deposit_charges ?> / <?= $bankConfig['deposit_max_charges'] ?>
                     </strong>
+                    <div style="font-size: 0.8rem; margin-top: 0.3rem;">
+                         <span class="timer-countdown" id="deposit-timer-countdown"
+                              data-last-deposit="<?= htmlspecialchars($stats->last_deposit_at ?? '') ?>"
+                              data-current-charges="<?= (int)$stats->deposit_charges ?>"
+                              data-max-charges="<?= (int)$bankConfig['deposit_max_charges'] ?>"
+                              data-regen-hours="<?= (int)$bankConfig['deposit_charge_regen_hours'] ?>">
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -131,3 +139,4 @@ $depositLimit = floor($resources->credits * ($bankConfig['deposit_percent_limit'
         </div>
     </div> <!-- End nested-tabs-container -->
 </div>
+<script src="/js/bank.js"></script>
