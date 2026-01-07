@@ -206,8 +206,8 @@ $c->get(ArmoryService::class),
 $c->get(PowerCalculatorService::class),
 $c->get(LevelUpService::class),
 $c->get(EventDispatcher::class),
-$c->get(EffectService::class), // --- NEW ---
-$c->get(NetWorthCalculatorService::class)
+$c->get(EffectService::class),
+$c->get(\App\Models\Services\NetWorthCalculatorService::class)
 );
 },
 
