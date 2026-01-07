@@ -37,6 +37,7 @@ class AlmanacController extends BaseController
 
         $this->render('almanac/index.php', [
             'pageTitle' => 'The Almanac',
+            'layoutMode' => 'full',
             'players' => $players,
             'alliances' => $alliances
         ]);
