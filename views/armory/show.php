@@ -8,255 +8,203 @@
 /* @var array $loadouts */
 /* @var float $discountPercent */
 /* @var bool $hasDiscount */
+
+// Simple Icon Mapping Helpers
+$unitIcons = [
+    'soldier' => 'fas fa-fist-raised',
+    'guard'   => 'fas fa-shield-alt',
+    'spy'     => 'fas fa-user-secret',
+    'sentry'  => 'fas fa-satellite-dish',
+    'worker'  => 'fas fa-hard-hat'
+];
+
+$categoryIcons = [
+    'main_weapon' => 'fas fa-gun',
+    'sidearm'     => 'fas fa-hand-holding-gun',
+    'melee'       => 'fas fa-sword',
+    'headgear'    => 'fas fa-head-side-mask',
+    'explosives'  => 'fas fa-bomb',
+    'armor_suit'  => 'fas fa-vest',
+    'secondary_defense' => 'fas fa-microchip',
+    'melee_counter' => 'fas fa-user-shield',
+    'defensive_headgear' => 'fas fa-helmet-battle',
+    'defensive_deployable' => 'fas fa-door-closed',
+    'silenced_projectors' => 'fas fa-wind',
+    'cloaking_disruption' => 'fas fa-ghost',
+    'concealed_blades' => 'fas fa-cut',
+    'intel_suite' => 'fas fa-brain',
+    'infiltration_gadgets' => 'fas fa-tools',
+    'shields' => 'fas fa-shield-virus',
+    'secondary_defensive_systems' => 'fas fa-cogs',
+    'shield_bash' => 'fas fa-impact--shield',
+    'helmets' => 'fas fa-hard-hat',
+    'fortifications' => 'fas fa-fort-awesome',
+    'mining_lasers_drills' => 'fas fa-hammer',
+    'resource_enhancement' => 'fas fa-magnet',
+    'exo_rig_plating' => 'fas fa-robot',
+    'scanners' => 'fas fa-search-plus',
+    'drones' => 'fas fa-helicopter'
+];
 ?>
 
-<div class="container-full">
-    <h1>Armory</h1>
-
-    <div class="resource-header-card">
-        <div class="header-stat">
-            <span>Credits on Hand</span>
-            <strong class="accent" id="global-user-credits" data-credits="<?= $userResources->credits ?>">
-                <?= number_format($userResources->credits) ?>
-            </strong>
-        </div>
-        <div class="header-stat">
-            <span>Dark Matter</span>
-            <strong class="accent" id="global-user-dark-matter" data-dark-matter="<?= $userResources->dark_matter ?>">
-                <?= number_format($userResources->dark_matter) ?>
-            </strong>
-        </div>
-        <div class="header-stat">
-            <span>Naquadah Crystals</span>
-            <strong class="accent" id="global-user-crystals" data-crystals="<?= $userResources->naquadah_crystals ?>">
-                <?= number_format($userResources->naquadah_crystals) ?>
-            </strong>
-        </div>
-        <div class="header-stat">
-            <span>Armory Level</span>
-            <strong class="accent-teal" id="global-armory-level" data-level="<?= $userStructures->armory_level ?>">
-                Level <?= $userStructures->armory_level ?>
-            </strong>
-        </div>
-        
-        <div class="header-stat">
-            <span>Charisma Bonus</span>
-            <strong class="accent-green">
-                <?= number_format($discountPercent * 100, 1) ?>% Discount
-            </strong>
+<div class="advisor-main-content">
+    <!-- 1. Context Banner -->
+    <div class="card-header-main mb-4 border-radius-8">
+        <div class="flex-between w-full align-items-center" style="display:flex; width: 100%; justify-content: space-between;">
+            <div class="card-title-group">
+                <span class="text-neon-blue">Empire Command</span>
+                <h4>Armory Requisitions</h4>
+            </div>
+            <div class="flex-gap-sm">
+                <div class="badge bg-dark border-secondary">
+                    Armory Lvl <?= $userStructures->armory_level ?>
+                </div>
+                <div class="badge bg-dark border-success">
+                    <i class="fas fa-tags icon-gold"></i> <?= number_format($discountPercent * 100, 1) ?>% Discount
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="tabs-nav">
-        <?php $i = 0; ?>
+    <!-- 2. Unit Selection Tabs -->
+    <div class="tabs-nav mb-4 justify-content-center">
         <?php foreach ($armoryConfig as $unitKey => $unitData): ?>
-            <a class="tab-link <?= $i === 0 ? 'active' : '' ?>" data-tab="tab-<?= $unitKey ?>">
-                <?= htmlspecialchars($unitData['title']) ?>
+            <a class="tab-link <?= $unitKey === 'soldier' ? 'active' : '' ?>" data-tab="tab-<?= $unitKey ?>">
+                <i class="<?= $unitIcons[$unitKey] ?? 'fas fa-user' ?>" style="margin-right: 8px;"></i> <?= htmlspecialchars($unitKey) ?>
             </a>
-            <?php $i++; ?>
         <?php endforeach; ?>
     </div>
 
-    <?php $i = 0; ?>
+    <!-- 3. Configurator Tabs Content -->
     <?php foreach ($armoryConfig as $unitKey => $unitData): ?>
-        <?php 
-            $unitResourceKey = $unitData['unit']; 
-            $unitCount = $userResources->{$unitResourceKey} ?? 0;
-            // Use the Service-prepared data
-            $tieredItems = $manufacturingData[$unitKey] ?? [];
-        ?>
-        <div id="tab-<?= $unitKey ?>" class="tab-content <?= $i === 0 ? 'active' : '' ?>" data-unit-key="<?= $unitKey ?>" data-unit-count="<?= $unitCount ?>">
-            
-            <div class="split-grid">
-                
-                <!-- Left Column: Loadout Management -->
-                <div class="data-card sticky-sidebar">
-                    <h3 class="text-accent">Loadout</h3>
-                    <p class="form-note mb-1">
-                        Active Units: <strong><?= number_format($unitCount) ?> <?= htmlspecialchars(ucfirst($unitResourceKey)) ?></strong>
-                    </p>
-                    
-                    <form action="/armory/equip" method="POST" class="equip-form">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                        <input type="hidden" name="unit_key" value="<?= $unitKey ?>">
+        <div id="tab-<?= $unitKey ?>" class="tab-content <?= $unitKey === 'soldier' ? 'active' : '' ?>">
+            <div class="structures-grid">
+                <?php foreach ($unitData['categories'] as $catKey => $catData): ?>
+                    <div class="structure-card slot-card" 
+                         data-unit="<?= $unitKey ?>" 
+                         data-category="<?= $catKey ?>">
                         
-                        <?php foreach ($unitData['categories'] as $categoryKey => $categoryData): ?>
-                            <div class="form-group">
-                                <label for="equip-<?= $unitKey ?>-<?= $categoryKey ?>">
-                                    <?= htmlspecialchars($categoryData['title']) ?>
-                                </label>
-                                <select class="equip-select w-full p-05 text-sm" 
-                                        data-category-key="<?= $categoryKey ?>">
-                                    <option value="">-- None Equipped --</option>
+                        <!-- Header -->
+                        <div class="card-header-main">
+                            <div class="card-icon">
+                                <i class="<?= $categoryIcons[$catKey] ?? 'fas fa-box' ?>"></i>
+                            </div>
+                            <div class="card-title-group">
+                                <span>Slot Configuration</span>
+                                <h4><?= htmlspecialchars($catData['title']) ?></h4>
+                            </div>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="card-body-main">
+                            <!-- Equipped Status -->
+                            <div class="equipped-status mb-3">
+                                <label class="text-muted font-07 text-uppercase mb-1" style="display: block;">Currently Equipped</label>
+                                <div class="equipped-item-display">
                                     <?php 
-                                        $currentlyEquipped = $loadouts[$unitKey][$categoryKey] ?? null;
-                                        foreach ($categoryData['items'] as $itemKey => $item): 
-                                            $owned = (int)($inventory[$itemKey] ?? 0);
+                                        $equippedKey = $loadouts[$unitKey][$catKey] ?? null;
+                                        $equippedItem = $equippedKey ? ($catData['items'][$equippedKey] ?? null) : null;
                                     ?>
-                                        <option value="<?= $itemKey ?>" <?= $currentlyEquipped === $itemKey ? 'selected' : '' ?>>
+                                    <strong class="text-neon-blue current-equipped-name">
+                                        <?= $equippedItem ? htmlspecialchars($equippedItem['name']) : 'None' ?>
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <hr class="opacity-20 mb-3">
+
+                            <!-- Requisition Selection -->
+                            <div class="form-group mb-3">
+                                <label class="text-muted font-07 text-uppercase mb-1" style="display: block;">Requisition Catalog</label>
+                                <select class="form-select config-select w-full bg-dark text-light border-secondary" 
+                                        style="padding: 0.5rem; border-radius: 6px;"
+                                        data-unit="<?= $unitKey ?>" 
+                                        data-category="<?= $catKey ?>">
+                                    <?php foreach ($catData['items'] as $itemKey => $item): 
+                                        $owned = (int)($inventory[$itemKey] ?? 0);
+                                    ?>
+                                        <option value="<?= $itemKey ?>" <?= $equippedKey === $itemKey ? 'selected' : '' ?>>
                                             <?= htmlspecialchars($item['name']) ?> (Owned: <?= number_format($owned) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                        <?php endforeach; ?>
-                        
-                        <input type="hidden" name="category_key" class="dynamic-category-key" value="">
-                        <input type="hidden" name="item_key" class="dynamic-item-key" value="">
-                    </form>
-                </div>
 
-                <!-- Right Column: Manufacturing (Logic-Free View) -->
-                <div>
-                    <?php foreach ($tieredItems as $tier => $items): ?>
-                        <details class="tier-accordion" data-tier="<?= $tier ?>" <?= $tier === 1 ? 'open' : '' ?>>
-                            <summary class="tier-summary">
-                                Tier <?= $tier ?> Equipment
-                            </summary>
-                            
-                            <div class="tier-content">
-                                <div class="item-grid grid-3">
-                                    <?php foreach ($items as $item): ?>
-                                        <div class="item-card">
-                                            <div class="flex-between mb-05">
-                                                <h4 class="m-0 border-none font-1-1"><?= htmlspecialchars($item['name']) ?></h4>
-                                                <span class="data-badge text-uppercase bg-glass text-muted border-glass font-07">
-                                                    <?= htmlspecialchars($item['slot_name']) ?>
-                                                </span>
-                                            </div>
-                                            
-                                            <p class="item-notes mb-075"><?= htmlspecialchars($item['notes']) ?></p>
-                                            
-                                            <div class="item-stats">
-                                                <?php foreach ($item['stat_badges'] as $badge): ?>
-                                                    <span class="stat-pill <?= $badge['type'] ?>"><?= $badge['label'] ?></span>
-                                                <?php endforeach; ?>
-                                            </div>
+                            <!-- Dynamic Info Area -->
+                            <div class="item-info-area p-3 mb-3" style="padding: 1rem;">
+                                <div class="item-stats-row mb-3" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    <!-- Populated by JS -->
+                                </div>
+                                
+                                <p class="item-description-text font-08 text-muted mb-3" style="min-height: 40px; margin-bottom: 1rem;">
+                                    <!-- Populated by JS -->
+                                </p>
 
-                                            <ul class="item-info font-085">
-                                                <li>
-                                                    <span>Cost:</span> 
-                                                    <div>
-                                                        <?php if ($hasDiscount): ?>
-                                                            <span class="cost-original"><?= number_format($item['base_cost']) ?></span>
-                                                            <strong class="cost-discounted"><?= number_format($item['effective_cost']) ?></strong>
-                                                        <?php else: ?>
-                                                            <strong><?= number_format($item['base_cost']) ?></strong>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </li>
-                                                <?php if ($item['cost_crystals'] > 0): ?>
-                                                <li>
-                                                    <span>Crystals:</span> 
-                                                    <strong><?= number_format($item['cost_crystals']) ?></strong>
-                                                </li>
-                                                <?php endif; ?>
-                                                <?php if ($item['cost_dark_matter'] > 0): ?>
-                                                <li>
-                                                    <span>Dark Matter:</span> 
-                                                    <strong><?= number_format($item['cost_dark_matter']) ?></strong>
-                                                </li>
-                                                <?php endif; ?>
-                                                <?php if ($item['armory_level_req'] > 0): ?>
-                                                    <li>
-                                                        <span>Armory:</span>
-                                                        <strong class="<?= $item['level_status_class'] ?>">
-                                                            Lvl <?= $item['armory_level_req'] ?>
-                                                        </strong>
-                                                    </li>
-                                                <?php endif; ?>
-                                                
-                                                <?php if (!$item['is_tier_1']): ?>
-                                                    <li>
-                                                        <span>Req:</span>
-                                                        <strong><?= htmlspecialchars($item['prereq_name']) ?></strong>
-                                                    </li>
-                                                    <li>
-                                                        <span>Req Owned:</span>
-                                                        <strong data-inventory-key="<?= $item['prereq_key'] ?>"><?= number_format($item['prereq_owned']) ?></strong>
-                                                    </li>
-                                                <?php endif; ?>
-                                                
-                                                <li class="border-top pt-05 mt-025">
-                                                    <span>Owned:</span> 
-                                                    <strong class="accent font-1-1" data-inventory-key="<?= $item['item_key'] ?>">
-                                                        <?= number_format($item['current_owned']) ?>
-                                                    </strong>
-                                                </li>
-                                            </ul>
-
-                                            <form action="/armory/manufacture" method="POST" class="manufacture-form mt-auto">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                                <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
-                                                
-                                                <div class="form-group">
-                                                    <div class="amount-input-wrapper mb-2">
-                                                        <input type="number" name="quantity" class="manufacture-amount w-full" min="1" placeholder="Qty" required 
-                                                            data-item-key="<?= $item['item_key'] ?>"
-                                                            data-item-cost="<?= $item['effective_cost'] ?>"
-                                                            data-cost-crystals="<?= $item['cost_crystals'] ?>"
-                                                            data-cost-dark-matter="<?= $item['cost_dark_matter'] ?>"
-                                                            data-prereq-key="<?= $item['prereq_key'] ?? '' ?>"
-                                                            data-prereq-owned="<?= $item['is_tier_1'] ? 999999999 : ($item['prereq_owned'] ?? 0) ?>"
-                                                            data-current-owned="<?= $item['current_owned'] ?>"
-                                                        >
-                                                    </div>
-                                                    <div class="button-group flex-gap-sm">
-                                                        <?php if ($item['is_tier_1']): ?>
-                                                            <button type="button" class="btn-submit btn-accent btn-max-manufacture flex-grow-1">Max</button>
-                                                        <?php else: ?>
-                                                            <button type="button" class="btn-submit btn-accent btn-max-upgrade flex-grow-1">Max</button>
-                                                        <?php endif; ?>
-                                                        <button type="submit" class="btn-submit btn-buy-now flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>Buy Now</button>
-                                                        <button type="button" class="btn-submit btn-add-to-batch flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>
-                                                            <?= $item['manufacture_btn_text'] ?>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    <?php endforeach; ?>
+                                <div class="cost-info font-08">
+                                    <div class="flex-between mb-1" style="display:flex; justify-content:space-between;">
+                                        <span>Credit Cost:</span>
+                                        <strong class="text-warning item-cost-display">0</strong>
+                                    </div>
+                                    <div class="flex-between mb-1 additional-costs" style="display:flex; flex-direction:column;">
+                                        <!-- Crystals/Dark Matter populated by JS -->
+                                    </div>
+                                    <div class="flex-between" style="display:flex; justify-content:space-between;">
+                                        <span>In Inventory:</span>
+                                        <strong class="text-info item-owned-display">0</strong>
+                                    </div>
                                 </div>
                             </div>
-                        </details>
-                    <?php endforeach; ?>
-                </div>
+
+                            <!-- Actions -->
+                            <div class="card-footer-actions mt-auto">
+                                <form class="manufacture-config-form" method="POST" action="/armory/manufacture">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <input type="hidden" name="item_key" class="dynamic-item-key">
+                                    
+                                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <input type="number" name="quantity" class="form-control config-qty" value="1" min="1">
+                                        <button type="submit" class="btn btn-primary btn-config-buy" style="flex-grow: 1;">
+                                            <i class="fas fa-shopping-cart" style="margin-right: 5px;"></i> Buy
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <form class="equip-config-form" method="POST" action="/armory/equip">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                    <input type="hidden" name="unit_key" value="<?= $unitKey ?>">
+                                    <input type="hidden" name="category_key" value="<?= $catKey ?>">
+                                    <input type="hidden" name="item_key" class="dynamic-item-key">
+                                    <div class="d-flex gap-2" style="display:flex; gap: 0.5rem;">
+                                        <button type="submit" class="btn btn-outline-info flex-grow-1 btn-config-equip">
+                                            <i class="fas fa-check-circle" style="margin-right: 5px;"></i> Equip
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning btn-config-unequip" title="Unequip Slot">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
-        <?php $i++; ?>
     <?php endforeach; ?>
 </div>
 
-<!-- Batch Checkout Box -->
-<div id="armory-checkout-box" style="display:none; position: fixed; bottom: 20px; right: 20px; width: 320px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(0,0,0,0.8); padding: 15px; z-index: 9999; border-radius: 8px; backdrop-filter: blur(5px);">
-    <div class="checkout-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 1.1em; color: var(--accent);">Batch Manufacture</h3>
-        <button id="btn-cancel-batch" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2em;">&times;</button>
-    </div>
-    
-    <div id="checkout-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; font-size: 0.9em;">
-        <!-- Items injected by JS -->
-    </div>
-    
-    <div class="checkout-totals" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>Total Credits:</span>
-            <span class="accent-gold" id="checkout-total-credits">0</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>Total Dark Matter:</span>
-            <span class="accent-purple" id="checkout-total-dark-matter">0</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>Total Crystals:</span>
-            <span class="accent-cyan" id="checkout-total-crystals">0</span>
-        </div>
-    </div>
-    
-    <form id="armory-checkout-form" method="POST">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-        <button type="submit" class="btn-submit" style="width: 100%;">Confirm Purchase</button>
-    </form>
-</div>
+<!-- Raw Data for JavaScript -->
+<script>
+    window.ArmoryData = {
+        config: <?= json_encode($armoryConfig) ?>,
+        manufacturing: <?= json_encode($manufacturingData) ?>,
+        inventory: <?= json_encode($inventory) ?>,
+        loadouts: <?= json_encode($loadouts) ?>,
+        userResources: {
+            credits: <?= (int)$userResources->credits ?>,
+            crystals: <?= (int)$userResources->naquadah_crystals ?>,
+            darkMatter: <?= (int)$userResources->dark_matter ?>
+        }
+    };
+</script>
 
 <script src="/js/armory.js?v=<?= time() ?>"></script>
