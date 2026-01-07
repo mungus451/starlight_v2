@@ -413,27 +413,7 @@ class NpcService
             created_at: 'now', updated_at: 'now'
         );
         
-        $enemyStats = new UserStats(
-            user_id: 0,
-            level: 1,
-            experience: 0,
-            net_worth: 0,
-            war_prestige: 0,
-            energy: 0,
-            attack_turns: 0,
-            level_up_points: 0,
-            strength_points: 0,
-            constitution_points: 0,
-            wealth_points: 0,
-            dexterity_points: 0,
-            charisma_points: 0,
-            deposit_charges: 0,
-            last_deposit_at: null,
-            battles_won: 0,
-            battles_lost: 0,
-            spy_successes: 0,
-            spy_failures: 0
-        );
+        $enemyStats = new UserStats(id: 0, user_id: 0, strength_points: 0, constitution_points: 0, agility_points: 0, wealth_points: 0, attack_turns: 0, created_at: 'now');
 
         $enemyDefense = $this->powerCalcService->calculateDefensePower(0, $enemyRes, $enemyStats, $enemyStruct)['total'];
 

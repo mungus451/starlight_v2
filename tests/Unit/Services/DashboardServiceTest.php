@@ -27,11 +27,6 @@ class DashboardServiceTest extends TestCase
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalc;
     private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalc;
 
-    private NotificationRepository|Mockery\MockInterface $mockNotificationRepo;
-    private AdvisorService|Mockery\MockInterface $mockAdvisorService;
-    private BountyRepository|Mockery\MockInterface $mockBountyRepo;
-    private WarRepository|Mockery\MockInterface $mockWarRepo;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -41,10 +36,6 @@ class DashboardServiceTest extends TestCase
         $this->mockStatsRepo = Mockery::mock(StatsRepository::class);
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
         $this->mockEffectRepo = Mockery::mock(EffectRepository::class);
-        $this->mockNotificationRepo = Mockery::mock(\App\Models\Repositories\NotificationRepository::class);
-        $this->mockAdvisorService = Mockery::mock(\App\Models\Services\AdvisorService::class);
-        $this->mockBountyRepo = Mockery::mock(\App\Models\Repositories\BountyRepository::class);
-        $this->mockWarRepo = Mockery::mock(\App\Models\Repositories\WarRepository::class);
         $this->mockPowerCalc = Mockery::mock(PowerCalculatorService::class);
         $this->mockNwCalc = Mockery::mock(\App\Models\Services\NetWorthCalculatorService::class);
 
@@ -54,10 +45,6 @@ class DashboardServiceTest extends TestCase
             $this->mockStatsRepo,
             $this->mockStructureRepo,
             $this->mockEffectRepo,
-            $this->mockNotificationRepo,
-            $this->mockAdvisorService,
-            $this->mockBountyRepo,
-            $this->mockWarRepo,
             $this->mockPowerCalc,
             $this->mockNwCalc
         );
@@ -79,12 +66,6 @@ class DashboardServiceTest extends TestCase
         $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($struct);
         $this->mockEffectRepo->shouldReceive('getAllActiveEffects')->with($userId)->andReturn([]);
         $this->mockNwCalc->shouldReceive('calculateTotalNetWorth')->with($userId)->andReturn(1000.0);
-        $this->mockAdvisorService->shouldReceive('getSuggestions')->with($user)->andReturn([]);
-        $this->mockNotificationRepo->shouldReceive('getRecent')->with($userId, 3)->andReturn([]);
-        
-        $this->mockStatsRepo->shouldReceive('findRivalByNetWorth')->with($stats)->andReturn(null);
-        $this->mockBountyRepo->shouldReceive('getHighestActiveBounty')->andReturn(null);
-        $this->mockWarRepo->shouldReceive('findActiveWarByAllianceId')->with($allianceId)->andReturn(null);
 
         // Verify Calculations are called with correct Alliance ID
         $this->mockPowerCalc->shouldReceive('calculateIncomePerTurn')
@@ -133,7 +114,7 @@ class DashboardServiceTest extends TestCase
 
     private function createMockStats(int $userId): UserStats
     {
-        return new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, 0, 0);
+        return new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null);
     }
 
     private function createMockStructure(int $userId): UserStructure

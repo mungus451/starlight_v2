@@ -223,8 +223,7 @@ class HighRiskProtocolTest extends TestCase
         return new UserStats(
             $d['user_id'], $d['level'], $d['experience'], $d['net_worth'], $d['war_prestige'],
             $d['energy'], $d['attack_turns'], $d['level_up_points'], $d['strength_points'], $d['constitution_points'],
-            $d['wealth_points'], $d['dexterity_points'], $d['charisma_points'], $d['deposit_charges'], $d['last_deposit_at'],
-            0, 0, 0, 0
+            $d['wealth_points'], $d['dexterity_points'], $d['charisma_points'], $d['deposit_charges'], $d['last_deposit_at']
         );
     }
 

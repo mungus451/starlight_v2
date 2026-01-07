@@ -97,7 +97,7 @@ class ProtoformLoopTest extends TestCase
         // Mock Data Fetches
         $resources = new UserResource($userId, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0);
         $structures = new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        $stats = new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, 0, 0);
+        $stats = new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null);
 
         $mockResourceRepo->shouldReceive('findByUserId')->andReturn($resources);
         $mockStructureRepo->shouldReceive('findByUserId')->andReturn($structures);

@@ -163,7 +163,7 @@ class SpyTheftTest extends TestCase
 
     private function createMockStats(int $userId): UserStats
     {
-        return new UserStats($userId, 5, 1000, 500000, 100, 100, 50, 0, 0, 0, 0, 0, 0, 5, null, 0, 0, 0, 0);
+        return new UserStats($userId, 5, 1000, 500000, 100, 100, 50, 0, 0, 0, 0, 0, 0, 5, null);
     }
 
     private function createMockStructure(int $userId): UserStructure
