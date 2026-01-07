@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // State
     let charts = {};
     let searchType = 'players'; // 'players' or 'alliances'
+    let searchTimeout = null;
 
     // --- Modal Logic ---
     const modal = document.getElementById('almanac-search-modal');
@@ -27,7 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modalInput.value = '';
         modalResults.innerHTML = '';
         modal.style.display = 'flex';
-        setTimeout(() => modalInput.focus(), 100); // Focus after transition
+        
+        // Trigger initial empty search to show top results
+        performSearch('');
+        
+        setTimeout(() => modalInput.focus(), 100);
     };
 
     window.closeSearchModal = function() {
@@ -46,82 +51,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Autocomplete Logic (Single Shared Input) ---
-    let searchTimeout = null;
-
+    // --- Autocomplete Logic ---
     modalInput.addEventListener('input', () => {
         const query = modalInput.value.trim();
         clearTimeout(searchTimeout);
-
-        if (query.length < 2) {
-            modalResults.innerHTML = '';
-            return;
-        }
-
-        searchTimeout = setTimeout(() => {
-            // Loading State
-            modalResults.innerHTML = '<div class="p-4 text-center"><div class="spinner-sm mx-auto"></div></div>';
-
-            const endpoint = searchType === 'players' 
-                ? '/almanac/search_players' 
-                : '/almanac/search_alliances';
-
-            fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        modalResults.innerHTML = '<div class="p-4 text-center text-muted">No matches found in database.</div>';
-                        return;
-                    }
-
-                    modalResults.innerHTML = '';
-                    data.forEach(item => {
-                        const el = document.createElement('div');
-                        el.className = 'result-item';
-                        
-                        if (searchType === 'players') {
-                            const avatarUrl = item.profile_picture_url 
-                                ? `/serve/avatar/${item.profile_picture_url}` 
-                                : '/img/default_avatar.png';
-                            
-                            el.innerHTML = `
-                                <img src="${avatarUrl}" class="result-avatar">
-                                <div class="result-info">
-                                    <span class="result-name text-light">${item.character_name}</span>
-                                    <span class="result-meta">Level ${item.level}</span>
-                                </div>
-                            `;
-                            el.onclick = () => {
-                                loadPlayerDossier(item.id);
-                                closeSearchModal();
-                            };
-                        } else {
-                            const avatarUrl = item.profile_picture_url 
-                                ? `/serve/alliance_avatar/${item.profile_picture_url}` 
-                                : '/img/default_alliance.png';
-                            
-                            el.innerHTML = `
-                                <img src="${avatarUrl}" class="result-avatar">
-                                <div class="result-info">
-                                    <span class="result-name text-warning">[${item.tag}] ${item.name}</span>
-                                    <span class="result-meta">${item.member_count} Members</span>
-                                </div>
-                            `;
-                            el.onclick = () => {
-                                loadAllianceDossier(item.id);
-                                closeSearchModal();
-                            };
-                        }
-                        
-                        modalResults.appendChild(el);
-                    });
-                })
-                .catch(err => {
-                    console.error(err);
-                    modalResults.innerHTML = '<div class="p-4 text-center text-danger">Connection Error.</div>';
-                });
-        }, 300);
+        searchTimeout = setTimeout(() => performSearch(query), 300);
     });
+
+    function performSearch(query) {
+        // Loading State
+        modalResults.innerHTML = '<div class="p-4 text-center"><div class="spinner-sm mx-auto"></div></div>';
+
+        const endpoint = searchType === 'players' 
+            ? '/almanac/search_players' 
+            : '/almanac/search_alliances';
+
+        fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.length === 0) {
+                    modalResults.innerHTML = '<div class="p-4 text-center text-muted">No matches found in database.</div>';
+                    return;
+                }
+
+                modalResults.innerHTML = '';
+                data.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'result-item';
+                    
+                    if (searchType === 'players') {
+                        const avatarUrl = item.profile_picture_url 
+                            ? `/serve/avatar/${item.profile_picture_url}` 
+                            : '/img/default_avatar.png';
+                        
+                        // Added fallback for level if undefined
+                        const level = item.level !== undefined ? item.level : '??';
+                        
+                        el.innerHTML = `
+                            <img src="${avatarUrl}" class="result-avatar">
+                            <div class="result-info">
+                                <span class="result-name text-light">${item.character_name}</span>
+                                <span class="result-meta">Level ${level}</span>
+                            </div>
+                        `;
+                        el.onclick = () => {
+                            loadPlayerDossier(item.id);
+                            closeSearchModal();
+                        };
+                    } else {
+                        const avatarUrl = item.profile_picture_url 
+                            ? `/serve/alliance_avatar/${item.profile_picture_url}` 
+                            : '/img/default_alliance.png';
+                        
+                        el.innerHTML = `
+                            <img src="${avatarUrl}" class="result-avatar">
+                            <div class="result-info">
+                                <span class="result-name text-warning">[${item.tag}] ${item.name}</span>
+                                <span class="result-meta">${item.member_count} Members</span>
+                            </div>
+                        `;
+                        el.onclick = () => {
+                            loadAllianceDossier(item.id);
+                            closeSearchModal();
+                        };
+                    }
+                    
+                    modalResults.appendChild(el);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                modalResults.innerHTML = '<div class="p-4 text-center text-danger">Connection Error.</div>';
+            });
+    }
 
 
     // --- Core Logic (Dossier Loading) ---

@@ -145,8 +145,9 @@ class AlmanacService
      */
     public function searchPlayers(string $query): array
     {
-        if (strlen($query) < 2) {
-            return [];
+        // If empty, return top 20 (default behavior)
+        if (empty($query)) {
+            return $this->userRepo->searchByCharacterName('', 20);
         }
         return $this->userRepo->searchByCharacterName($query, 10);
     }
@@ -156,8 +157,9 @@ class AlmanacService
      */
     public function searchAlliances(string $query): array
     {
-        if (strlen($query) < 2) {
-            return [];
+        // If empty, return top 20 (default behavior)
+        if (empty($query)) {
+            return $this->allianceRepo->searchByName('', 20);
         }
         return $this->allianceRepo->searchByName($query, 10);
     }
