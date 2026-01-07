@@ -13,6 +13,7 @@ use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\StructureRepository; // --- NEW ---
 use App\Models\Services\EffectService;
 use App\Models\Services\LevelUpService;
+use App\Models\Services\GeneralService;
 use PDO;
 use Throwable;
 
@@ -34,6 +35,7 @@ private EffectService $effectService;
 private HouseFinanceRepository $houseFinanceRepo;
 private LevelUpService $levelUpService;
 private StructureRepository $structureRepo; // --- NEW ---
+private GeneralService $generalService;
 
 public function __construct(
 PDO $db,
@@ -47,7 +49,8 @@ BlackMarketLogRepository $logRepo,
 EffectService $effectService,
 HouseFinanceRepository $houseFinanceRepo,
 LevelUpService $levelUpService,
-StructureRepository $structureRepo // --- NEW ---
+StructureRepository $structureRepo, // --- NEW ---
+GeneralService $generalService
 ) {
 $this->db = $db;
 $this->config = $config;
@@ -61,6 +64,7 @@ $this->effectService = $effectService;
 $this->houseFinanceRepo = $houseFinanceRepo;
 $this->levelUpService = $levelUpService;
 $this->structureRepo = $structureRepo;
+$this->generalService = $generalService;
 }
 
     public function getUndermarketPageData(int $userId): array
@@ -512,6 +516,87 @@ return ServiceResponse::error($e->getMessage());
         }
 
         return ServiceResponse::error("Invalid currency source.");
+    }
+
+    public function draftMercenaries(int $userId, string $unitType, int $quantity): ServiceResponse
+    {
+        $structures = $this->structureRepo->findByUserId($userId);
+        if (!$structures || $structures->mercenary_outpost_level <= 0) {
+            return ServiceResponse::error("You must build a Mercenary Outpost to draft units.");
+        }
+
+        if ($quantity <= 0) {
+            return ServiceResponse::error("Quantity must be a positive number.");
+        }
+
+        $config = $this->config->get('black_market.mercenary_outpost');
+        $limitPerLevel = $config['limit_per_level'] ?? 500;
+        $maxDraft = $structures->mercenary_outpost_level * $limitPerLevel;
+
+        if ($quantity > $maxDraft) {
+            return ServiceResponse::error("You can only draft a maximum of " . number_format($maxDraft) . " units at your current outpost level.");
+        }
+
+        $unitCost = $config['costs'][$unitType]['dark_matter'] ?? null;
+        if ($unitCost === null) {
+            return ServiceResponse::error("Invalid unit type for drafting.");
+        }
+
+        $totalCost = $unitCost * $quantity;
+        $resources = $this->resourceRepo->findByUserId($userId);
+
+        if ($resources->dark_matter < $totalCost) {
+            return ServiceResponse::error("Insufficient Dark Matter. Cost: " . number_format($totalCost, 2));
+        }
+        
+        if ($unitType === 'soldiers') {
+            $cap = $this->generalService->getArmyCapacity($userId);
+            if (($resources->soldiers + $quantity) > $cap) {
+                return ServiceResponse::error("Army Limit Reached ({$cap}). You cannot exceed your army capacity.");
+            }
+        }
+        
+        $this->db->beginTransaction();
+        try {
+            $this->resourceRepo->updateResources($userId, 0, 0, -$totalCost);
+            
+            $newUntrained = $resources->untrained_citizens;
+            $newWorkers = $resources->workers;
+            $newSoldiers = $resources->soldiers;
+            $newGuards = $resources->guards;
+            $newSpies = $resources->spies;
+            $newSentries = $resources->sentries;
+
+            match ($unitType) {
+                'soldiers' => $newSoldiers += $quantity,
+                'guards'   => $newGuards += $quantity,
+                'spies'    => $newSpies += $quantity,
+                'sentries' => $newSentries += $quantity,
+                default    => null,
+            };
+
+            $this->resourceRepo->updateTrainedUnits(
+                $userId,
+                $resources->credits,
+                $newUntrained,
+                $newWorkers,
+                $newSoldiers,
+                $newGuards,
+                $newSpies,
+                $newSentries
+            );
+
+            $this->logRepo->log($userId, 'draft', 'dark_matter', $totalCost, $unitType, ['quantity' => $quantity]);
+
+            $this->db->commit();
+            return ServiceResponse::success("Successfully drafted " . number_format($quantity) . " " . ucfirst($unitType) . ".");
+
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return ServiceResponse::error("An error occurred during drafting: " . $e->getMessage());
+        }
     }
 
     private function processPurchase(int $userId, float $cost, callable $action): ServiceResponse{

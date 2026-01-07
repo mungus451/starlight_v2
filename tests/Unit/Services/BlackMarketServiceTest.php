@@ -63,7 +63,8 @@ class BlackMarketServiceTest extends TestCase
             $this->mockEffectService,
             $this->mockHouseFinanceRepo,
             $this->mockLevelUpService,
-            $this->mockStructureRepo
+            $this->mockStructureRepo,
+            Mockery::mock(\App\Models\Services\GeneralService::class)
         );
     }
 

@@ -113,15 +113,16 @@ class HighRiskProtocolTest extends TestCase
             $this->db,
             $this->config,
             $this->resourceRepo,
-            $this->statsRepo, 
+            $this->statsRepo,
             $this->userRepo,
             $this->createMock(BountyRepository::class),
-            $this->createMock(AttackService::class), 
+            $this->createMock(AttackService::class),
             $this->logRepo,
             $this->effectService,
             $this->createMock(HouseFinanceRepository::class),
             $this->createMock(LevelUpService::class),
-            $this->structureRepo
+            $this->structureRepo,
+            $this->createMock(\App\Models\Services\GeneralService::class)
         );
 
         // Setup AttackService (Testing combat modifiers)

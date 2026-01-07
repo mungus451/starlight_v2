@@ -244,4 +244,29 @@ $this->redirect('/black-market/actions');
         }
         $this->redirect('/black-market/converter');
     }
+
+    public function draft(): void
+    {
+        $data = $this->validate($_POST, [
+            'csrf_token' => 'required',
+            'unit_type' => 'required|string',
+            'quantity' => 'required|int|min:1'
+        ]);
+
+        if (!$this->csrfService->validateToken($data['csrf_token'])) {
+            $this->session->setFlash('error', 'Invalid token.');
+            $this->redirect('/black-market/actions');
+            return;
+        }
+
+        $userId = $this->session->get('user_id');
+        $response = $this->bmService->draftMercenaries($userId, $data['unit_type'], $data['quantity']);
+
+        if ($response->isSuccess()) {
+            $this->session->setFlash('success', $response->message);
+        } else {
+            $this->session->setFlash('error', $response->message);
+        }
+        $this->redirect('/black-market/actions');
+    }
 }

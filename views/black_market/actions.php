@@ -166,7 +166,32 @@
     <?php endif; ?>
 </div>
 
-<!-- NEW: Laundering -->
+<!-- Mercenary Outpost -->
+<?php if (($viewContext['structures']->mercenary_outpost_level ?? 0) > 0): ?>
+<div class="item-card">
+    <h4><i class="fas fa-user-shield"></i> Mercenary Outpost</h4>
+    <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">
+        Instantly draft mercenaries using Dark Matter. The number of units you can draft is determined by your outpost level.
+    </p>
+    <form action="/black-market/draft" method="POST" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+        <div class="form-group">
+            <select name="unit_type" required>
+                <option value="soldiers">Soldiers</option>
+                <option value="guards">Guards</option>
+                <option value="spies">Spies</option>
+                <option value="sentries">Sentries</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="number" name="quantity" placeholder="Quantity" required min="1">
+        </div>
+        <button class="btn-submit" style="width: 100%;">Draft Mercenaries</button>
+    </form>
+</div>
+<?php endif; ?>
+
+<!-- Launder Credits -->
 <div class="item-card">
     <h4><i class="fas fa-money-bill-wave"></i> Resource Laundering</h4>
     <p style="font-size: 0.85rem; color: var(--muted); flex-grow: 1;">

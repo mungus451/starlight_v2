@@ -74,7 +74,8 @@ class BlackMarketVoidEffectsTest extends TestCase
             $this->effectService,
             $this->houseFinanceRepo,
             $this->levelUpService,
-            $this->structureRepo
+            $this->structureRepo,
+            Mockery::mock(\App\Models\Services\GeneralService::class)
         );
 
         // Common Config Setup

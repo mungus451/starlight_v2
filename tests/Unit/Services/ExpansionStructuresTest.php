@@ -144,18 +144,19 @@ class ExpansionStructuresTest extends TestCase
         $mockHouseRepo = Mockery::mock(HouseFinanceRepository::class);
         
         $this->blackMarketService = new BlackMarketService(
-            $this->mockPdo, 
+            $this->mockPdo,
             $this->mockConfig,
             $this->mockResourceRepo,
             $this->mockStatsRepo,
             $this->mockUserRepo,
-            $this->mockBountyRepo, 
+            $this->mockBountyRepo,
             $mockAttackServiceForBlackMarket,
-            $this->mockLogRepo, 
+            $this->mockLogRepo,
             $this->mockEffectService,
             $mockHouseRepo,
-            $this->mockLevelUpService, 
-            $this->mockStructureRepo
+            $this->mockLevelUpService,
+            $this->mockStructureRepo,
+            Mockery::mock(GeneralService::class)
         );
 
         // --- 5. Setup AttackService ---
@@ -322,7 +323,8 @@ class ExpansionStructuresTest extends TestCase
             $localMockEffectService,
             $localMockHouseRepo,
             $localMockLevelUpService,
-            $localMockStructureRepo // This is used for orbital_trade_port_level
+            $localMockStructureRepo, // This is used for orbital_trade_port_level
+            Mockery::mock(GeneralService::class)
         );
 
         // Mock StructureRepo to return relevant structure level
@@ -485,8 +487,52 @@ class ExpansionStructuresTest extends TestCase
         $this->assertEquals(120, $result['total']);
     }
 
+    // --- TEST 8: Mercenary Outpost ---
+    public function testMercenaryOutpostDrafting(): void
+    {
+        $userId = 1;
+        $unitType = 'soldiers';
+        $quantity = 1000;
+        
+        $structures = $this->createMockStructures($userId, mercenaryOutpostLevel: 5);
+        $resources = $this->createMockResources($userId, darkMatter: 1000.0, soldiers: 500);
+        
+        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($structures);
+        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($resources);
+        
+        $this->mockConfig->shouldReceive('get')->with('black_market.mercenary_outpost')->andReturn([
+            'limit_per_level' => 500,
+            'costs' => ['soldiers' => ['dark_matter' => 0.75]]
+        ]);
+        
+        $mockGeneralService = Mockery::mock(GeneralService::class);
+        $mockGeneralService->shouldReceive('getArmyCapacity')->with($userId)->andReturn(10000); // Plenty of capacity
+
+        // We need to re-inject the mocked GeneralService into the BlackMarketService for this test
+        $this->blackMarketService = new BlackMarketService(
+            $this->mockPdo, $this->mockConfig, $this->mockResourceRepo, $this->mockStatsRepo,
+            $this->mockUserRepo, $this->mockBountyRepo, Mockery::mock(AttackService::class),
+            $this->mockLogRepo, $this->mockEffectService, Mockery::mock(HouseFinanceRepository::class),
+            $this->mockLevelUpService, $this->mockStructureRepo, $mockGeneralService
+        );
+        
+        $this->mockResourceRepo->shouldReceive('updateResources')
+            ->with($userId, 0, 0, -750.0) // 1000 * 0.75
+            ->once();
+        
+        $this->mockResourceRepo->shouldReceive('updateTrainedUnits')
+            ->with($userId, $resources->credits, $resources->untrained_citizens, $resources->workers, 1500, $resources->guards, $resources->spies, $resources->sentries)
+            ->once();
+            
+        $this->mockLogRepo->shouldReceive('log')->once();
+
+        $response = $this->blackMarketService->draftMercenaries($userId, $unitType, $quantity);
+
+        $this->assertTrue($response->isSuccess());
+    }
+
     // Helpers
-    private function createMockResources(int $userId, int $soldiers = 0, int $workers = 0, int $banked = 0, int $credits = 0, int $sentries = 0, float $crystals = 0.0): UserResource
+    private function createMockResources(int $userId, int $soldiers = 0, int $workers = 0, int $banked = 0, int $credits = 0, int $sentries = 0, float $crystals = 0.0, float $darkMatter = 0.0): UserResource
     {
         return new UserResource(
             user_id: $userId,
@@ -499,7 +545,11 @@ class ExpansionStructuresTest extends TestCase
             soldiers: $soldiers,
             guards: 0,
             spies: 0,
-            sentries: $sentries
+            sentries: $sentries,
+            untraceable_chips: 0,
+            research_data: 0,
+            dark_matter: $darkMatter,
+            protoform: 0.0
         );
     }
 

@@ -32,6 +32,16 @@ return [
     'safehouse_cooldown' => 720, // 12 Hours (Total cycle: 4h Safe + 8h Vuln)
 ],
 
+'mercenary_outpost' => [
+    'limit_per_level' => 500, // Max 500 units can be drafted per level of the outpost
+    'costs' => [
+        'soldiers' => ['dark_matter' => 0.75],
+        'guards'   => ['dark_matter' => 1.25],
+        'spies'    => ['dark_matter' => 5.0],
+        'sentries' => ['dark_matter' => 2.5],
+    ],
+],
+
     // Loot Box Probabilities (Weights determine rarity relative to total sum)
     'void_container_loot' => [
         // --- GOOD OUTCOMES ---
