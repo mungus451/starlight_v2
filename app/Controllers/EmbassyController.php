@@ -27,6 +27,7 @@ class EmbassyController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $data = $this->embassyService->getEmbassyData($userId);
+        $data['layoutMode'] = 'full';
 
         $this->render('embassy/index.php', $data);
     }
