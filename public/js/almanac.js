@@ -4,64 +4,129 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let charts = {};
+    let searchType = 'players'; // 'players' or 'alliances'
 
-    // --- Live Search Initialization ---
-    
-    // Player Search
-    initAutocomplete({
-        inputId: 'player-search-input',
-        resultsId: 'player-search-results',
-        endpoint: '/almanac/search_players',
-        renderItem: (item) => {
-            const avatarUrl = item.profile_picture_url 
-                ? `/serve/avatar/${item.profile_picture_url}` 
-                : '/img/default_avatar.png';
-            return `
-                <div class="result-item" data-id="${item.id}">
-                    <img src="${avatarUrl}" class="result-avatar">
-                    <div class="result-info">
-                        <span class="result-name">${item.character_name}</span>
-                        <span class="result-meta">Level ${item.level}</span>
-                    </div>
-                </div>
-            `;
-        },
-        onSelect: (item) => {
-            loadPlayerDossier(item.id);
+    // --- Modal Logic ---
+    const modal = document.getElementById('almanac-search-modal');
+    const modalInput = document.getElementById('modal-search-input');
+    const modalResults = document.getElementById('modal-search-results');
+    const modalTitle = document.getElementById('search-modal-title');
+
+    window.openSearchModal = function(type) {
+        searchType = type;
+        
+        // Update UI
+        if (type === 'players') {
+            modalTitle.textContent = 'Search Personnel Database';
+            modalInput.placeholder = 'Type commander name...';
+        } else {
+            modalTitle.textContent = 'Search Faction Registry';
+            modalInput.placeholder = 'Type alliance name or tag...';
+        }
+
+        modalInput.value = '';
+        modalResults.innerHTML = '';
+        modal.style.display = 'flex';
+        setTimeout(() => modalInput.focus(), 100); // Focus after transition
+    };
+
+    window.closeSearchModal = function() {
+        modal.style.display = 'none';
+    };
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeSearchModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            closeSearchModal();
         }
     });
 
-    // Alliance Search
-    initAutocomplete({
-        inputId: 'alliance-search-input',
-        resultsId: 'alliance-search-results',
-        endpoint: '/almanac/search_alliances',
-        renderItem: (item) => {
-            const avatarUrl = item.profile_picture_url 
-                ? `/serve/alliance_avatar/${item.profile_picture_url}` 
-                : '/img/default_alliance.png';
-            return `
-                <div class="result-item" data-id="${item.id}">
-                    <img src="${avatarUrl}" class="result-avatar">
-                    <div class="result-info">
-                        <span class="result-name">[${item.tag}] ${item.name}</span>
-                        <span class="result-meta">${item.member_count} Members</span>
-                    </div>
-                </div>
-            `;
-        },
-        onSelect: (item) => {
-            loadAllianceDossier(item.id);
+    // --- Autocomplete Logic (Single Shared Input) ---
+    let searchTimeout = null;
+
+    modalInput.addEventListener('input', () => {
+        const query = modalInput.value.trim();
+        clearTimeout(searchTimeout);
+
+        if (query.length < 2) {
+            modalResults.innerHTML = '';
+            return;
         }
+
+        searchTimeout = setTimeout(() => {
+            // Loading State
+            modalResults.innerHTML = '<div class="p-4 text-center"><div class="spinner-sm mx-auto"></div></div>';
+
+            const endpoint = searchType === 'players' 
+                ? '/almanac/search_players' 
+                : '/almanac/search_alliances';
+
+            fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        modalResults.innerHTML = '<div class="p-4 text-center text-muted">No matches found in database.</div>';
+                        return;
+                    }
+
+                    modalResults.innerHTML = '';
+                    data.forEach(item => {
+                        const el = document.createElement('div');
+                        el.className = 'result-item';
+                        
+                        if (searchType === 'players') {
+                            const avatarUrl = item.profile_picture_url 
+                                ? `/serve/avatar/${item.profile_picture_url}` 
+                                : '/img/default_avatar.png';
+                            
+                            el.innerHTML = `
+                                <img src="${avatarUrl}" class="result-avatar">
+                                <div class="result-info">
+                                    <span class="result-name text-light">${item.character_name}</span>
+                                    <span class="result-meta">Level ${item.level}</span>
+                                </div>
+                            `;
+                            el.onclick = () => {
+                                loadPlayerDossier(item.id);
+                                closeSearchModal();
+                            };
+                        } else {
+                            const avatarUrl = item.profile_picture_url 
+                                ? `/serve/alliance_avatar/${item.profile_picture_url}` 
+                                : '/img/default_alliance.png';
+                            
+                            el.innerHTML = `
+                                <img src="${avatarUrl}" class="result-avatar">
+                                <div class="result-info">
+                                    <span class="result-name text-warning">[${item.tag}] ${item.name}</span>
+                                    <span class="result-meta">${item.member_count} Members</span>
+                                </div>
+                            `;
+                            el.onclick = () => {
+                                loadAllianceDossier(item.id);
+                                closeSearchModal();
+                            };
+                        }
+                        
+                        modalResults.appendChild(el);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    modalResults.innerHTML = '<div class="p-4 text-center text-danger">Connection Error.</div>';
+                });
+        }, 300);
     });
 
 
-    // --- Core Logic ---
+    // --- Core Logic (Dossier Loading) ---
 
     function loadPlayerDossier(playerId) {
-        // Hide previous results if any
-        document.getElementById('player-search-results').classList.remove('active');
-        
         fetch(`/almanac/get_player_dossier?player_id=${playerId}`)
             .then(res => {
                 if (!res.ok) throw new Error('Failed to load dossier');
@@ -77,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = data.player;
         const s = data.stats;
 
-        // Header
         document.getElementById('player-name').textContent = p.characterName;
         document.getElementById('player-bio').textContent = p.bio || "No biography available.";
         document.getElementById('player-joined').textContent = `Joined: ${new Date(p.createdAt).toLocaleDateString()}`;
@@ -116,8 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadAllianceDossier(allianceId) {
-        document.getElementById('alliance-search-results').classList.remove('active');
-
         fetch(`/almanac/get_alliance_dossier?alliance_id=${allianceId}`)
             .then(res => res.json())
             .then(data => renderAllianceDossier(data))
@@ -173,69 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(tr);
             });
         }
-    }
-
-    // --- Autocomplete Engine ---
-    function initAutocomplete({ inputId, resultsId, endpoint, renderItem, onSelect }) {
-        const input = document.getElementById(inputId);
-        const results = document.getElementById(resultsId);
-        let timeout = null;
-
-        if (!input || !results) return;
-
-        input.addEventListener('input', () => {
-            const query = input.value.trim();
-            clearTimeout(timeout);
-
-            if (query.length < 2) {
-                results.classList.remove('active');
-                results.innerHTML = '';
-                return;
-            }
-
-            timeout = setTimeout(() => {
-                // Show loading state
-                results.innerHTML = '<div class="p-3 text-center"><div class="spinner-sm mx-auto"></div></div>';
-                results.classList.add('active');
-
-                fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.length === 0) {
-                            results.innerHTML = '<div class="p-3 text-center text-muted">No matches found.</div>';
-                            return;
-                        }
-
-                        results.innerHTML = '';
-                        data.forEach(item => {
-                            // Create HTML string from render function
-                            const itemHtml = renderItem(item);
-                            // Convert string to DOM element (wrapper)
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = itemHtml.trim();
-                            const el = tempDiv.firstChild;
-
-                            el.addEventListener('click', () => {
-                                onSelect(item);
-                                input.value = ''; // Clear input on selection
-                                results.classList.remove('active');
-                            });
-
-                            results.appendChild(el);
-                        });
-                    })
-                    .catch(() => {
-                        results.innerHTML = '<div class="p-3 text-center text-danger">Error fetching results.</div>';
-                    });
-            }, 300); // 300ms debounce
-        });
-
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (!input.contains(e.target) && !results.contains(e.target)) {
-                results.classList.remove('active');
-            }
-        });
     }
 
     // --- Tab Logic ---

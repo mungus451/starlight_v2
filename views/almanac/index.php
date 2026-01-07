@@ -36,8 +36,8 @@
     <!-- ================= PLAYER TAB ================= -->
     <div id="players-content" class="structure-category-container active">
         
-        <!-- Search Console -->
-        <div class="structure-card mb-4" style="border-color: var(--accent-blue); overflow: visible;">
+        <!-- Search Console (Trigger) -->
+        <div class="structure-card mb-4" style="border-color: var(--accent-blue);">
             <div class="card-body-main p-3">
                 <div class="row justify-content-center">
                     <div class="col-md-8 col-lg-6">
@@ -45,15 +45,11 @@
                             <i class="fas fa-search me-1"></i> Access Personnel Records
                         </label>
                         
-                        <!-- Live Search Console -->
-                        <div class="search-console-wrapper position-relative" style="width: 100%; z-index: 100;">
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-neon-blue">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" id="player-search-input" class="form-control bg-dark border-secondary text-light" placeholder="Search by Name..." autocomplete="off">
-                            </div>
-                            <div id="player-search-results" class="autocomplete-results border-neon-blue"></div>
+                        <div class="input-group" style="cursor: pointer;" onclick="openSearchModal('players')">
+                            <span class="input-group-text bg-dark border-secondary text-neon-blue">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="Tap to search commanders..." readonly style="pointer-events: none;">
                         </div>
 
                     </div>
@@ -248,8 +244,8 @@
     <!-- ================= ALLIANCE TAB ================= -->
     <div id="alliances-content" class="structure-category-container">
          
-         <!-- Alliance Search -->
-        <div class="structure-card mb-4" style="border-color: var(--accent-2); overflow: visible;">
+         <!-- Alliance Search (Trigger) -->
+        <div class="structure-card mb-4" style="border-color: var(--accent-2);">
             <div class="card-body-main p-3">
                 <div class="row justify-content-center">
                     <div class="col-md-8 col-lg-6">
@@ -257,15 +253,11 @@
                             <i class="fas fa-search me-1"></i> Access Faction Database
                         </label>
                         
-                        <!-- Live Search Console -->
-                        <div class="search-console-wrapper position-relative" style="width: 100%; z-index: 100;">
-                            <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-warning">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" id="alliance-search-input" class="form-control bg-dark border-secondary text-light" placeholder="Search by Name or Tag..." autocomplete="off">
-                            </div>
-                            <div id="alliance-search-results" class="autocomplete-results border-warning"></div>
+                        <div class="input-group" style="cursor: pointer;" onclick="openSearchModal('alliances')">
+                            <span class="input-group-text bg-dark border-secondary text-warning">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="Tap to search factions..." readonly style="pointer-events: none;">
                         </div>
                     </div>
                 </div>
@@ -369,93 +361,133 @@
     </div>
 </div>
 
-<!-- Scripts (v6 for cache busting) -->
+<!-- SEARCH MODAL -->
+<div id="almanac-search-modal" class="search-modal-overlay" style="display: none;">
+    <div class="search-modal-container">
+        <div class="search-modal-header">
+            <h3 id="search-modal-title">Search Database</h3>
+            <button class="btn-close-modal" onclick="closeSearchModal()">&times;</button>
+        </div>
+        <div class="search-modal-body">
+            <div class="input-group mb-3">
+                <span class="input-group-text bg-black border-secondary text-muted">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="modal-search-input" class="form-control bg-black border-secondary text-light fs-5" placeholder="Type to search..." autocomplete="off">
+            </div>
+            
+            <div id="modal-search-results" class="modal-results-list">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts (v7 for cache busting) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/js/almanac.js?v=6"></script>
+<script src="/js/almanac.js?v=7"></script>
 
 <style>
-/* Autocomplete Results (Live Search) */
-.autocomplete-results {
-    position: absolute;
-    top: 100%;
+/* Search Modal Styles */
+.search-modal-overlay {
+    position: fixed;
+    top: 0;
     left: 0;
-    right: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 100px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.search-modal-container {
     background: rgba(13, 17, 23, 0.95);
-    border: 1px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    max-height: 300px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.search-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-modal-header h3 {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.btn-close-modal {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.btn-close-modal:hover { color: #fff; }
+
+.search-modal-body {
+    padding: 1.5rem;
     overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
-.autocomplete-results.active {
-    display: block;
+.modal-results-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 100px;
 }
 
-.autocomplete-results.border-neon-blue { border-color: #00f3ff; }
-.autocomplete-results.border-warning { border-color: #ffc107; }
-
+/* Reusing Result Item Styles */
 .result-item {
-    padding: 12px 16px;
+    padding: 15px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
     transition: background 0.2s;
+    border-radius: 8px;
 }
-
-.result-item:last-child { border-bottom: none; }
-
-.result-item:hover {
-    background: rgba(255,255,255,0.1);
-}
+.result-item:hover { background: rgba(255,255,255,0.1); }
 
 .result-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--border);
 }
 
-.result-info {
-    flex: 1;
-}
+.result-name { font-size: 1.1rem; }
+.result-meta { font-size: 0.85rem; }
 
-.result-name {
-    display: block;
-    font-weight: 600;
-    color: #fff;
-    font-size: 0.95rem;
-}
-
-.result-meta {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted);
-}
-
-/* Spinner */
-.spinner-sm {
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Scrollbar for options */
-.autocomplete-results::-webkit-scrollbar { width: 6px; }
-.autocomplete-results::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-.autocomplete-results::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-.autocomplete-results.border-neon-blue::-webkit-scrollbar-thumb { background: #00f3ff; }
-.autocomplete-results.border-warning::-webkit-scrollbar-thumb { background: #ffc107; }
+/* Scrollbar */
+.modal-results-list::-webkit-scrollbar { width: 6px; }
+.modal-results-list::-webkit-scrollbar-track { background: transparent; }
+.modal-results-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 </style>

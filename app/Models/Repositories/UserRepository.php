@@ -52,39 +52,43 @@ private PDO $db
 
      */
 
-    public function searchByCharacterName(string $query, int $limit = 10): array
+        public function searchByCharacterName(string $query, int $limit = 10): array
 
-    {
+        {
 
-        $sql = "
+            $sql = "
 
-            SELECT id, character_name, profile_picture_url 
+                SELECT u.id, u.character_name, u.profile_picture_url, s.level
 
-            FROM users 
+                FROM users u
 
-            WHERE character_name LIKE ? 
+                LEFT JOIN user_stats s ON u.id = s.user_id
 
-            ORDER BY character_name ASC 
+                WHERE u.character_name LIKE ? 
 
-            LIMIT ?
+                ORDER BY u.character_name ASC 
 
-        ";
+                LIMIT ?
 
-        $stmt = $this->db->prepare($sql);
+            ";
 
-        $term = '%' . $query . '%';
+    
 
-        $stmt->bindParam(1, $term, PDO::PARAM_STR);
+            $stmt = $this->db->prepare($sql);
 
-        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+            $term = '%' . $query . '%';
 
-        $stmt->execute();
+            $stmt->bindParam(1, $term, PDO::PARAM_STR);
 
+            $stmt->bindParam(2, $limit, PDO::PARAM_INT);
 
+            $stmt->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 
-    }
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        }
 
 
 
