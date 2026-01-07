@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxDepositBtn = document.getElementById('btn-max-deposit');
     if (maxDepositBtn) {
         maxDepositBtn.addEventListener('click', () => {
-            const limit = parseFloat(maxDepositBtn.dataset.limit || 0.8);
-            const onHand = parseInt(maxDepositBtn.dataset.onhand || 0);
+            const limit = parseFloat(maxDepositBtn.getAttribute('data-limit') || 0.8);
+            const onHand = parseInt(maxDepositBtn.getAttribute('data-onhand') || 0);
             const maxAmount = Math.floor(onHand * limit);
             
             setInputAmount('dep-amount-display', 'dep-amount-hidden', maxAmount);
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxWithdrawBtn = document.getElementById('btn-max-withdraw');
     if (maxWithdrawBtn) {
         maxWithdrawBtn.addEventListener('click', () => {
-            const banked = parseInt(maxWithdrawBtn.dataset.banked || 0);
+            const banked = parseInt(maxWithdrawBtn.getAttribute('data-banked') || 0);
             setInputAmount('wit-amount-display', 'wit-amount-hidden', banked);
         });
     }
@@ -62,19 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Charge Timer
     const timerEl = document.getElementById('deposit-timer-countdown');
     if (timerEl) {
-        const lastDepositAt = timerEl.dataset.lastDeposit;
-        const currentCharges = parseInt(timerEl.dataset.currentCharges);
-        const maxCharges = parseInt(timerEl.dataset.maxCharges);
-        const regenHours = parseInt(timerEl.dataset.regenHours);
+        const lastDepositAt = timerEl.getAttribute('data-last-deposit');
+        const currentCharges = parseInt(timerEl.getAttribute('data-current-charges') || 0);
+        const maxCharges = parseInt(timerEl.getAttribute('data-max-charges') || 4);
+        const regenHours = parseFloat(timerEl.getAttribute('data-regen-hours') || 6);
 
         if (currentCharges < maxCharges && lastDepositAt) {
-            // Ensure UTC parsing by appending Z if missing (standard MySQL timestamp fix)
-            const timeString = lastDepositAt.endsWith('Z') ? lastDepositAt : lastDepositAt.replace(' ', 'T') + 'Z';
+            // Ensure UTC parsing
+            // Assumption: DB Time is UTC. JS Date(UTC_String) works best with T and Z.
+            const timeString = lastDepositAt.replace(' ', 'T') + (lastDepositAt.includes('Z') ? '' : 'Z');
             const lastTime = new Date(timeString);
             const regenMs = regenHours * 60 * 60 * 1000;
             const nextTime = new Date(lastTime.getTime() + regenMs);
 
-            const interval = setInterval(() => {
+            const updateTimer = () => {
                 const now = new Date();
                 const diff = nextTime - now;
 
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearInterval(interval);
                     timerEl.innerText = "Ready!";
                     timerEl.classList.add('text-success');
+                    timerEl.classList.remove('text-warning');
                     return;
                 }
 
@@ -89,11 +91,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                timerEl.innerText = `${h}h ${m}m ${s}s`;
-            }, 1000);
+                const hh = String(h).padStart(2, '0');
+                const mm = String(m).padStart(2, '0');
+                const ss = String(s).padStart(2, '0');
+
+                timerEl.innerText = `${hh}:${mm}:${ss}`;
+                timerEl.classList.add('text-warning');
+            };
+
+            // Run immediately then interval
+            updateTimer();
+            const interval = setInterval(updateTimer, 1000);
+
         } else if (currentCharges >= maxCharges) {
             timerEl.innerText = "Full";
             timerEl.classList.add('text-success');
+        } else {
+            // Case where < max but no lastDeposit (shouldn't happen unless manual db edit)
+            timerEl.innerText = "--:--:--";
         }
     }
 
