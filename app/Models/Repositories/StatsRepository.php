@@ -261,11 +261,11 @@ class StatsRepository
             dexterity_points: (int)$data['dexterity_points'],
             charisma_points: (int)$data['charisma_points'],
             deposit_charges: (int)$data['deposit_charges'],
-            last_deposit_at: $data['last_deposit_at']
-            // Note: We don't necessarily need to hydrate the new columns into the Entity 
-            // if they are only used for leaderboards/stats display via raw arrays.
-            // But if we wanted them on the Entity, we'd add them to UserStats class definition.
-            // For now, they live in the DB and are accessed via specialized queries.
+            last_deposit_at: $data['last_deposit_at'],
+            battles_won: (int)($data['battles_won'] ?? 0),
+            battles_lost: (int)($data['battles_lost'] ?? 0),
+            spy_successes: (int)($data['spy_successes'] ?? 0),
+            spy_failures: (int)($data['spy_failures'] ?? 0)
         );
     }
 }

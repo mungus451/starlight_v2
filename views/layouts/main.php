@@ -105,16 +105,14 @@
                     <a href="/dashboard" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
                 </li>
 
-                <!-- Empire Dropdown -->
+                <!-- Structures -->
                 <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-city"></i> Empire <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
-                    <ul class="nav-submenu">
-                        <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
-                        <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li>
-                        <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
-                        <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
-                        <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
-                    </ul>
+                    <a href="/structures" class="nav-link"><i class="fas fa-industry"></i> Structures <span class="nav-queue-badge" id="nav-queue-structures"></span></a>
+                </li>
+                
+                <!-- Research -->
+                <li class="nav-item">
+                    <a href="/research" class="nav-link"><i class="fas fa-flask"></i> Research <span class="nav-queue-badge" id="nav-queue-research"></span></a>
                 </li>
 
                 <!-- Economy Dropdown -->
@@ -128,12 +126,11 @@
 
                 <!-- Military Dropdown -->
                 <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-crosshairs"></i> Military <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
+                    <span class="nav-link"><i class="fas fa-crosshairs"></i> Military <span class="nav-queue-badge" id="nav-queue-military"></span> <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
                         <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
                         <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
                         <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
-                        <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy Network</a></li>
                         <li><a href="/battle"><i class="fas fa-fighter-jet"></i> Battle Control</a></li>
                     </ul>
                 </li>

@@ -38,8 +38,12 @@ readonly class UserStats
         public readonly int $wealth_points,
         public readonly int $dexterity_points,
         public readonly int $charisma_points,
-        public readonly int $deposit_charges,     // ADDED
-        public readonly ?string $last_deposit_at  // ADDED
+        public readonly int $deposit_charges,
+        public readonly ?string $last_deposit_at,
+        public readonly int $battles_won,
+        public readonly int $battles_lost,
+        public readonly int $spy_successes,
+        public readonly int $spy_failures
     ) {
     }
 }

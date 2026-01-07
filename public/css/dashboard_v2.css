@@ -1,0 +1,196 @@
+/* public/css/dashboard_v2.css */
+
+:root {
+    --dashboard-gap: 1.5rem;
+    --dashboard-card-bg: rgba(13, 17, 23, 0.85);
+    --dashboard-card-border: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-v2-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: var(--dashboard-gap);
+}
+
+@media (min-width: 992px) {
+    .dashboard-v2-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto auto;
+    }
+}
+
+.dashboard-card {
+    background: var(--dashboard-card-bg);
+    border: 1px solid var(--dashboard-card-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 243, 255, 0.1);
+}
+
+.dashboard-card h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-family: 'Orbitron', sans-serif;
+    color: #fff;
+    border-bottom: 1px solid var(--dashboard-card-border);
+    padding-bottom: 0.75rem;
+}
+
+.dashboard-card h3 .text-accent {
+    color: var(--accent);
+}
+
+/* 1. Player Card */
+.player-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.player-avatar {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    object-fit: cover;
+}
+
+.player-avatar-svg {
+    padding: 10px;
+    background: var(--dark-3);
+}
+
+.player-title h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.player-title p {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.player-card-body .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--dashboard-card-border);
+}
+
+.player-card-body .stat-item:last-child {
+    border-bottom: none;
+}
+
+.player-card-body .stat-label {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.player-card-body .stat-value {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+/* 2. Resource Card */
+.resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.resource-item {
+    background: rgba(0,0,0,0.2);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--dashboard-card-border);
+}
+
+.resource-label {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.resource-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    font-family: 'Orbitron', sans-serif;
+    overflow-wrap: break-word;
+}
+
+/* 3. Modifiers Card */
+.modifiers-list, .alerts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.modifier-item, .alert-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--dashboard-card-border);
+}
+
+.modifier-item:last-child, .alert-item:last-child {
+    border-bottom: none;
+}
+
+.modifier-item .fas, .alert-item .fas {
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+}
+
+.modifier-label, .alert-item span {
+    flex-grow: 1;
+    color: #fff;
+    font-weight: 500;
+}
+
+.modifier-timer, .alert-timer {
+    font-family: monospace;
+    font-size: 1rem;
+    color: var(--muted);
+}
+
+.no-modifiers {
+    text-align: center;
+    color: var(--muted);
+    padding: 1rem 0;
+}
+
+/* 4. Alerts Card */
+.alert-item.alert-danger { color: var(--danger); }
+.alert-item.alert-success { color: var(--success); }
+.alert-item.alert-info { color: var(--info); }
+
+.alert-item .fa-skull-crossbones { color: var(--danger); }
+.alert-item .fa-check-circle { color: var(--success); }
+.alert-item .fa-info-circle { color: var(--info); }
+
+
+/* Glitch Text Effect (from GEMINI.md) */
+.glitch-text {
+  position: relative;
+  color: #00f3ff;
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.7);
+}

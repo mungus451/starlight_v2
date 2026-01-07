@@ -75,6 +75,7 @@ use App\Models\Services\NpcService;
 use App\Models\Services\TurnProcessorService;
 use App\Models\Services\EffectService;
 use App\Models\Services\NpcDirectorService; // --- NEW ---
+use App\Models\Services\NetWorthCalculatorService;
 use App\Models\AI\Strategies\IndustrialistStrategy; // --- NEW ---
 use App\Models\AI\Strategies\ReaverStrategy;       // --- NEW ---
 use App\Models\AI\Strategies\VaultKeeperStrategy;  // --- NEW ---

@@ -388,10 +388,10 @@ class AttackService
             
             $this->statsRepo->updateBattleAttackerStats(
                 $attackerId,
-                $attackerStats->attack_turns - $turnCost,
-                $attackerNewNW,
-                $attackerStats->experience + $attackerXpGain,
-                $attackerStats->war_prestige + $warPrestigeGained
+                (int)($attackerStats->attack_turns - $turnCost),
+                (int)$attackerNewNW,
+                (int)($attackerStats->experience + $attackerXpGain),
+                (int)($attackerStats->war_prestige + $warPrestigeGained)
             );
 
             if ($attackResult === 'victory') {

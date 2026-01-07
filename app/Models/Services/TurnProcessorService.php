@@ -249,7 +249,7 @@ class TurnProcessorService
             // 7. Update Net Worth
             // We calculate this after all income and expenses have been applied to get the accurate state.
             $newNetWorth = $this->nwCalculator->calculateTotalNetWorth($userId);
-            $this->statsRepo->updateNetWorth($userId, $newNetWorth);
+            $this->statsRepo->updateNetWorth($userId, (int)$newNetWorth);
 
             // 8. Commit if we own the transaction
             if ($transactionStartedByMe) {
