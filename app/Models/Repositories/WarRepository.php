@@ -56,6 +56,33 @@ class WarRepository
     }
 
     /**
+     * Finds the first active war an alliance is involved in.
+     *
+     * @param int $allianceId
+     * @return War|null
+     */
+    public function findActiveWarByAllianceId(int $allianceId): ?War
+    {
+        $sql = "
+            SELECT 
+                w.*, 
+                a1.name as declarer_name, 
+                a2.name as defender_name
+            FROM wars w
+            JOIN alliances a1 ON w.declarer_alliance_id = a1.id
+            JOIN alliances a2 ON w.declared_against_alliance_id = a2.id
+            WHERE w.status = 'active' 
+            AND (w.declarer_alliance_id = ? OR w.declared_against_alliance_id = ?)
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId, $allianceId]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $data ? $this->hydrate($data) : null;
+    }
+
+    /**
      * Creates a new war declaration.
      *
      * @param string $name

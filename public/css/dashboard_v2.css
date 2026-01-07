@@ -12,10 +12,9 @@
     gap: var(--dashboard-gap);
 }
 
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
     .dashboard-v2-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: auto auto;
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -56,8 +55,8 @@
 }
 
 .player-avatar {
-    width: 75px;
-    height: 75px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     border: 3px solid var(--accent);
     box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
@@ -104,14 +103,15 @@
     color: #fff;
 }
 
-/* 2. Resource Card */
-.resource-grid {
+/* 2. Economic Summary Card */
+.economy-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
-.resource-item {
+.economy-item {
     background: rgba(0,0,0,0.2);
     padding: 1rem;
     border-radius: 8px;
@@ -119,23 +119,151 @@
     border: 1px solid var(--dashboard-card-border);
 }
 
-.resource-label {
+.economy-label {
     display: block;
     color: var(--muted);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     font-size: 0.9rem;
 }
 
-.resource-value {
+.economy-value {
     display: block;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--accent-2);
     font-family: 'Orbitron', sans-serif;
-    overflow-wrap: break-word;
+    margin-bottom: 0.25rem;
 }
 
-/* 3. Modifiers Card */
+.economy-flow {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.economy-flow.positive {
+    color: var(--success);
+}
+
+.economy-flow.negative {
+    color: var(--danger);
+}
+
+.income-breakdown-bar {
+    display: flex;
+    width: 100%;
+    height: 20px;
+    background-color: var(--dark-3);
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.income-bar, .upkeep-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.income-bar {
+    background-color: var(--success);
+}
+
+.upkeep-bar {
+    background-color: var(--danger);
+}
+
+/* 3. Advisor Suggestions Card */
+.advisor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.advisor-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--dashboard-card-border);
+}
+
+.advisor-item:last-child {
+    border-bottom: none;
+}
+
+.advisor-item .fas {
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+    color: var(--accent-2);
+}
+
+.advisor-item a {
+    color: #fff;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.advisor-item a:hover {
+    color: var(--accent);
+}
+
+/* 4. Threat & Opportunity Card */
+.threat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.threat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--dashboard-card-border);
+}
+
+.threat-item:last-child {
+    border-bottom: none;
+}
+
+.threat-item .fas {
+    font-size: 1.5rem;
+    width: 30px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.threat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+}
+
+.threat-value {
+    font-weight: 600;
+    color: #fff;
+}
+
+.threat-value small {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 0.5rem;
+}
+
+.threat-value.hostile {
+    color: var(--danger);
+}
+
+/* 5. Modifiers Card */
 .modifiers-list, .alerts-list {
     list-style: none;
     padding: 0;
@@ -172,10 +300,32 @@
     color: var(--muted);
 }
 
-.no-modifiers {
+.no-modifiers, .no-alerts {
     text-align: center;
     color: var(--muted);
     padding: 1rem 0;
+}
+
+.alert-item {
+    justify-content: space-between;
+}
+
+.alert-link {
+    flex-grow: 1;
+    color: #fff;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.alert-link:hover {
+    color: var(--accent);
+}
+
+.alert-time {
+    font-size: 0.9rem;
+    color: var(--muted);
+    white-space: nowrap;
 }
 
 /* 4. Alerts Card */

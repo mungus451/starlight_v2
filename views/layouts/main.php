@@ -110,10 +110,10 @@
                     <a href="/structures" class="nav-link"><i class="fas fa-industry"></i> Structures <span class="nav-queue-badge" id="nav-queue-structures"></span></a>
                 </li>
                 
-                <!-- Research -->
+                <!-- Research 
                 <li class="nav-item">
                     <a href="/research" class="nav-link"><i class="fas fa-flask"></i> Research <span class="nav-queue-badge" id="nav-queue-research"></span></a>
-                </li>
+                </li> -->
 
                 <!-- Economy Dropdown -->
                 <li class="nav-item">
@@ -260,6 +260,18 @@
                     <i class="fas fa-chevron-down toggle-icon"></i>
                 </div>
                 <div class="advisor-pod-content">
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Credits</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->credits) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Crystals</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->naquadah_crystals) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Dark Matter</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->dark_matter) ?></span>
+                    </div>
                     <div class="advisor-stat">
                         <span class="advisor-stat-label">Citizens</span>
                         <span class="advisor-stat-value"><?= number_format($advisorData['resources']->untrained_citizens) ?></span>

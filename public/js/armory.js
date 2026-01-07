@@ -12,53 +12,11 @@ window.Armory = {
     init: function() {
         console.log('[Armory] Initializing features...');
         this.initTabs();
-        this.initAccordions(); // Initialize accordions right after tabs
         this.initMaxButtons();
+        this.initUpgradeButtons();
         this.initEquipForms();
         this.initBatchSystem();
-    },
-
-    // --- Tab Switching ---
-    initTabs: function() {
-        const links = document.querySelectorAll('.tabs-nav:not(#armory-tabs) .tab-link');
-        const contents = document.querySelectorAll('.tab-content');
-        let activeTabId = null;
-
-        const activateTab = (tabId) => {
-            const link = document.querySelector(`.tab-link[data-tab="${tabId}"]`);
-            const content = document.getElementById(tabId);
-            if (!link || !content) return false;
-
-            links.forEach(l => l.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-            
-            link.classList.add('active');
-            content.classList.add('active');
-            
-            localStorage.setItem(this.ARMORY_TAB_KEY, tabId);
-            this.restoreAccordionState(tabId); // Restore accordion state for the new tab
-            return true;
-        };
-
-        const savedTabId = localStorage.getItem(this.ARMORY_TAB_KEY);
-        if (savedTabId) {
-            if (activateTab(savedTabId)) {
-                activeTabId = savedTabId;
-            }
-        }
-        
-        // Fallback to the first tab if none was saved or found
-        if (!activeTabId && links.length > 0) {
-            const firstTabId = links[0].dataset.tab;
-            activateTab(firstTabId);
-        }
-
-        links.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                activateTab(link.dataset.tab);
-            });
-        });
+        this.initAccordions(); // Move to end to prevent blocking other features
     },
 
     // --- Accordion State Persistence ---
@@ -74,18 +32,36 @@ window.Armory = {
                 const tier = e.target.dataset.tier;
                 const isOpen = e.target.open;
 
-                const allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+                let allStates = {};
+                try {
+                    allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+                } catch (e) {
+                    console.warn('Invalid accordion state, resetting.');
+                }
+                
                 if (!allStates[tabId]) {
                     allStates[tabId] = {};
                 }
                 allStates[tabId][`tier-${tier}`] = isOpen;
-                localStorage.setItem(this.ACCORDION_STATE_KEY, JSON.stringify(allStates));
+                
+                try {
+                    localStorage.setItem(this.ACCORDION_STATE_KEY, JSON.stringify(allStates));
+                } catch (e) {
+                    console.error('Failed to save accordion state:', e);
+                }
             });
         });
     },
 
     restoreAccordionState: function(tabId) {
-        const allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+        let allStates = {};
+        try {
+            allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+        } catch (e) {
+            console.warn('Invalid accordion state, resetting.');
+            return;
+        }
+
         const tabStates = allStates[tabId];
         if (!tabStates) return;
 
@@ -101,20 +77,19 @@ window.Armory = {
         });
     },
 
-    // --- Max Manufacture Buttons ---
+    // --- Max Manufacture Buttons (Tier 1 - Resource Only) ---
     initMaxButtons: function() {
         document.querySelectorAll('.btn-max-manufacture').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const container = btn.closest('.amount-input-group');
+                const container = btn.closest('.form-group');
                 const input = container.querySelector('input.manufacture-amount');
                 if (!input) return;
 
-                // Get all costs from the input's data attributes
+                // Get costs
                 const creditCost = parseInt(input.dataset.itemCost || 0);
                 const crystalCost = parseInt(input.dataset.costCrystals || 0);
                 const darkMatterCost = parseInt(input.dataset.costDarkMatter || 0);
-                const reqOwned = parseInt(input.dataset.prereqOwned || Number.MAX_SAFE_INTEGER);
 
                 // Get user's current resources
                 const userCredits = parseInt(document.getElementById('global-user-credits')?.dataset.credits || 0);
@@ -125,8 +100,61 @@ window.Armory = {
                 let maxByCrystals = (crystalCost > 0) ? Math.floor(userCrystals / crystalCost) : Number.MAX_SAFE_INTEGER;
                 let maxByDarkMatter = (darkMatterCost > 0) ? Math.floor(userDarkMatter / darkMatterCost) : Number.MAX_SAFE_INTEGER;
 
-                // The true max is the minimum of all constraints
-                const maxQty = Math.min(maxByCredits, maxByCrystals, maxByDarkMatter, reqOwned);
+                const maxQty = Math.min(maxByCredits, maxByCrystals, maxByDarkMatter);
+
+                input.value = Math.max(0, maxQty);
+            });
+        });
+    },
+
+    // --- Max Upgrade Buttons (Tier 2+ - Prereq + Resource) ---
+    initUpgradeButtons: function() {
+        const upgradeBtns = document.querySelectorAll('.btn-max-upgrade');
+        console.log(`[Armory] Found ${upgradeBtns.length} upgrade buttons.`);
+
+        upgradeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('[Armory] Max Upgrade clicked.');
+
+                const container = btn.closest('.form-group');
+                const input = container.querySelector('input.manufacture-amount');
+                if (!input) {
+                    console.error('[Armory] Input not found relative to button.');
+                    return;
+                }
+
+                // 1. Get Prerequisite Limit (Primary Constraint)
+                const reqOwnedRaw = input.dataset.prereqOwned;
+                const reqOwned = parseInt(reqOwnedRaw || 0);
+                console.log(`[Armory] Prereq Owned: Raw="${reqOwnedRaw}", Parsed=${reqOwned}`);
+
+                // 2. Get Resource Limits
+                const creditCost = parseInt(input.dataset.itemCost || 0);
+                const crystalCost = parseInt(input.dataset.costCrystals || 0);
+                const darkMatterCost = parseInt(input.dataset.costDarkMatter || 0);
+                
+                console.log(`[Armory] Costs: Credits=${creditCost}, Crystals=${crystalCost}, DM=${darkMatterCost}`);
+
+                const userCreditsEl = document.getElementById('global-user-credits');
+                const userCrystalsEl = document.getElementById('global-user-crystals');
+                const userDarkMatterEl = document.getElementById('global-user-dark-matter');
+
+                const userCredits = parseInt(userCreditsEl?.dataset.credits || 0);
+                const userCrystals = parseInt(userCrystalsEl?.dataset.crystals || 0);
+                const userDarkMatter = parseInt(userDarkMatterEl?.dataset.darkMatter || 0);
+
+                console.log(`[Armory] User Resources: Credits=${userCredits}, Crystals=${userCrystals}, DM=${userDarkMatter}`);
+
+                let maxByCredits = (creditCost > 0) ? Math.floor(userCredits / creditCost) : Number.MAX_SAFE_INTEGER;
+                let maxByCrystals = (crystalCost > 0) ? Math.floor(userCrystals / crystalCost) : Number.MAX_SAFE_INTEGER;
+                let maxByDarkMatter = (darkMatterCost > 0) ? Math.floor(userDarkMatter / darkMatterCost) : Number.MAX_SAFE_INTEGER;
+
+                console.log(`[Armory] Max Limits: Credits=${maxByCredits}, Crystals=${maxByCrystals}, DM=${maxByDarkMatter}`);
+
+                // 3. Calculate Final Max (Lowest of Prereq or Resources)
+                const maxQty = Math.min(reqOwned, maxByCredits, maxByCrystals, maxByDarkMatter);
+                console.log(`[Armory] Final Max Qty: ${maxQty}`);
 
                 input.value = Math.max(0, maxQty);
             });

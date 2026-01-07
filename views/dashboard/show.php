@@ -4,12 +4,37 @@
  * @var \App\Models\Entities\UserResource $resources
  * @var \App\Models\Entities\UserStats $stats
  * @var array $activeEffects
+ * @var \App\Models\Entities\Notification[] $critical_alerts
+ * @var array $incomeBreakdown
+ * @var array $advisor_suggestions
+ * @var array $threat_and_opportunity
  * @var string $csrf_token
  */
+
+use App\Core\StarlightUtils;
 
 // Calculate total battles and spy missions from the stats object
 $total_battles = ($stats->battles_won ?? 0) + ($stats->battles_lost ?? 0);
 $total_spy_missions = ($stats->spy_successes ?? 0) + ($stats->spy_failures ?? 0);
+
+// Helper function to map notification types to UI elements
+function get_alert_ui_details(string $type): array {
+    return match ($type) {
+        'attack_report' => ['icon' => 'fa-skull-crossbones', 'class' => 'alert-danger'],
+        'spy_report' => ['icon' => 'fa-user-secret', 'class' => 'alert-info'],
+        'construction_complete' => ['icon' => 'fa-check-circle', 'class' => 'alert-success'],
+        'system' => ['icon' => 'fa-info-circle', 'class' => 'alert-info'],
+        default => ['icon' => 'fa-bell', 'class' => 'alert-info'],
+    };
+}
+
+// Calculate Income vs Upkeep for the visual bar
+$base_income = $incomeBreakdown['base_production'] ?? 0;
+$total_income = $incomeBreakdown['total_credit_income'] ?? 0;
+$total_upkeep = $base_income > $total_income ? $base_income - $total_income : 0; // Simplified for display
+$income_pct = $base_income > 0 ? ($total_income / ($base_income + $total_upkeep)) * 100 : 100;
+$upkeep_pct = $base_income > 0 ? ($total_upkeep / ($base_income + $total_upkeep)) * 100 : 0;
+
 ?>
 
 <link rel="stylesheet" href="/css/dashboard_v2.css?v=<?= time() ?>">
@@ -47,26 +72,113 @@ $total_spy_missions = ($stats->spy_successes ?? 0) + ($stats->spy_failures ?? 0)
         </div>
     </div>
 
-    <!-- Panel 2: Core Resources -->
-    <div class="dashboard-card resource-card">
-        <h3><i class="fas fa-coins text-accent"></i> Core Resources</h3>
-        <div class="resource-grid">
-            <div class="resource-item">
-                <span class="resource-label">Credits</span>
-                <span class="resource-value"><?= number_format($resources->credits) ?></span>
+    <!-- Panel 2: Economic Summary -->
+    <div class="dashboard-card economy-card">
+        <h3><i class="fas fa-chart-line text-accent"></i> Economic Summary</h3>
+        <div class="economy-grid">
+            <!-- Credits -->
+            <div class="economy-item">
+                <span class="economy-label">Credits</span>
+                <span class="economy-value"><?= StarlightUtils::format_short($resources->credits) ?></span>
+                <span class="economy-flow <?= ($incomeBreakdown['total_credit_income'] >= 0) ? 'positive' : 'negative' ?>">
+                    <?= StarlightUtils::format_short($incomeBreakdown['total_credit_income'], true) ?>/turn
+                </span>
             </div>
-            <div class="resource-item">
-                <span class="resource-label">Crystals</span>
-                <span class="resource-value"><?= number_format($resources->research_data) ?></span>
+            <!-- Crystals -->
+            <div class="economy-item">
+                <span class="economy-label">Crystals</span>
+                <span class="economy-value"><?= StarlightUtils::format_short($resources->research_data) ?></span>
+                <span class="economy-flow positive">
+                    <?= StarlightUtils::format_short($incomeBreakdown['research_data_income'], true) ?>/turn
+                </span>
             </div>
-            <div class="resource-item">
-                <span class="resource-label">Dark Matter</span>
-                <span class="resource-value"><?= number_format($resources->dark_matter) ?></span>
+            <!-- Dark Matter -->
+            <div class="economy-item">
+                <span class="economy-label">Dark Matter</span>
+                <span class="economy-value"><?= StarlightUtils::format_short($resources->dark_matter) ?></span>
+                <span class="economy-flow positive">
+                    <?= StarlightUtils::format_short($incomeBreakdown['dark_matter_income'], true) ?>/turn
+                </span>
+            </div>
+        </div>
+        <div class="income-breakdown-bar">
+            <div class="income-bar" style="width: <?= $income_pct ?>%;">
+                <span>Income</span>
+            </div>
+            <div class="upkeep-bar" style="width: <?= $upkeep_pct ?>%;">
+                <span>Upkeep</span>
             </div>
         </div>
     </div>
 
-    <!-- Panel 3: Active Modifiers -->
+    <!-- Panel 3: Advisor Suggestions -->
+    <div class="dashboard-card advisor-card">
+        <h3><i class="fas fa-lightbulb text-accent"></i> Advisor Suggestions</h3>
+        <?php if (!empty($advisor_suggestions)): ?>
+            <ul class="advisor-list">
+                <?php foreach ($advisor_suggestions as $suggestion): ?>
+                    <li class="advisor-item">
+                        <i class="fas <?= htmlspecialchars($suggestion['icon']) ?>"></i>
+                        <a href="<?= htmlspecialchars($suggestion['link']) ?>"><?= htmlspecialchars($suggestion['text']) ?></a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="no-suggestions">No suggestions at this time. Your empire is running smoothly!</p>
+        <?php endif; ?>
+    </div>
+    
+    <!-- Panel 4: Threat & Opportunity -->
+    <div class="dashboard-card threat-card">
+        <h3><i class="fas fa-crosshairs text-accent"></i> Threat & Opportunity</h3>
+        <ul class="threat-list">
+            <li class="threat-item">
+                <i class="fas fa-user-ninja"></i>
+                <div>
+                    <span class="threat-label">Nearest Rival</span>
+                    <?php if ($threat_and_opportunity['rival']): ?>
+                        <span class="threat-value">
+                            <?= htmlspecialchars($threat_and_opportunity['rival']['character_name']) ?>
+                            <small>(<?= StarlightUtils::format_short($threat_and_opportunity['rival']['net_worth']) ?> NW)</small>
+                        </span>
+                    <?php else: ?>
+                        <span class="threat-value">You are at the top!</span>
+                    <?php endif; ?>
+                </div>
+            </li>
+            <li class="threat-item">
+                <i class="fas fa-flag"></i>
+                <div>
+                    <span class="threat-label">Alliance Status</span>
+                    <?php if ($threat_and_opportunity['active_war']):
+                        $war = $threat_and_opportunity['active_war'];
+                        $opponent = ($war->declarer_alliance_id === $user->alliance_id) ? $war->defender_name : $war->declarer_name;
+                    ?>
+                        <span class="threat-value hostile">At war with <?= htmlspecialchars($opponent) ?></span>
+                    <?php else: ?>
+                        <span class="threat-value">No active wars.</span>
+                    <?php endif; ?>
+                </div>
+            </li>
+            <li class="threat-item">
+                <i class="fas fa-bullseye"></i>
+                <div>
+                    <span class="threat-label">Highest Bounty</span>
+                     <?php if ($threat_and_opportunity['highest_bounty']):
+                        $bounty = $threat_and_opportunity['highest_bounty'];
+                    ?>
+                        <span class="threat-value">
+                            <?= StarlightUtils::format_short($bounty['amount']) ?> Crystals on <?= htmlspecialchars($bounty['target_name']) ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="threat-value">No active bounties.</span>
+                    <?php endif; ?>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Panel 5: Active Modifiers -->
     <div class="dashboard-card modifiers-card">
         <h3><i class="fas fa-bolt text-accent"></i> Active Modifiers</h3>
         <?php if (!empty($activeEffects)): ?>
@@ -86,24 +198,24 @@ $total_spy_missions = ($stats->spy_successes ?? 0) + ($stats->spy_failures ?? 0)
         <?php endif; ?>
     </div>
 
-    <!-- Panel 4: Critical Alerts -->
+    <!-- Panel 6: Critical Alerts -->
     <div class="dashboard-card alerts-card">
         <h3><i class="fas fa-exclamation-triangle text-accent"></i> Critical Alerts</h3>
-        <ul class="alerts-list">
-            <!-- Note: Backend logic for alerts needs to be implemented. This is a placeholder. -->
-            <li class="alert-item alert-danger">
-                <i class="fas fa-skull-crossbones"></i>
-                <span>Incoming attack from [Player]!</span>
-                <span class="alert-timer">00:15:32</span>
-            </li>
-            <li class="alert-item alert-success">
-                <i class="fas fa-check-circle"></i>
-                <span>Construction of Metal Mine (Level 10) complete.</span>
-            </li>
-             <li class="alert-item alert-info">
-                <i class="fas fa-info-circle"></i>
-                <span>A spy report is available for review.</span>
-            </li>
-        </ul>
+        <?php if (!empty($critical_alerts)): ?>
+            <ul class="alerts-list">
+                <?php foreach ($critical_alerts as $alert): ?>
+                    <?php $ui = get_alert_ui_details($alert->type); ?>
+                    <li class="alert-item <?= htmlspecialchars($ui['class']) ?>">
+                        <i class="fas <?= htmlspecialchars($ui['icon']) ?>"></i>
+                        <a href="<?= htmlspecialchars($alert->link ?? '/notifications') ?>" class="alert-link">
+                            <?= htmlspecialchars($alert->title) ?>
+                        </a>
+                        <span class="alert-time"><?= StarlightUtils::time_ago($alert->created_at) ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p class="no-alerts">No recent alerts.</p>
+        <?php endif; ?>
     </div>
 </div>

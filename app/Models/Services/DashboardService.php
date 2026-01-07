@@ -6,7 +6,11 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
-use App\Models\Repositories\EffectRepository; // --- NEW ---
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\EffectRepository;
+use App\Models\Repositories\NotificationRepository;
+use App\Models\Repositories\BountyRepository;
+use App\Models\Services\AdvisorService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\NetWorthCalculatorService;
 
@@ -21,9 +25,13 @@ class DashboardService
     private ResourceRepository $resourceRepository;
     private StatsRepository $statsRepository;
     private StructureRepository $structureRepository;
-    private EffectRepository $effectRepo; // --- NEW ---
+    private EffectRepository $effectRepo;
+    private NotificationRepository $notificationRepo;
+    private AdvisorService $advisorService;
+    private BountyRepository $bountyRepo;
     private PowerCalculatorService $powerCalculator;
     private NetWorthCalculatorService $nwCalculator;
+    private WarRepository $warRepo;
 
     /**
     * DI Constructor.
@@ -39,7 +47,11 @@ class DashboardService
         ResourceRepository $resourceRepository,
         StatsRepository $statsRepository,
         StructureRepository $structureRepository,
-        EffectRepository $effectRepo, // --- NEW ---
+        EffectRepository $effectRepo,
+        NotificationRepository $notificationRepo,
+        AdvisorService $advisorService,
+        BountyRepository $bountyRepo,
+        WarRepository $warRepo,
         PowerCalculatorService $powerCalculator,
         NetWorthCalculatorService $nwCalculator
     ) {
@@ -48,6 +60,10 @@ class DashboardService
         $this->statsRepository = $statsRepository;
         $this->structureRepository = $structureRepository;
         $this->effectRepo = $effectRepo;
+        $this->notificationRepo = $notificationRepo;
+        $this->advisorService = $advisorService;
+        $this->bountyRepo = $bountyRepo;
+        $this->warRepo = $warRepo;
         $this->powerCalculator = $powerCalculator;
         $this->nwCalculator = $nwCalculator;
     }
@@ -66,8 +82,16 @@ class DashboardService
         $resources = $this->resourceRepository->findByUserId($userId);
         $stats = $this->statsRepository->findByUserId($userId);
         $structures = $this->structureRepository->findByUserId($userId);
-        
-        $activeEffects = $this->effectRepo->getAllActiveEffects($userId); // --- NEW ---
+        $activeEffects = $this->effectRepo->getAllActiveEffects($userId);
+        $criticalAlerts = $this->notificationRepo->getRecent($userId, 3);
+        $advisorSuggestions = $this->advisorService->getSuggestions($user);
+
+        // 4. Fetch Threat & Opportunity Data
+        $threatData = [
+            'rival' => $this->statsRepository->findRivalByNetWorth($stats),
+            'highest_bounty' => $this->bountyRepo->getHighestActiveBounty(),
+            'active_war' => $user->alliance_id ? $this->warRepo->findActiveWarByAllianceId($user->alliance_id) : null
+        ];
 
         // 2. Get all calculation breakdowns from the injected service
         // Pass alliance_id to ALL calculators to ensure structure bonuses apply
@@ -116,7 +140,10 @@ class DashboardService
             'resources' => $resources,
             'stats' => $stats,
             'structures' => $structures,
-            'activeEffects' => $activeEffects, // --- NEW ---
+            'activeEffects' => $activeEffects,
+            'critical_alerts' => $criticalAlerts,
+            'advisor_suggestions' => $advisorSuggestions,
+            'threat_and_opportunity' => $threatData,
             'incomeBreakdown' => $incomeBreakdown,
             'offenseBreakdown' => $offenseBreakdown,
             'defenseBreakdown' => $defenseBreakdown,

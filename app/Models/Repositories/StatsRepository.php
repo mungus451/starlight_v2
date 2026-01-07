@@ -155,6 +155,29 @@ class StatsRepository
     }
 
     /**
+     * Finds the user ranked immediately above the given user in net worth.
+     *
+     * @param UserStats $currentUserStats
+     * @return array|null
+     */
+    public function findRivalByNetWorth(UserStats $currentUserStats): ?array
+    {
+        $sql = "
+            SELECT u.character_name, s.net_worth
+            FROM user_stats s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.net_worth > ?
+            ORDER BY s.net_worth ASC
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$currentUserStats->net_worth]);
+        $rival = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $rival ?: null;
+    }
+
+    /**
      * Finds viable targets for NPC aggression.
      * Excludes the NPC itself. Prioritizes high net worth targets within a reasonable range.
      *

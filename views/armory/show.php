@@ -197,11 +197,16 @@
                                                             data-cost-crystals="<?= $item['cost_crystals'] ?>"
                                                             data-cost-dark-matter="<?= $item['cost_dark_matter'] ?>"
                                                             data-prereq-key="<?= $item['prereq_key'] ?? '' ?>"
+                                                            data-prereq-owned="<?= $item['is_tier_1'] ? 999999999 : ($item['prereq_owned'] ?? 0) ?>"
                                                             data-current-owned="<?= $item['current_owned'] ?>"
                                                         >
                                                     </div>
                                                     <div class="button-group flex-gap-sm">
-                                                        <button type="button" class="btn-submit btn-accent btn-max-manufacture flex-grow-1">Max</button>
+                                                        <?php if ($item['is_tier_1']): ?>
+                                                            <button type="button" class="btn-submit btn-accent btn-max-manufacture flex-grow-1">Max</button>
+                                                        <?php else: ?>
+                                                            <button type="button" class="btn-submit btn-accent btn-max-upgrade flex-grow-1">Max</button>
+                                                        <?php endif; ?>
                                                         <button type="submit" class="btn-submit btn-buy-now flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>Buy Now</button>
                                                         <button type="button" class="btn-submit btn-add-to-batch flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>
                                                             <?= $item['manufacture_btn_text'] ?>
@@ -254,4 +259,4 @@
     </form>
 </div>
 
-<script src="/js/armory.js"></script>
+<script src="/js/armory.js?v=<?= time() ?>"></script>

@@ -51,6 +51,7 @@ use App\Models\Services\BankService;
 use App\Models\Services\TrainingService;
 use App\Models\Services\StructureService;
 use App\Models\Services\ArmoryService;
+use App\Models\Services\AdvisorService;
 use App\Models\Services\GeneralService;
 use App\Models\Services\SettingsService;
 use App\Models\Services\SpyService;
@@ -192,29 +193,34 @@ RealmNewsRepository::class => function (ContainerInterface $c) { return new Real
 
 // Attack Service (Updated Phase 19)
 AttackService::class => function (ContainerInterface $c) {
-return new AttackService(
-$c->get(PDO::class),
-$c->get(Config::class),
-$c->get(UserRepository::class),
-$c->get(ResourceRepository::class),
-$c->get(StructureRepository::class),
-$c->get(StatsRepository::class),
-$c->get(BattleRepository::class),
-$c->get(AllianceRepository::class),
-$c->get(AllianceBankLogRepository::class),
-$c->get(BountyRepository::class),
-$c->get(ArmoryService::class),
-$c->get(PowerCalculatorService::class),
-$c->get(LevelUpService::class),
-$c->get(EventDispatcher::class),
-$c->get(EffectService::class),
-$c->get(\App\Models\Services\NetWorthCalculatorService::class)
-);
+    return new AttackService(
+        $c->get(PDO::class),
+        $c->get(Config::class),
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StructureRepository::class),
+        $c->get(StatsRepository::class),
+        $c->get(BattleRepository::class),
+        $c->get(AllianceRepository::class),
+        $c->get(AllianceBankLogRepository::class),
+        $c->get(BountyRepository::class),
+        $c->get(ArmoryService::class),
+        $c->get(PowerCalculatorService::class),
+        $c->get(LevelUpService::class),
+        $c->get(EventDispatcher::class),
+        $c->get(EffectService::class),
+        $c->get(\App\Models\Services\NetWorthCalculatorService::class)
+    );
+},
+
+AdvisorService::class => function (ContainerInterface $c) {
+    return new AdvisorService(
+        $c->get(StatsRepository::class)
+    );
 },
 
 // Black Market Service (Needs Logging Update Phase 20)
-BlackMarketService::class => function (ContainerInterface $c) {
-return new BlackMarketService(
+BlackMarketService::class => function (ContainerInterface $c) {return new BlackMarketService(
 $c->get(PDO::class),
 $c->get(Config::class),
 $c->get(ResourceRepository::class),
@@ -248,6 +254,22 @@ RealmNewsService::class => function (ContainerInterface $c) {
 BattleService::class => function (ContainerInterface $c) {
     return new \App\Models\Services\BattleService(
         $c->get(BattleRepository::class)
+    );
+},
+
+DashboardService::class => function (ContainerInterface $c) {
+    return new DashboardService(
+        $c->get(UserRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StatsRepository::class),
+        $c->get(StructureRepository::class),
+        $c->get(EffectRepository::class),
+        $c->get(NotificationRepository::class),
+        $c->get(AdvisorService::class),
+        $c->get(BountyRepository::class),
+        $c->get(WarRepository::class),
+        $c->get(PowerCalculatorService::class),
+        $c->get(NetWorthCalculatorService::class)
     );
 },
 
