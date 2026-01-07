@@ -18,6 +18,7 @@ use App\Models\Services\LevelUpService;
 use App\Models\Services\EffectService;
 use App\Models\Services\NetWorthCalculatorService;
 use App\Core\Events\EventDispatcher;
+use App\Models\Entities\UserResource; // --- NEW IMPORT ---
 use App\Events\BattleConcludedEvent;
 use PDO;
 use Throwable;
@@ -248,13 +249,25 @@ class AttackService
             $soldiersSent -= $ionCasualties;
             if ($soldiersSent < 0) $soldiersSent = 0;
             
-            // Update resource object for power calc
-            $attackerResources->soldiers = $soldiersSent;
+            // Update resource object for power calc - create a NEW resource object with updated soldiers
+            $attackerResourcesForCalc = new UserResource(
+                user_id: $attackerResources->user_id,
+                credits: $attackerResources->credits,
+                banked_credits: $attackerResources->banked_credits,
+                gemstones: $attackerResources->gemstones,
+                naquadah_crystals: $attackerResources->naquadah_crystals,
+                untrained_citizens: $attackerResources->untrained_citizens,
+                workers: $attackerResources->workers,
+                soldiers: $soldiersSent, // This is the updated value
+                guards: $attackerResources->guards,
+                spies: $attackerResources->spies,
+                sentries: $attackerResources->sentries
+            );
         }
 
         // Calculate Battle Power
         $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
-            $attackerId, $attackerResources, $attackerStats, $attackerStructures, $attacker->alliance_id
+            $attackerId, ($ionCasualties > 0 ? $attackerResourcesForCalc : $attackerResources), $attackerStats, $attackerStructures, $attacker->alliance_id
         );
         $offensePower = $offensePowerBreakdown['total'];
         $originalOffensePower = $offensePower; 

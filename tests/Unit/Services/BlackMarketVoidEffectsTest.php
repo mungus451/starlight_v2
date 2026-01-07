@@ -15,6 +15,8 @@ use App\Models\Services\EffectService;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Services\LevelUpService;
 use App\Models\Entities\UserResource;
+use App\Models\Repositories\StructureRepository;
+use App\Models\Entities\UserStructure;
 use Mockery;
 use PDO;
 
@@ -31,6 +33,7 @@ class BlackMarketVoidEffectsTest extends TestCase
     private $effectService;
     private $houseFinanceRepo;
     private $levelUpService;
+    private $structureRepo;
     private $service;
 
     protected function setUp(): void
@@ -56,6 +59,7 @@ class BlackMarketVoidEffectsTest extends TestCase
         $this->effectService = Mockery::mock(EffectService::class);
         $this->houseFinanceRepo = Mockery::mock(HouseFinanceRepository::class);
         $this->levelUpService = Mockery::mock(LevelUpService::class);
+        $this->structureRepo = Mockery::mock(StructureRepository::class);
 
         // 3. Service Instantiation
         $this->service = new BlackMarketService(
@@ -69,13 +73,17 @@ class BlackMarketVoidEffectsTest extends TestCase
             $this->logRepo,
             $this->effectService,
             $this->houseFinanceRepo,
-            $this->levelUpService
+            $this->levelUpService,
+            $this->structureRepo
         );
 
         // Common Config Setup
         $this->config->shouldReceive('get')
             ->with('black_market.costs.void_container', 100)
             ->andReturn(100);
+        $this->config->shouldReceive('get')
+            ->with('game_balance.black_market')
+            ->andReturn([])->byDefault();
 
         // Common Resource Setup (Sufficient Funds)
         $resources = new UserResource(
@@ -102,8 +110,24 @@ class BlackMarketVoidEffectsTest extends TestCase
             ->byDefault();
 
         $this->resourceRepo->shouldReceive('updateResources')
-            ->with(1, 0, -100) // Deduct cost
+            ->with(1, 0, Mockery::any())
             ->andReturn(true)
+            ->byDefault();
+
+        $structures = new UserStructure(
+            user_id: 1,
+            fortification_level: 0,
+            offense_upgrade_level: 0,
+            defense_upgrade_level: 0,
+            spy_upgrade_level: 0,
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0,
+            accounting_firm_level: 0
+        );
+        $this->structureRepo->shouldReceive('findByUserId')
+            ->with(1)
+            ->andReturn($structures)
             ->byDefault();
             
         $this->logRepo->shouldReceive('log')->byDefault();

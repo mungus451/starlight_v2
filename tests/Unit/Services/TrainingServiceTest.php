@@ -6,7 +6,9 @@ use Tests\Unit\TestCase;
 use App\Models\Services\TrainingService;
 use App\Models\Services\GeneralService;
 use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository;
 use App\Models\Entities\UserResource;
+use App\Models\Entities\UserStructure;
 use App\Core\Config;
 use App\Core\ServiceResponse;
 use Mockery;
@@ -17,6 +19,7 @@ class TrainingServiceTest extends TestCase
     private Config|Mockery\MockInterface $mockConfig;
     private ResourceRepository|Mockery\MockInterface $mockResourceRepo;
     private GeneralService|Mockery\MockInterface $mockGeneralService;
+    private StructureRepository|Mockery\MockInterface $mockStructureRepo;
 
     protected function setUp(): void
     {
@@ -25,11 +28,13 @@ class TrainingServiceTest extends TestCase
         $this->mockConfig = Mockery::mock(Config::class);
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $this->mockGeneralService = Mockery::mock(GeneralService::class);
+        $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
 
         $this->service = new TrainingService(
             $this->mockConfig,
             $this->mockResourceRepo,
-            $this->mockGeneralService
+            $this->mockGeneralService,
+            $this->mockStructureRepo
         );
     }
 
@@ -38,8 +43,15 @@ class TrainingServiceTest extends TestCase
         $userId = 1;
         $mockResource = $this->createMockResource($userId);
         $mockCosts = ['soldiers' => ['credits' => 15000, 'citizens' => 1]];
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
 
         $this->mockResourceRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockResource);
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         $this->mockConfig->shouldReceive('get')->once()->with('game_balance.training', [])->andReturn($mockCosts);
 
         $result = $this->service->getTrainingData($userId);
@@ -64,14 +76,30 @@ class TrainingServiceTest extends TestCase
 
     public function testTrainUnitsRejectsInvalidUnitType(): void
     {
-        $this->mockConfig->shouldReceive('get')->with('game_balance.training.invalid_unit')->andReturn(null);
-        $response = $this->service->trainUnits(1, 'invalid_unit', 10);
+        $userId = 1;
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn([]);
+        $response = $this->service->trainUnits($userId, 'invalid_unit', 10);
         $this->assertServiceFailure($response);
     }
 
     public function testTrainUnitsFailsWhenResourcesNotFound(): void
     {
-        $this->mockConfig->shouldReceive('get')->andReturn(['credits' => 100, 'citizens' => 1]);
+        $userId = 1;
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 100, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn(null);
         
         $response = $this->service->trainUnits(1, 'soldiers', 5);
@@ -82,8 +110,15 @@ class TrainingServiceTest extends TestCase
     {
         $userId = 1;
         $mockResource = $this->createMockResource($userId, credits: 100);
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
-        $this->mockConfig->shouldReceive('get')->andReturn(['credits' => 1000, 'citizens' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 1000, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
 
         $response = $this->service->trainUnits($userId, 'soldiers', 1);
@@ -95,8 +130,15 @@ class TrainingServiceTest extends TestCase
     {
         $userId = 1;
         $mockResource = $this->createMockResource($userId, credits: 10000, citizens: 0);
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
-        $this->mockConfig->shouldReceive('get')->andReturn(['credits' => 100, 'citizens' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 100, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
 
         $response = $this->service->trainUnits($userId, 'soldiers', 1);
@@ -108,8 +150,15 @@ class TrainingServiceTest extends TestCase
     {
         $userId = 1;
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 10, soldiers: 10);
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
-        $this->mockConfig->shouldReceive('get')->andReturn(['credits' => 100, 'citizens' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 100, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
         
         // Cap is 10. Trying to add 1. Total 11 > 10.
@@ -124,8 +173,15 @@ class TrainingServiceTest extends TestCase
     {
         $userId = 1;
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 20, soldiers: 3);
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
-        $this->mockConfig->shouldReceive('get')->with('game_balance.training.soldiers')->andReturn(['credits' => 1000, 'citizens' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 1000, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
         
         // Cap is 100.
@@ -142,8 +198,15 @@ class TrainingServiceTest extends TestCase
         // Workers don't check army cap
         $userId = 1;
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 20);
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
+            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
+            armory_level: 0, accounting_firm_level: 0
+        );
+        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
-        $this->mockConfig->shouldReceive('get')->with('game_balance.training.workers')->andReturn(['credits' => 100, 'citizens' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['workers' => ['credits' => 100, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
         $this->mockResourceRepo->shouldReceive('updateTrainedUnits')->once()->andReturn(true);
 

@@ -120,7 +120,8 @@ class HighRiskProtocolTest extends TestCase
             $this->logRepo,
             $this->effectService,
             $this->createMock(HouseFinanceRepository::class),
-            $this->createMock(LevelUpService::class)
+            $this->createMock(LevelUpService::class),
+            $this->structureRepo
         );
 
         // Setup AttackService (Testing combat modifiers)

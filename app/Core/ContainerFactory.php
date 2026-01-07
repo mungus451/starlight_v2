@@ -343,7 +343,8 @@ TrainingService::class => function (ContainerInterface $c) {
     return new TrainingService(
         $c->get(Config::class),
         $c->get(ResourceRepository::class),
-        $c->get(GeneralService::class)
+        $c->get(GeneralService::class),
+        $c->get(StructureRepository::class)
     );
 },
 

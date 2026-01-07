@@ -11,6 +11,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
 use App\Models\Repositories\HouseFinanceRepository;
+use App\Models\Repositories\StructureRepository;
 use App\Models\Services\EffectService;
 use App\Models\Services\AttackService;
 use App\Models\Services\LevelUpService;
@@ -31,6 +32,7 @@ class BlackMarketServiceTest extends TestCase
     private $mockEffectService;
     private $mockHouseFinanceRepo;
     private $mockLevelUpService;
+    private $mockStructureRepo;
 
     protected function setUp(): void
     {
@@ -47,6 +49,7 @@ class BlackMarketServiceTest extends TestCase
         $this->mockEffectService = Mockery::mock(EffectService::class);
         $this->mockHouseFinanceRepo = Mockery::mock(HouseFinanceRepository::class);
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
+        $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
 
         $this->service = new BlackMarketService(
             $this->mockDb,
@@ -59,7 +62,8 @@ class BlackMarketServiceTest extends TestCase
             $this->mockLogRepo,
             $this->mockEffectService,
             $this->mockHouseFinanceRepo,
-            $this->mockLevelUpService
+            $this->mockLevelUpService,
+            $this->mockStructureRepo
         );
     }
 
@@ -75,6 +79,7 @@ class BlackMarketServiceTest extends TestCase
 
         // 2. Transaction
         $this->mockDb->shouldReceive('beginTransaction')->once();
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(true);
         $this->mockDb->shouldReceive('commit')->once();
 
         // 3. Break Effect
