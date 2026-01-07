@@ -1,40 +1,26 @@
 document.addEventListener('DOMContentLoaded', function() {
     
     // ==========================================
-    // 1. Expand / Collapse Logic
+    // 1. Category Tab Logic (Central Deck)
     // ==========================================
-    const allCards = document.querySelectorAll('.structure-card');
-    const expandAllBtn = document.getElementById('btn-expand-all');
-    const collapseAllBtn = document.getElementById('btn-collapse-all');
+    const navButtons = document.querySelectorAll('.structure-nav-btn');
+    const categoryContainers = document.querySelectorAll('.structure-category-container');
 
-    // Individual Card Toggling
-    const allHeaders = document.querySelectorAll('.card-header-main, .card-header');
-    allHeaders.forEach(header => {
-        header.addEventListener('click', function() {
-            const card = this.closest('.structure-card');
-            if (card) {
-                card.classList.toggle('is-expanded');
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all
+            navButtons.forEach(b => b.classList.remove('active'));
+            categoryContainers.forEach(c => c.classList.remove('active'));
+
+            // Activate clicked
+            btn.classList.add('active');
+            const targetId = btn.dataset.tabTarget;
+            const targetContainer = document.getElementById(targetId);
+            if (targetContainer) {
+                targetContainer.classList.add('active');
             }
         });
     });
-
-    // Expand All Button
-    if (expandAllBtn) {
-        expandAllBtn.addEventListener('click', function() {
-            allCards.forEach(card => {
-                card.classList.add('is-expanded');
-            });
-        });
-    }
-    
-    // Collapse All Button
-    if (collapseAllBtn) {
-        collapseAllBtn.addEventListener('click', function() {
-            allCards.forEach(card => {
-                card.classList.remove('is-expanded');
-            });
-        });
-    }
 
     // ==========================================
     // 2. Shopping Cart / Batch Logic
@@ -111,8 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // UI Update
         btn.classList.add('in-cart');
-        btn.textContent = 'Remove from Batch';
-        btn.classList.replace('btn-submit', 'btn-secondary'); // Visual toggle
+        btn.innerHTML = '<i class="fas fa-minus"></i> Remove';
+        btn.classList.replace('btn-outline-info', 'btn-info'); 
         
         // Also ensure the parent card is expanded so user sees they selected it? 
         // Optional, but might be nice.
@@ -128,8 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // UI Update
         btn.classList.remove('in-cart');
-        btn.textContent = `Add to Batch (Lvl ${btn.dataset.nextLevel})`;
-        btn.classList.replace('btn-secondary', 'btn-submit');
+        btn.innerHTML = '<i class="fas fa-plus"></i> Batch';
+        btn.classList.replace('btn-info', 'btn-outline-info');
 
         updateCheckoutUI();
     }
@@ -158,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (checkoutBox) checkoutBox.style.display = 'block';
+        if (checkoutBox) checkoutBox.style.display = 'flex'; // Changed to flex for new HUD layout
         
         // Calculate Totals
         let tCred = 0, tCry = 0, tDm = 0;
@@ -174,10 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (checkoutList) {
                 const li = document.createElement('div');
-                li.className = 'checkout-item';
-                li.style.fontSize = '0.9em';
-                li.style.padding = '2px 0';
-                li.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                li.className = 'hud-item';
                 li.textContent = names[key];
                 checkoutList.appendChild(li);
             }

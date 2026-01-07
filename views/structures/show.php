@@ -6,172 +6,164 @@
  */
 ?>
 
-<style>
-    /* Local override for structure specific cards if needed, otherwise inherits global */
-    .structure-card.max-level { 
-        border-color: var(--accent-2); 
-        box-shadow: var(--shadow), 0 0 15px rgba(249, 199, 79, 0.2); 
-    }
-</style>
-
-<div class="container-full">
-    <h1>Strategic Structures</h1>
-    <p class="subtitle" style="text-align: center; color: var(--muted); margin-top: -1rem; margin-bottom: 2rem;">
-        Build and upgrade your infrastructure to expand your influence and power.
-    </p>
-
-    <!-- Header Stats -->
-    <div class="resource-header-card">
-        <div class="header-stat">
-            <span>Credits</span>
-            <strong class="accent-gold"><?= number_format($resources->credits) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Workers</span>
-            <strong class="accent"><?= number_format($resources->workers) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Soldiers</span>
-            <strong class="accent-red"><?= number_format($resources->soldiers) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Guards</span>
-            <strong class="accent-blue"><?= number_format($resources->guards) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Spies</span>
-            <strong class="accent-green"><?= number_format($resources->spies) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Sentries</span>
-            <strong class="accent-green"><?= number_format($resources->sentries) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Naquadah</span>
-            <strong class="accent-purple"><?= number_format($resources->naquadah_crystals, 0) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Dark Matter</span>
-            <strong class="accent-blue"><?= number_format($resources->dark_matter) ?></strong>
-        </div>
-        <div class="header-stat">
-            <span>Research</span>
-            <strong class="accent"><?= number_format($resources->research_data) ?></strong>
+<div class="structures-page-content">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h1>Strategic Structures</h1>
+            <p class="subtitle" style="color: var(--muted); margin: 0;">
+                Build and upgrade your infrastructure to expand your influence and power.
+            </p>
         </div>
     </div>
 
-    <!-- Structures Grid -->
-    <div class="structures-grid">
-        <?php if (empty($groupedStructures)): ?>
-            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--muted);">
-                Configuration error: No structures found.
-            </div>
-        <?php else: ?>
-            <?php foreach ($groupedStructures as $categoryName => $structures): ?>
+    <?php if (empty($groupedStructures)): ?>
+        <div style="text-align: center; padding: 2rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 8px;">
+            <i class="fas fa-exclamation-triangle"></i> Configuration error: No structures found.
+        </div>
+    <?php else: ?>
 
-                <div class="structure-category">
-                    <h2><?= htmlspecialchars($categoryName) ?></h2>
-                </div>
+        <!-- Category Navigation Deck -->
+        <div class="structure-nav-container">
+            <?php 
+            $firstCategory = true;
+            foreach ($groupedStructures as $categoryName => $structures): 
+                $catId = 'cat-' . md5($categoryName);
+            ?>
+                <button class="structure-nav-btn <?= $firstCategory ? 'active' : '' ?>" data-tab-target="<?= $catId ?>">
+                    <?php 
+                        // Optional: Add icons based on category name if desired, or just text
+                        $icon = match($categoryName) {
+                            'Economy' => '<i class="fas fa-coins"></i>',
+                            'Military' => '<i class="fas fa-crosshairs"></i>',
+                            'Defense' => '<i class="fas fa-shield-alt"></i>',
+                            'Intel' => '<i class="fas fa-satellite"></i>',
+                            default => '<i class="fas fa-layer-group"></i>'
+                        };
+                    ?>
+                    <?= $icon ?> <?= htmlspecialchars($categoryName) ?>
+                </button>
+                <?php $firstCategory = false; ?>
+            <?php endforeach; ?>
+        </div>
 
-                <?php foreach ($structures as $struct): ?>
-                    <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
-                        
-                        <!-- Card Header -->
-                        <div class="card-header-main">
-                            <span class="card-icon"><?= $struct['icon'] ?></span>
-                            <div class="card-title-group">
-                                <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
-                                <p class="card-level">Level: <?= $struct['current_level'] ?></p>
-                            </div>
-                        </div>
-
-                        <!-- Card Body -->
-                        <div class="card-body-main">
-                            <p class="card-description"><?= htmlspecialchars($struct['description']) ?></p>
-                            
-                            <?php if (!empty($struct['benefit_text'])): ?>
-                                <div class="card-benefit">
-                                    <span class="icon">✨</span>
-                                    <?= htmlspecialchars($struct['benefit_text']) ?>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if (!$struct['is_max_level']): ?>
-                                <div class="card-costs-next">
-                                    <div class="cost-item <?= !$struct['can_afford'] ? 'insufficient' : '' ?>">
-                                        <span class="icon">◎</span>
-                                        <span class="value"><?= $struct['cost_formatted'] ?></span>
+        <!-- Central Viewing Containers -->
+        <div class="structure-deck">
+            <?php 
+            $firstCategory = true;
+            foreach ($groupedStructures as $categoryName => $structures): 
+                $catId = 'cat-' . md5($categoryName);
+            ?>
+                <div id="<?= $catId ?>" class="structure-category-container <?= $firstCategory ? 'active' : '' ?>">
+                    <div class="structures-grid">
+                        <?php foreach ($structures as $struct): ?>
+                            <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
+                                
+                                <!-- Card Header -->
+                                <div class="card-header-main">
+                                    <span class="card-icon"><?= $struct['icon'] ?></span>
+                                    <div class="card-title-group">
+                                        <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
+                                        <p class="card-level">Level: <span class="text-white"><?= $struct['current_level'] ?></span></p>
                                     </div>
                                 </div>
-                            <?php endif; ?>
-                        </div>
 
-                        <!-- Card Footer (Actions) -->
-                        <div class="card-footer-actions">
-                            <?php if ($struct['is_max_level']): ?>
-                                <div class="max-level-badge">Max Level Achieved!</div>
-                            <?php else: ?>
-                                <button type="button" 
-                                        class="btn-submit btn-upgrade-now" 
-                                        style="flex-grow: 1;"
-                                        data-key="<?= htmlspecialchars($struct['key']) ?>"
-                                        <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                    Upgrade Now
-                                </button>
-                                <button type="button" 
-                                        class="btn-submit btn-add-cart" 
-                                        style="border: 1px solid var(--accent); flex-grow: 1;"
-                                        data-key="<?= htmlspecialchars($struct['key']) ?>"
-                                        data-name="<?= htmlspecialchars($struct['name']) ?>"
-                                        data-next-level="<?= $struct['next_level'] ?>"
-                                        data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
-                                        data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
-                                        data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
-                                        <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                    <?= $struct['can_afford'] ? 'Add to Batch' : 'Insufficient' ?>
-                                </button>
-                            <?php endif; ?>
-                        </div>
-                        
+                                <!-- Card Body -->
+                                <div class="card-body-main">
+                                    <p class="card-description" style="min-height: 40px;"><?= htmlspecialchars($struct['description']) ?></p>
+                                    
+                                    <?php if (!empty($struct['benefit_text'])): ?>
+                                        <div class="card-benefit mb-3">
+                                            <span class="text-neon-blue" style="font-weight: 600; font-size: 0.9rem;">
+                                                <i class="fas fa-bolt" style="margin-right: 5px;"></i>
+                                                <?= htmlspecialchars($struct['benefit_text']) ?>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!$struct['is_max_level']): ?>
+                                        <div class="resource-cost-grid">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="text-muted">Upgrade Cost:</span>
+                                                <span class="<?= !$struct['can_afford'] ? 'text-danger' : 'text-white' ?> font-weight-bold">
+                                                    <?= $struct['cost_formatted'] ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Card Footer (Actions) -->
+                                <div class="card-footer-actions p-3 pt-0 flex-gap-sm">
+                                    <?php if ($struct['is_max_level']): ?>
+                                        <div class="w-100 text-center p-2" style="border: 1px solid var(--accent-2); border-radius: 6px; color: var(--accent-2); background: rgba(249, 199, 79, 0.1);">
+                                            <i class="fas fa-check-circle"></i> Max Level
+                                        </div>
+                                    <?php else: ?>
+                                        <button type="button" 
+                                                class="btn btn-primary flex-grow-1 btn-upgrade-now" 
+                                                data-key="<?= htmlspecialchars($struct['key']) ?>"
+                                                <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
+                                            Upgrade
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-info flex-grow-1 btn-add-cart" 
+                                                data-key="<?= htmlspecialchars($struct['key']) ?>"
+                                                data-name="<?= htmlspecialchars($struct['name']) ?>"
+                                                data-next-level="<?= $struct['next_level'] ?>"
+                                                data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
+                                                data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
+                                                data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
+                                                <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
+                                            <i class="fas fa-plus"></i> Batch
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                                
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                </div>
+                <?php $firstCategory = false; ?>
             <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
+        </div>
 
-    <!-- Batch Checkout Box -->
-    <div id="structure-checkout-box" style="display:none; position: fixed; bottom: 20px; right: 20px; width: 320px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(0,0,0,0.8); padding: 15px; z-index: 9999; border-radius: 8px; backdrop-filter: blur(5px);">
-        <div class="checkout-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin: 0; font-size: 1.1em; color: var(--accent);">Batch Upgrade</h3>
-            <button id="btn-cancel-batch" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2em;">&times;</button>
+    <?php endif; ?>
+
+    <!-- New HUD Floating Bar (Replaces old checkout box) -->
+    <div id="structure-checkout-box" class="hud-floating-bar" style="display:none;">
+        <div class="hud-header">
+            <h3><i class="fas fa-list-ul"></i> Build Queue</h3>
+            <button id="btn-cancel-batch" class="hud-btn-close" title="Clear Queue">&times;</button>
         </div>
         
-        <div id="checkout-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; font-size: 0.9em;">
+        <div id="checkout-list" class="hud-content">
             <!-- Items injected by JS -->
         </div>
         
-        <div class="checkout-totals" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Credits:</span>
-                <span class="accent-gold" id="checkout-total-credits">0</span>
+        <div class="hud-footer">
+            <div class="hud-total-row">
+                <span>Total Credits:</span>
+                <span class="icon-gold" id="checkout-total-credits">0</span>
             </div>
             <div id="checkout-rare-resources" style="display: none;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div class="hud-total-row">
                     <span>Naquadah:</span>
-                    <span class="accent-purple" id="checkout-total-crystal">0</span>
+                    <span class="icon-crystal" id="checkout-total-crystal">0</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div class="hud-total-row">
                     <span>Dark Matter:</span>
-                    <span class="accent-blue" id="checkout-total-dm">0</span>
+                    <span class="icon-matter" id="checkout-total-dm">0</span>
                 </div>
             </div>
+            
+            <form id="checkout-form" action="/structures/batch-upgrade" method="POST" class="mt-3">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <input type="hidden" name="structure_keys" id="checkout-input-keys" value="">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-hammer"></i> Confirm Construction
+                </button>
+            </form>
         </div>
-        
-        <form id="checkout-form" action="/structures/batch-upgrade" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="hidden" name="structure_keys" id="checkout-input-keys" value="">
-            <button type="submit" class="btn-submit" style="width: 100%;">Confirm Purchase</button>
-        </form>
     </div>
 
 </div>
