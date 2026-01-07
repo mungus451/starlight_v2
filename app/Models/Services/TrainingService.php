@@ -5,6 +5,7 @@ namespace App\Models\Services;
 use App\Core\Config;
 use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository; // --- NEW DEPENDENCY ---
 use PDO;
 
 /**
@@ -17,6 +18,7 @@ class TrainingService
     private Config $config;
     private ResourceRepository $resourceRepo;
     private GeneralService $generalService;
+    private StructureRepository $structureRepo; // --- NEW PROPERTY ---
 
     /**
      * DI Constructor.
@@ -25,15 +27,18 @@ class TrainingService
      * @param Config $config
      * @param ResourceRepository $resourceRepo
      * @param GeneralService $generalService
+     * @param StructureRepository $structureRepo
      */
     public function __construct(
         Config $config, 
         ResourceRepository $resourceRepo,
-        GeneralService $generalService
+        GeneralService $generalService,
+        StructureRepository $structureRepo // --- NEW INJECTION ---
     ) {
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
         $this->generalService = $generalService;
+        $this->structureRepo = $structureRepo;
     }
 
     /**
@@ -45,12 +50,42 @@ class TrainingService
     public function getTrainingData(int $userId): array
     {
         $resources = $this->resourceRepo->findByUserId($userId);
-        $costs = $this->config->get('game_balance.training', []);
+        // Use dynamic costs
+        $costs = $this->calculateDiscountedCosts($userId);
 
         return [
             'resources' => $resources,
             'costs' => $costs
         ];
+    }
+
+    private function calculateDiscountedCosts(int $userId): array
+    {
+        $costs = $this->config->get('game_balance.training', []);
+        // Fetch structures - handle potential null if user not fully initialized, though unlikely here
+        $structures = $this->structureRepo->findByUserId($userId);
+        
+        if (!$structures) return $costs;
+
+        $cloningLevel = $structures->cloning_vats_level ?? 0;
+        
+        if ($cloningLevel > 0) {
+            $discountPerLevel = $costs['cloning_vats_discount_per_level'] ?? 0.01;
+            $maxDiscount = $costs['cloning_vats_max_discount'] ?? 0.40;
+            
+            $discountPct = min($cloningLevel * $discountPerLevel, $maxDiscount);
+            $multiplier = 1.0 - $discountPct;
+            
+            // Apply to Soldiers and Guards credits only
+            if (isset($costs['soldiers']['credits'])) {
+                $costs['soldiers']['credits'] = (int)floor($costs['soldiers']['credits'] * $multiplier);
+            }
+            if (isset($costs['guards']['credits'])) {
+                $costs['guards']['credits'] = (int)floor($costs['guards']['credits'] * $multiplier);
+            }
+        }
+        
+        return $costs;
     }
 
     /**
@@ -69,7 +104,9 @@ class TrainingService
         }
 
         // 2. Validation 2: Unit Type & Costs
-        $unitCost = $this->config->get('game_balance.training.' . $unitType);
+        // Use discounted costs
+        $allCosts = $this->calculateDiscountedCosts($userId);
+        $unitCost = $allCosts[$unitType] ?? null;
         
         if (is_null($unitCost)) {
             return ServiceResponse::error('Invalid unit type selected.');

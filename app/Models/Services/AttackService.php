@@ -199,7 +199,6 @@ class AttackService
                 if ($diff->h > 0) $timeRemaining[] = $diff->h . 'h';
                 if ($diff->i > 0) $timeRemaining[] = $diff->i . 'm';
                 
-                // If less than a minute, show seconds or just "< 1m"
                 if (empty($timeRemaining)) {
                     $timeStr = "less than a minute";
                 } else {
@@ -236,12 +235,29 @@ class AttackService
             return ServiceResponse::error('You do not have enough attack turns.');
         }
 
+        // --- NEW: Ion Cannon Network (Pre-Battle Damage) ---
+        $ionLevel = $defenderStructures->ion_cannon_network_level ?? 0;
+        $ionCasualties = 0;
+        if ($ionLevel > 0) {
+            $ionDmgPerLevel = $config['ion_cannon_damage_per_level'] ?? 0.001;
+            $maxIonDmg = $config['max_ion_cannon_damage'] ?? 0.05;
+            $ionPercent = min($ionLevel * $ionDmgPerLevel, $maxIonDmg);
+            $ionCasualties = (int)ceil($soldiersSent * $ionPercent);
+            
+            // Reduce attacking force in memory
+            $soldiersSent -= $ionCasualties;
+            if ($soldiersSent < 0) $soldiersSent = 0;
+            
+            // Update resource object for power calc
+            $attackerResources->soldiers = $soldiersSent;
+        }
+
         // Calculate Battle Power
         $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
             $attackerId, $attackerResources, $attackerStats, $attackerStructures, $attacker->alliance_id
         );
         $offensePower = $offensePowerBreakdown['total'];
-        $originalOffensePower = $offensePower; // Store original for report
+        $originalOffensePower = $offensePower; 
 
         $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
             $defender->id, $defenderResources, $defenderStats, $defenderStructures, $defender->alliance_id
@@ -266,52 +282,54 @@ class AttackService
             $attackResult = 'stalemate';
         }
 
-        // If the shield absorbed everything, it's an automatic defeat with no defender losses
+        // If shield absorbed everything
         if ($shieldHp > 0 && $offensePower <= 0) {
             $attackResult = 'defeat';
         }
 
-        // --- NEW: RATIO BASED CASUALTY LOGIC ---
-        // Prevent division by zero
+        // --- Ratio Based Casualty Logic ---
         $safeOffense = max(1, $offensePower);
         $safeDefense = max(1, $defensePower);
         $ratio = 1.0;
 
         if ($attackResult === 'victory') {
             $ratio = $safeOffense / $safeDefense;
-            // Attacker is Winner
             $attackerSoldiersLost = $this->calculateWinnerLosses($soldiersSent, $ratio);
-            // Defender is Loser
             $defenderGuardsLost = $this->calculateLoserLosses($defenderResources->guards, $ratio);
         } elseif ($attackResult === 'defeat') {
-            // If shield absorbed all damage, no one loses anything
             if ($shieldHp > 0 && $offensePower <= 0) {
                 $attackerSoldiersLost = 0;
                 $defenderGuardsLost = 0;
             } else {
                 $ratio = $safeDefense / $safeOffense;
-                // Defender is Winner (losses applied to their guards)
                 $defenderGuardsLost = $this->calculateWinnerLosses($defenderResources->guards, $ratio);
-                // Attacker is Loser
                 $attackerSoldiersLost = $this->calculateLoserLosses($soldiersSent, $ratio);
             }
         } else {
-            // Stalemate (High casualties for both)
-            $attackerSoldiersLost = (int)ceil($soldiersSent * 0.15); // Flat 15%
+            $attackerSoldiersLost = (int)ceil($soldiersSent * 0.15);
             $defenderGuardsLost = (int)ceil($defenderResources->guards * 0.15);
         }
 
-        // Apply Casualty Scalar (Global Tuning)
+        // Apply Casualty Scalar
         $casualtyScalar = $config['global_casualty_scalar'] ?? 1.0;
         $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * $casualtyScalar);
         $defenderGuardsLost = (int)ceil($defenderGuardsLost * $casualtyScalar);
 
-        // Hard Caps (Cannot lose more than you have)
+        // Caps
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
-        // --- NEW: Nanite Forge Casualty Reduction (for Defender) ---
-        $naniteReductionPercent = 0.0;
+        // Add Ion Cannon Casualties to Total Attacker Losses
+        $attackerSoldiersLost += $ionCasualties;
+        // Re-check cap against ORIGINAL amount
+        $attackerSoldiersLost = min($attackerResources->soldiers + $ionCasualties, $attackerSoldiersLost); // Actually original was $soldiersSent + $ionCasualties.
+        // Let's rely on original resource fetch? No, $attackerResources->soldiers was mutated.
+        // We need original count.
+        // Original count = $soldiersSent + $ionCasualties.
+        // Wait, $attackerResources->soldiers matches $soldiersSent.
+        // So original was $soldiersSent + $ionCasualties.
+        
+        // --- Nanite Forge ---
         if ($attackResult === 'victory' && $defenderStructures->nanite_forge_level > 0) {
             $naniteReductionPerLevel = $this->config->get('game_balance.attack.nanite_casualty_reduction_per_level', 0.0);
             $maxNaniteReduction = $this->config->get('game_balance.attack.max_nanite_casualty_reduction', 0.0);
@@ -322,9 +340,9 @@ class AttackService
             $defenderGuardsLost = (int)ceil($defenderGuardsLost * (1 - $naniteReductionPercent));
         }
 
-        // --- NEW: High Risk Protocol Casualty Reduction (Attacker) ---
+        // --- High Risk Protocol ---
         if ($this->effectService->hasActiveEffect($attackerId, 'high_risk_protocol')) {
-            $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * 0.90); // -10% Casualties
+            $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * 0.90);
         }
 
         // XP Calculation
@@ -341,9 +359,17 @@ class AttackService
             default => 0
         };
 
+        // --- NEW: War College Bonus (XP) ---
+        $warCollegeLevel = $attackerStructures->war_college_level ?? 0;
+        if ($warCollegeLevel > 0) {
+            $xpBonusPerLevel = $config['war_college_xp_bonus_per_level'] ?? 0.02;
+            $xpMultiplier = 1.0 + ($warCollegeLevel * $xpBonusPerLevel);
+            $attackerXpGain = (int)ceil($attackerXpGain * $xpMultiplier);
+        }
+
         // Calculate Gains (Loot)
         $creditsPlundered = 0;
-        $netWorthStolen = 0; // Deprecated: NW is now dynamic
+        $netWorthStolen = 0; 
         $warPrestigeGained = 0;
         $battleTaxAmount = 0;
         $tributeTaxAmount = 0;
@@ -351,7 +377,17 @@ class AttackService
 
         if ($attackResult === 'victory') {
             $creditsPlundered = (int)($defenderResources->credits * $config['plunder_percent']);
-            // $netWorthStolen logic removed
+            
+            // --- NEW: Phase Bunker Protection ---
+            $bunkerLevel = $defenderStructures->phase_bunker_level ?? 0;
+            if ($bunkerLevel > 0) {
+                $protPerLevel = $config['phase_bunker_protection_per_level'] ?? 0.005;
+                $maxProt = $config['max_phase_bunker_protection'] ?? 0.20;
+                $protPercent = min($bunkerLevel * $protPerLevel, $maxProt);
+                
+                $creditsPlundered = (int)floor($creditsPlundered * (1.0 - $protPercent));
+            }
+
             $warPrestigeGained = $config['war_prestige_gain_base'];
 
             if ($attacker->alliance_id !== null && $creditsPlundered > 0) {
@@ -363,7 +399,6 @@ class AttackService
 
         $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
-        // Snapshot for Narrative
         $defenderTotalGuardsSnapshot = $defenderResources->guards;
 
         $transactionStartedByMe = false;
@@ -374,16 +409,22 @@ class AttackService
 
         try {
             // Update Attacker Resources
+            // Note: $attackerResources->soldiers was mutated, so we use original logic:
+            // Original Soldiers - Total Lost
+            // $soldiersSent (current memory) + $ionCasualties = Original.
+            // $attackerSoldiersLost = Total lost including Ion.
+            // New Total = (Original) - $attackerSoldiersLost.
+            $originalSoldiers = $soldiersSent + $ionCasualties;
+            
             $this->resourceRepo->updateBattleAttacker(
                 $attackerId,
                 $attackerResources->credits + $attackerCreditGain,
-                $attackerResources->soldiers - $attackerSoldiersLost
+                $originalSoldiers - $attackerSoldiersLost
             );
 
             // Update Attacker Stats
             $this->levelUpService->grantExperience($attackerId, $attackerXpGain);
             
-            // Recalculate Net Worth dynamically
             $attackerNewNW = $this->nwCalculator->calculateTotalNetWorth($attackerId);
             
             $this->statsRepo->updateBattleAttackerStats(
@@ -410,7 +451,6 @@ class AttackService
             // Update Defender Stats
             $this->levelUpService->grantExperience($defender->id, $defenderXpGain);
             
-            // Recalculate Defender Net Worth
             $defenderNewNW = $this->nwCalculator->calculateTotalNetWorth($defender->id);
             
             $this->statsRepo->updateBattleDefenderStats(
@@ -420,14 +460,14 @@ class AttackService
 
             // Create Battle Report
             $battleReportId = $this->battleRepo->createReport(
-                $attackerId, $defender->id, $attackType, $attackResult, $soldiersSent,
+                $attackerId, $defender->id, $attackType, $attackResult, ($soldiersSent + $ionCasualties),
                 $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
                 $attackerXpGain, $warPrestigeGained, $netWorthStolen,
                 (int)$originalOffensePower, (int)$defensePower, 
                 $defenderTotalGuardsSnapshot,
                 $isShadowContract,
-                $shieldHp, // NEW
-                $damageToShield // NEW
+                $shieldHp, 
+                $damageToShield 
             );
 
             // Alliance Bank

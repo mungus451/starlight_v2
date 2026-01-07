@@ -388,6 +388,34 @@ class PowerCalculatorService
         // 11. Protoform (Affected by Edict Resource Multiplier)
         $protoformIncome = $structures->protoform_vat_level * ($config['protoform_per_vat_level'] ?? 0) * $edictResourceMultiplier;
 
+        // --- NEW: FUSION PLANT BONUS ---
+        // Multiplies all "collector" outputs.
+        // Applies to: Credits (Base), Research, DM, Naquadah, Protoform.
+        $fusionLevel = $structures->fusion_plant_level ?? 0;
+        if ($fusionLevel > 0) {
+            $fusionBonusPerLevel = $config['fusion_plant_bonus_per_level'] ?? 0.005;
+            $fusionMultiplier = 1.0 + ($fusionLevel * $fusionBonusPerLevel);
+            
+            // Apply to Credits (Base Production part only, or Total? User said "output of collectors")
+            // Base Production is the output of collectors (Mines/Workers).
+            // So we scale baseProduction before it hits the additive multipliers? 
+            // Or just scale the final sum? 
+            // Scaling baseProduction effectively scales the total derived from it.
+            // Let's scale the *final* amounts for simplicity and impact.
+            
+            $totalCreditIncome = (int)floor($totalCreditIncome * $fusionMultiplier);
+            $researchDataIncome = (int)floor($researchDataIncome * $fusionMultiplier);
+            $darkMatterIncome *= $fusionMultiplier;
+            $naquadahIncome *= $fusionMultiplier;
+            $protoformIncome *= $fusionMultiplier;
+
+            $detailedBreakdown[] = [ 
+                'label' => "Fusion Plant (Lvl {$fusionLevel})", 
+                'value' => "+" . number_format(($fusionMultiplier - 1) * 100, 1) . "%", 
+                'type' => 'scalar' 
+            ];
+        }
+
         // --- VOID BUFF: Resource Boost (+25%) ---
         if ($this->effectService->hasActiveEffect($userId, 'void_resource_boost')) {
             $boost = 1.25;
@@ -469,6 +497,13 @@ class PowerCalculatorService
         $armory = $this->armoryService->getAggregateBonus($userId, 'sentry', 'defense', $sentries);
         $totalBase = $base + $armory;
         $structBonus = $structures->spy_upgrade_level * $config['defense_power_per_level'];
+        
+        // --- NEW: Neural Uplink Bonus ---
+        $neuralLevel = $structures->neural_uplink_level ?? 0;
+        if ($neuralLevel > 0) {
+            $neuralBonus = $neuralLevel * ($config['neural_uplink_bonus_per_level'] ?? 0.02);
+            $structBonus += $neuralBonus;
+        }
         
         // Edict Sentry Bonus
         $edictBonuses = $this->getEdictBonuses($userId);

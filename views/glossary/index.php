@@ -25,11 +25,11 @@
                         <?php 
                         // Map structure types to icons
                         $icon = match($key) {
-                            'fortification', 'defense_upgrade', 'planetary_shield' => 'fa-shield-alt',
-                            'offense_upgrade', 'weapon_vault', 'nanite_forge' => 'fa-crosshairs',
-                            'spy_upgrade', 'quantum_research_lab', 'embassy' => 'fa-user-secret',
-                            'economy_upgrade', 'accounting_firm', 'bank' => 'fa-coins',
-                            'population' => 'fa-users',
+                            'fortification', 'defense_upgrade', 'planetary_shield', 'phase_bunker' => 'fa-shield-alt',
+                            'offense_upgrade', 'weapon_vault', 'nanite_forge', 'ion_cannon_network' => 'fa-crosshairs',
+                            'spy_upgrade', 'quantum_research_lab', 'embassy', 'neural_uplink', 'subspace_scanner' => 'fa-user-secret',
+                            'economy_upgrade', 'accounting_firm', 'bank', 'fusion_plant', 'orbital_trade_port', 'banking_datacenter' => 'fa-coins',
+                            'population', 'cloning_vats', 'war_college', 'mercenary_outpost' => 'fa-users',
                             'armory' => 'fa-cogs',
                             'naquadah_mining_complex' => 'fa-gem',
                             'dark_matter_siphon' => 'fa-atom',
@@ -81,7 +81,10 @@
 <!-- ======================= UNITS TAB ======================= -->
 <div id="units" class="tab-content">
     <div class="structures-grid">
-        <?php foreach ($units as $key => $unit): ?>
+        <?php foreach ($units as $key => $unit): 
+            // Skip configuration values that aren't units
+            if (!is_array($unit) || !isset($unit['credits'])) continue;
+        ?>
             <div class="structure-card">
                 <div class="card-header-main">
                     <div class="card-icon">

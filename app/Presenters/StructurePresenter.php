@@ -24,9 +24,17 @@ class StructurePresenter
         $costs = $data['costs'];
         
         // Configs for benefit calculations
-        $turnConfig = $data['turnConfig'];
-        $attackConfig = $data['attackConfig'];
-        $spyConfig = $data['spyConfig'];
+        $turnConfig = $data['turnConfig'] ?? [];
+        $attackConfig = $data['attackConfig'] ?? [];
+        $spyConfig = $data['spyConfig'] ?? [];
+        // New configs might be needed, but we can pass them via $data if we update the service.
+        // For now, we assume key values are available in the main config arrays or generic $data['game_balance'] if we passed it.
+        // Actually, StructureService usually passes specific config sections.
+        // Let's rely on what's typically available or hardcode constants if they aren't passed yet.
+        // Note: TurnProcessorService logic was updated to use specific keys, we should try to match that.
+        
+        // We might need to access the full game_balance array for the new structures if they aren't in turn/attack/spy config subsets passed by the service.
+        // But for safety, I'll check if keys exist in the passed arrays, otherwise fall back to 0 or hardcoded logic for display.
 
         $grouped = [];
         $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
@@ -62,7 +70,7 @@ class StructurePresenter
             $costFormatted = implode(' + ', $costParts);
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
-            $benefitText = $this->calculateBenefitText($key, $turnConfig, $attackConfig, $spyConfig, $currentLevel);
+            $benefitText = $this->calculateBenefitText($key, $data, $currentLevel);
 
             // 4. Determine Icon
             $icon = $this->getCategoryIcon($category);
@@ -105,8 +113,17 @@ class StructurePresenter
         return $orderedGrouped;
     }
 
-    private function calculateBenefitText(string $key, array $turnConfig, array $attackConfig, array $spyConfig, int $currentLevel): string
+    private function calculateBenefitText(string $key, array $data, int $currentLevel): string
     {
+        // Extract configs from data wrapper for easier access
+        $turnConfig = $data['turnConfig'] ?? [];
+        $attackConfig = $data['attackConfig'] ?? [];
+        $spyConfig = $data['spyConfig'] ?? [];
+        
+        // For new structures, we might need to look at specific sections if available
+        // But we can mostly hardcode the display logic based on standard formulas if the exact config isn't passed to the view model yet.
+        // Ideally, StructureService should pass the full game_balance or the relevant subsections.
+        
         switch ($key) {
             case 'economy_upgrade':
                 $val = $turnConfig['credit_income_per_econ_level'] ?? 0;
@@ -180,6 +197,50 @@ class StructurePresenter
                 $currentOutput = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
                 $nextOutput = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
                 return "Output: " . number_format($currentOutput, 2) . " / Turn (Next: " . number_format($nextOutput, 2) . ")";
+
+            // --- NEW EXPANSION STRUCTURES ---
+            case 'fusion_plant':
+                // 0.5% per level
+                $val = ($turnConfig['fusion_plant_bonus_per_level'] ?? 0.005) * 100;
+                return "+ " . number_format($val, 1) . "% Global Production";
+
+            case 'orbital_trade_port':
+                // 0.5% per level
+                return "- 0.5% Black Market Crystal Costs";
+
+            case 'banking_datacenter':
+                // 10 mins per level
+                return "- 10 Minutes Deposit Regen Time";
+
+            case 'cloning_vats':
+                // 1% per level
+                return "- 1% Unit Training Cost (Credits)";
+
+            case 'war_college':
+                // 2% per level
+                $val = ($attackConfig['war_college_xp_bonus_per_level'] ?? 0.02) * 100;
+                return "+ " . number_format($val, 0) . "% Commander XP Gain";
+
+            case 'mercenary_outpost':
+                return "Unlocks Emergency Draft (Use Dark Matter)";
+
+            case 'phase_bunker':
+                // 0.5% per level
+                $val = ($attackConfig['phase_bunker_protection_per_level'] ?? 0.005) * 100;
+                return "+ " . number_format($val, 1) . "% Resource Protection";
+
+            case 'ion_cannon_network':
+                // 0.1% per level
+                $val = ($attackConfig['ion_cannon_damage_per_level'] ?? 0.001) * 100;
+                return "Eliminates " . number_format($val, 1) . "% of Attackers Pre-Battle";
+
+            case 'neural_uplink':
+                // 2% per level
+                $val = ($spyConfig['neural_uplink_bonus_per_level'] ?? 0.02) * 100;
+                return "+ " . number_format($val, 0) . "% Sentry Counter-Ops";
+
+            case 'subspace_scanner':
+                return "Improves Incoming Attack Intel";
             
             default:
                 return "";

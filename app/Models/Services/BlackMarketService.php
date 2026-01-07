@@ -10,6 +10,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\BlackMarketLogRepository;
 use App\Models\Repositories\HouseFinanceRepository;
+use App\Models\Repositories\StructureRepository; // --- NEW ---
 use App\Models\Services\EffectService;
 use App\Models\Services\LevelUpService;
 use PDO;
@@ -32,6 +33,7 @@ private BlackMarketLogRepository $logRepo;
 private EffectService $effectService;
 private HouseFinanceRepository $houseFinanceRepo;
 private LevelUpService $levelUpService;
+private StructureRepository $structureRepo; // --- NEW ---
 
 public function __construct(
 PDO $db,
@@ -44,7 +46,8 @@ AttackService $attackService,
 BlackMarketLogRepository $logRepo,
 EffectService $effectService,
 HouseFinanceRepository $houseFinanceRepo,
-LevelUpService $levelUpService
+LevelUpService $levelUpService,
+StructureRepository $structureRepo // --- NEW ---
 ) {
 $this->db = $db;
 $this->config = $config;
@@ -57,6 +60,7 @@ $this->logRepo = $logRepo;
 $this->effectService = $effectService;
 $this->houseFinanceRepo = $houseFinanceRepo;
 $this->levelUpService = $levelUpService;
+$this->structureRepo = $structureRepo;
 }
 
     public function getUndermarketPageData(int $userId): array
@@ -511,20 +515,33 @@ return ServiceResponse::error($e->getMessage());
     }
 
     private function processPurchase(int $userId, float $cost, callable $action): ServiceResponse{
-$resources = $this->resourceRepo->findByUserId($userId);
-if ($resources->naquadah_crystals < $cost) return ServiceResponse::error("Insufficient Naquadah Crystals.");
+        // --- Orbital Trade Port Discount ---
+        $structures = $this->structureRepo->findByUserId($userId);
+        $bmConfig = $this->config->get('game_balance.black_market');
+        
+        $level = $structures->orbital_trade_port_level ?? 0;
+        if ($level > 0) {
+            $discountPerLevel = $bmConfig['orbital_trade_port_discount_per_level'] ?? 0.005;
+            $maxDiscount = $bmConfig['max_orbital_trade_port_discount'] ?? 0.25;
+            
+            $discountPct = min($level * $discountPerLevel, $maxDiscount);
+            $cost = floor($cost * (1.0 - $discountPct));
+        }
 
-$this->db->beginTransaction();
-try {
-$this->resourceRepo->updateResources($userId, 0, -$cost);
-$result = $action();
-$message = is_array($result) ? ($result['message'] ?? 'Operation successful') : $result;
-$status = is_array($result) ? ($result['status'] ?? 'success') : 'success';
-$this->db->commit();
-return ServiceResponse::success($message, ['outcome_type' => $status]);
-} catch (Throwable $e) {
-if ($this->db->inTransaction()) $this->db->rollBack();
-return ServiceResponse::error("Transaction failed: " . $e->getMessage());
-}
-}
+        $resources = $this->resourceRepo->findByUserId($userId);
+        if ($resources->naquadah_crystals < $cost) return ServiceResponse::error("Insufficient Naquadah Crystals.");
+
+        $this->db->beginTransaction();
+        try {
+            $this->resourceRepo->updateResources($userId, 0, -$cost);
+            $result = $action();
+            $message = is_array($result) ? ($result['message'] ?? 'Operation successful') : $result;
+            $status = is_array($result) ? ($result['status'] ?? 'success') : 'success';
+            $this->db->commit();
+            return ServiceResponse::success($message, ['outcome_type' => $status]);
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            return ServiceResponse::error("Transaction failed: " . $e->getMessage());
+        }
+    }
 }
