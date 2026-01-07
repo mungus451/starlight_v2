@@ -106,14 +106,15 @@ if ($response->isSuccess()) {
 // Flash message is set so it appears on next full page load if user refreshes
 $this->session->setFlash('success', $response->message);
 
-$this->jsonResponse([
-'success' => true,
-'message' => $response->message,
-'new_credits' => $response->data['new_credits'],
-'new_owned' => $response->data['new_owned'],
-'item_key' => $response->data['item_key']
-]);
-} else {
+        $this->jsonResponse([
+            'success' => true,
+            'message' => $response->message,
+            'new_credits' => $response->data['new_credits'],
+            'new_crystals' => $response->data['new_crystals'],
+            'new_dark_matter' => $response->data['new_dark_matter'],
+            'new_owned' => $response->data['new_owned'],
+            'item_key' => $response->data['item_key']
+        ]);} else {
 $this->jsonResponse(['success' => false, 'error' => $response->message]);
 }
 } else {

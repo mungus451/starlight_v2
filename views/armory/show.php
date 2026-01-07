@@ -11,24 +11,24 @@
 
 // Simple Icon Mapping Helpers
 $unitIcons = [
-    'soldier' => 'fas fa-fist-raised',
+    'soldier' => 'fas fa-crosshairs',
     'guard'   => 'fas fa-shield-alt',
     'spy'     => 'fas fa-user-secret',
-    'sentry'  => 'fas fa-satellite-dish',
-    'worker'  => 'fas fa-hard-hat'
+    'sentry'  => 'fas fa-binoculars',
+    'worker'  => 'fas fa-hammer'
 ];
 
 $categoryIcons = [
     'main_weapon' => 'fas fa-gun',
-    'sidearm'     => 'fas fa-hand-holding-gun',
-    'melee'       => 'fas fa-sword',
-    'headgear'    => 'fas fa-head-side-mask',
+    'sidearm'     => 'fas fa-bolt', // Swapped from hand-holding-gun
+    'melee'       => 'fas fa-hand-fist', // Swapped from sword
+    'headgear'    => 'fas fa-mask',
     'explosives'  => 'fas fa-bomb',
     'armor_suit'  => 'fas fa-vest',
     'secondary_defense' => 'fas fa-microchip',
     'melee_counter' => 'fas fa-user-shield',
-    'defensive_headgear' => 'fas fa-helmet-battle',
-    'defensive_deployable' => 'fas fa-door-closed',
+    'defensive_headgear' => 'fas fa-hard-hat', // Swapped from helmet-battle
+    'defensive_deployable' => 'fas fa-dungeon',
     'silenced_projectors' => 'fas fa-wind',
     'cloaking_disruption' => 'fas fa-ghost',
     'concealed_blades' => 'fas fa-cut',
@@ -36,9 +36,9 @@ $categoryIcons = [
     'infiltration_gadgets' => 'fas fa-tools',
     'shields' => 'fas fa-shield-virus',
     'secondary_defensive_systems' => 'fas fa-cogs',
-    'shield_bash' => 'fas fa-impact--shield',
+    'shield_bash' => 'fas fa-hand-rock', // Swapped from impact--shield
     'helmets' => 'fas fa-hard-hat',
-    'fortifications' => 'fas fa-fort-awesome',
+    'fortifications' => 'fas fa-archway',
     'mining_lasers_drills' => 'fas fa-hammer',
     'resource_enhancement' => 'fas fa-magnet',
     'exo_rig_plating' => 'fas fa-robot',
@@ -48,20 +48,18 @@ $categoryIcons = [
 ?>
 
 <div class="advisor-main-content">
-    <!-- 1. Context Banner -->
-    <div class="card-header-main mb-4 border-radius-8">
-        <div class="flex-between w-full align-items-center" style="display:flex; width: 100%; justify-content: space-between;">
-            <div class="card-title-group">
-                <span class="text-neon-blue">Empire Command</span>
-                <h4>Armory Requisitions</h4>
+    <!-- 1. Page Header -->
+    <div class="page-header-container">
+        <h1 class="page-title-neon">Armory Requisitions</h1>
+        <p class="page-subtitle-tech">
+            Advanced Weaponry // Defensive Systems // Special Ops Gear
+        </p>
+        <div class="flex-center gap-2 mt-2">
+            <div class="badge bg-dark border-secondary">
+                Armory Lvl <?= $userStructures->armory_level ?>
             </div>
-            <div class="flex-gap-sm">
-                <div class="badge bg-dark border-secondary">
-                    Armory Lvl <?= $userStructures->armory_level ?>
-                </div>
-                <div class="badge bg-dark border-success">
-                    <i class="fas fa-tags icon-gold"></i> <?= number_format($discountPercent * 100, 1) ?>% Discount
-                </div>
+            <div class="badge bg-dark border-success">
+                <i class="fas fa-tags icon-gold"></i> <?= number_format($discountPercent * 100, 1) ?>% Discount
             </div>
         </div>
     </div>
@@ -70,7 +68,7 @@ $categoryIcons = [
     <div class="tabs-nav mb-4 justify-content-center">
         <?php foreach ($armoryConfig as $unitKey => $unitData): ?>
             <a class="tab-link <?= $unitKey === 'soldier' ? 'active' : '' ?>" data-tab="tab-<?= $unitKey ?>">
-                <i class="<?= $unitIcons[$unitKey] ?? 'fas fa-user' ?>" style="margin-right: 8px;"></i> <?= htmlspecialchars($unitKey) ?>
+                <i class="<?= $unitIcons[$unitKey] ?? 'fas fa-user' ?>" style="margin-right: 8px;"></i> <?= htmlspecialchars(ucfirst($unitKey)) ?>
             </a>
         <?php endforeach; ?>
     </div>
@@ -170,6 +168,14 @@ $categoryIcons = [
                                         <button type="submit" class="btn btn-primary btn-config-buy" style="flex-grow: 1;">
                                             <i class="fas fa-shopping-cart" style="margin-right: 5px;"></i> Buy
                                         </button>
+                                    </div>
+
+                                    <!-- Transaction Preview -->
+                                    <div class="transaction-preview p-2 border-radius-4 mb-3" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); display: none;">
+                                        <div class="text-uppercase font-07 text-muted mb-2 border-bottom border-secondary pb-1">Purchase Preview</div>
+                                        <div class="preview-costs">
+                                            <!-- Populated by JS -->
+                                        </div>
                                     </div>
                                 </form>
 

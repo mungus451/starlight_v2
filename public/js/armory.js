@@ -60,10 +60,16 @@ window.Armory = {
         
         slotCards.forEach(card => {
             const select = card.querySelector('.config-select');
+            const qtyInput = card.querySelector('.config-qty');
             
             // Handle selection change
             select.addEventListener('change', () => {
                 this.updateSlotInfo(card, select.value);
+            });
+
+            // Handle quantity change
+            qtyInput.addEventListener('input', () => {
+                this.updateTransactionPreview(card, qtyInput.value, select.value);
             });
 
             // Handle Unequip Click
@@ -81,12 +87,117 @@ window.Armory = {
                 maxBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.calculateMax(card, select.value);
+                    // Manually trigger preview update after MAX
+                    this.updateTransactionPreview(card, qtyInput.value, select.value);
                 });
             }
 
             // Initial update for currently selected/equipped item
             this.updateSlotInfo(card, select.value);
         });
+    },
+
+    /**
+     * Update the live transaction preview
+     */
+    updateTransactionPreview: function(card, qty, itemKey) {
+        const preview = card.querySelector('.transaction-preview');
+        const costArea = preview.querySelector('.preview-costs');
+        const itemData = this.getItemData(card, itemKey);
+        
+        if (!itemData || isNaN(qty) || qty <= 0) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        const totalQty = parseInt(qty);
+        const userRes = this.data.userResources;
+        
+        const totalCredits = itemData.effective_cost * totalQty;
+        const totalCrystals = (itemData.cost_crystals || 0) * totalQty;
+        const totalDarkMatter = (itemData.cost_dark_matter || 0) * totalQty;
+
+        const hasCredits = userRes.credits >= totalCredits;
+        const hasCrystals = userRes.crystals >= totalCrystals;
+        const hasDarkMatter = userRes.darkMatter >= totalDarkMatter;
+
+        // Prerequisite check
+        let hasPrereq = true;
+        let prereqDisplay = '';
+        if (!itemData.is_tier_1 && itemData.prereq_key) {
+            const ownedPrereq = this.data.inventory[itemData.prereq_key] || 0;
+            hasPrereq = ownedPrereq >= totalQty;
+            
+            const colorClass = hasPrereq ? 'text-success' : 'text-danger';
+            const icon = hasPrereq ? 'fa-check-circle' : 'fa-times-circle';
+            
+            prereqDisplay = `
+                <div class="flex-between font-08 mb-1" style="display:flex; justify-content:space-between;">
+                    <span class="text-muted">Requires ${itemData.prereq_name}:</span>
+                    <span class="${colorClass}">
+                        <i class="fas ${icon} me-1"></i> ${totalQty.toLocaleString()} / ${ownedPrereq.toLocaleString()}
+                    </span>
+                </div>
+            `;
+        }
+
+        let html = '';
+        
+        // Credits Row
+        html += `
+            <div class="flex-between font-08 mb-1" style="display:flex; justify-content:space-between;">
+                <span>Credits:</span>
+                <span class="${hasCredits ? 'text-success' : 'text-danger'}">
+                    <i class="fas ${hasCredits ? 'fa-check-circle' : 'fa-times-circle'} me-1"></i> ${totalCredits.toLocaleString()}
+                </span>
+            </div>
+        `;
+
+        // Crystals Row
+        if (totalCrystals > 0) {
+            html += `
+                <div class="flex-between font-08 mb-1" style="display:flex; justify-content:space-between;">
+                    <span>Crystals:</span>
+                    <span class="${hasCrystals ? 'text-success' : 'text-danger'}">
+                        <i class="fas ${hasCrystals ? 'fa-check-circle' : 'fa-times-circle'} me-1"></i> ${totalCrystals.toLocaleString()}
+                    </span>
+                </div>
+            `;
+        }
+
+        // Dark Matter Row
+        if (totalDarkMatter > 0) {
+            html += `
+                <div class="flex-between font-08 mb-1" style="display:flex; justify-content:space-between;">
+                    <span>Dark Matter:</span>
+                    <span class="${hasDarkMatter ? 'text-success' : 'text-danger'}">
+                        <i class="fas ${hasDarkMatter ? 'fa-check-circle' : 'fa-times-circle'} me-1"></i> ${totalDarkMatter.toLocaleString()}
+                    </span>
+                </div>
+            `;
+        }
+
+        html += prereqDisplay;
+
+        // Final Status
+        const canAfford = hasCredits && hasCrystals && hasDarkMatter && hasPrereq;
+        const statusText = canAfford ? 'VALID REQUISITION' : 'INSUFFICIENT RESOURCES';
+        const statusColor = canAfford ? 'text-success' : 'text-danger';
+        
+        html += `
+            <div class="text-center mt-2 font-07 fw-bold ${statusColor}">
+                ${statusText}
+            </div>
+        `;
+
+        costArea.innerHTML = html;
+        preview.style.display = 'block';
+
+        // Update Buy Button State
+        const buyBtn = card.querySelector('.btn-config-buy');
+        if (itemData.has_level) {
+            buyBtn.disabled = !canAfford;
+        }
     },
 
     /**
@@ -243,6 +354,10 @@ window.Armory = {
             equipBtn.classList.add('btn-outline-info');
             equipBtn.classList.remove('btn-success');
         }
+
+        // 7. Update Live Preview
+        const qtyInput = card.querySelector('.config-qty');
+        this.updateTransactionPreview(card, qtyInput.value, itemKey);
     },
 
     /**
@@ -336,6 +451,8 @@ window.Armory = {
                         
                         // 2. Update Credits/Resources locally (Important for subsequent MAX calcs!)
                         if (result.new_credits !== undefined) this.data.userResources.credits = result.new_credits;
+                        if (result.new_crystals !== undefined) this.data.userResources.crystals = result.new_crystals;
+                        if (result.new_dark_matter !== undefined) this.data.userResources.darkMatter = result.new_dark_matter;
                         
                         // Note: If the backend doesn't return new crystals/DM, we might need to manually deduct
                         // or request the backend to send them. For now we assume typical credit purchase.

@@ -228,7 +228,11 @@ class ArmoryService
             }
             
             $this->db->commit();
-            return ServiceResponse::success("Batch manufacturing successful!", ['total_cost' => $totalCost]);
+            return ServiceResponse::success("Batch manufacturing successful!", [
+                'new_credits' => $userResources->credits - $totalCost,
+                'new_crystals' => $userResources->naquadah_crystals - $totalCrystalCost,
+                'new_dark_matter' => $userResources->dark_matter - $totalDarkMatterCost
+            ]);
 
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -312,11 +316,16 @@ class ArmoryService
         }
 
         $newCredits = 0;
+        $newCrystals = 0;
+        $newDarkMatter = 0;
         $newOwned = 0;
 
         try {
             // Deduct All Resources
             $newCredits = $userResources->credits - $totalCost;
+            $newCrystals = $userResources->naquadah_crystals - $totalCrystalCost;
+            $newDarkMatter = $userResources->dark_matter - $totalDarkMatterCost;
+
             $this->resourceRepo->updateResources(
                 $userId, 
                 -$totalCost, 
@@ -361,6 +370,8 @@ class ArmoryService
 
         return ServiceResponse::success($msg, [
             'new_credits' => $newCredits,
+            'new_crystals' => $newCrystals,
+            'new_dark_matter' => $newDarkMatter,
             'new_owned' => $newOwned,
             'item_key' => $itemKey
         ]);

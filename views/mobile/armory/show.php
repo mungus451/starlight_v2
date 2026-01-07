@@ -5,11 +5,11 @@
 /* @var array $manufacturingData */
 
 $unitIcons = [
-    'soldier' => 'fa-user-ninja',
-    'guard' => 'fa-user-shield',
-    'spy' => 'fa-mask',
-    'sentry' => 'fa-satellite-dish',
-    'worker' => 'fa-helmet-safety'
+    'soldier' => 'fa-crosshairs',
+    'guard' => 'fa-shield-alt',
+    'spy' => 'fa-user-secret',
+    'sentry' => 'fa-binoculars',
+    'worker' => 'fa-hammer'
 ];
 ?>
 <div class="mobile-content">
