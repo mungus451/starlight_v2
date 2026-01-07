@@ -59,7 +59,7 @@ class ProtoformLoopTest extends TestCase
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
         $this->mockNwCalculator = $this->createMock(NetWorthCalculatorService::class); // NEW
-        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(100000); // Arbitrary value
+        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(100000.0); // Arbitrary value
 
         $service = new TurnProcessorService(
             $mockDb,

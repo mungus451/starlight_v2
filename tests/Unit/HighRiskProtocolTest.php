@@ -127,7 +127,7 @@ class HighRiskProtocolTest extends TestCase
         $this->powerService = $this->createMock(PowerCalculatorService::class);
 
         $this->nwCalculator = $this->createMock(NetWorthCalculatorService::class);
-        $this->nwCalculator->method('calculateTotalNetWorth')->willReturn(1000000);
+        $this->nwCalculator->method('calculateTotalNetWorth')->willReturn(1000000.0);
 
         $this->attackService = $this->getMockBuilder(AttackService::class)
             ->setConstructorArgs([

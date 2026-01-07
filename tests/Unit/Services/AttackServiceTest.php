@@ -75,7 +75,7 @@ class AttackServiceTest extends TestCase
         $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
 
         // Mock NW Calculator to return a default value, as specific NW logic isn't central to most AttackService tests
-        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(1000000);
+        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(1000000.0);
 
         $this->service = new AttackService(
             $this->mockDb,
