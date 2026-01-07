@@ -274,8 +274,7 @@ class TurnProcessorServiceTest extends TestCase
                 return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             }
         
-            private function createMockStats(int $userId): UserStats
-            {
-                return new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null);
-            }
-        }
+                private function createMockStats(int $userId): UserStats
+                {
+                    return new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, 0, 0);
+                }        }

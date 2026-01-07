@@ -148,6 +148,9 @@ $categoryIcons = [
                                     <div class="flex-between mb-1 additional-costs" style="display:flex; flex-direction:column;">
                                         <!-- Crystals/Dark Matter populated by JS -->
                                     </div>
+                                    <div class="flex-between mb-1 prereq-info" style="display:none; justify-content:space-between; color: var(--muted);">
+                                        <!-- Populated by JS: Requires: Pulse Rifle (Owned: 12) -->
+                                    </div>
                                     <div class="flex-between" style="display:flex; justify-content:space-between;">
                                         <span>In Inventory:</span>
                                         <strong class="text-info item-owned-display">0</strong>
@@ -162,7 +165,8 @@ $categoryIcons = [
                                     <input type="hidden" name="item_key" class="dynamic-item-key">
                                     
                                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                        <input type="number" name="quantity" class="form-control config-qty" value="1" min="1">
+                                        <input type="number" name="quantity" class="form-control config-qty" value="1" min="1" style="width: 70px !important;">
+                                        <button type="button" class="btn btn-secondary btn-sm btn-config-max" style="padding: 0 10px;">MAX</button>
                                         <button type="submit" class="btn btn-primary btn-config-buy" style="flex-grow: 1;">
                                             <i class="fas fa-shopping-cart" style="margin-right: 5px;"></i> Buy
                                         </button>

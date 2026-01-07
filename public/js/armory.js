@@ -75,9 +75,71 @@ window.Armory = {
                 });
             }
 
+            // Handle MAX Click
+            const maxBtn = card.querySelector('.btn-config-max');
+            if (maxBtn) {
+                maxBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.calculateMax(card, select.value);
+                });
+            }
+
             // Initial update for currently selected/equipped item
             this.updateSlotInfo(card, select.value);
         });
+    },
+
+    /**
+     * Calculate and set MAX quantity
+     */
+    calculateMax: function(card, itemKey) {
+        const itemData = this.getItemData(card, itemKey);
+        if (!itemData) return;
+
+        const userRes = this.data.userResources;
+        
+        // 1. Resource Limits
+        const maxCredits = itemData.effective_cost > 0 
+            ? Math.floor(userRes.credits / itemData.effective_cost) 
+            : Number.MAX_SAFE_INTEGER;
+            
+        const maxCrystals = itemData.cost_crystals > 0 
+            ? Math.floor(userRes.crystals / itemData.cost_crystals) 
+            : Number.MAX_SAFE_INTEGER;
+            
+        const maxDarkMatter = itemData.cost_dark_matter > 0 
+            ? Math.floor(userRes.darkMatter / itemData.cost_dark_matter) 
+            : Number.MAX_SAFE_INTEGER;
+
+        // 2. Prerequisite Limit
+        let maxPrereq = Number.MAX_SAFE_INTEGER;
+        
+        if (!itemData.is_tier_1 && itemData.prereq_key) {
+            // Check inventory for the prerequisite item
+            maxPrereq = this.data.inventory[itemData.prereq_key] || 0;
+        }
+
+        // 3. Final Calculation
+        const maxQty = Math.min(maxCredits, maxCrystals, maxDarkMatter, maxPrereq);
+        
+        // Update Input
+        const input = card.querySelector('.config-qty');
+        input.value = Math.max(0, maxQty);
+    },
+
+    /**
+     * Helper to find item data
+     */
+    getItemData: function(card, itemKey) {
+        const unitKey = card.dataset.unit;
+        const tiers = this.data.manufacturing[unitKey] || {};
+        
+        for (const tier in tiers) {
+            const items = tiers[tier];
+            const found = items.find(i => i.item_key === itemKey);
+            if (found) return found;
+        }
+        return null;
     },
 
     /**
@@ -87,17 +149,7 @@ window.Armory = {
         const unitKey = card.dataset.unit;
         const categoryKey = card.dataset.category;
         
-        // Find item data from manufacturing list (enriched with stats/costs)
-        // Note: tieredItems is an object with tiers as keys. We need to find the item.
-        let itemData = null;
-        const tiers = this.data.manufacturing[unitKey] || {};
-        
-        for (const tier in tiers) {
-            const items = tiers[tier];
-            itemData = items.find(i => i.item_key === itemKey);
-            if (itemData) break;
-        }
-
+        const itemData = this.getItemData(card, itemKey);
         if (!itemData) return;
 
         // 1. Update Hidden Inputs in Forms
@@ -121,7 +173,7 @@ window.Armory = {
         const descText = card.querySelector('.item-description-text');
         descText.innerText = itemData.notes || 'No description available.';
 
-        // 4. Update Costs
+        // 4. Update Costs & Prereq
         const costDisplay = card.querySelector('.item-cost-display');
         costDisplay.innerText = parseInt(itemData.effective_cost).toLocaleString();
 
@@ -135,6 +187,16 @@ window.Armory = {
             additionalCosts.innerHTML += `<div class="flex-between" style="display:flex; justify-content:space-between;"><span>Dark Matter:</span><strong class="text-purple">${parseInt(itemData.cost_dark_matter).toLocaleString()}</strong></div>`;
         }
 
+        // Prerequisite Info
+        const prereqInfo = card.querySelector('.prereq-info');
+        if (!itemData.is_tier_1 && itemData.prereq_name) {
+            const prereqOwned = this.data.inventory[itemData.prereq_key] || 0;
+            prereqInfo.innerHTML = `<span>Requires: ${itemData.prereq_name}</span><span>(Owned: ${prereqOwned.toLocaleString()})</span>`;
+            prereqInfo.style.display = 'flex';
+        } else {
+            prereqInfo.style.display = 'none';
+        }
+
         // 5. Update Owned
         const ownedDisplay = card.querySelector('.item-owned-display');
         ownedDisplay.innerText = (this.data.inventory[itemKey] || 0).toLocaleString();
@@ -143,14 +205,17 @@ window.Armory = {
         const buyBtn = card.querySelector('.btn-config-buy');
         const equipBtn = card.querySelector('.btn-config-equip');
         const unequipBtn = card.querySelector('.btn-config-unequip');
+        const maxBtn = card.querySelector('.btn-config-max');
         
         // Disable Buy if Armory level too low
         if (!itemData.has_level) {
             buyBtn.disabled = true;
             buyBtn.title = `Requires Armory Level ${itemData.armory_level_req}`;
+            maxBtn.disabled = true;
         } else {
             buyBtn.disabled = false;
             buyBtn.title = '';
+            maxBtn.disabled = false;
         }
 
         // Disable Equip if not owned
@@ -265,8 +330,16 @@ window.Armory = {
                     const result = await response.json();
                     if (result.success) {
                         this.showToast(result.message, 'success');
-                        // Update inventory data and refresh view
+                        
+                        // Update inventory data
                         this.data.inventory[result.item_key] = result.new_owned;
+                        
+                        // 2. Update Credits/Resources locally (Important for subsequent MAX calcs!)
+                        if (result.new_credits !== undefined) this.data.userResources.credits = result.new_credits;
+                        
+                        // Note: If the backend doesn't return new crystals/DM, we might need to manually deduct
+                        // or request the backend to send them. For now we assume typical credit purchase.
+                        
                         const card = form.closest('.slot-card');
                         
                         // Update Dropdown Text for the purchased item
@@ -277,6 +350,10 @@ window.Armory = {
                             option.text = `${itemName} (Owned: ${result.new_owned.toLocaleString()})`;
                         }
 
+                        // Update Prerequisite Source if this item is a prereq for something else?
+                        // Complex to track cross-dependencies. For now, rely on refresh for cross-slot updates
+                        // OR we could iterate all slots and update texts.
+                        
                         this.updateSlotInfo(card, select.value);
                     } else {
                         this.showToast(result.error || 'Purchase failed', 'error');
