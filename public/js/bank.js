@@ -1,12 +1,13 @@
 /**
- * Bank Page Logic
- * Handles deposits, withdrawals, transfers, and the recharge timer.
- * Dependencies: StarlightUtils (utils.js)
+ * Bank Logic (Advisor V2)
+ * Handles vault operations, transfers, and real-time charge timers.
  */
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // --- 1. Initialize Input Masks ---
-    // We map specific display inputs to their hidden counterparts
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize Tabs
+    initTabs();
+
+    // 2. Initialize Input Masks (Format as you type)
     const masks = [
         { display: 'dep-amount-display', hidden: 'dep-amount-hidden' },
         { display: 'wit-amount-display', hidden: 'wit-amount-hidden' },
@@ -17,97 +18,108 @@ document.addEventListener('DOMContentLoaded', function() {
         const displayEl = document.getElementById(pair.display);
         const hiddenEl = document.getElementById(pair.hidden);
         if (displayEl && hiddenEl) {
-            StarlightUtils.setupInputMask(displayEl, hiddenEl);
+            // Using StarlightUtils global helper
+            if (typeof StarlightUtils !== 'undefined') {
+                StarlightUtils.setupInputMask(displayEl, hiddenEl);
+            } else {
+                // Fallback if Utils not loaded (Simple integer parsing)
+                displayEl.addEventListener('input', () => {
+                    const raw = displayEl.value.replace(/,/g, '');
+                    if (!isNaN(raw) && raw.length > 0) {
+                        displayEl.value = parseInt(raw).toLocaleString();
+                        hiddenEl.value = parseInt(raw);
+                    } else {
+                        hiddenEl.value = 0;
+                    }
+                });
+            }
         }
     });
 
-    // --- 2. Data Retrieval ---
-    // We grab global user data from the DOM headers (standardized across pages)
-    const creditsEl = document.getElementById('global-user-credits');
-    const bankedEl = document.getElementById('global-user-banked');
+    // 3. Max Button Logic
     
-    const USER_CREDITS = creditsEl ? parseInt(creditsEl.getAttribute('data-credits'), 10) : 0;
-    const USER_BANKED = bankedEl ? parseInt(bankedEl.getAttribute('data-banked'), 10) : 0;
-
-    // --- 3. Max Button Logic ---
-    
-    // Deposit Max (Configurable Limit)
+    // Deposit
     const maxDepositBtn = document.getElementById('btn-max-deposit');
     if (maxDepositBtn) {
-        maxDepositBtn.addEventListener('click', function() {
-            // Read the limit percentage from the button itself (e.g., data-limit="0.80")
-            const limitPercent = parseFloat(this.getAttribute('data-limit') || 0.8);
-            const maxAmount = Math.floor(USER_CREDITS * limitPercent);
+        maxDepositBtn.addEventListener('click', () => {
+            const limit = parseFloat(maxDepositBtn.dataset.limit || 0.8);
+            const onHand = parseInt(maxDepositBtn.dataset.onhand || 0);
+            const maxAmount = Math.floor(onHand * limit);
             
-            const displayInput = document.getElementById('dep-amount-display');
-            const hiddenInput = document.getElementById('dep-amount-hidden');
-            
-            if (displayInput && hiddenInput) {
-                displayInput.value = StarlightUtils.formatNumber(maxAmount);
-                hiddenInput.value = maxAmount > 0 ? maxAmount : 0;
-            }
+            setInputAmount('dep-amount-display', 'dep-amount-hidden', maxAmount);
         });
     }
 
-    // Withdraw Max
+    // Withdraw
     const maxWithdrawBtn = document.getElementById('btn-max-withdraw');
     if (maxWithdrawBtn) {
-        maxWithdrawBtn.addEventListener('click', function() {
-            const displayInput = document.getElementById('wit-amount-display');
-            const hiddenInput = document.getElementById('wit-amount-hidden');
-            
-            if (displayInput && hiddenInput) {
-                displayInput.value = StarlightUtils.formatNumber(USER_BANKED);
-                hiddenInput.value = USER_BANKED > 0 ? USER_BANKED : 0;
-            }
+        maxWithdrawBtn.addEventListener('click', () => {
+            const banked = parseInt(maxWithdrawBtn.dataset.banked || 0);
+            setInputAmount('wit-amount-display', 'wit-amount-hidden', banked);
         });
     }
 
-    // --- 4. Deposit Timer Logic ---
+    // 4. Charge Timer
     const timerEl = document.getElementById('deposit-timer-countdown');
-    
     if (timerEl) {
-        // Read config from data attributes
-        const lastDepositAt = timerEl.getAttribute('data-last-deposit'); // "2023-10-27 10:00:00" or empty
-        const currentCharges = parseInt(timerEl.getAttribute('data-current-charges'), 10);
-        const maxCharges = parseInt(timerEl.getAttribute('data-max-charges'), 10);
-        const regenHours = parseInt(timerEl.getAttribute('data-regen-hours'), 10);
+        const lastDepositAt = timerEl.dataset.lastDeposit;
+        const currentCharges = parseInt(timerEl.dataset.currentCharges);
+        const maxCharges = parseInt(timerEl.dataset.maxCharges);
+        const regenHours = parseInt(timerEl.dataset.regenHours);
 
-        // Only run if we are not full and have a previous deposit time
         if (currentCharges < maxCharges && lastDepositAt) {
-            
-            // Parse MySQL UTC timestamp to JS Date object
-            // We append 'Z' to ensure JS treats it as UTC
-            const lastDepositTime = new Date(lastDepositAt.replace(' ', 'T') + 'Z');
-            const regenMillis = regenHours * 60 * 60 * 1000;
-            const nextRegenTime = new Date(lastDepositTime.getTime() + regenMillis);
+            // Ensure UTC parsing by appending Z if missing (standard MySQL timestamp fix)
+            const timeString = lastDepositAt.endsWith('Z') ? lastDepositAt : lastDepositAt.replace(' ', 'T') + 'Z';
+            const lastTime = new Date(timeString);
+            const regenMs = regenHours * 60 * 60 * 1000;
+            const nextTime = new Date(lastTime.getTime() + regenMs);
 
-            const timerInterval = setInterval(function() {
+            const interval = setInterval(() => {
                 const now = new Date();
-                const diff = nextRegenTime - now;
+                const diff = nextTime - now;
 
                 if (diff <= 0) {
-                    clearInterval(timerInterval);
-                    timerEl.textContent = "Reloading to claim charge...";
-                    window.location.reload();
+                    clearInterval(interval);
+                    timerEl.innerText = "Ready!";
+                    timerEl.classList.add('text-success');
                     return;
                 }
 
-                // Calc parts
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                // Pad and display
-                const hh = String(hours).padStart(2, '0');
-                const mm = String(minutes).padStart(2, '0');
-                const ss = String(seconds).padStart(2, '0');
-
-                timerEl.textContent = `Next charge in: ${hh}:${mm}:${ss}`;
-                
+                timerEl.innerText = `${h}h ${m}m ${s}s`;
             }, 1000);
         } else if (currentCharges >= maxCharges) {
-            timerEl.textContent = "Charges are full";
+            timerEl.innerText = "Full";
+            timerEl.classList.add('text-success');
         }
+    }
+
+    // --- Helpers ---
+
+    function setInputAmount(displayId, hiddenId, amount) {
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
+        if (display && hidden) {
+            const safeAmount = amount > 0 ? amount : 0;
+            display.value = safeAmount.toLocaleString();
+            hidden.value = safeAmount;
+        }
+    }
+
+    function initTabs() {
+        const tabs = document.querySelectorAll('.structure-nav-btn[data-tab-target]');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.structure-category-container').forEach(c => c.classList.remove('active'));
+                const target = document.getElementById(tab.dataset.tabTarget);
+                if (target) target.classList.add('active');
+            });
+        });
     }
 });
