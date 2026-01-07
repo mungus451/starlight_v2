@@ -7,13 +7,11 @@
 ?>
 
 <div class="structures-page-content">
-    <div class="d-flex justify-content-between align-items-end mb-4">
-        <div>
-            <h1>Strategic Structures</h1>
-            <p class="subtitle" style="color: var(--muted); margin: 0;">
-                Build and upgrade your infrastructure to expand your influence and power.
-            </p>
-        </div>
+    <div class="page-header-container">
+        <h1 class="page-title-neon">Strategic Structures</h1>
+        <p class="page-subtitle-tech">
+            Build and upgrade infrastructure // Expand influence
+        </p>
     </div>
 
     <?php if (empty($groupedStructures)): ?>
