@@ -112,8 +112,15 @@
                                 <div class="max-level-badge">Max Level Achieved!</div>
                             <?php else: ?>
                                 <button type="button" 
+                                        class="btn-submit btn-upgrade-now" 
+                                        style="flex-grow: 1;"
+                                        data-key="<?= htmlspecialchars($struct['key']) ?>"
+                                        <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
+                                    Upgrade Now
+                                </button>
+                                <button type="button" 
                                         class="btn-submit btn-add-cart" 
-                                        style="border: 1px solid var(--accent);"
+                                        style="border: 1px solid var(--accent); flex-grow: 1;"
                                         data-key="<?= htmlspecialchars($struct['key']) ?>"
                                         data-name="<?= htmlspecialchars($struct['name']) ?>"
                                         data-next-level="<?= $struct['next_level'] ?>"
@@ -121,7 +128,7 @@
                                         data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
                                         data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
                                         <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                    <?= $struct['can_afford'] ? 'Add to Batch (Lvl ' . $struct['next_level'] . ')' : 'Insufficient Resources' ?>
+                                    <?= $struct['can_afford'] ? 'Add to Batch' : 'Insufficient' ?>
                                 </button>
                             <?php endif; ?>
                         </div>

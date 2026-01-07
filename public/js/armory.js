@@ -6,93 +6,157 @@
 
 window.Armory = {
     cart: new Map(), // key -> {qty, name, cost}
+    ARMORY_TAB_KEY: 'armoryActiveTab',
+    ACCORDION_STATE_KEY: 'armoryAccordionState',
 
     init: function() {
         console.log('[Armory] Initializing features...');
         this.initTabs();
+        this.initAccordions(); // Initialize accordions right after tabs
         this.initMaxButtons();
         this.initEquipForms();
         this.initBatchSystem();
     },
 
-    // --- Tab Switching (Static tabs, e.g. Desktop) ---
+    // --- Tab Switching ---
     initTabs: function() {
         const links = document.querySelectorAll('.tabs-nav:not(#armory-tabs) .tab-link');
         const contents = document.querySelectorAll('.tab-content');
+        let activeTabId = null;
+
+        const activateTab = (tabId) => {
+            const link = document.querySelector(`.tab-link[data-tab="${tabId}"]`);
+            const content = document.getElementById(tabId);
+            if (!link || !content) return false;
+
+            links.forEach(l => l.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            link.classList.add('active');
+            content.classList.add('active');
+            
+            localStorage.setItem(this.ARMORY_TAB_KEY, tabId);
+            this.restoreAccordionState(tabId); // Restore accordion state for the new tab
+            return true;
+        };
+
+        const savedTabId = localStorage.getItem(this.ARMORY_TAB_KEY);
+        if (savedTabId) {
+            if (activateTab(savedTabId)) {
+                activeTabId = savedTabId;
+            }
+        }
+        
+        // Fallback to the first tab if none was saved or found
+        if (!activeTabId && links.length > 0) {
+            const firstTabId = links[0].dataset.tab;
+            activateTab(firstTabId);
+        }
 
         links.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                links.forEach(l => l.classList.remove('active'));
-                contents.forEach(c => c.classList.remove('active'));
-                link.classList.add('active');
-                const targetId = link.dataset.tab;
-                const target = document.getElementById(targetId);
-                if (target) target.classList.add('active');
+                activateTab(link.dataset.tab);
             });
+        });
+    },
+
+    // --- Accordion State Persistence ---
+    initAccordions: function() {
+        const accordions = document.querySelectorAll('.tier-accordion');
+        
+        accordions.forEach(accordion => {
+            accordion.addEventListener('toggle', (e) => {
+                const tabContent = e.target.closest('.tab-content');
+                if (!tabContent) return;
+
+                const tabId = tabContent.id;
+                const tier = e.target.dataset.tier;
+                const isOpen = e.target.open;
+
+                const allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+                if (!allStates[tabId]) {
+                    allStates[tabId] = {};
+                }
+                allStates[tabId][`tier-${tier}`] = isOpen;
+                localStorage.setItem(this.ACCORDION_STATE_KEY, JSON.stringify(allStates));
+            });
+        });
+    },
+
+    restoreAccordionState: function(tabId) {
+        const allStates = JSON.parse(localStorage.getItem(this.ACCORDION_STATE_KEY) || '{}');
+        const tabStates = allStates[tabId];
+        if (!tabStates) return;
+
+        const tabContent = document.getElementById(tabId);
+        if (!tabContent) return;
+        
+        const accordions = tabContent.querySelectorAll('.tier-accordion');
+        accordions.forEach(accordion => {
+            const tier = accordion.dataset.tier;
+            if (tabStates[`tier-${tier}`] !== undefined) {
+                accordion.open = tabStates[`tier-${tier}`];
+            }
         });
     },
 
     // --- Max Manufacture Buttons ---
     initMaxButtons: function() {
-        const maxBtns = document.querySelectorAll('.btn-max-manufacture');
-        
-        maxBtns.forEach(btn => {
-            // Remove existing listeners to prevent duplicates if init is called twice
-            btn.onclick = (e) => {
+        document.querySelectorAll('.btn-max-manufacture').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const container = btn.closest('.input-group') || btn.parentElement;
+                const container = btn.closest('.amount-input-group');
                 const input = container.querySelector('input.manufacture-amount');
                 if (!input) return;
 
-                const cost = parseInt(btn.dataset.itemCost || 0);
-                const reqOwned = parseInt(btn.dataset.reqOwned || 999999999);
-                
-                const creditElem = document.getElementById('global-user-credits');
-                const currentCredits = parseInt(creditElem.dataset.credits || creditElem.innerText.replace(/,/g, '')) || 0;
+                // Get all costs from the input's data attributes
+                const creditCost = parseInt(input.dataset.itemCost || 0);
+                const crystalCost = parseInt(input.dataset.costCrystals || 0);
+                const darkMatterCost = parseInt(input.dataset.costDarkMatter || 0);
+                const reqOwned = parseInt(input.dataset.prereqOwned || Number.MAX_SAFE_INTEGER);
 
-                if (cost <= 0) {
-                    input.value = reqOwned !== 999999999 ? reqOwned : 0;
-                    return;
-                }
+                // Get user's current resources
+                const userCredits = parseInt(document.getElementById('global-user-credits')?.dataset.credits || 0);
+                const userCrystals = parseInt(document.getElementById('global-user-crystals')?.dataset.crystals || 0);
+                const userDarkMatter = parseInt(document.getElementById('global-user-dark-matter')?.dataset.darkMatter || 0);
 
-                let maxQty = Math.floor(currentCredits / cost);
-                if (reqOwned < maxQty) {
-                    maxQty = reqOwned;
-                }
+                let maxByCredits = (creditCost > 0) ? Math.floor(userCredits / creditCost) : Number.MAX_SAFE_INTEGER;
+                let maxByCrystals = (crystalCost > 0) ? Math.floor(userCrystals / crystalCost) : Number.MAX_SAFE_INTEGER;
+                let maxByDarkMatter = (darkMatterCost > 0) ? Math.floor(userDarkMatter / darkMatterCost) : Number.MAX_SAFE_INTEGER;
+
+                // The true max is the minimum of all constraints
+                const maxQty = Math.min(maxByCredits, maxByCrystals, maxByDarkMatter, reqOwned);
 
                 input.value = Math.max(0, maxQty);
-            };
+            });
         });
     },
 
-    // --- Batch System ---
+    // --- Batch and Buy Now System ---
     initBatchSystem: function() {
         const forms = document.querySelectorAll('.manufacture-form');
         
         forms.forEach(form => {
             const input = form.querySelector('input[name="quantity"]');
-            const btn = form.querySelector('.btn-manufacture-submit');
             const itemKey = form.querySelector('input[name="item_key"]').value;
-            
-            // Get Item Name safely
             const card = form.closest('.item-card');
-            const itemName = card ? (card.querySelector('h4')?.innerText || card.querySelector('h3')?.innerText) : 'Item';
-            
-            // Transform button to "Add to Batch" behavior
-            if (btn) {
-                btn.type = 'button';
-                // Check if already in cart
+            const itemName = card ? (card.querySelector('h4')?.innerText || 'Item') : 'Item';
+
+            // --- "Add to Batch" Button ---
+            const batchBtn = form.querySelector('.btn-add-to-batch');
+            if (batchBtn) {
+                // Check if already in cart on init
                 if (this.cart.has(itemKey)) {
                     const existing = this.cart.get(itemKey);
-                    btn.innerText = `In Batch (${existing.qty})`;
-                    btn.classList.add('btn-secondary');
+                    batchBtn.innerText = `In Batch (${existing.qty})`;
+                    batchBtn.classList.add('btn-secondary');
                 } else {
-                    btn.innerText = 'Add to Batch';
-                    btn.classList.remove('btn-secondary');
+                    batchBtn.innerText = 'Add to Batch';
+                    batchBtn.classList.remove('btn-secondary');
                 }
 
-                btn.onclick = (e) => {
+                batchBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     const qty = parseInt(input.value) || 0;
                     if (qty <= 0) {
@@ -101,12 +165,50 @@ window.Armory = {
                     }
                     
                     const cost = parseInt(input.dataset.itemCost || 0);
-                    this.addToCart(itemKey, qty, itemName, cost, btn);
-                };
+                    const costCrystals = parseInt(input.dataset.costCrystals || 0);
+                    const costDarkMatter = parseInt(input.dataset.costDarkMatter || 0);
+
+                    this.addToCart(itemKey, qty, itemName, cost, costCrystals, costDarkMatter, batchBtn);
+                });
             }
+
+            // --- "Buy Now" Form Submission ---
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault(); // Always prevent default to handle via AJAX
+                const btn = form.querySelector('.btn-buy-now');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = 'Buying...';
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch('/armory/manufacture', {
+                        method: 'POST',
+                        headers: { 
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json' 
+                        },
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showToast(result.message, 'success');
+                        setTimeout(() => window.location.reload(), 1000); // Reload to see changes
+                    } else {
+                        this.showToast(result.error || 'Purchase failed', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                } catch (err) {
+                    console.error(err);
+                    this.showToast('A network error occurred.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
         });
 
-        // Checkout Logic (only once)
+        // --- Checkout Logic (only needs to be initialized once) ---
         const checkoutForm = document.getElementById('armory-checkout-form');
         if (checkoutForm && !checkoutForm.dataset.initialized) {
             checkoutForm.dataset.initialized = "true";
@@ -119,10 +221,10 @@ window.Armory = {
                 submitBtn.disabled = true;
                 submitBtn.innerText = 'Processing...';
 
-                const items = [];
-                this.cart.forEach((data, key) => {
-                    items.push({ item_key: key, quantity: data.qty });
-                });
+                const items = Array.from(this.cart.entries()).map(([key, data]) => ({
+                    item_key: key,
+                    quantity: data.qty
+                }));
 
                 try {
                     const formData = new FormData();
@@ -161,7 +263,7 @@ window.Armory = {
             cancelBtn.onclick = () => {
                 this.cart.clear();
                 this.updateCheckoutUI();
-                document.querySelectorAll('.btn-manufacture-submit').forEach(b => {
+                document.querySelectorAll('.btn-add-to-batch').forEach(b => {
                     b.innerText = 'Add to Batch';
                     b.classList.remove('btn-secondary');
                 });
@@ -169,8 +271,8 @@ window.Armory = {
         }
     },
 
-    addToCart: function(key, qty, name, cost, btn) {
-        this.cart.set(key, { qty, name, cost });
+    addToCart: function(key, qty, name, cost, costCrystals, costDarkMatter, btn) {
+        this.cart.set(key, { qty, name, cost, costCrystals, costDarkMatter });
         
         btn.innerText = `In Batch (${qty})`;
         btn.classList.add('btn-secondary');
@@ -182,7 +284,9 @@ window.Armory = {
     updateCheckoutUI: function() {
         const box = document.getElementById('armory-checkout-box');
         const list = document.getElementById('checkout-list');
-        const totalEl = document.getElementById('checkout-total-credits');
+        const totalCreditsEl = document.getElementById('checkout-total-credits');
+        const totalCrystalsEl = document.getElementById('checkout-total-crystals');
+        const totalDarkMatterEl = document.getElementById('checkout-total-dark-matter');
         
         if (this.cart.size === 0) {
             if (box) box.style.display = 'none';
@@ -192,22 +296,31 @@ window.Armory = {
         if (box) box.style.display = 'block';
         if (list) list.innerHTML = '';
         
-        let totalCost = 0;
+        let totalCredits = 0;
+        let totalCrystals = 0;
+        let totalDarkMatter = 0;
         
         this.cart.forEach((data, key) => {
-            const itemCost = data.cost * data.qty;
-            totalCost += itemCost;
+            const itemCreditCost = data.cost * data.qty;
+            const itemCrystalCost = data.costCrystals * data.qty;
+            const itemDarkMatterCost = data.costDarkMatter * data.qty;
+
+            totalCredits += itemCreditCost;
+            totalCrystals += itemCrystalCost;
+            totalDarkMatter += itemDarkMatterCost;
             
             if (list) {
                 const div = document.createElement('div');
                 div.className = 'checkout-item';
                 div.style.cssText = 'font-size:0.85rem; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between;';
-                div.innerHTML = `<span>${data.name} x${data.qty}</span> <span class="text-accent">${itemCost.toLocaleString()}</span>`;
+                div.innerHTML = `<span>${data.name} x${data.qty}</span> <span class="text-accent">${itemCreditCost.toLocaleString()}</span>`;
                 list.appendChild(div);
             }
         });
         
-        if (totalEl) totalEl.innerText = totalCost.toLocaleString();
+        if (totalCreditsEl) totalCreditsEl.innerText = totalCredits.toLocaleString();
+        if (totalCrystalsEl) totalCrystalsEl.innerText = totalCrystals.toLocaleString();
+        if (totalDarkMatterEl) totalDarkMatterEl.innerText = totalDarkMatter.toLocaleString();
     },
 
     // --- AJAX: Equip ---

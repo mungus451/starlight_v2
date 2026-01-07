@@ -4,6 +4,10 @@ namespace App\Models\Services;
 
 use App\Models\Repositories\StatsRepository;
 use App\Models\Services\LevelCalculatorService;
+use App\Models\Services\DashboardService;
+use App\Models\Services\RealmNewsService;
+use App\Models\Services\BattleService;
+use App\Presenters\DashboardPresenter;
 
 /**
  * Responsible for gathering "Global" data required by the main layout.
@@ -15,13 +19,25 @@ class ViewContextService
 {
     private StatsRepository $statsRepo;
     private LevelCalculatorService $levelCalculator;
+    private DashboardService $dashboardService;
+    private DashboardPresenter $dashboardPresenter;
+    private RealmNewsService $realmNewsService;
+    private BattleService $battleService;
 
     public function __construct(
         StatsRepository $statsRepo,
-        LevelCalculatorService $levelCalculator
+        LevelCalculatorService $levelCalculator,
+        DashboardService $dashboardService,
+        DashboardPresenter $dashboardPresenter,
+        RealmNewsService $realmNewsService,
+        BattleService $battleService
     ) {
         $this->statsRepo = $statsRepo;
         $this->levelCalculator = $levelCalculator;
+        $this->dashboardService = $dashboardService;
+        $this->dashboardPresenter = $dashboardPresenter;
+        $this->realmNewsService = $realmNewsService;
+        $this->battleService = $battleService;
     }
 
     /**
@@ -44,9 +60,27 @@ class ViewContextService
             $data['global_user_level'] = $stats->level;
         }
 
-        // Future: Add unread notification count here if we move away from AJAX polling
-        // $data['global_unread_count'] = ...
+        // 2. Fetch data for the Advisor Panel
+        $data['advisorData'] = $this->getAdvisorData($userId);
+
+        // 3. Fetch latest realm news
+        $data['realmNews'] = $this->realmNewsService->getLatestNews();
+
+        // 4. Fetch latest global battles
+        $data['latestBattles'] = $this->battleService->getLatestGlobalBattles();
 
         return $data;
+    }
+
+    /**
+     * Fetches and prepares all data needed for the Advisor HUD.
+     *
+     * @param int $userId
+     * @return array
+     */
+    private function getAdvisorData(int $userId): array
+    {
+        $dashboardData = $this->dashboardService->getDashboardData($userId);
+        return $this->dashboardPresenter->present($dashboardData);
     }
 }

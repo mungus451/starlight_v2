@@ -67,36 +67,18 @@
             <span>Bank Interest / Turn</span>
             <span class="value-green value-total">+ <?= number_format($incomeBreakdown['interest']) ?></span>
         </li>
-        <li>
-            <span>Credits on Hand</span>
-            <span><?= number_format($resources->credits) ?></span>
-        </li>
+
                 <li>
                     <span>Banked Credits</span>
                     <span><?= number_format($resources->banked_credits) ?></span>
-                </li>
-                <!-- NEW: Research Data -->
-                <li>
-                    <span>Research Data</span>
-                    <span><?= number_format($resources->research_data) ?></span>
                 </li>
                         <li>
                             <span>Research Data / Turn</span>
                             <span class="value-green value-total">+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
                         </li>
-                        <!-- NEW: Dark Matter -->
-                        <li>
-                            <span>Dark Matter</span>
-                            <span><?= number_format($resources->dark_matter) ?></span>
-                        </li>
                         <li>
                             <span>Dark Matter / Turn</span>
                                 <span class="value-green value-total">+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
-                            </li>
-                            <!-- NEW: Naquadah Crystals -->
-                            <li>
-                                <span>Naquadah Crystals</span>
-                                <span><?= $formatted_naquadah_crystals ?></span>
                             </li>
                             <li>
                                 <span>Naquadah / Turn</span>

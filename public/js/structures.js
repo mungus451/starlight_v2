@@ -196,4 +196,86 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ==========================================
+    // 3. "Upgrade Now" AJAX Logic
+    // ==========================================
+    document.querySelectorAll('.btn-upgrade-now').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const structureKey = btn.dataset.key;
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+            if (!structureKey) {
+                console.error('Structure key not found on button.');
+                return;
+            }
+
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Upgrading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('structure_key', structureKey);
+                formData.append('csrf_token', csrfToken);
+
+                const response = await fetch('/structures/upgrade', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest' // To let backend know it's AJAX
+                    },
+                    body: formData
+                });
+
+                // Since the backend redirects, we check the 'redirected' flag
+                if (response.redirected || response.ok) {
+                    // The backend will set a flash message, so we just need to reload
+                    window.location.reload();
+                } else {
+                    // Try to get an error from a JSON response if the backend is set up for it
+                    // For now, we assume a generic error
+                    showToast('Upgrade failed. Please check your resources.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+
+            } catch (error) {
+                console.error('Upgrade Error:', error);
+                showToast('A network error occurred.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    });
+
+    // Simple toast notification function
+    function showToast(message, type) {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.innerText = message;
+        const bg = type === 'success' ? '#4CAF50' : '#e53e3e';
+        toast.style.cssText = `background:${bg}; color:#fff; padding:12px 24px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:0.9rem; opacity:0; transform:translateY(20px); transition:all 0.3s ease;`;
+
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
 });

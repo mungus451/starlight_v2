@@ -150,6 +150,32 @@ class BattleRepository
     }
 
     /**
+     * Finds the 5 most recent, non-hidden battle reports realm-wide.
+     *
+     * @return BattleReport[]
+     */
+    public function findLatestGlobal(): array
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.is_hidden = 0
+            ORDER BY r.created_at DESC
+            LIMIT 5
+        ";
+        
+        $stmt = $this->db->query($sql);
+        
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
      * Retrieves paginated battle reports for a user (either attacker or defender).
      */
     public function getPaginatedUserBattles(int $userId, int $limit, int $offset): array

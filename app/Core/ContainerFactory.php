@@ -185,6 +185,7 @@ GeneralRepository::class => function (ContainerInterface $c) { return new Genera
 ScientistRepository::class => function (ContainerInterface $c) { return new ScientistRepository($c->get(PDO::class)); },
 EffectRepository::class => function (ContainerInterface $c) { return new EffectRepository($c->get(PDO::class)); }, // --- NEW ---
 IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },   // --- NEW ---
+RealmNewsRepository::class => function (ContainerInterface $c) { return new RealmNewsRepository($c->get(PDO::class)); },
 
 // --- SERVICES ---
 
@@ -232,6 +233,20 @@ EffectService::class => function (ContainerInterface $c) {
     return new EffectService(
         $c->get(EffectRepository::class),
         $c->get(UserRepository::class)
+    );
+},
+
+// Realm News Service
+RealmNewsService::class => function (ContainerInterface $c) {
+    return new \App\Models\Services\RealmNewsService(
+        $c->get(RealmNewsRepository::class)
+    );
+},
+
+// Battle Service (New for Advisor)
+BattleService::class => function (ContainerInterface $c) {
+    return new \App\Models\Services\BattleService(
+        $c->get(BattleRepository::class)
     );
 },
 
@@ -436,6 +451,18 @@ return new Logger($logPath, false);
         $c->get(EdictRepository::class),
         $c->get(EmbassyService::class),
         $c->get(NetWorthCalculatorService::class)
+    );
+},
+
+// View Context Service - Provides global data to the main layout
+ViewContextService::class => function (ContainerInterface $c) {
+    return new ViewContextService(
+        $c->get(StatsRepository::class),
+        $c->get(LevelCalculatorService::class),
+        $c->get(DashboardService::class),
+        $c->get(\App\Presenters\DashboardPresenter::class),
+        $c->get(\App\Models\Services\RealmNewsService::class),
+        $c->get(\App\Models\Services\BattleService::class)
     );
 }
 ]);

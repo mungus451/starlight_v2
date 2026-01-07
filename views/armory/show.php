@@ -21,6 +21,18 @@
             </strong>
         </div>
         <div class="header-stat">
+            <span>Dark Matter</span>
+            <strong class="accent" id="global-user-dark-matter" data-dark-matter="<?= $userResources->dark_matter ?>">
+                <?= number_format($userResources->dark_matter) ?>
+            </strong>
+        </div>
+        <div class="header-stat">
+            <span>Naquadah Crystals</span>
+            <strong class="accent" id="global-user-crystals" data-crystals="<?= $userResources->naquadah_crystals ?>">
+                <?= number_format($userResources->naquadah_crystals) ?>
+            </strong>
+        </div>
+        <div class="header-stat">
             <span>Armory Level</span>
             <strong class="accent-teal" id="global-armory-level" data-level="<?= $userStructures->armory_level ?>">
                 Level <?= $userStructures->armory_level ?>
@@ -97,7 +109,7 @@
                 <!-- Right Column: Manufacturing (Logic-Free View) -->
                 <div>
                     <?php foreach ($tieredItems as $tier => $items): ?>
-                        <details class="tier-accordion" <?= $tier === 1 ? 'open' : '' ?>>
+                        <details class="tier-accordion" data-tier="<?= $tier ?>" <?= $tier === 1 ? 'open' : '' ?>>
                             <summary class="tier-summary">
                                 Tier <?= $tier ?> Equipment
                             </summary>
@@ -178,20 +190,24 @@
                                                 <input type="hidden" name="item_key" value="<?= $item['item_key'] ?>">
                                                 
                                                 <div class="form-group">
-                                                    <div class="amount-input-group">
-                                                        <input type="number" name="quantity" class="manufacture-amount" min="1" placeholder="Qty" required 
+                                                    <div class="amount-input-wrapper mb-2">
+                                                        <input type="number" name="quantity" class="manufacture-amount w-full" min="1" placeholder="Qty" required 
                                                             data-item-key="<?= $item['item_key'] ?>"
-                                                            data-item-cost="<?= $item['effective_cost'] ?>" 
+                                                            data-item-cost="<?= $item['effective_cost'] ?>"
+                                                            data-cost-crystals="<?= $item['cost_crystals'] ?>"
+                                                            data-cost-dark-matter="<?= $item['cost_dark_matter'] ?>"
                                                             data-prereq-key="<?= $item['prereq_key'] ?? '' ?>"
                                                             data-current-owned="<?= $item['current_owned'] ?>"
                                                         >
-                                                        <button type="button" class="btn-submit btn-accent btn-max-manufacture p-05">Max</button>
+                                                    </div>
+                                                    <div class="button-group flex-gap-sm">
+                                                        <button type="button" class="btn-submit btn-accent btn-max-manufacture flex-grow-1">Max</button>
+                                                        <button type="submit" class="btn-submit btn-buy-now flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>Buy Now</button>
+                                                        <button type="button" class="btn-submit btn-add-to-batch flex-grow-1" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>
+                                                            <?= $item['manufacture_btn_text'] ?>
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                
-                                                <button type="submit" class="btn-submit btn-manufacture-submit" <?= !$item['can_manufacture'] ? 'disabled' : '' ?>>
-                                                    <?= $item['manufacture_btn_text'] ?>
-                                                </button>
                                             </form>
                                         </div>
                                     <?php endforeach; ?>
@@ -219,8 +235,16 @@
     
     <div class="checkout-totals" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-bottom: 15px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>Total Cost:</span>
+            <span>Total Credits:</span>
             <span class="accent-gold" id="checkout-total-credits">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span>Total Dark Matter:</span>
+            <span class="accent-purple" id="checkout-total-dark-matter">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <span>Total Crystals:</span>
+            <span class="accent-cyan" id="checkout-total-crystals">0</span>
         </div>
     </div>
     

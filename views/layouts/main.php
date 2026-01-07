@@ -16,6 +16,7 @@
 
     <!-- Operation Starlight CSS -->
     <link rel="stylesheet" href="/css/starlight.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -201,27 +202,150 @@
         <?php endif; ?>
     </nav>
 <?php endif; ?>
-    
-    <?php 
-    if (isset($layoutMode) && $layoutMode === 'full'): 
-    ?>
-        <div class="container-full">
-    <?php else: ?>
-        <div class="container">
-    <?php endif; ?>
-    
-        <?php if ($flashError): ?>
-            <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
+
+<div class="advisor-layout-grid">
+    <div class="advisor-main-content">
+        <?php 
+        if (isset($layoutMode) && $layoutMode === 'full'): 
+        ?>
+            <div class="container-full">
+        <?php else: ?>
+            <div class="container">
         <?php endif; ?>
         
-        <?php if ($flashSuccess): ?>
-            <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
-        <?php endif; ?>
+            <?php if ($flashError): ?>
+                <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+            
+            <?php if ($flashSuccess): ?>
+                <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
+            <?php endif; ?>
 
-        <?= $content ?>
+            <?= $content ?>
+        </div>
     </div>
 
-    <script src="/js/utils.js"></script>
+    <?php if (!$this->session->get('is_mobile') && $isLoggedIn && isset($advisorData)): ?>
+        <aside class="advisor-panel">
+            <!-- Advisor Header -->
+            <div class="advisor-header">
+                <?php if ($advisorData['user']->profile_picture_url): ?>
+                    <img src="/serve/avatar/<?= htmlspecialchars($advisorData['user']->profile_picture_url) ?>" alt="Avatar" class="advisor-avatar">
+                <?php else: ?>
+                    <svg class="advisor-avatar" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                <?php endif; ?>
+                <div class="advisor-player-info">
+                    <h3><?= htmlspecialchars($advisorData['user']->characterName) ?></h3>
+                    <span class="advisor-player-level">Level <?= $advisorData['stats']->level ?></span>
+                </div>
+            </div>
+
+            <!-- Core Stats -->
+            <div class="advisor-core-stats">
+                <div class="advisor-stat">
+                    <span class="advisor-stat-label">Credits</span>
+                    <span class="advisor-stat-value"><?= number_format($advisorData['resources']->credits) ?></span>
+                </div>
+                <div class="advisor-stat">
+                    <span class="advisor-stat-label">Attack Turns</span>
+                    <span class="advisor-stat-value accent"><?= number_format($advisorData['stats']->attack_turns) ?></span>
+                </div>
+                <div class="advisor-stat">
+                    <span class="advisor-stat-label">Server Time</span>
+                    <span class="advisor-stat-value" id="advisor-clock">--:--:--</span>
+                </div>
+            </div>
+
+            <!-- Pod: Resources -->
+            <div class="advisor-pod">
+                <div class="advisor-pod-header" data-pod-id="resources">
+                    <h4><i class="fas fa-coins" style="margin-right: 8px;"></i> Resources</h4>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="advisor-pod-content">
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Citizens</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->untrained_citizens) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Workers</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->workers) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Research Data</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->research_data) ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pod: Military -->
+            <div class="advisor-pod">
+                <div class="advisor-pod-header" data-pod-id="military">
+                    <h4><i class="fas fa-crosshairs" style="margin-right: 8px;"></i> Military</h4>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="advisor-pod-content">
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Offense</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['offenseBreakdown']['total']) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Defense</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['defenseBreakdown']['total']) ?></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pod: Quick Links -->
+            <div class="advisor-pod">
+                <div class="advisor-pod-header" data-pod-id="quick-links">
+                    <h4><i class="fas fa-link" style="margin-right: 8px;"></i> Quick Links</h4>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="advisor-pod-content advisor-quick-links">
+                    <a href="/structures" class="advisor-quick-link" title="Structures"><i class="fas fa-industry"></i></a>
+                    <a href="/training" class="advisor-quick-link" title="Training"><i class="fas fa-users"></i></a>
+                    <a href="/armory" class="advisor-quick-link" title="Armory"><i class="fas fa-shield-alt"></i></a>
+                    <a href="/bank" class="advisor-quick-link" title="Bank"><i class="fas fa-university"></i></a>
+                </div>
+            </div>
+
+            <!-- Pod: Realm News -->
+            <div class="advisor-pod">
+                <div class="advisor-pod-header" data-pod-id="realm-news">
+                    <h4><i class="fas fa-newspaper" style="margin-right: 8px;"></i> Realm News</h4>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="advisor-pod-content">
+                    <?php if (isset($realmNews) && $realmNews): ?>
+                        <h5 class="realm-news-title"><?= htmlspecialchars($realmNews->title) ?></h5>
+                        <p class="realm-news-content"><?= nl2br(htmlspecialchars($realmNews->content)) ?></p>
+                        <small class="realm-news-date">Posted: <?= date('M j, Y', strtotime($realmNews->created_at)) ?></small>
+                    <?php endif; ?>
+
+                    <?php if (isset($latestBattles) && !empty($latestBattles)): ?>
+                        <h5 class="realm-news-title" style="margin-top: 1.5rem;"><i class="fas fa-skull-crossbones" style="margin-right: 8px;"></i> Recent Battles</h5>
+                        <ul class="advisor-battle-list">
+                            <?php foreach ($latestBattles as $battle): ?>
+                                <li>
+                                    <a href="/battle/report/<?= $battle->id ?>" class="advisor-battle-link">
+                                        <span class="battle-attacker"><?= htmlspecialchars($battle->attacker_name) ?></span>
+                                        <span class="battle-result <?= $battle->attack_result === 'win' ? 'text-success' : 'text-danger' ?>"><?= ucfirst($battle->attack_result) ?></span>
+                                        <span class="battle-defender"><?= htmlspecialchars($battle->defender_name) ?></span>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?>
+                        <p style="margin-top: 1.5rem;">No recent battles to display.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </aside>
+    <?php endif; ?>
+</div>
+
+<script src="/js/utils.js"></script>
 
 <?php if ($this->session->get('is_mobile') && $isLoggedIn): ?>
     
@@ -233,29 +357,8 @@
 
     <!-- Desktop-Specific JS -->
     <script src="/js/notifications.js"></script>
-    <!-- Bootstrap JS (Required for Tabs/Dropdowns on desktop if used) -->
+    <script src="/js/advisor.js?v=<?= time(); ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Desktop Dropdown Toggles for Mobile Viewports (on the desktop nav) - kept for legacy support if needed
-            const dropdowns = document.querySelectorAll('.main-nav .nav-item');
-            dropdowns.forEach(item => {
-                const link = item.querySelector('.nav-link');
-                const submenu = item.querySelector('.nav-submenu');
-                
-                if (submenu && link) {
-                    link.addEventListener('click', (e) => {
-                        // Only prevent default if we are in mobile view
-                        if (window.innerWidth <= 980) {
-                            if (e.target.closest('.nav-submenu')) return;
-                            e.preventDefault();
-                            item.classList.toggle('active');
-                        }
-                    });
-                }
-            });
-        });
-    </script>
     
 <?php endif; ?>
 
