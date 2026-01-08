@@ -19,6 +19,7 @@ use Mockery;
 use App\Models\Repositories\NotificationRepository;
 use App\Models\Repositories\BountyRepository;
 use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\BattleRepository; // Added
 use App\Models\Services\AdvisorService;
 use App\Models\Services\NetWorthCalculatorService;
 
@@ -34,6 +35,7 @@ class DashboardServiceTest extends TestCase
     private AdvisorService|Mockery\MockInterface $mockAdvisorService;
     private BountyRepository|Mockery\MockInterface $mockBountyRepo;
     private WarRepository|Mockery\MockInterface $mockWarRepo;
+    private BattleRepository|Mockery\MockInterface $mockBattleRepo; // Added
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalc;
     private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalc;
 
@@ -50,6 +52,7 @@ class DashboardServiceTest extends TestCase
         $this->mockAdvisorService = Mockery::mock(AdvisorService::class);
         $this->mockBountyRepo = Mockery::mock(BountyRepository::class);
         $this->mockWarRepo = Mockery::mock(WarRepository::class);
+        $this->mockBattleRepo = Mockery::mock(BattleRepository::class); // Added
         $this->mockPowerCalc = Mockery::mock(PowerCalculatorService::class);
         $this->mockNwCalc = Mockery::mock(NetWorthCalculatorService::class);
 
@@ -58,6 +61,7 @@ class DashboardServiceTest extends TestCase
         $this->mockAdvisorService->shouldReceive('getSuggestions')->andReturn([])->byDefault();
         $this->mockBountyRepo->shouldReceive('getHighestActiveBounty')->andReturn(null)->byDefault();
         $this->mockWarRepo->shouldReceive('findActiveWarByAllianceId')->andReturn(null)->byDefault();
+        $this->mockBattleRepo->shouldReceive('getPaginatedUserBattles')->andReturn([])->byDefault(); // Added
 
         $this->service = new DashboardService(
             $this->mockUserRepo,
@@ -69,6 +73,7 @@ class DashboardServiceTest extends TestCase
             $this->mockAdvisorService,
             $this->mockBountyRepo,
             $this->mockWarRepo,
+            $this->mockBattleRepo, // Added
             $this->mockPowerCalc,
             $this->mockNwCalc
         );
