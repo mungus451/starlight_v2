@@ -11,6 +11,11 @@ use App\Presenters\DashboardPresenter;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\AllianceBankLogRepository;
+use App\Models\Repositories\TreatyRepository;
+use App\Models\Repositories\WarBattleLogRepository;
+use App\Models\Repositories\BattleRepository;
+use App\Models\Repositories\SpyRepository;
 
 /**
  * Responsible for gathering "Global" data required by the main layout.
@@ -31,6 +36,11 @@ class ViewContextService
     private UserRepository $userRepo;
     private AllianceRepository $allianceRepo;
     private WarRepository $warRepo;
+    private AllianceBankLogRepository $bankLogRepo;
+    private TreatyRepository $treatyRepo;
+    private WarBattleLogRepository $warLogRepo;
+    private BattleRepository $battleRepo;
+    private SpyRepository $spyRepo;
 
     public function __construct(
         StatsRepository $statsRepo,
@@ -41,7 +51,12 @@ class ViewContextService
         BattleService $battleService,
         UserRepository $userRepo,
         AllianceRepository $allianceRepo,
-        WarRepository $warRepo
+        WarRepository $warRepo,
+        AllianceBankLogRepository $bankLogRepo,
+        TreatyRepository $treatyRepo,
+        WarBattleLogRepository $warLogRepo,
+        BattleRepository $battleRepo,
+        SpyRepository $spyRepo
     ) {
         $this->statsRepo = $statsRepo;
         $this->levelCalculator = $levelCalculator;
@@ -52,6 +67,11 @@ class ViewContextService
         $this->userRepo = $userRepo;
         $this->allianceRepo = $allianceRepo;
         $this->warRepo = $warRepo;
+        $this->bankLogRepo = $bankLogRepo;
+        $this->treatyRepo = $treatyRepo;
+        $this->warLogRepo = $warLogRepo;
+        $this->battleRepo = $battleRepo;
+        $this->spyRepo = $spyRepo;
     }
 
     /**
@@ -121,7 +141,7 @@ class ViewContextService
             return null;
         }
 
-        // Check for active war
+        // 1. Check for active war
         $war = $this->warRepo->findActiveWarByAllianceId($alliance->id);
         $warData = null;
         
@@ -139,13 +159,26 @@ class ViewContextService
             ];
         }
 
-        // Dummy Live Feed Data (Placeholder until real logging system is hooked up)
-        // In a real implementation, this would query an 'alliance_logs' table.
-        $feed = [
-            'System: Uplink established.',
-            'Intel: Sector 7 quiet.',
-            'Treasury: Daily tax collection pending.',
-        ];
+        // 2. Calculate DEFCON
+        $defcon = $this->calculateDefcon($alliance->id);
+
+        // 3. Determine Objective
+        $objective = $this->determineObjective($alliance, $war);
+
+        // 4. Build Live Feed
+        $feed = $this->getLiveFeed($alliance->id);
+
+        // 5. Active Ops (Treaties, Tax, etc)
+        $ops = [];
+        if ($warData) {
+            $ops[] = "WAR: Engagement Active";
+        }
+        // Placeholder for real treaty logic
+        //$treaties = $this->treatyRepo->findActiveByAllianceId($alliance->id);
+        //foreach($treaties as $t) $ops[] = "Treaty: {$t->partner_name} ...";
+        if (empty($ops)) {
+            $ops[] = "Routine Operations";
+        }
 
         return [
             'id' => $alliance->id,
@@ -153,8 +186,129 @@ class ViewContextService
             'tag' => $alliance->tag,
             'avatar' => $alliance->profile_picture_url,
             'treasury' => $alliance->bank_credits,
+            'defcon' => $defcon,
+            'objective' => $objective,
             'war' => $warData,
+            'ops' => $ops,
             'feed' => $feed
         ];
+    }
+
+    private function calculateDefcon(int $allianceId): int
+    {
+        // 1. Fetch Latest Incidents
+        $lastBattle = $this->battleRepo->findLatestDefenseByAlliance($allianceId);
+        $lastSpy = $this->spyRepo->findLatestDefenseByAlliance($allianceId);
+        
+        // 2. Determine Most Recent Event
+        $latestEventTime = 0;
+        $isSuccess = false; // Was the hostile action successful?
+        
+        if ($lastBattle) {
+            $t = strtotime($lastBattle->created_at);
+            if ($t > $latestEventTime) {
+                $latestEventTime = $t;
+                // 'victory' means Attacker won -> Successful Incident
+                $isSuccess = ($lastBattle->attack_result === 'victory');
+            }
+        }
+        
+        if ($lastSpy) {
+            $t = strtotime($lastSpy->created_at);
+            if ($t > $latestEventTime) {
+                $latestEventTime = $t;
+                // 'success' means Spy won -> Successful Incident
+                $isSuccess = ($lastSpy->operation_result === 'success');
+            }
+        }
+        
+        // If no events ever, we are safe
+        if ($latestEventTime === 0) {
+            return 5;
+        }
+        
+        // 3. Determine Base Level
+        // Success = DEFCON 1 (Severe)
+        // Failure = DEFCON 3 (Elevated, but capped)
+        $baseLevel = $isSuccess ? 1 : 3;
+        
+        // 4. Calculate Recovery (Time Decay)
+        // 2 hours = +1 Level
+        $secondsSince = time() - $latestEventTime;
+        $hoursSince = $secondsSince / 3600;
+        $recoveryLevels = floor($hoursSince / 2);
+        
+        // 5. Final Calculation
+        $currentLevel = $baseLevel + (int)$recoveryLevels;
+        
+        return min(5, $currentLevel);
+    }
+
+    private function determineObjective($alliance, $war): array
+    {
+        // Priority 1: War
+        if ($war) {
+            $isDeclarer = ($war->declarer_alliance_id === $alliance->id);
+            $myScore = $isDeclarer ? $war->declarer_score : $war->defender_score;
+            $pct = ($war->goal_threshold > 0) ? ($myScore / $war->goal_threshold) * 100 : 0;
+            
+            return [
+                'type' => 'WAR EFFORT',
+                'name' => 'Operation: Victory',
+                'progress' => min(100, $pct),
+                'label' => 'Score Goal'
+            ];
+        }
+
+        // Priority 2: Crisis (Low Funds)
+        if ($alliance->bank_credits < 1000000) {
+            $pct = ($alliance->bank_credits / 1000000) * 100;
+            return [
+                'type' => 'CRISIS',
+                'name' => 'Emergency Funding',
+                'progress' => min(100, $pct),
+                'label' => '1M Goal'
+            ];
+        }
+
+        // Priority 3: Growth
+        // Next milestone: 10M, 50M, 100M, 1B
+        $milestones = [10000000, 50000000, 100000000, 1000000000];
+        $target = 1000000000;
+        foreach ($milestones as $m) {
+            if ($alliance->bank_credits < $m) {
+                $target = $m;
+                break;
+            }
+        }
+        $pct = ($alliance->bank_credits / $target) * 100;
+        
+        return [
+            'type' => 'GROWTH',
+            'name' => 'Treasury Expansion',
+            'progress' => min(100, $pct),
+            'label' => number_format($target / 1000000) . 'M Goal'
+        ];
+    }
+
+    private function getLiveFeed(int $allianceId): array
+    {
+        // In a real app, union query: Bank Logs + Battle Logs + War Logs
+        // For now, fetch recent bank logs
+        $logs = [];
+        
+        $bankLogs = $this->bankLogRepo->findLogsByAllianceId($allianceId, 5);
+        foreach ($bankLogs as $l) {
+            $logs[] = [
+                'type' => 'BANK',
+                'text' => ($l->character_name ?? 'System') . " " . ($l->amount >= 0 ? 'deposited' : 'withdrew') . " " . number_format(abs($l->amount)) . " Cr",
+                'time' => strtotime($l->created_at)
+            ];
+        }
+        
+        // Sort by time desc
+        usort($logs, fn($a, $b) => $b['time'] <=> $a['time']);
+        
+        return array_slice($logs, 0, 10);
     }
 }

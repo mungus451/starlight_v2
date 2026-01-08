@@ -225,16 +225,20 @@
             <div class="uplink-header">
                 <div class="uplink-content-wrapper">
                     <span class="uplink-status">SECURE CHANNEL // ESTABLISHED</span>
-                <?php if ($allianceContext['avatar']): ?>
-                    <img src="/serve/alliance_avatar/<?= htmlspecialchars($allianceContext['avatar']) ?>" class="uplink-avatar">
-                <?php else: ?>
-                    <div class="uplink-avatar" style="background: #000; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">
-                        <i class="fas fa-users fa-2x" style="color: var(--uplink-dim);"></i>
+                    <?php if ($allianceContext['avatar']): ?>
+                        <img src="/serve/alliance_avatar/<?= htmlspecialchars($allianceContext['avatar']) ?>" class="uplink-avatar">
+                    <?php else: ?>
+                        <div class="uplink-avatar" style="background: #000; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">
+                            <i class="fas fa-users fa-2x" style="color: var(--uplink-dim);"></i>
+                        </div>
+                    <?php endif; ?>
+                    <h3 class="uplink-name"><?= htmlspecialchars($allianceContext['name']) ?></h3>
+                    <div class="uplink-treasury">
+                        <i class="fas fa-university"></i> <?= number_format($allianceContext['treasury']) ?> Cr
                     </div>
-                <?php endif; ?>
-                <h3 class="uplink-name"><?= htmlspecialchars($allianceContext['name']) ?></h3>
-                <div class="uplink-treasury">
-                    <i class="fas fa-university"></i> <?= number_format($allianceContext['treasury']) ?> Cr
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: <?= $allianceContext['defcon'] <= 2 ? 'var(--uplink-alert)' : 'var(--uplink-accent)' ?>;">
+                        DEFCON <?= $allianceContext['defcon'] ?>
+                    </div>
                 </div>
             </div>
 
@@ -257,15 +261,15 @@
 
             <!-- Faction Objective -->
             <div class="uplink-module">
-                <div class="module-title">FACTION OBJECTIVE</div>
+                <div class="module-title">PRIORITY OBJECTIVE</div>
                 <div class="objective-box">
-                    <span class="objective-name">Operation: Void Cull</span>
+                    <span class="objective-name"><?= htmlspecialchars($allianceContext['objective']['name']) ?></span>
                     <div class="objective-progress">
-                        <div class="objective-fill" style="width: 72%;"></div>
+                        <div class="objective-fill" style="width: <?= $allianceContext['objective']['progress'] ?>%;"></div>
                     </div>
-                    <div style="font-size: 0.7rem; color: var(--uplink-dim); display: flex; justify-content: space-between;">
-                        <span>Eliminate Units</span>
-                        <span>72%</span>
+                    <div style="font-size: 0.7rem; color: var(--uplink-muted); display: flex; justify-content: space-between;">
+                        <span><?= htmlspecialchars($allianceContext['objective']['type']) ?></span>
+                        <span><?= htmlspecialchars($allianceContext['objective']['label']) ?></span>
                     </div>
                 </div>
             </div>
@@ -274,21 +278,27 @@
             <div class="uplink-module">
                 <div class="module-title">ACTIVE OPERATIONS</div>
                 <ul class="ops-list">
-                    <li>Treaty: Solar Fed (4d rem)</li>
-                    <li>Ritual: Void Shift (2h 15m)</li>
-                    <li>Tax Collection (Pending)</li>
+                    <?php foreach ($allianceContext['ops'] as $op): ?>
+                        <li><?= htmlspecialchars($op) ?></li>
+                    <?php endforeach; ?>
                 </ul>
             </div>
 
             <!-- Encrypted Feed -->
             <div class="uplink-module">
-                <div class="module-title">ENCRYPTED FEED</div>
+                <div class="module-title">INTELLIGENCE FEED</div>
                 <div class="uplink-feed">
-                    <?php foreach ($allianceContext['feed'] as $log): ?>
-                        <div class="feed-item">
-                            <?= htmlspecialchars($log) ?>
-                        </div>
-                    <?php endforeach; ?>
+                    <?php if (empty($allianceContext['feed'])): ?>
+                        <div class="feed-item text-muted">No recent activity.</div>
+                    <?php else: ?>
+                        <?php foreach ($allianceContext['feed'] as $log): ?>
+                            <div class="feed-item">
+                                <span class="feed-timestamp">[<?= date('H:i', $log['time']) ?>]</span>
+                                <strong style="color: var(--uplink-accent);"><?= htmlspecialchars($log['type']) ?>:</strong>
+                                <?= htmlspecialchars($log['text']) ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 

@@ -492,7 +492,12 @@ ViewContextService::class => function (ContainerInterface $c) {
         $c->get(\App\Models\Services\BattleService::class),
         $c->get(UserRepository::class),
         $c->get(AllianceRepository::class),
-        $c->get(WarRepository::class)
+        $c->get(WarRepository::class),
+        $c->get(AllianceBankLogRepository::class),
+        $c->get(TreatyRepository::class),
+        $c->get(WarBattleLogRepository::class),
+        $c->get(BattleRepository::class),
+        $c->get(SpyRepository::class)
     );
 }
 ]);

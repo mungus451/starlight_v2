@@ -216,6 +216,31 @@ class BattleRepository
     }
 
     /**
+     * Finds the most recent battle report where a member of the given alliance was the defender.
+     *
+     * @param int $allianceId
+     * @return BattleReport|null
+     */
+    public function findLatestDefenseByAlliance(int $allianceId): ?BattleReport
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE d.alliance_id = ?
+            ORDER BY r.created_at DESC
+            LIMIT 1
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $data ? $this->hydrate($data) : null;
+    }
+
+    /**
      * Helper method to convert a database row into a BattleReport entity.
      */
     private function hydrate(array $data): BattleReport
