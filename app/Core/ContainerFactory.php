@@ -270,6 +270,7 @@ DashboardService::class => function (ContainerInterface $c) {
         $c->get(AdvisorService::class),
         $c->get(BountyRepository::class),
         $c->get(WarRepository::class),
+        $c->get(BattleRepository::class),
         $c->get(PowerCalculatorService::class),
         $c->get(NetWorthCalculatorService::class)
     );

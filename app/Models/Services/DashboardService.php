@@ -7,6 +7,7 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\BattleRepository; // Added
 use App\Models\Repositories\EffectRepository;
 use App\Models\Repositories\NotificationRepository;
 use App\Models\Repositories\BountyRepository;
@@ -32,6 +33,7 @@ class DashboardService
     private PowerCalculatorService $powerCalculator;
     private NetWorthCalculatorService $nwCalculator;
     private WarRepository $warRepo;
+    private BattleRepository $battleRepo; // Added
 
     /**
     * DI Constructor.
@@ -52,6 +54,7 @@ class DashboardService
         AdvisorService $advisorService,
         BountyRepository $bountyRepo,
         WarRepository $warRepo,
+        BattleRepository $battleRepo, // Added
         PowerCalculatorService $powerCalculator,
         NetWorthCalculatorService $nwCalculator
     ) {
@@ -64,6 +67,7 @@ class DashboardService
         $this->advisorService = $advisorService;
         $this->bountyRepo = $bountyRepo;
         $this->warRepo = $warRepo;
+        $this->battleRepo = $battleRepo; // Added
         $this->powerCalculator = $powerCalculator;
         $this->nwCalculator = $nwCalculator;
     }
@@ -85,6 +89,9 @@ class DashboardService
         $activeEffects = $this->effectRepo->getAllActiveEffects($userId);
         $criticalAlerts = $this->notificationRepo->getRecent($userId, 3);
         $advisorSuggestions = $this->advisorService->getSuggestions($user);
+        
+        // Fetch recent battles for the oscilloscope
+        $recentBattles = $this->battleRepo->getPaginatedUserBattles($userId, 20, 0);
 
         // 4. Fetch Threat & Opportunity Data
         $threatData = [
@@ -143,6 +150,7 @@ class DashboardService
             'activeEffects' => $activeEffects,
             'critical_alerts' => $criticalAlerts,
             'advisor_suggestions' => $advisorSuggestions,
+            'recent_battles' => $recentBattles, // Added
             'threat_and_opportunity' => $threatData,
             'incomeBreakdown' => $incomeBreakdown,
             'offenseBreakdown' => $offenseBreakdown,

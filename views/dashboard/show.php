@@ -206,4 +206,9 @@ if ($threat_and_opportunity['active_war']) {
 
 </div>
 
+<script>
+    window.dashboardData = {
+        battles: <?= json_encode($recent_battles ?? []) ?>
+    };
+</script>
 <script src="/js/dashboard_v3.js?v=<?= time() ?>"></script>
