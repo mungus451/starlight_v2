@@ -1,0 +1,259 @@
+/* 
+ * Black Market V2 - "The Void Syndicate" UI Overhaul
+ * Adds Glassmorphism, 3D Tilt, Tickers, and Gamified Interactions.
+ */
+
+:root {
+    --bm-glass-bg: rgba(13, 17, 23, 0.6);
+    --bm-glass-border: rgba(255, 255, 255, 0.08);
+    --bm-neon-cyan: #00f3ff;
+    --bm-neon-purple: #bc13fe;
+    --bm-neon-red: #ff2a2a;
+    --bm-neon-gold: #f9c74f;
+}
+
+/* --- 1. THE VOID BACKGROUND (Container Override) --- */
+.structures-page-content {
+    position: relative;
+    z-index: 1;
+}
+
+.void-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.05) 0%, rgba(0, 0, 0, 0) 60%);
+    overflow: hidden;
+}
+
+.void-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--bm-neon-cyan);
+    box-shadow: 0 0 4px var(--bm-neon-cyan);
+    border-radius: 50%;
+    opacity: 0;
+    animation: drift 10s infinite linear;
+}
+
+@keyframes drift {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    20% { opacity: 0.5; }
+    80% { opacity: 0.5; }
+    100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
+}
+
+/* --- 2. SYNDICATE TICKER --- */
+.bm-ticker-container {
+    width: 100%;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 1px solid var(--bm-neon-cyan);
+    border-bottom: 1px solid var(--bm-neon-cyan);
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.bm-ticker-track {
+    display: flex;
+    white-space: nowrap;
+    animation: ticker-scroll 20s linear infinite;
+}
+
+.bm-ticker-item {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--bm-neon-cyan);
+    margin-right: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+}
+
+.bm-ticker-item.warning { color: var(--bm-neon-red); text-shadow: 0 0 5px rgba(255, 42, 42, 0.5); }
+.bm-ticker-item.gold { color: var(--bm-neon-gold); text-shadow: 0 0 5px rgba(249, 199, 79, 0.5); }
+
+@keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* --- 3. HOLOGRAPHIC GLASS CARDS (3D TILT) --- */
+.bm-card {
+    position: relative;
+    background: var(--bm-glass-bg);
+    border: 1px solid var(--bm-glass-border);
+    border-radius: 12px;
+    padding: 0; /* Content handled by internal divs */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transform-style: preserve-3d;
+    transform: perspective(1000px);
+    transition: transform 0.1s ease-out, box-shadow 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+}
+
+.bm-card:hover {
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15), inset 0 0 20px rgba(255, 255, 255, 0.05);
+    border-color: rgba(0, 243, 255, 0.3);
+}
+
+/* Scanline Effect */
+.bm-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0, 243, 255, 0.03) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.bm-scanner-bar {
+    position: absolute;
+    top: -10%;
+    left: 0;
+    width: 100%;
+    height: 10%;
+    background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.2), transparent);
+    animation: scan 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 3;
+}
+
+@keyframes scan {
+    0% { top: -10%; }
+    50% { top: 110%; }
+    100% { top: -10%; }
+}
+
+/* Card Content (Lifted off the glass) */
+.bm-card-content {
+    transform: translateZ(20px);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.bm-card-header {
+    padding: 1.25rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid var(--bm-glass-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.bm-card-body {
+    padding: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* --- 4. HOLD-TO-DECRYPT BUTTON --- */
+.btn-decrypt-container {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin-top: 1rem;
+    user-select: none;
+}
+
+.btn-decrypt {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 243, 255, 0.1);
+    border: 1px solid var(--bm-neon-cyan);
+    color: var(--bm-neon-cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.btn-decrypt:hover {
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.btn-decrypt:active {
+    transform: scale(0.98);
+}
+
+.btn-decrypt-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--bm-neon-cyan);
+    z-index: -1;
+    transition: width 0.1s linear; /* JS handles the animation, CSS smooths it slightly */
+}
+
+.btn-decrypt.holding {
+    color: #000;
+}
+
+.btn-decrypt.holding .btn-decrypt-progress {
+    /* JS will animate width to 100% */
+}
+
+.btn-decrypt-text {
+    position: relative;
+    z-index: 2;
+}
+
+.decrypt-lock-icon {
+    margin-right: 10px;
+    transition: transform 0.3s;
+}
+
+.btn-decrypt:hover .decrypt-lock-icon {
+    transform: rotate(-15deg); /* Jiggle lock */
+}
+
+/* --- 5. GLITCH BORDER (For Risky Items) --- */
+.bm-card.risk-high {
+    border-color: rgba(255, 42, 42, 0.4);
+}
+
+.bm-card.risk-high:hover {
+    box-shadow: 0 0 20px rgba(255, 42, 42, 0.25);
+    animation: border-glitch 0.3s infinite;
+}
+
+@keyframes border-glitch {
+    0% { border-color: var(--bm-neon-red); transform: translate(0, 0) perspective(1000px); }
+    20% { border-color: transparent; transform: translate(-2px, 2px) perspective(1000px); }
+    40% { border-color: var(--bm-neon-red); transform: translate(-2px, -2px) perspective(1000px); }
+    60% { border-color: transparent; transform: translate(2px, 2px) perspective(1000px); }
+    80% { border-color: var(--bm-neon-red); transform: translate(2px, -2px) perspective(1000px); }
+    100% { border-color: var(--bm-neon-red); transform: translate(0, 0) perspective(1000px); }
+}

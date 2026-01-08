@@ -280,6 +280,18 @@
     gap: 1.5rem;
 }
 
+/* New: Black Market Specific Grid (Forced 2-Column) */
+.black-market-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+@media (max-width: 992px) {
+    .black-market-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .structure-card {
     background: rgba(13, 17, 23, 0.85);
     border: 1px solid var(--border);

@@ -34,7 +34,7 @@ public function showExchange(): void
 $userId = $this->session->get('user_id');
 $data = $this->converterService->getConverterPageData($userId);
 $data['active_tab'] = 'exchange';
-$this->render('black_market/exchange.php', $data + ['title' => 'Black Market - Exchange']);
+$this->render('black_market/exchange.php', $data + ['title' => 'Black Market - Exchange', 'layoutMode' => 'full']);
 }
 
     // --- Tab 2: The Undermarket (Actions) ---

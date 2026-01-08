@@ -8,164 +8,272 @@
  */
 ?>
 
-<div class="container-full">
-    <h1>The Void Syndicate</h1>
+<link rel="stylesheet" href="/css/black_market_v2.css?v=<?= time() ?>">
 
-    <div class="tabs-nav" style="justify-content: center; margin-bottom: 2rem;">
+<!-- Background Atmosphere -->
+<div class="void-particles">
+    <?php for($i=0; $i<20; $i++): ?>
+        <div class="void-particle" style="left: <?= rand(0,100) ?>%; animation-delay: <?= rand(0,10) ?>s; animation-duration: <?= rand(10,20) ?>s;"></div>
+    <?php endfor; ?>
+</div>
+
+<div class="structures-page-content">
+    <div class="page-header-container">
+        <h1 class="page-title-neon glitch-text" data-text="THE VOID SYNDICATE">THE VOID SYNDICATE</h1>
+        <p class="page-subtitle-tech">SYSTEM_ACCESS_GRANTED // ENCRYPTION_LEVEL_0</p>
+    </div>
+
+    <div class="tabs-nav mb-4 justify-content-center">
         <a href="/black-market/converter" class="tab-link active">Crystal Exchange</a>
-        <a href="/black-market/actions" class="tab-link">Undermarket</a>
+        <a href="/black-market/actions" class="tab-link">The Undermarket</a>
     </div>
 
-    <p style="text-align: center; color: var(--muted); margin-top: -1rem; margin-bottom: 2rem;">
-        Exchange Credits for Naquadah Crystals and vice-versa. A <?= $feePercentage * 100 ?>% fee applies to all conversions.
-    </p>
-
-    <!-- Info Grid -->
-    <div class="item-grid" style="margin-bottom: 2rem;">
-        <div class="balance-card">
-            <h3 style="margin: 0 0 1rem 0; font-size: 1.2rem; color: var(--accent-2); border-bottom: 1px solid rgba(249, 199, 79, 0.2); padding-bottom: 0.5rem;">Your Wallet</h3>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="color: var(--muted);">Credits:</span>
-                <span style="font-weight: 700;"><?= number_format($userResources->credits, 2) ?></span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--muted);">Naquadah Crystals:</span>
-                <span style="font-weight: 700;"><?= number_format($userResources->naquadah_crystals, 4) ?> 💎</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
-                <span style="color: var(--muted);">Dark Matter:</span>
-                <span style="font-weight: 700; color: #d8b4fe;"><?= number_format($userResources->dark_matter, 4) ?> DM</span>
+    <!-- Quick Wallet Bar (Always Visible) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="dashboard-card text-center py-3" style="border-left: 3px solid var(--accent);">
+                <span class="text-muted small text-uppercase fw-bold">Credits</span>
+                <h3 class="mb-0 mt-1"><?= number_format($userResources->credits, 2) ?></h3>
             </div>
         </div>
-        <div class="balance-card">
-            <h3 style="margin: 0 0 1rem 0; font-size: 1.2rem; color: var(--accent-2); border-bottom: 1px solid rgba(249, 199, 79, 0.2); padding-bottom: 0.5rem;">The House's Cut</h3>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="color: var(--muted);">Credits Taxed:</span>
-                <span style="font-weight: 700;"><?= number_format($houseFinances->credits_taxed, 2) ?></span>
+        <div class="col-md-4">
+            <div class="dashboard-card text-center py-3" style="border-left: 3px solid var(--accent-2);">
+                <span class="text-muted small text-uppercase fw-bold">Naquadah Crystals</span>
+                <h3 class="mb-0 mt-1 text-warning"><?= number_format($userResources->naquadah_crystals, 4) ?> <i class="fas fa-gem small"></i></h3>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--muted);">Crystals Taxed:</span>
-                <span style="font-weight: 700;"><?= number_format($houseFinances->crystals_taxed, 4) ?> 💎</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
-                <span style="color: var(--muted);">Dark Matter Taxed:</span>
-                <span style="font-weight: 700; color: #d8b4fe;"><?= number_format($houseFinances->dark_matter_taxed ?? 0, 4) ?> DM</span>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-card text-center py-3" style="border-left: 3px solid #a855f7;">
+                <span class="text-muted small text-uppercase fw-bold">Dark Matter</span>
+                <h3 class="mb-0 mt-1" style="color: #d8b4fe;"><?= number_format($userResources->dark_matter, 4) ?> <i class="fas fa-atom small"></i></h3>
             </div>
         </div>
     </div>
 
-    <!-- Converter Forms -->
-    <div class="item-grid">
-        <!-- Convert Credits to Crystals -->
-        <div class="item-card">
-            <h4>Credits -> Naquadah Crystals</h4>
-            <form action="/black-market/convert" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                <input type="hidden" name="conversion_direction" value="credits_to_crystals">
-
-                <div class="form-group">
-                    <label for="credits-amount-display">Amount of Credits to Convert</label>
-                    <input type="text" inputmode="numeric" id="credits-amount-display" placeholder="e.g., 10,000" required>
-                    <input type="hidden" name="amount" id="credits-amount-hidden">
-                </div>
-
-                <div class="conversion-summary">
-                    <div style="display: flex; justify-content: space-between;"><span>Fee (<?= $feePercentage * 100 ?>%):</span> <span id="c2cry-fee">0.00 Credits</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Amount after fee:</span> <span id="c2cry-after-fee">0.00 Credits</span></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
-                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="c2cry-receive">0.0000 💎</span></div>
-                </div>
-
-                <button type="submit" class="btn-submit btn-accent">Convert to Crystals</button>
-            </form>
-        </div>
-
-        <!-- Convert Crystals to Credits -->
-        <div class="item-card">
-            <h4>Naquadah Crystals -> Credits</h4>
-            <form action="/black-market/convert" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                <input type="hidden" name="conversion_direction" value="crystals_to_credits">
-
-                <div class="form-group">
-                    <label for="crystals-amount-display">Amount of Crystals to Convert</label>
-                    <input type="text" inputmode="numeric" id="crystals-amount-display" placeholder="e.g., 100.0" required>
-                    <input type="hidden" name="amount" id="crystals-amount-hidden">
-                </div>
-
-                <div class="conversion-summary">
-                    <div style="display: flex; justify-content: space-between;"><span>Fee (<?= $feePercentage * 100 ?>%):</span> <span id="cry2c-fee">0.0000 💎</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Amount after fee:</span> <span id="cry2c-after-fee">0.0000 💎</span></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
-                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="cry2c-receive">0.00 Credits</span></div>
-                </div>
-
-                <button type="submit" class="btn-submit btn-accent">Convert to Credits</button>
-            </form>
-        </div>
+    <!-- Category Navigation Deck -->
+    <div class="structure-nav-container">
+        <button class="structure-nav-btn active" data-tab-target="cat-exchange">
+            <i class="fas fa-exchange-alt"></i> Currency Exchange
+        </button>
+        <button class="structure-nav-btn" data-tab-target="cat-synthesis">
+            <i class="fas fa-atom"></i> Matter Synthesis
+        </button>
     </div>
 
-    <!-- Matter Synthesis -->
-    <h2 style="text-align: center; color: var(--accent); margin: 3rem 0 1rem 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">Matter Synthesis</h2>
-    <p style="text-align: center; color: var(--muted); margin-bottom: 2rem;">
-        Fuse raw materials into Dark Matter. <span class="text-danger">This process is irreversible.</span>
-    </p>
+    <!-- Central Viewing Containers -->
+    <div class="structure-deck">
 
-    <div class="item-grid">
-        <!-- Credits -> DM -->
-        <div class="item-card" style="border-color: #a855f7; box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4 style="margin: 0; color: #d8b4fe;">Credits <i class="fas fa-arrow-right"></i> Dark Matter</h4>
-                <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe;">10k : 0.7</span>
+        <!-- CATEGORY: CURRENCY EXCHANGE -->
+        <div id="cat-exchange" class="structure-category-container active">
+            <div class="row g-4">
+                <!-- Credits -> Crystals -->
+                <div class="col-md-6">
+                    <div class="bm-card h-100">
+                        <div class="bm-card-content">
+                            <div class="bm-card-header">
+                                <div class="card-icon"><i class="fas fa-coins"></i></div>
+                                <div><h4 style="margin:0;">Credits <i class="fas fa-arrow-right mx-2 small text-muted"></i> Crystals</h4><span class="text-muted small">Acquire Naquadah</span></div>
+                            </div>
+                            <div class="bm-card-body">
+                                <form action="/black-market/convert" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                    <input type="hidden" name="conversion_direction" value="credits_to_crystals">
+
+                                    <div class="form-group mb-3">
+                                        <label class="text-muted small mb-1">Amount to Convert</label>
+                                        <div class="input-group">
+                                            <input type="text" inputmode="numeric" id="credits-amount-display" class="form-control bg-dark text-light border-secondary" placeholder="0" required>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('credits-amount-display').value = '<?= (int)$userResources->credits ?>'; document.getElementById('credits-amount-display').dispatchEvent(new Event('input'));">MAX</button>
+                                        </div>
+                                        <input type="hidden" name="amount" id="credits-amount-hidden">
+                                    </div>
+
+                                    <div class="bg-dark p-3 rounded mb-3 border border-secondary" style="font-size: 0.9rem;">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Exchange Rate:</span>
+                                            <span>1,000 : 1.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Syndicate Fee (<?= $feePercentage * 100 ?>%):</span>
+                                            <span id="c2cry-fee" class="text-danger">0.00 Credits</span>
+                                        </div>
+                                        <hr class="my-2 border-secondary">
+                                        <div class="d-flex justify-content-between fw-bold">
+                                            <span class="text-light">Net Crystals:</span>
+                                            <span id="c2cry-receive" class="text-neon-blue">0.0000 💎</span>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-full py-2">PURCHASE CRYSTALS</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crystals -> Credits -->
+                <div class="col-md-6">
+                    <div class="bm-card h-100">
+                        <div class="bm-card-content">
+                            <div class="bm-card-header">
+                                <div class="card-icon text-warning"><i class="fas fa-gem"></i></div>
+                                <div><h4 style="margin:0;">Crystals <i class="fas fa-arrow-right mx-2 small text-muted"></i> Credits</h4><span class="text-muted small">Liquidate Assets</span></div>
+                            </div>
+                            <div class="bm-card-body">
+                                <form action="/black-market/convert" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                    <input type="hidden" name="conversion_direction" value="crystals_to_credits">
+
+                                    <div class="form-group mb-3">
+                                        <label class="text-muted small mb-1">Amount to Convert</label>
+                                        <div class="input-group">
+                                            <input type="text" inputmode="numeric" id="crystals-amount-display" class="form-control bg-dark text-light border-secondary" placeholder="0" required>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('crystals-amount-display').value = '<?= floor($userResources->naquadah_crystals) ?>'; document.getElementById('crystals-amount-display').dispatchEvent(new Event('input'));">MAX</button>
+                                        </div>
+                                        <input type="hidden" name="amount" id="crystals-amount-hidden">
+                                    </div>
+
+                                    <div class="bg-dark p-3 rounded mb-3 border border-secondary" style="font-size: 0.9rem;">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Exchange Rate:</span>
+                                            <span>1.00 : 1,000</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Syndicate Fee (<?= $feePercentage * 100 ?>%):</span>
+                                            <span id="cry2c-fee" class="text-danger">0.0000 💎</span>
+                                        </div>
+                                        <hr class="my-2 border-secondary">
+                                        <div class="d-flex justify-content-between fw-bold">
+                                            <span class="text-light">Net Credits:</span>
+                                            <span id="cry2c-receive" class="text-neon-blue">0.00 Credits</span>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-full py-2">SELL CRYSTALS</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <form action="/black-market/synthesize/credits" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                
-                <div class="form-group">
-                    <label>Amount of Credits to Convert</label>
-                    <input type="text" id="syn-credits-display" placeholder="e.g., 10,000" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #a855f7; padding: 0.5rem; color: white;" required>
-                    <input type="hidden" name="amount" id="syn-credits-hidden">
-                </div>
-
-                <div class="conversion-summary" style="margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between;"><span>Potential DM:</span> <span id="syn-credits-base">0.0000 DM</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Fee (30%):</span> <span id="syn-credits-fee">0.0000 DM</span></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
-                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="syn-credits-receive">0.0000 DM</span></div>
-                </div>
-                
-                <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
-            </form>
         </div>
 
-        <!-- Crystals -> DM -->
-        <div class="item-card" style="border-color: #a855f7; box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4 style="margin: 0; color: #d8b4fe;">Crystals <i class="fas fa-arrow-right"></i> Dark Matter</h4>
-                <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #d8b4fe;">10 : 0.7</span>
+        <!-- CATEGORY: MATTER SYNTHESIS -->
+        <div id="cat-synthesis" class="structure-category-container">
+            <div class="alert alert-dark border-secondary d-flex align-items-center mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle text-warning me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong class="text-warning">WARNING: Irreversible Process</strong><br>
+                    <span class="text-muted small">Matter Synthesis fuses raw materials into Dark Matter. This process cannot be undone.</span>
+                </div>
             </div>
 
-            <form action="/black-market/synthesize/crystals" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                
-                <div class="form-group">
-                    <label>Amount of Crystals to Convert</label>
-                    <input type="text" id="syn-crystals-display" placeholder="e.g., 10" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #a855f7; padding: 0.5rem; color: white;" required>
-                    <input type="hidden" name="amount" id="syn-crystals-hidden">
+            <div class="row g-4">
+                <!-- Credits -> DM -->
+                <div class="col-md-6">
+                    <div class="bm-card border-neon" style="border-color: rgba(168, 85, 247, 0.4);">
+                        <div class="bm-card-content">
+                            <div class="bm-card-header" style="background: rgba(168, 85, 247, 0.05);">
+                                <div class="card-icon" style="color: #d8b4fe;"><i class="fas fa-microchip"></i></div>
+                                <div><h4 style="margin:0; color: #d8b4fe;">Credits <i class="fas fa-long-arrow-alt-right mx-1 small"></i> Dark Matter</h4><span class="text-muted small">Yield: 10k -> 0.70</span></div>
+                            </div>
+                            <div class="bm-card-body">
+                                <form action="/black-market/synthesize/credits" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                    <div class="form-group mb-3">
+                                        <label class="text-muted small mb-1">Amount to Synthesize</label>
+                                        <input type="text" id="syn-credits-display" class="form-control bg-dark text-light border-secondary" placeholder="0" required>
+                                        <input type="hidden" name="amount" id="syn-credits-hidden">
+                                    </div>
+                                    <div class="bg-dark p-3 rounded mb-3 border border-secondary" style="font-size: 0.9rem;">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Base Yield:</span>
+                                            <span id="syn-credits-base">0.0000 DM</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Synthesis Loss (30%):</span>
+                                            <span id="syn-credits-fee" class="text-danger">0.0000 DM</span>
+                                        </div>
+                                        <hr class="my-2 border-secondary">
+                                        <div class="d-flex justify-content-between fw-bold">
+                                            <span class="text-light">Final Output:</span>
+                                            <span id="syn-credits-receive" style="color: #d8b4fe;">0.0000 DM</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn w-full py-2" style="background: #6b21a8; color: white;">INITIATE SYNTHESIS</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="conversion-summary" style="margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between;"><span>Potential DM:</span> <span id="syn-crystals-base">0.0000 DM</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Fee (30%):</span> <span id="syn-crystals-fee">0.0000 DM</span></div>
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
-                    <div style="display: flex; justify-content: space-between; color: var(--accent); font-weight: 700;"><span>You will receive:</span> <span id="syn-crystals-receive">0.0000 DM</span></div>
+                <!-- Crystals -> DM -->
+                <div class="col-md-6">
+                    <div class="bm-card border-neon" style="border-color: rgba(168, 85, 247, 0.4);">
+                        <div class="bm-card-content">
+                            <div class="bm-card-header" style="background: rgba(168, 85, 247, 0.05);">
+                                <div class="card-icon" style="color: #d8b4fe;"><i class="fas fa-atom"></i></div>
+                                <div><h4 style="margin:0; color: #d8b4fe;">Crystals <i class="fas fa-long-arrow-alt-right mx-1 small"></i> Dark Matter</h4><span class="text-muted small">Yield: 10 -> 0.70</span></div>
+                            </div>
+                            <div class="bm-card-body">
+                                <form action="/black-market/synthesize/crystals" method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                                    <div class="form-group mb-3">
+                                        <label class="text-muted small mb-1">Amount to Synthesize</label>
+                                        <input type="text" id="syn-crystals-display" class="form-control bg-dark text-light border-secondary" placeholder="0" required>
+                                        <input type="hidden" name="amount" id="syn-crystals-hidden">
+                                    </div>
+                                    <div class="bg-dark p-3 rounded mb-3 border border-secondary" style="font-size: 0.9rem;">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Base Yield:</span>
+                                            <span id="syn-crystals-base">0.0000 DM</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="text-muted">Synthesis Loss (30%):</span>
+                                            <span id="syn-crystals-fee" class="text-danger">0.0000 DM</span>
+                                        </div>
+                                        <hr class="my-2 border-secondary">
+                                        <div class="d-flex justify-content-between fw-bold">
+                                            <span class="text-light">Final Output:</span>
+                                            <span id="syn-crystals-receive" style="color: #d8b4fe;">0.0000 DM</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn w-full py-2" style="background: #6b21a8; color: white;">INITIATE SYNTHESIS</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn-submit" style="background: #6b21a8; width: 100%;">Synthesize</button>
-            </form>
+            </div>
         </div>
+
     </div>
 </div>
 
+<script src="/js/black_market_ui.js?v=<?= time() ?>"></script>
 <script src="/js/converter.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Category Tabs Switcher (Inline Logic) ---
+        const navBtns = document.querySelectorAll('.structure-nav-btn');
+        const categories = document.querySelectorAll('.structure-category-container');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 1. Toggle Button State
+                navBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 2. Toggle Category Visibility
+                const targetId = btn.getAttribute('data-tab-target');
+                categories.forEach(cat => {
+                    if (cat.id === targetId) {
+                        cat.classList.add('active');
+                    } else {
+                        cat.classList.remove('active');
+                    }
+                });
+            });
+        });
+    });
+</script>

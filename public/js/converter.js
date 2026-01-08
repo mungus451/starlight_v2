@@ -89,9 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const afterFee = amount - fee;
         const receive = afterFee / conversionRate;
 
-        c2cryFeeEl.textContent = `${formatFloat(fee.toFixed(2))} Credits`;
-        c2cryAfterFeeEl.textContent = `${formatFloat(afterFee.toFixed(2))} Credits`;
-        c2cryReceiveEl.textContent = `${receive.toFixed(4)} 💎`;
+        if (c2cryFeeEl) c2cryFeeEl.textContent = `${formatFloat(fee.toFixed(2))} Credits`;
+        if (c2cryAfterFeeEl) c2cryAfterFeeEl.textContent = `${formatFloat(afterFee.toFixed(2))} Credits`;
+        if (c2cryReceiveEl) c2cryReceiveEl.textContent = `${receive.toFixed(4)} 💎`;
     });
 
     // --- Crystals to Credits Conversion ---
@@ -106,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const afterFee = amount - fee;
         const receive = afterFee * conversionRate;
 
-        cry2cFeeEl.textContent = `${fee.toFixed(4)} 💎`;
-        cry2cAfterFeeEl.textContent = `${afterFee.toFixed(4)} 💎`;
-        cry2cReceiveEl.textContent = `${formatFloat(receive.toFixed(2))} Credits`;
+        if (cry2cFeeEl) cry2cFeeEl.textContent = `${fee.toFixed(4)} 💎`;
+        if (cry2cAfterFeeEl) cry2cAfterFeeEl.textContent = `${afterFee.toFixed(4)} 💎`;
+        if (cry2cReceiveEl) cry2cReceiveEl.textContent = `${formatFloat(receive.toFixed(2))} Credits`;
     });
 
     // --- Matter Synthesis Logic (Desktop & Mobile) ---
