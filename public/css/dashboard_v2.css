@@ -497,6 +497,28 @@
     100% { transform: translate(-50%, -50%) rotateX(70deg) rotate(360deg); }
 }
 
+.holo-avatar-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    object-fit: cover;
+    z-index: 2;
+    opacity: 0.8;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+    border: 2px solid rgba(0, 243, 255, 0.5);
+    mix-blend-mode: hard-light; /* Makes it look holographic */
+    animation: avatar-pulse 4s ease-in-out infinite;
+}
+
+@keyframes avatar-pulse {
+    0%, 100% { opacity: 0.8; filter: brightness(1); }
+    50% { opacity: 1; filter: brightness(1.2); }
+}
+
 .holo-stats {
     flex-grow: 1;
 }

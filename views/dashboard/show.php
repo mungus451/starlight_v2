@@ -53,6 +53,13 @@ if ($threat_and_opportunity['active_war']) {
         <div class="holo-planet-container">
             <div class="holo-planet"></div>
             <div class="holo-ring"></div>
+            <?php if ($user->profile_picture_url): ?>
+                <img src="/serve/avatar/<?= htmlspecialchars($user->profile_picture_url) ?>" alt="Avatar" class="holo-avatar-overlay">
+            <?php else: ?>
+                <div class="holo-avatar-overlay d-flex align-items-center justify-content-center">
+                    <i class="fas fa-user-astronaut" style="font-size: 2.5rem; color: rgba(0, 243, 255, 0.7);"></i>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="holo-stats">
             <h2 class="holo-title glitch-text" data-text="<?= htmlspecialchars($user->characterName) ?>"><?= htmlspecialchars($user->characterName) ?></h2>
