@@ -196,34 +196,33 @@ class ViewContextService
 
     private function calculateDefcon(int $allianceId): int
     {
-        // 1. Fetch Latest Incidents
+        // 1. Fetch Latest Incidents (Returns raw array with 'seconds_ago')
         $lastBattle = $this->battleRepo->findLatestDefenseByAlliance($allianceId);
         $lastSpy = $this->spyRepo->findLatestDefenseByAlliance($allianceId);
         
         // 2. Determine Most Recent Event
-        $latestEventTime = 0;
+        $secondsSince = null;
         $isSuccess = false; // Was the hostile action successful?
         
+        // Check Battle
         if ($lastBattle) {
-            $t = strtotime($lastBattle->created_at);
-            if ($t > $latestEventTime) {
-                $latestEventTime = $t;
-                // 'victory' means Attacker won -> Successful Incident
-                $isSuccess = ($lastBattle->attack_result === 'victory');
-            }
+            $secondsSince = (int)$lastBattle['seconds_ago'];
+            // 'victory' means Attacker won -> Successful Incident
+            $isSuccess = ($lastBattle['attack_result'] === 'victory');
         }
         
+        // Check Spy (Compare recency if both exist)
         if ($lastSpy) {
-            $t = strtotime($lastSpy->created_at);
-            if ($t > $latestEventTime) {
-                $latestEventTime = $t;
+            $spySeconds = (int)$lastSpy['seconds_ago'];
+            if ($secondsSince === null || $spySeconds < $secondsSince) {
+                $secondsSince = $spySeconds;
                 // 'success' means Spy won -> Successful Incident
-                $isSuccess = ($lastSpy->operation_result === 'success');
+                $isSuccess = ($lastSpy['operation_result'] === 'success');
             }
         }
         
         // If no events ever, we are safe
-        if ($latestEventTime === 0) {
+        if ($secondsSince === null) {
             return 5;
         }
         
@@ -234,7 +233,8 @@ class ViewContextService
         
         // 4. Calculate Recovery (Time Decay)
         // 2 hours = +1 Level
-        $secondsSince = time() - $latestEventTime;
+        // Ensure secondsSince is not negative (future date safety)
+        $secondsSince = max(0, $secondsSince);
         $hoursSince = $secondsSince / 3600;
         $recoveryLevels = floor($hoursSince / 2);
         

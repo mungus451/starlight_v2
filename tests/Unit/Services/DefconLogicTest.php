@@ -70,40 +70,27 @@ class DefconLogicTest extends TestCase
     }
 
     /**
-     * Helper to create a Mock Battle Report
+     * Helper to create a Mock Battle Report Array
      */
-    private function createMockBattle(string $result, string $time)
+    private function createMockBattle(string $result, int $secondsAgo)
     {
-        return new BattleReport(
-            id: 1, attacker_id: 1, defender_id: 2,
-            created_at: $time,
-            attack_type: 'plunder',
-            attack_result: $result,
-            soldiers_sent: 100, attacker_soldiers_lost: 10, defender_guards_lost: 10,
-            credits_plundered: 1000, experience_gained: 100, war_prestige_gained: 1,
-            net_worth_stolen: 100, attacker_offense_power: 1000, defender_defense_power: 1000,
-            defender_total_guards: 1000
-        );
+        return [
+            'id' => 1,
+            'attack_result' => $result,
+            'seconds_ago' => $secondsAgo
+        ];
     }
 
     /**
-     * Helper to create a Mock Spy Report
+     * Helper to create a Mock Spy Report Array
      */
-    private function createMockSpy(string $result, string $time)
+    private function createMockSpy(string $result, int $secondsAgo)
     {
-        return new SpyReport(
-            id: 1, attacker_id: 1, defender_id: 2,
-            created_at: $time,
-            operation_result: $result,
-            spies_sent: 10, spies_lost_attacker: 0, sentries_lost_defender: 0,
-            defender_total_sentries: 100,
-            credits_seen: 1000, gemstones_seen: 0, workers_seen: 0,
-            soldiers_seen: 0, guards_seen: 0, spies_seen: 0, sentries_seen: 0,
-            fortification_level_seen: 0, offense_upgrade_level_seen: 0,
-            defense_upgrade_level_seen: 0, spy_upgrade_level_seen: 0,
-            economy_upgrade_level_seen: 0, population_level_seen: 0,
-            armory_level_seen: 0
-        );
+        return [
+            'id' => 1,
+            'operation_result' => $result,
+            'seconds_ago' => $secondsAgo
+        ];
     }
 
     public function testDefcon5WhenNoIncidents()
@@ -117,8 +104,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon1SuccessfulBattleWithin2Hours()
     {
-        $time = date('Y-m-d H:i:s', time() - (1 * 3600)); // 1 hour ago
-        $battle = $this->createMockBattle('victory', $time);
+        $battle = $this->createMockBattle('victory', 3600); // 1 hour ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -128,8 +114,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon2SuccessfulBattleWithin4Hours()
     {
-        $time = date('Y-m-d H:i:s', time() - (3 * 3600)); // 3 hours ago
-        $battle = $this->createMockBattle('victory', $time);
+        $battle = $this->createMockBattle('victory', 3 * 3600); // 3 hours ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -139,8 +124,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon3FailedBattleWithin2Hours()
     {
-        $time = date('Y-m-d H:i:s', time() - (1 * 3600)); // 1 hour ago
-        $battle = $this->createMockBattle('defeat', $time); // Failure
+        $battle = $this->createMockBattle('defeat', 3600); // Failure, 1 hour ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -150,8 +134,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon4FailedBattleWithin4Hours()
     {
-        $time = date('Y-m-d H:i:s', time() - (3 * 3600)); // 3 hours ago
-        $battle = $this->createMockBattle('defeat', $time);
+        $battle = $this->createMockBattle('defeat', 3 * 3600); // 3 hours ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -161,8 +144,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon5After8HoursFromSuccessfulBattle()
     {
-        $time = date('Y-m-d H:i:s', time() - (9 * 3600)); // 9 hours ago
-        $battle = $this->createMockBattle('victory', $time);
+        $battle = $this->createMockBattle('victory', 9 * 3600); // 9 hours ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -173,12 +155,10 @@ class DefconLogicTest extends TestCase
     public function testDefcon3WhenSuccessfulBattleIsOldAndFailedSpyIsNew()
     {
         // Successful battle 10 hours ago (Decayed to 5)
-        $battleTime = date('Y-m-d H:i:s', time() - (10 * 3600));
-        $battle = $this->createMockBattle('victory', $battleTime);
+        $battle = $this->createMockBattle('victory', 10 * 3600);
 
         // Failed spy 30 mins ago (Base 3)
-        $spyTime = date('Y-m-d H:i:s', time() - (1800));
-        $spy = $this->createMockSpy('failure', $spyTime);
+        $spy = $this->createMockSpy('failure', 1800);
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($spy);
@@ -189,8 +169,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon4After6HoursFromSuccessfulBattle()
     {
-        $time = date('Y-m-d H:i:s', time() - (7 * 3600)); // 7 hours ago
-        $battle = $this->createMockBattle('victory', $time);
+        $battle = $this->createMockBattle('victory', 7 * 3600); // 7 hours ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -200,8 +179,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon5After4HoursFromFailedBattle()
     {
-        $time = date('Y-m-d H:i:s', time() - (5 * 3600)); // 5 hours ago
-        $battle = $this->createMockBattle('defeat', $time);
+        $battle = $this->createMockBattle('defeat', 5 * 3600); // 5 hours ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($battle);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
@@ -211,8 +189,7 @@ class DefconLogicTest extends TestCase
 
     public function testDefcon1WhenSuccessfulSpyIsNew()
     {
-        $time = date('Y-m-d H:i:s', time() - (1 * 3600)); // 1 hour ago
-        $spy = $this->createMockSpy('success', $time);
+        $spy = $this->createMockSpy('success', 3600); // 1 hour ago
 
         $this->battleRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn(null);
         $this->spyRepo->shouldReceive('findLatestDefenseByAlliance')->andReturn($spy);

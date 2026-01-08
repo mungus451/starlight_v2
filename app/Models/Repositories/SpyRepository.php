@@ -119,10 +119,13 @@ class SpyRepository
         return $data ? $this->hydrate($data) : null;
     }
 
-    public function findLatestDefenseByAlliance(int $allianceId): ?SpyReport
+    public function findLatestDefenseByAlliance(int $allianceId): ?array
     {
         $sql = "
-            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            SELECT r.*, 
+                   d.character_name as defender_name, 
+                   a.character_name as attacker_name,
+                   TIMESTAMPDIFF(SECOND, r.created_at, NOW()) as seconds_ago
             FROM spy_reports r
             JOIN users d ON r.defender_id = d.id
             JOIN users a ON r.attacker_id = a.id
@@ -133,9 +136,8 @@ class SpyRepository
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$allianceId]);
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $data ? $this->hydrate($data) : null;
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     private function hydrate(array $data): SpyReport
