@@ -366,7 +366,7 @@
     <?php endif; ?>
 </div>
 
-<script src="/js/utils.js"></script>
+<script src="/js/utils.js?v=<?= time() ?>"></script>
 
 <?php if ($this->session->get('is_mobile') && $isLoggedIn): ?>
     
