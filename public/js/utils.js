@@ -62,5 +62,55 @@ window.StarlightUtils = {
                  e.target.setSelectionRange(newCursorPosition, newCursorPosition);
             }
         });
+    },
+
+    /**
+     * Initializes tab navigation with localStorage persistence.
+     * @param {string} storageKey Unique key for localStorage.
+     * @param {string} defaultTabId Default tab ID to show if no history.
+     */
+    setupTabs: function(storageKey, defaultTabId) {
+        const navBtns = document.querySelectorAll('.structure-nav-btn');
+        const categories = document.querySelectorAll('.structure-category-container');
+        
+        if (navBtns.length === 0) return;
+
+        const activateTab = (targetId) => {
+            // Update Buttons
+            navBtns.forEach(btn => {
+                if (btn.getAttribute('data-tab-target') === targetId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update Content
+            categories.forEach(cat => {
+                if (cat.id === targetId) {
+                    cat.classList.add('active');
+                } else {
+                    cat.classList.remove('active');
+                }
+            });
+
+            // Save State
+            localStorage.setItem(storageKey, targetId);
+        };
+
+        // Initialize from storage or default
+        const savedTab = localStorage.getItem(storageKey);
+        if (savedTab && document.getElementById(savedTab)) {
+            activateTab(savedTab);
+        } else {
+            activateTab(defaultTabId);
+        }
+
+        // Add Listeners
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                activateTab(btn.getAttribute('data-tab-target'));
+            });
+        });
     }
 };

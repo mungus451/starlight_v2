@@ -90,7 +90,7 @@ $tickerItems = [
                             Possible contents: <span class="text-accent">Massive Credits</span>, <span class="text-purple">Dark Matter</span>, or <span class="text-info">Elite Mercenaries</span>.
                         </p>
                         <div class="d-flex align-items-center justify-content-between mt-auto">
-                            <span class="text-warning font-monospace" style="font-size: 1.2rem;">
+                            <span class="text-neon-blue font-monospace" style="font-size: 1.2rem;">
                                 COST: <?= number_format($costs['void_container']) ?> 💎
                             </span>
                             
@@ -146,7 +146,7 @@ $tickerItems = [
                         <div class="bm-card-body">
                             <p class="text-muted">Blocks all incoming spy attempts for <span class="text-accent">4 hours</span>.</p>
                             <div class="d-flex justify-content-between align-items-center mt-auto mb-2">
-                                <span class="text-warning"><?= number_format($costs['radar_jamming']) ?> 💎</span>
+                                <span class="text-neon-blue"><?= number_format($costs['radar_jamming']) ?> 💎</span>
                             </div>
                             <form action="/black-market/buy/radar_jamming" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
@@ -173,7 +173,7 @@ $tickerItems = [
                                 </div>
                             <?php else: ?>
                                 <div class="mt-auto">
-                                    <span class="text-warning d-block mb-2 text-center"><?= number_format($costs['safehouse']) ?> 💎</span>
+                                    <span class="text-neon-blue d-block mb-2 text-center"><?= number_format($costs['safehouse']) ?> 💎</span>
                                     <form action="/black-market/buy/safehouse" method="POST">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                         <div class="btn-decrypt-container" style="height: 40px; margin-top: 0;">
@@ -205,7 +205,7 @@ $tickerItems = [
                                     <button class="btn btn-sm btn-outline-danger w-full">Terminate</button>
                                 </form>
                             <?php else: ?>
-                                <span class="text-warning d-block mb-2 mt-auto text-center"><?= number_format($costs['high_risk_buff']) ?> 💎</span>
+                                <span class="text-neon-blue d-block mb-2 mt-auto text-center"><?= number_format($costs['high_risk_buff']) ?> 💎</span>
                                 <form action="/black-market/buy/high_risk" method="POST">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                     <button class="btn btn-danger w-full">Initiate</button>
@@ -224,7 +224,7 @@ $tickerItems = [
                         </div>
                         <div class="bm-card-body">
                             <p class="text-muted">Bribe officials for safehouse location. 1 attack permitted.</p>
-                            <span class="text-warning d-block mb-2 mt-auto text-center"><?= number_format($costs['safehouse_cracker']) ?> 💎</span>
+                            <span class="text-neon-blue d-block mb-2 mt-auto text-center"><?= number_format($costs['safehouse_cracker']) ?> 💎</span>
                             <form action="/black-market/buy/safehouse_cracker" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <button class="btn btn-outline-danger w-full">Bribe Official</button>
@@ -247,7 +247,7 @@ $tickerItems = [
                         </div>
                         <div class="bm-card-body">
                             <p class="text-muted">Wipe neural pathways. Reallocate all stats.</p>
-                            <span class="text-warning d-block mb-2 mt-auto text-center"><?= number_format($costs['stat_respec']) ?> 💎</span>
+                            <span class="text-neon-blue d-block mb-2 mt-auto text-center"><?= number_format($costs['stat_respec']) ?> 💎</span>
                             <form action="/black-market/buy/respec" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <button class="btn btn-outline-info w-full">Reset Stats</button>
@@ -265,7 +265,7 @@ $tickerItems = [
                         </div>
                         <div class="bm-card-body">
                             <p class="text-muted">Restore <span class="text-success">50 Attack Turns</span> instantly.</p>
-                            <span class="text-warning d-block mb-2 mt-auto text-center"><?= number_format($costs['turn_refill']) ?> 💎</span>
+                            <span class="text-neon-blue d-block mb-2 mt-auto text-center"><?= number_format($costs['turn_refill']) ?> 💎</span>
                             <form action="/black-market/buy/refill" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <button class="btn btn-outline-info w-full">Inject</button>
@@ -283,7 +283,7 @@ $tickerItems = [
                         </div>
                         <div class="bm-card-body">
                             <p class="text-muted">Import <span class="text-info">50,000 Citizens</span>.</p>
-                            <span class="text-warning d-block mb-2 mt-auto text-center"><?= number_format($costs['citizen_package']) ?> 💎</span>
+                            <span class="text-neon-blue d-block mb-2 mt-auto text-center"><?= number_format($costs['citizen_package']) ?> 💎</span>
                             <form action="/black-market/buy/citizens" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <button class="btn btn-outline-info w-full">Process Import</button>
@@ -341,7 +341,7 @@ $tickerItems = [
                 <div class="bm-card">
                     <div class="bm-card-content">
                         <div class="bm-card-header">
-                            <div class="card-icon"><i class="fas fa-coins"></i></div>
+                            <div class="card-icon text-warning"><i class="fas fa-coins"></i></div>
                             <div><h4 style="margin:0;">Laundering</h4><span class="text-muted small">Untraceable Chips</span></div>
                         </div>
                         <div class="bm-card-body">
@@ -382,7 +382,7 @@ $tickerItems = [
                                                 <?php foreach ($bounties as $b): ?>
                                                     <tr>
                                                         <td><strong class="text-light"><?= htmlspecialchars($b['target_name']) ?></strong></td>
-                                                        <td class="text-end text-warning"><?= number_format($b['amount']) ?> 💎</td>
+                                                        <td class="text-end text-neon-blue"><?= number_format($b['amount']) ?> 💎</td>
                                                     </tr>
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
@@ -430,18 +430,6 @@ $tickerItems = [
         if (bountyDisplay && bountyHidden) StarlightUtils.setupInputMask(bountyDisplay, bountyHidden);
 
         // --- Category Tabs Switcher ---
-        const navBtns = document.querySelectorAll('.structure-nav-btn');
-        const categories = document.querySelectorAll('.structure-category-container');
-
-        navBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                navBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const targetId = btn.getAttribute('data-tab-target');
-                categories.forEach(cat => {
-                    cat.classList.toggle('active', cat.id === targetId);
-                });
-            });
-        });
+        StarlightUtils.setupTabs('bm_actions_active_tab', 'cat-specops');
     });
 </script>
