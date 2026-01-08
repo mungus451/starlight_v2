@@ -17,8 +17,9 @@
     <!-- Operation Starlight CSS -->
     <link rel="stylesheet" href="/css/starlight.css?v=<?= time() ?>">
     <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/alliance_uplink.css?v=<?= time() ?>">
 </head>
-<body>
+<body class="<?= isset($allianceContext) ? 'has-uplink' : '' ?>">
 
 <?php if ($this->session->get('is_mobile')): ?>
 
@@ -213,6 +214,95 @@
 <?php endif; ?>
 
 <div class="advisor-layout-grid">
+
+    <?php if (isset($allianceContext) && !$this->session->get('is_mobile')): ?>
+        <aside class="alliance-uplink" id="alliance-uplink-panel">
+            <button class="uplink-toggle-btn" id="uplink-toggle" title="Toggle Sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <!-- Header -->
+            <div class="uplink-header">
+                <div class="uplink-content-wrapper">
+                    <span class="uplink-status">SECURE CHANNEL // ESTABLISHED</span>
+                <?php if ($allianceContext['avatar']): ?>
+                    <img src="/serve/alliance_avatar/<?= htmlspecialchars($allianceContext['avatar']) ?>" class="uplink-avatar">
+                <?php else: ?>
+                    <div class="uplink-avatar" style="background: #000; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">
+                        <i class="fas fa-users fa-2x" style="color: var(--uplink-dim);"></i>
+                    </div>
+                <?php endif; ?>
+                <h3 class="uplink-name"><?= htmlspecialchars($allianceContext['name']) ?></h3>
+                <div class="uplink-treasury">
+                    <i class="fas fa-university"></i> <?= number_format($allianceContext['treasury']) ?> Cr
+                </div>
+            </div>
+
+            <!-- War Status (Conditional) -->
+            <?php if ($allianceContext['war']): ?>
+                <div class="uplink-module">
+                    <div class="module-title">WAR STATUS: ACTIVE</div>
+                    <div class="war-status-box">
+                        <span class="text-muted" style="font-size:0.7rem;">ENGAGEMENT VS</span>
+                        <span class="war-opponent"><?= htmlspecialchars($allianceContext['war']['opponent']) ?></span>
+                        <div class="war-score-bar">
+                            <div class="war-score-fill" style="width: <?= $allianceContext['war']['progress'] ?>%;"></div>
+                        </div>
+                        <div class="war-score-text">
+                            <?= number_format($allianceContext['war']['score']) ?> / <?= number_format($allianceContext['war']['goal']) ?> GOAL
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Faction Objective -->
+            <div class="uplink-module">
+                <div class="module-title">FACTION OBJECTIVE</div>
+                <div class="objective-box">
+                    <span class="objective-name">Operation: Void Cull</span>
+                    <div class="objective-progress">
+                        <div class="objective-fill" style="width: 72%;"></div>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--uplink-dim); display: flex; justify-content: space-between;">
+                        <span>Eliminate Units</span>
+                        <span>72%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Ops -->
+            <div class="uplink-module">
+                <div class="module-title">ACTIVE OPERATIONS</div>
+                <ul class="ops-list">
+                    <li>Treaty: Solar Fed (4d rem)</li>
+                    <li>Ritual: Void Shift (2h 15m)</li>
+                    <li>Tax Collection (Pending)</li>
+                </ul>
+            </div>
+
+            <!-- Encrypted Feed -->
+            <div class="uplink-module">
+                <div class="module-title">ENCRYPTED FEED</div>
+                <div class="uplink-feed">
+                    <?php foreach ($allianceContext['feed'] as $log): ?>
+                        <div class="feed-item">
+                            <?= htmlspecialchars($log) ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="uplink-module" style="border-bottom: none;">
+                <div class="module-title">QUICK LOGISTICS</div>
+                <div class="uplink-actions">
+                    <button class="uplink-btn" onclick="location.href='/alliance/bank'">Deposit</button>
+                    <button class="uplink-btn alert" onclick="alert('Distress Signal Broadcasted to all officers!')">SOS Signal</button>
+                </div>
+            </div>
+        </aside>
+    <?php endif; ?>
+
     <div class="advisor-main-content">
         <?php 
         if (isset($layoutMode) && $layoutMode === 'full'): 
@@ -379,6 +469,7 @@
     <!-- Desktop-Specific JS -->
     <script src="/js/notifications.js"></script>
     <script src="/js/advisor.js?v=<?= time(); ?>"></script>
+    <script src="/js/alliance_uplink.js?v=<?= time(); ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
 <?php endif; ?>

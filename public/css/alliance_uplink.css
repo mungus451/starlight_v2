@@ -1,0 +1,371 @@
+/* 
+ * alliance_uplink.css 
+ * Starlight Dominion - Alliance Uplink (Left Sidebar)
+ * Theme: Starlight Advisor Match (Dark Blue/Teal/Glass)
+ */
+
+:root {
+    --uplink-bg: rgba(12, 16, 30, 0.95);
+    --uplink-border: rgba(45, 209, 209, 0.2);
+    --uplink-text: #eff1ff;
+    --uplink-muted: #a8afd4;
+    --uplink-accent: #2dd1d1; /* Teal */
+    --uplink-accent-rgb: 45, 209, 209;
+    --uplink-alert: #e53e3e;
+    --uplink-width: 280px;
+    --uplink-collapsed-width: 50px;
+}
+
+/* --- Main Panel --- */
+.alliance-uplink {
+    position: fixed;
+    top: 60px; /* Below Navbar */
+    left: 0;
+    width: var(--uplink-width);
+    height: calc(100vh - 60px);
+    background: var(--uplink-bg);
+    border-right: 1px solid var(--uplink-border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    z-index: 900;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll when collapsing */
+    scrollbar-width: thin;
+    scrollbar-color: var(--uplink-border) var(--uplink-bg);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.alliance-uplink.collapsed {
+    width: var(--uplink-collapsed-width);
+}
+
+.alliance-uplink::-webkit-scrollbar {
+    width: 6px;
+}
+.alliance-uplink::-webkit-scrollbar-thumb {
+    background: var(--uplink-border);
+    border-radius: 3px;
+}
+
+/* --- Header --- */
+.uplink-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid var(--uplink-border);
+    background: radial-gradient(circle at top, rgba(45, 209, 209, 0.1), transparent 70%);
+    text-align: center;
+    position: relative;
+    min-height: 180px; /* Ensure height for absolute button */
+    transition: padding 0.3s;
+}
+
+.alliance-uplink.collapsed .uplink-header {
+    padding: 1rem 0;
+    background: none;
+    min-height: auto;
+}
+
+/* Toggle Button (Middle-Right Handle) */
+.uplink-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: var(--uplink-bg);
+    border: 1px solid var(--uplink-border);
+    border-right: none;
+    color: var(--uplink-accent);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 15px 4px;
+    border-radius: 8px 0 0 8px;
+    transition: all 0.3s;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.uplink-toggle-btn:hover {
+    color: #fff;
+    background: rgba(var(--uplink-accent-rgb), 0.2);
+    border-color: var(--uplink-accent);
+}
+
+.alliance-uplink.collapsed .uplink-toggle-btn {
+    right: 0;
+    transform: translateY(-50%) rotate(180deg);
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+    border-right: 1px solid var(--uplink-border);
+}
+
+/* Content Wrapper (Hides when collapsed) */
+.uplink-content-wrapper {
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.alliance-uplink.collapsed .uplink-content-wrapper,
+.alliance-uplink.collapsed .uplink-module {
+    opacity: 0;
+    pointer-events: none;
+    display: none; /* remove from flow */
+}
+
+/* Collapsed Icon Mode (Optional: Show small icons when collapsed) */
+/* We could add a separate ".collapsed-only-icon" container if we wanted 
+   persistent icons in collapsed state, but for now we just collapse fully. */
+
+.uplink-status {
+    font-size: 0.7rem;
+    color: var(--uplink-accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.8;
+}
+
+.uplink-avatar {
+    width: 70px;
+    height: 70px;
+    border: 2px solid var(--uplink-accent);
+    border-radius: 50%;
+    margin-bottom: 0.8rem;
+    box-shadow: 0 0 15px rgba(var(--uplink-accent-rgb), 0.3);
+    object-fit: cover;
+}
+
+.uplink-name {
+    font-size: 1.1rem;
+    color: var(--uplink-text);
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.uplink-treasury {
+    font-size: 0.85rem;
+    color: var(--uplink-muted);
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* --- Modules --- */
+.uplink-module {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: opacity 0.2s;
+}
+
+.module-title {
+    font-size: 0.75rem;
+    color: var(--uplink-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.module-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 4px;
+    background: var(--uplink-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--uplink-accent);
+}
+
+/* --- Faction Objective --- */
+.objective-box {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.objective-name {
+    font-size: 0.9rem;
+    color: var(--uplink-text);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.objective-progress {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    width: 100%;
+    margin-bottom: 8px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.objective-fill {
+    height: 100%;
+    background: var(--uplink-accent);
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(var(--uplink-accent-rgb), 0.4);
+}
+
+/* --- Active Ops --- */
+.ops-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.ops-list li {
+    margin-bottom: 8px;
+    color: var(--uplink-text);
+    padding-left: 12px;
+    position: relative;
+}
+
+.ops-list li::before {
+    content: '•';
+    color: var(--uplink-accent);
+    position: absolute;
+    left: 0;
+}
+
+/* --- War Status --- */
+.war-status-box {
+    text-align: center;
+    background: rgba(229, 62, 62, 0.1); /* Red tint */
+    border: 1px solid rgba(229, 62, 62, 0.3);
+    padding: 0.75rem;
+    border-radius: 8px;
+}
+
+.war-opponent {
+    color: #fff;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.war-score-bar {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.war-score-fill {
+    height: 100%;
+    background: var(--uplink-alert);
+    width: 0%;
+    transition: width 0.5s;
+}
+
+.war-score-text {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Encrypted Feed --- */
+.uplink-feed {
+    font-size: 0.8rem;
+    color: var(--uplink-muted);
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.feed-item {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feed-item:last-child {
+    border-bottom: none;
+}
+
+/* --- Quick Actions --- */
+.uplink-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.uplink-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--uplink-text);
+    font-family: inherit;
+    font-size: 0.75rem;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.uplink-btn:hover {
+    background: rgba(45, 209, 209, 0.15);
+    border-color: var(--uplink-accent);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.uplink-btn.alert {
+    border-color: rgba(229, 62, 62, 0.3);
+    color: #ff8888;
+}
+
+.uplink-btn.alert:hover {
+    background: rgba(229, 62, 62, 0.2);
+    border-color: var(--uplink-alert);
+    color: #fff;
+}
+
+/* Layout Adjustment for Main Content */
+@media (min-width: 992px) {
+    /* Default Open State */
+    body.has-uplink .advisor-layout-grid {
+        grid-template-columns: var(--uplink-width) 1fr 280px; /* Uplink | Main | Advisor */
+        gap: 0;
+        transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Collapsed State via Body Class */
+    body.has-uplink.uplink-collapsed .advisor-layout-grid {
+        grid-template-columns: var(--uplink-collapsed-width) 1fr 280px;
+    }
+    
+    body.has-uplink .advisor-panel {
+        grid-column: 3;
+    }
+    
+    body.has-uplink .advisor-main-content {
+        grid-column: 2;
+    }
+    
+    /* If advisor is hidden/missing */
+    body.has-uplink.no-advisor .advisor-layout-grid {
+        grid-template-columns: var(--uplink-width) 1fr;
+    }
+
+    body.has-uplink.no-advisor.uplink-collapsed .advisor-layout-grid {
+        grid-template-columns: var(--uplink-collapsed-width) 1fr;
+    }
+}

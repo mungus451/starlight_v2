@@ -489,7 +489,10 @@ ViewContextService::class => function (ContainerInterface $c) {
         $c->get(DashboardService::class),
         $c->get(\App\Presenters\DashboardPresenter::class),
         $c->get(\App\Models\Services\RealmNewsService::class),
-        $c->get(\App\Models\Services\BattleService::class)
+        $c->get(\App\Models\Services\BattleService::class),
+        $c->get(UserRepository::class),
+        $c->get(AllianceRepository::class),
+        $c->get(WarRepository::class)
     );
 }
 ]);

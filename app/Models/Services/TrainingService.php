@@ -52,11 +52,71 @@ class TrainingService
         $resources = $this->resourceRepo->findByUserId($userId);
         // Use dynamic costs
         $costs = $this->calculateDiscountedCosts($userId);
+        
+        // Enrich with UI data (Stats, Descriptions)
+        $units = $this->enrichUnitData($costs);
 
         return [
             'resources' => $resources,
-            'costs' => $costs
+            'costs' => $costs, // Kept for backward compat if needed, but 'units' is preferred
+            'units' => $units
         ];
+    }
+
+    private function enrichUnitData(array $costs): array
+    {
+        $info = [
+            'workers' => [
+                'name' => 'Worker',
+                'role' => 'Economy',
+                'atk' => 0, 
+                'def' => 0,
+                'desc' => 'The backbone of your economy. Each worker generates passive credit income every turn.',
+                'icon' => 'fas fa-hammer'
+            ],
+            'soldiers' => [
+                'name' => 'Soldier',
+                'role' => 'Offense',
+                'atk' => $this->config->get('game_balance.attack.power_per_soldier', 1), 
+                'def' => 0, 
+                'desc' => 'Frontline troops trained for offensive operations. High casualty rate, high impact.',
+                'icon' => 'fas fa-crosshairs'
+            ],
+            'guards' => [
+                'name' => 'Guard',
+                'role' => 'Defense',
+                'atk' => 0, 
+                'def' => $this->config->get('game_balance.attack.power_per_guard', 1),
+                'desc' => 'Defensive specialists trained to protect your territory and resources from invasion.',
+                'icon' => 'fas fa-shield-alt'
+            ],
+            'spies' => [
+                'name' => 'Spy',
+                'role' => 'Intel',
+                'atk' => $this->config->get('game_balance.spy.base_power_per_spy', 1), 
+                'def' => 0,
+                'desc' => 'Covert operatives used to infiltrate enemy empires, gather intel, and sabotage systems.',
+                'icon' => 'fas fa-user-secret'
+            ],
+            'sentries' => [
+                'name' => 'Sentry',
+                'role' => 'Intel',
+                'atk' => 0, 
+                'def' => $this->config->get('game_balance.spy.base_power_per_sentry', 1),
+                'desc' => 'Counter-espionage units specialized in detecting and neutralizing enemy infiltrators.',
+                'icon' => 'fas fa-eye'
+            ],
+        ];
+
+        $enriched = [];
+        foreach ($costs as $key => $cost) {
+            // Skip non-unit keys if any exist in the array
+            if (!isset($info[$key])) continue;
+
+            $enriched[$key] = array_merge($cost, $info[$key]);
+        }
+        
+        return $enriched;
     }
 
     private function calculateDiscountedCosts(int $userId): array
