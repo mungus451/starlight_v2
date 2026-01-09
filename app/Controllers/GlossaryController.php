@@ -41,6 +41,45 @@ class GlossaryController extends BaseController
         $edicts = $this->config->get('edicts');
         $blackMarket = $this->config->get('black_market');
         
+        // 1.5 Define Command Directives
+        $directives = [
+            'industry' => [
+                'name' => 'Industrial Revolution',
+                'description' => 'A strategic focus on expanding the alliance\'s physical infrastructure.',
+                'goal' => '+10% Total Structure Levels',
+                'icon' => 'fa-industry',
+                'badge' => "Architect's Seal"
+            ],
+            'military' => [
+                'name' => 'Total Mobilization',
+                'description' => 'A call to arms to bolster the frontline offensive and defensive capabilities.',
+                'goal' => '+10% Total Soldiers & Guards',
+                'icon' => 'fa-fighter-jet',
+                'badge' => "Warlord's Crest"
+            ],
+            'intel' => [
+                'name' => 'Shadow Protocol',
+                'description' => 'A coordination effort to expand the alliance\'s reach through espionage and counter-intelligence.',
+                'goal' => '+10% Total Spies & Sentries',
+                'icon' => 'fa-user-secret',
+                'badge' => "The All-Seeing Eye"
+            ],
+            'treasury' => [
+                'name' => 'Treasury Tithe',
+                'description' => 'A fiscal mandate to strengthen the alliance war chest for major operations.',
+                'goal' => '+10% Total Bank Credits',
+                'icon' => 'fa-coins',
+                'badge' => "Golden Handshake"
+            ],
+            'recruit' => [
+                'name' => 'Mass Recruitment',
+                'description' => 'An initiative to expand the alliance\'s influence by bringing in new members.',
+                'goal' => '+1 Member',
+                'icon' => 'fa-users',
+                'badge' => "Legion Banner"
+            ]
+        ];
+        
         // 2. Define Resources (Manual definition as they aren't strictly config-based in the same way)
         $resources = [
             'credits' => [
@@ -95,7 +134,8 @@ class GlossaryController extends BaseController
             'armory' => $armory,
             'resources' => $resources,
             'edicts' => $edicts,
-            'blackMarket' => $blackMarket
+            'blackMarket' => $blackMarket,
+            'directives' => $directives
         ]);
     }
 }

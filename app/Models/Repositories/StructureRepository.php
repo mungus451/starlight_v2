@@ -97,6 +97,42 @@ class StructureRepository
 
 
     /**
+     * Sums the levels of ALL structures for all members of an alliance.
+     *
+     * @param int $allianceId
+     * @return int
+     */
+    public function getAggregateStructureLevelForAlliance(int $allianceId): int
+    {
+        // Sum all columns that end in '_level'
+        $columns = [
+            'fortification_level', 'offense_upgrade_level', 'defense_upgrade_level',
+            'spy_upgrade_level', 'economy_upgrade_level', 'population_level',
+            'armory_level', 'accounting_firm_level', 'quantum_research_lab_level',
+            'nanite_forge_level', 'dark_matter_siphon_level', 'planetary_shield_level',
+            'naquadah_mining_complex_level', 'protoform_vat_level', 'weapon_vault_level',
+            'embassy_level', 'fusion_plant_level', 'orbital_trade_port_level',
+            'banking_datacenter_level', 'cloning_vats_level', 'war_college_level',
+            'mercenary_outpost_level', 'phase_bunker_level', 'ion_cannon_network_level',
+            'neural_uplink_level', 'subspace_scanner_level'
+        ];
+
+        $sumExpr = implode(' + ', array_map(fn($c) => "s.$c", $columns));
+
+        $sql = "
+            SELECT SUM($sumExpr) as total
+            FROM user_structures s
+            JOIN users u ON s.user_id = u.id
+            WHERE u.alliance_id = ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * Helper method to convert a database row (array) into a UserStructure entity.
      *
      * @param array $data

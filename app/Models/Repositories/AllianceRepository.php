@@ -279,23 +279,43 @@ class AllianceRepository
         return $stmt->execute([$netWorth, $allianceId]);
     }
 
+    public function updateDirective(int $allianceId, string $type, int $target, int $startValue): bool
+    {
+        $sql = "
+            UPDATE alliances 
+            SET directive_type = ?, 
+                directive_target = ?, 
+                directive_start_value = ?, 
+                directive_started_at = NOW()
+            WHERE id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$type, $target, $startValue, $allianceId]);
+    }
+
     /**
      * Helper method to convert a database row into an Alliance entity.
      */
-    private function hydrate(array $data): Alliance
+    private function hydrate(array $row): Alliance
     {
         return new Alliance(
-            id: (int)$data['id'],
-            name: $data['name'],
-            tag: $data['tag'],
-            description: $data['description'] ?? null,
-            profile_picture_url: $data['profile_picture_url'] ?? null,
-            is_joinable: (bool)$data['is_joinable'],
-            leader_id: (int)$data['leader_id'],
-            net_worth: (int)$data['net_worth'],
-            bank_credits: (float)$data['bank_credits'],
-            last_compound_at: $data['last_compound_at'] ?? null,
-            created_at: $data['created_at']
+            id: (int)$row['id'],
+            name: $row['name'],
+            tag: $row['tag'],
+            description: $row['description'],
+            profile_picture_url: $row['profile_picture_url'],
+            is_joinable: (bool)$row['is_joinable'],
+            leader_id: (int)$row['leader_id'],
+            net_worth: (int)$row['net_worth'],
+            bank_credits: (float)$row['bank_credits'],
+            last_compound_at: $row['last_compound_at'],
+            created_at: $row['created_at'],
+            directive_type: $row['directive_type'] ?? null,
+            directive_target: (int)($row['directive_target'] ?? 0),
+            directive_start_value: (int)($row['directive_start_value'] ?? 0),
+            directive_started_at: $row['directive_started_at'] ?? null,
+            completed_directives: json_decode($row['completed_directives'] ?? '{}', true) ?? []
         );
     }
 }

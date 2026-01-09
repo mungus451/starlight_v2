@@ -481,6 +481,20 @@ return new Logger($logPath, false);
     );
 },
 
+// Alliance Controllers
+\App\Controllers\AllianceDirectiveController::class => function (ContainerInterface $c) {
+    return new \App\Controllers\AllianceDirectiveController(
+        $c->get(Session::class),
+        $c->get(CSRFService::class),
+        $c->get(Validator::class),
+        $c->get(ViewContextService::class),
+        $c->get(AllianceService::class),
+        $c->get(AllianceRoleRepository::class),
+        $c->get(UserRepository::class),
+        $c->get(AllianceRepository::class)
+    );
+},
+
 // View Context Service - Provides global data to the main layout
 ViewContextService::class => function (ContainerInterface $c) {
     return new ViewContextService(
@@ -497,7 +511,9 @@ ViewContextService::class => function (ContainerInterface $c) {
         $c->get(TreatyRepository::class),
         $c->get(WarBattleLogRepository::class),
         $c->get(BattleRepository::class),
-        $c->get(SpyRepository::class)
+        $c->get(SpyRepository::class),
+        $c->get(ResourceRepository::class),
+        $c->get(StructureRepository::class)
     );
 }
 ]);

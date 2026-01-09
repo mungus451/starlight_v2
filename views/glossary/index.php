@@ -11,6 +11,7 @@
     <a class="tab-link" data-tab="units">Units</a>
     <a class="tab-link" data-tab="armory">Armory</a>
     <a class="tab-link" data-tab="edicts">Edicts</a>
+    <a class="tab-link" data-tab="directives">Directives</a>
     <a class="tab-link" data-tab="black-market">Black Market</a>
     <a class="tab-link" data-tab="resources">Resources</a>
 </div>
@@ -284,6 +285,53 @@
                 </div>
             </div>
         <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- ======================= DIRECTIVES TAB ======================= -->
+<div id="directives" class="tab-content">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="text-neon-blue"><i class="fas fa-satellite-dish"></i> Alliance Command Directives</h3>
+            <p class="text-muted">Directives are strategic mandates set by Alliance Leaders to coordinate members toward a unified objective. Completing directives earns the alliance permanent Merit Badges.</p>
+        </div>
+    </div>
+
+    <div class="structures-grid">
+        <?php foreach ($directives as $key => $dir): ?>
+            <div class="structure-card">
+                <div class="card-header-main">
+                    <div class="card-icon">
+                        <i class="fas <?= $dir['icon'] ?> text-neon-blue"></i>
+                    </div>
+                    <div class="card-title-group">
+                        <h3 class="card-title"><?= htmlspecialchars($dir['name']) ?></h3>
+                        <span class="card-category text-muted">Command Directive</span>
+                    </div>
+                </div>
+
+                <div class="card-body-main">
+                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                        <?= htmlspecialchars($dir['description']) ?>
+                    </p>
+
+                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                        <div>
+                            <span class="text-muted">Primary Goal:</span><br>
+                            <span class="text-info"><?= $dir['goal'] ?></span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Merit Badge:</span><br>
+                            <span class="text-warning"><?= $dir['badge'] ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-award"></i> <strong>Merit Badges:</strong> Badges upgrade visually as your alliance completes more directives of that type (Bronze &rarr; Silver &rarr; Gold &rarr; Platinum &rarr; Diamond &rarr; Starlight).
     </div>
 </div>
 

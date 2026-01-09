@@ -299,8 +299,14 @@ return $npcs;
 /**
 * Helper method to convert a database row (array) into a User entity.
 */
-private function hydrate(array $data): User
-{
+    public function countAllianceMembers(int $allianceId): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM users WHERE alliance_id = ?");
+        $stmt->execute([$allianceId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    private function hydrate(array $data): User{
 return new User(
 id: (int)$data['id'],
 email: $data['email'],

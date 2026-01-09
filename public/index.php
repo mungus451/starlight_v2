@@ -197,6 +197,11 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 
+    // Directives (Command Center)
+    $r->addRoute('GET', '/alliance/directive/manage', [\App\Controllers\AllianceDirectiveController::class, 'showPage']);
+    $r->addRoute('GET', '/alliance/directive/options', [\App\Controllers\AllianceDirectiveController::class, 'getOptions']);
+    $r->addRoute('POST', '/alliance/directive/set', [\App\Controllers\AllianceDirectiveController::class, 'setDirective']);
+
     // Refactored: Recruitment (Applications & Invites) -> AllianceApplicationController
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceApplicationController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceApplicationController::class, 'handleCancelApp']);

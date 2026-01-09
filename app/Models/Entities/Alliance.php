@@ -16,8 +16,13 @@ readonly class Alliance
      * @param bool $is_joinable (NEW: 0=Application, 1=Open)
      * @param int $leader_id
      * @param int $net_worth
-     * @param int $bank_credits (NEW: Alliance bank)
+     * @param float $bank_credits (NEW: Alliance bank)
      * @param string|null $last_compound_at (NEW: For interest)
+     * @param string|null $directive_type
+     * @param int $directive_target
+     * @param int $directive_start_value
+     * @param string|null $directive_started_at
+     * @param array $completed_directives (JSON decoded)
      * @param string $created_at
      */
     public function __construct(
@@ -30,8 +35,13 @@ readonly class Alliance
         public readonly int $leader_id,
         public readonly int $net_worth,
         public readonly float $bank_credits,       
-        public readonly ?string $last_compound_at, 
-        public readonly string $created_at
+        public readonly ?string $last_compound_at,
+        public readonly string $created_at,
+        public readonly ?string $directive_type = null,
+        public readonly int $directive_target = 0,
+        public readonly int $directive_start_value = 0,
+        public readonly ?string $directive_started_at = null,
+        public readonly array $completed_directives = []
     ) {
     }
 }

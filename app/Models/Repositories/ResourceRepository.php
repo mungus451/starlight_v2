@@ -99,6 +99,35 @@ $stmt = $this->db->prepare($sql);
 return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);
 }
 
+    /**
+     * Sums the count of specified unit types for all members of an alliance.
+     *
+     * @param int $allianceId
+     * @param array $unitColumns e.g. ['soldiers', 'guards']
+     * @return int
+     */
+    public function getAggregateUnitsForAlliance(int $allianceId, array $unitColumns): int
+    {
+        // Sanitize columns to prevent SQL injection (though array input is trusted from service)
+        $allowed = ['soldiers', 'guards', 'spies', 'sentries', 'workers'];
+        $cols = array_intersect($unitColumns, $allowed);
+        if (empty($cols)) return 0;
+
+        $sumExpr = implode(' + ', array_map(fn($c) => "r.$c", $cols));
+        
+        $sql = "
+            SELECT SUM($sumExpr) as total
+            FROM user_resources r
+            JOIN users u ON r.user_id = u.id
+            WHERE u.alliance_id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        return (int)$stmt->fetchColumn();
+    }
+
     public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
     {
         $updates = [];

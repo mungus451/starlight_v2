@@ -261,7 +261,12 @@
 
             <!-- Faction Objective -->
             <div class="uplink-module">
-                <div class="module-title">PRIORITY OBJECTIVE</div>
+                <div class="module-title">
+                    PRIORITY OBJECTIVE
+                    <?php if ($allianceContext['is_leader']): ?>
+                        <a href="/alliance/directive/manage" class="uplink-btn btn-sm" style="margin-left: auto; padding: 2px 6px; font-size: 0.65rem; text-decoration: none; display: inline-block;">SET</a>
+                    <?php endif; ?>
+                </div>
                 <div class="objective-box">
                     <span class="objective-name"><?= htmlspecialchars($allianceContext['objective']['name']) ?></span>
                     <div class="objective-progress">
@@ -283,6 +288,21 @@
                     <?php endforeach; ?>
                 </ul>
             </div>
+
+            <!-- Merit Badges -->
+            <?php if (!empty($allianceContext['badges'])): ?>
+                <div class="uplink-module">
+                    <div class="module-title">ALLIANCE HONORS</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; text-align: center;">
+                        <?php foreach ($allianceContext['badges'] as $badge): ?>
+                            <div class="badge-item" title="<?= $badge['name'] ?> (<?= $badge['tier'] ?>) - Completed <?= $badge['count'] ?> times">
+                                <i class="fas <?= $badge['icon'] ?>" style="color: <?= $badge['color'] ?>; font-size: 1.5rem; display: block; margin-bottom: 5px;"></i>
+                                <span style="font-size: 0.65rem; color: var(--uplink-muted); display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"><?= $badge['name'] ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- Encrypted Feed -->
             <div class="uplink-module">
@@ -481,6 +501,29 @@
     <script src="/js/advisor.js?v=<?= time(); ?>"></script>
     <script src="/js/alliance_uplink.js?v=<?= time(); ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Alliance Directive Modal -->
+    <div id="directive-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content-glass">
+            <div class="modal-header">
+                <h3>ALLIANCE COMMAND CENTER</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Select a strategic priority to coordinate your alliance efforts.</p>
+                <div id="directive-options-grid" class="directive-grid">
+                    <!-- Loaded via JS -->
+                    <div class="loading-spinner">Loading options...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-directive" disabled>Confirm Orders</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/alliance_directive.js?v=<?= time(); ?>"></script>
     
 <?php endif; ?>
 
