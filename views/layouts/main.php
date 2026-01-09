@@ -382,8 +382,12 @@
             <div class="uplink-module" style="border-bottom: none;">
                 <div class="module-title">QUICK LOGISTICS</div>
                 <div class="uplink-actions">
-                    <button class="uplink-btn" onclick="location.href='/alliance/bank'">Deposit</button>
-                    <button class="uplink-btn alert" onclick="alert('Distress Signal Broadcasted to all officers!')">SOS Signal</button>
+                    <a href="/alliance/profile/<?= $allianceContext['id'] ?>" class="uplink-btn">
+                        <i class="fas fa-home"></i> HQ
+                    </a>
+                    <a href="/alliance/sos/manage" class="uplink-btn alert">
+                        <i class="fas fa-triangle-exclamation"></i> SOS
+                    </a>
                 </div>
             </div>
         </aside>

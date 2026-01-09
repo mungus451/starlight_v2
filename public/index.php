@@ -204,8 +204,12 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // Alliance Operations (Theater Ops)
     $r->addRoute('POST', '/alliance/ops/donate', [\App\Controllers\AllianceOperationsController::class, 'donateTurns']);
-    $r->addRoute('POST', '/alliance/ops/contribute', [\App\Controllers\AllianceOperationsController::class, 'contributeToOp']);
+    $r->addRoute('POST', '/alliance/ops/contribute', ['App\Controllers\AllianceOperationsController', 'contributeToOp']);
 
+    // Alliance SOS
+    $r->addRoute('GET', '/alliance/sos/manage', ['App\Controllers\AllianceSOSController', 'showPage']);
+    $r->addRoute('POST', '/alliance/sos/broadcast', ['App\Controllers\AllianceSOSController', 'broadcast']);
+    
     // Refactored: Recruitment (Applications & Invites) -> AllianceApplicationController
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceApplicationController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceApplicationController::class, 'handleCancelApp']);

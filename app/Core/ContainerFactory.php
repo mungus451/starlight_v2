@@ -521,6 +521,18 @@ return new Logger($logPath, false);
     );
 },
 
+\App\Controllers\AllianceSOSController::class => function (ContainerInterface $c) {
+    return new \App\Controllers\AllianceSOSController(
+        $c->get(Session::class),
+        $c->get(CSRFService::class),
+        $c->get(Validator::class),
+        $c->get(ViewContextService::class),
+        $c->get(NotificationService::class),
+        $c->get(UserRepository::class),
+        $c->get(AllianceRepository::class)
+    );
+},
+
 // View Context Service - Provides global data to the main layout
 ViewContextService::class => function (ContainerInterface $c) {
     return new ViewContextService(
