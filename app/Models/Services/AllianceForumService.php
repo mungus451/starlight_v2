@@ -3,6 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
+use App\Core\Permissions;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
@@ -110,7 +111,7 @@ class AllianceForumService
 
         // 3. Determine Permissions
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        $canManage = ($role && $role->can_manage_forum);
+        $canManage = ($role && $role->hasPermission(Permissions::CAN_MANAGE_FORUM));
 
         // 4. Fetch Posts
         $posts = $this->postRepo->findAllByTopicId($topicId);
@@ -258,7 +259,7 @@ class AllianceForumService
         if (!$topic || $topic->alliance_id !== $user->alliance_id) return ['allowed' => false, 'message' => 'Access denied.'];
 
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        if ($role && $role->can_manage_forum) return ['allowed' => true, 'message' => ''];
+        if ($role && $role->hasPermission(Permissions::CAN_MANAGE_FORUM)) return ['allowed' => true, 'message' => ''];
 
         return ['allowed' => false, 'message' => 'Permission denied.'];
     }

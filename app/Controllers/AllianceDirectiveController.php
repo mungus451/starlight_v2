@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Session;
+use App\Core\Permissions;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
@@ -124,6 +125,6 @@ class AllianceDirectiveController extends BaseController
         if (!$user) return false;
         
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        return $role && $role->can_manage_diplomacy; // Or specific 'can_set_directive' later
+        return $role && $role->hasPermission(Permissions::CAN_MANAGE_DIPLOMACY); // Or specific 'can_set_directive' later
     }
 }

@@ -13,6 +13,7 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
 use App\Models\Services\NotificationService;
+use App\Core\Permissions;
 use App\Models\Entities\User;
 use App\Models\Entities\Alliance;
 use App\Models\Entities\AllianceRole;
@@ -82,7 +83,7 @@ class AllianceStructureServiceTest extends TestCase
         // 2. Mock Role (Can manage)
         $role = new AllianceRole(
             $roleId, $allianceId, 'Leader', 1,
-            true, true, true, true, true, true, true, true, true, true, true
+            0xFFFFFFFF // All permissions
         );
         $this->roleRepo->shouldReceive('findById')->with($roleId)->andReturn($role);
         

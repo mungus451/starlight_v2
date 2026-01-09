@@ -63,6 +63,11 @@ abstract class TestCase extends PHPUnitTestCase
     protected function createMockConfig(array $values = []): Config
     {
         $mock = Mockery::mock(Config::class);
+        
+        $mock->shouldReceive('get')->with('game_balance.attack.power_per_soldier', 1)->andReturn(1)->byDefault();
+        $mock->shouldReceive('get')->with('game_balance.attack.power_per_guard', 1)->andReturn(1)->byDefault();
+        $mock->shouldReceive('get')->with('game_balance.spy.base_power_per_spy', 1)->andReturn(1)->byDefault();
+        $mock->shouldReceive('get')->with('game_balance.spy.base_power_per_sentry', 1)->andReturn(1)->byDefault();
 
         foreach ($values as $key => $value) {
             $mock->shouldReceive('get')

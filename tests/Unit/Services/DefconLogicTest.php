@@ -50,12 +50,15 @@ class DefconLogicTest extends TestCase
         $bankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $treatyRepo = Mockery::mock(TreatyRepository::class);
         $warLogRepo = Mockery::mock(WarBattleLogRepository::class);
+        $resourceRepo = Mockery::mock(\App\Models\Repositories\ResourceRepository::class);
+        $structureRepo = Mockery::mock(\App\Models\Repositories\StructureRepository::class);
+        $opsRepo = Mockery::mock(\App\Models\Repositories\AllianceOperationRepository::class);
 
         $this->service = new ViewContextService(
             $statsRepo, $levelCalc, $dashService, $dashPresenter,
             $newsService, $battleService, $userRepo, $allianceRepo,
             $warRepo, $bankLogRepo, $treatyRepo, $warLogRepo,
-            $this->battleRepo, $this->spyRepo
+            $this->battleRepo, $this->spyRepo, $resourceRepo, $structureRepo, $opsRepo
         );
     }
 

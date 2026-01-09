@@ -26,6 +26,11 @@ class TrainingServiceTest extends TestCase
         parent::setUp();
 
         $this->mockConfig = Mockery::mock(Config::class);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.power_per_soldier', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.power_per_guard', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.spy.base_power_per_spy', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.spy.base_power_per_sentry', 1)->andReturn(1)->byDefault();
+        
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $this->mockGeneralService = Mockery::mock(GeneralService::class);
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);

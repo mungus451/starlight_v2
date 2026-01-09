@@ -96,6 +96,10 @@ class ExpansionStructuresTest extends TestCase
         
         $this->mockConfig->shouldReceive('get')->with('game_balance.generals', [])->andReturn([])->byDefault();
         $this->mockConfig->shouldReceive('get')->with('elite_weapons', [])->andReturn([])->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.power_per_soldier', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.attack.power_per_guard', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.spy.base_power_per_spy', 1)->andReturn(1)->byDefault();
+        $this->mockConfig->shouldReceive('get')->with('game_balance.spy.base_power_per_sentry', 1)->andReturn(1)->byDefault();
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
         $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault(); 
         $this->mockArmoryService->shouldReceive('getAggregateBonus')->andReturn(0)->byDefault();

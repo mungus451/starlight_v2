@@ -17,8 +17,9 @@
         </p>
     </div>
 
-    <!-- Mod Actions -->
-    <?php if (!empty($permissions) && $permissions->can_manage_forum): ?>
+<div class="topic-view-container p-3">
+    <!-- Moderation Actions -->
+    <?php if (!empty($perms) && $perms['can_manage_forum']): ?>
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
         <form action="/alliance/forum/topic/<?= $topic->id ?>/pin" method="POST" style="flex: 1;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
