@@ -1,4 +1,6 @@
 <?php
+use App\Core\Permissions;
+
 // --- Helper variables from the controller ---
 /* @var \App\Models\Entities\AllianceRole[] $roles */
 /* @var int $alliance_id */
@@ -22,7 +24,7 @@
                         
                         <div class="item-actions">
                             <?php if ($role->name !== 'Leader' && $role->name !== 'Recruit' && $role->name !== 'Member'): ?>
-                                <!-- Edit Role Form (Simplified: in a real app, this might be a modal or separate page) -->
+                                <!-- Edit Role Form -->
                                 <form action="/alliance/roles/delete/<?= $role->id ?>" method="POST" onsubmit="return confirm('Are you sure? Members in this role will be demoted to Recruit.');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                     <button type="submit" class="btn-submit btn-reject">Delete</button>
@@ -31,6 +33,31 @@
                                 <span style="color: var(--muted); font-size: 0.8rem; font-style: italic;">Default</span>
                             <?php endif; ?>
                         </div>
+                    </li>
+                    <li class="data-item">
+                        <form action="/alliance/roles/update/<?= $role->id ?>" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                            <div class="form-group">
+                                <label for="role_name_<?= $role->id ?>">Role Name</label>
+                                <input type="text" name="role_name" id="role_name_<?= $role->id ?>" value="<?= htmlspecialchars($role->name) ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Permissions:</label>
+                                <div class="checkbox-grid">
+                                    <?php foreach (Permissions::all() as $name => $bit): ?>
+                                        <div class="checkbox-group">
+                                            <label>
+                                                <input type="checkbox" name="permissions[<?= $name ?>]" value="1" <?= $role->hasPermission($bit) ? 'checked' : '' ?>>
+                                                <?= htmlspecialchars(ucwords(strtolower(str_replace('_', ' ', str_replace('CAN_', '', $name))))) ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-submit">Update Role</button>
+                        </form>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -50,72 +77,14 @@
                 <div class="form-group">
                     <label>Permissions:</label>
                     <div class="checkbox-grid">
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_edit_profile]" value="1">
-                                Edit Profile
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_applications]" value="1">
-                                Manage Apps
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_invite_members]" value="1">
-                                Invite Members
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_kick_members]" value="1">
-                                Kick Members
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_roles]" value="1">
-                                Manage Roles
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_see_private_board]" value="1">
-                                View Private Board
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_forum]" value="1">
-                                Manage Forum
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_bank]" value="1">
-                                Manage Bank
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_structures]" value="1">
-                                Manage Structures
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_manage_diplomacy]" value="1">
-                                Diplomacy
-                            </label>
-                        </div>
-                        <div class="checkbox-group">
-                            <label>
-                                <input type="checkbox" name="permissions[can_declare_war]" value="1">
-                                Declare War
-                            </label>
-                        </div>
+                        <?php foreach (Permissions::all() as $name => $bit): ?>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="permissions[<?= $name ?>]" value="1">
+                                    <?= htmlspecialchars(ucwords(strtolower(str_replace('_', ' ', str_replace('CAN_', '', $name))))) ?>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 

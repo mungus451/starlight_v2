@@ -2,6 +2,7 @@
 
 namespace App\Presenters;
 
+use App\Core\Permissions;
 use App\Models\Entities\Alliance;
 use App\Models\Entities\User;
 use App\Models\Entities\AllianceRole;
@@ -35,15 +36,15 @@ $hasApplied = ($data['userApplication'] !== null);
 
 // 2. Calculate Global Permissions (Booleans for the View)
 $permissions = [
-'can_edit_profile' => $viewerRole && $viewerRole->can_edit_profile,
-'can_manage_apps' => $viewerRole && $viewerRole->can_manage_applications,
-'can_invite' => $viewerRole && $viewerRole->can_invite_members,
-'can_kick' => $viewerRole && $viewerRole->can_kick_members,
-'can_manage_roles' => $viewerRole && $viewerRole->can_manage_roles,
-'can_manage_bank' => $viewerRole && $viewerRole->can_manage_bank,
-'can_manage_structures' => $viewerRole && $viewerRole->can_manage_structures,
-'can_manage_diplomacy' => $viewerRole && $viewerRole->can_manage_diplomacy,
-'can_declare_war' => $viewerRole && $viewerRole->can_declare_war,
+'can_edit_profile' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_EDIT_PROFILE),
+'can_manage_apps' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_APPLICATIONS),
+'can_invite' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_INVITE_MEMBERS),
+'can_kick' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_KICK_MEMBERS),
+'can_manage_roles' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_ROLES),
+'can_manage_bank' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_BANK),
+'can_manage_structures' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_STRUCTURES),
+'can_manage_diplomacy' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_DIPLOMACY),
+'can_declare_war' => $viewerRole && $viewerRole->hasPermission(Permissions::CAN_DECLARE_WAR),
 ];
 
 // 3. Format Alliance Data

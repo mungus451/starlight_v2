@@ -3,6 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
+use App\Core\Permissions;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -209,7 +210,7 @@ class AllianceService
 
         // Get pending applications (only relevant for those with permission)
         $applications = [];
-        if ($viewerRole && $viewerRole->can_manage_applications) {
+        if ($viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_APPLICATIONS)) {
             $applications = $this->appRepo->findByAllianceId($allianceId);
         }
 
