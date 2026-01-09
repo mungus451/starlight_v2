@@ -14,6 +14,11 @@ use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\AllianceOperationRepository; // NEW
+
+/**
+ * Creates and configures the PHP-DI Container.
+ */
 use App\Models\Repositories\ArmoryRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
@@ -59,6 +64,7 @@ use App\Models\Services\AttackService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\AllianceService;
 use App\Models\Services\AllianceManagementService;
+use App\Models\Services\AllianceOperationService; // NEW
 use App\Models\Services\AlliancePolicyService;
 use App\Models\Services\AllianceStructureService;
 use App\Models\Services\AllianceForumService;
@@ -159,10 +165,10 @@ return Database::getInstance();
 UserRepository::class => function (ContainerInterface $c) { return new UserRepository($c->get(PDO::class)); },
 ResourceRepository::class => function (ContainerInterface $c) { return new ResourceRepository($c->get(PDO::class)); },
 StatsRepository::class => function (ContainerInterface $c) { return new StatsRepository($c->get(PDO::class)); },
-StructureRepository::class => function (ContainerInterface $c) { return new StructureRepository($c->get(PDO::class)); },
-ArmoryRepository::class => function (ContainerInterface $c) { return new ArmoryRepository($c->get(PDO::class)); },
-AllianceRepository::class => function (ContainerInterface $c) { return new AllianceRepository($c->get(PDO::class)); },
-AllianceRoleRepository::class => function (ContainerInterface $c) { return new AllianceRoleRepository($c->get(PDO::class)); },
+    StructureRepository::class => function (ContainerInterface $c) { return new StructureRepository($c->get(PDO::class)); },
+    ArmoryRepository::class => function (ContainerInterface $c) { return new ArmoryRepository($c->get(PDO::class)); },
+    AllianceRepository::class => function (ContainerInterface $c) { return new AllianceRepository($c->get(PDO::class)); },
+    AllianceOperationRepository::class => function (ContainerInterface $c) { return new AllianceOperationRepository($c->get(PDO::class)); }, // NEWAllianceRoleRepository::class => function (ContainerInterface $c) { return new AllianceRoleRepository($c->get(PDO::class)); },
 ApplicationRepository::class => function (ContainerInterface $c) { return new ApplicationRepository($c->get(PDO::class)); },
 AllianceBankLogRepository::class => function (ContainerInterface $c) { return new AllianceBankLogRepository($c->get(PDO::class)); },
 AllianceLoanRepository::class => function (ContainerInterface $c) { return new AllianceLoanRepository($c->get(PDO::class)); },
@@ -342,6 +348,16 @@ StructureService::class => function (ContainerInterface $c) {
     );
 },
 
+    \App\Models\Services\AllianceOperationService::class => function (ContainerInterface $c) {
+        return new \App\Models\Services\AllianceOperationService(
+            $c->get(\App\Models\Repositories\AllianceOperationRepository::class),
+            $c->get(\App\Models\Repositories\ResourceRepository::class),
+            $c->get(\App\Models\Repositories\StatsRepository::class),
+            $c->get(\App\Models\Repositories\AllianceRepository::class),
+            $c->get(\App\Models\Repositories\UserRepository::class)
+        );
+    },
+
 TrainingService::class => function (ContainerInterface $c) {
     return new TrainingService(
         $c->get(Config::class),
@@ -495,6 +511,16 @@ return new Logger($logPath, false);
     );
 },
 
+\App\Controllers\AllianceOperationsController::class => function (ContainerInterface $c) {
+    return new \App\Controllers\AllianceOperationsController(
+        $c->get(Session::class),
+        $c->get(CSRFService::class),
+        $c->get(Validator::class),
+        $c->get(ViewContextService::class),
+        $c->get(\App\Models\Services\AllianceOperationService::class)
+    );
+},
+
 // View Context Service - Provides global data to the main layout
 ViewContextService::class => function (ContainerInterface $c) {
     return new ViewContextService(
@@ -513,7 +539,8 @@ ViewContextService::class => function (ContainerInterface $c) {
         $c->get(BattleRepository::class),
         $c->get(SpyRepository::class),
         $c->get(ResourceRepository::class),
-        $c->get(StructureRepository::class)
+        $c->get(StructureRepository::class),
+        $c->get(AllianceOperationRepository::class) // NEW
     );
 }
 ]);

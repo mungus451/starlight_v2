@@ -79,6 +79,31 @@ class GlossaryController extends BaseController
                 'badge' => "Legion Banner"
             ]
         ];
+
+        // 1.6 Define Alliance Operations (Theater Ops)
+        $allianceOps = [
+            'deployment_drill' => [
+                'name' => 'Deployment Drill',
+                'description' => 'A cooperative wargame where members deploy (sacrifice) soldiers to simulate combat scenarios.',
+                'requirement' => 'Soldiers',
+                'reward' => 'Global Training Speed Buff',
+                'icon' => 'fa-users'
+            ],
+            'resource_drive' => [
+                'name' => 'Resource Drive',
+                'description' => 'A logistical operation to stockpile raw credits for alliance infrastructure projects.',
+                'requirement' => 'Credits',
+                'reward' => 'Bank Interest Buff',
+                'icon' => 'fa-coins'
+            ],
+            'energy_boost' => [
+                'name' => 'Energy Mobilization',
+                'description' => 'A focus on generating Alliance Energy (AE) to fuel tactical strikes.',
+                'requirement' => 'Turns',
+                'reward' => 'Immediate AE Injection',
+                'icon' => 'fa-bolt'
+            ]
+        ];
         
         // 2. Define Resources (Manual definition as they aren't strictly config-based in the same way)
         $resources = [
@@ -135,7 +160,8 @@ class GlossaryController extends BaseController
             'resources' => $resources,
             'edicts' => $edicts,
             'blackMarket' => $blackMarket,
-            'directives' => $directives
+            'directives' => $directives,
+            'allianceOps' => $allianceOps
         ]);
     }
 }

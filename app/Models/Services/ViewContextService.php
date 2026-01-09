@@ -18,6 +18,7 @@ use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\SpyRepository;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
+use App\Models\Repositories\AllianceOperationRepository; // NEW
 
 /**
  * Responsible for gathering "Global" data required by the main layout.
@@ -45,6 +46,7 @@ class ViewContextService
     private SpyRepository $spyRepo;
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
+    private AllianceOperationRepository $opsRepo; // NEW
 
     public function __construct(
         StatsRepository $statsRepo,
@@ -62,7 +64,8 @@ class ViewContextService
         \App\Models\Repositories\BattleRepository $battleRepo,
         \App\Models\Repositories\SpyRepository $spyRepo,
         \App\Models\Repositories\ResourceRepository $resourceRepo,
-        \App\Models\Repositories\StructureRepository $structureRepo
+        \App\Models\Repositories\StructureRepository $structureRepo,
+        \App\Models\Repositories\AllianceOperationRepository $opsRepo // NEW
     ) {
         $this->statsRepo = $statsRepo;
         $this->levelCalculator = $levelCalculator;
@@ -80,6 +83,7 @@ class ViewContextService
         $this->spyRepo = $spyRepo;
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
+        $this->opsRepo = $opsRepo;
     }
 
     /**
@@ -149,23 +153,21 @@ class ViewContextService
             return null;
         }
 
-        // Check permissions (assuming AllianceRoleRepository is injected or accessed via a service)
-        // Since I don't have RoleRepo injected here, I'll do a quick check via raw query or add injection.
-        // Adding injection is cleaner but more work. I'll fetch role via existing repos if possible.
-        // Actually, let's just assume if leader_id matches. For officers, we'll need role lookup.
-        // I'll skip complex permission check here for display-only logic and rely on Controller validation for security.
-        // But for UI button visibility...
-        // Let's add a placeholder is_leader check.
         $isLeader = ($alliance->leader_id === $userId);
 
         // 1. Check for active war
         $war = $this->warRepo->findActiveWarByAllianceId($alliance->id);
         $warData = null;
+        $ops = [];
         
         if ($war) {
             $isDeclarer = ($war->declarer_alliance_id === $alliance->id);
             $myScore = $isDeclarer ? $war->declarer_score : $war->defender_score;
+            $enemyScore = $isDeclarer ? $war->defender_score : $war->declarer_score;
             $opponentName = $isDeclarer ? $war->defender_name : $war->declarer_name;
+            $opponentId = $isDeclarer ? $war->declared_against_alliance_id : $war->declarer_alliance_id;
+            
+            // War Progress
             $pct = ($war->goal_threshold > 0) ? ($myScore / $war->goal_threshold) * 100 : 0;
             
             $warData = [
@@ -174,30 +176,100 @@ class ViewContextService
                 'score' => $myScore,
                 'goal' => $war->goal_threshold
             ];
+
+            // Add War Op
+            $ops[] = [
+                'type' => 'war',
+                'title' => 'WAR: ' . ($opponentName ?? 'Hostile'),
+                'desc' => 'Score: ' . number_format($myScore) . ' vs ' . number_format($enemyScore),
+                'meta' => ($myScore > $enemyScore ? 'WINNING' : ($myScore < $enemyScore ? 'LOSING' : 'TIED')),
+                'meta_class' => ($myScore >= $enemyScore ? 'text-success' : 'text-danger'),
+                'icon' => 'fa-crosshairs',
+                'class' => 'op-war'
+            ];
         }
 
-        // 2. Calculate DEFCON
+        // 2. Active Treaties
+        $treaties = $this->treatyRepo->findByAllianceId($alliance->id);
+        foreach ($treaties as $t) {
+            if ($t->status === 'active') {
+                $partnerName = ($t->alliance1_id === $alliance->id) ? $t->alliance2_name : $t->alliance1_name;
+                $ops[] = [
+                    'type' => 'treaty',
+                    'title' => 'PACT: ' . $partnerName,
+                    'desc' => ucfirst($t->treaty_type) . ' Agreement',
+                    'meta' => 'ACTIVE',
+                    'meta_class' => 'text-success',
+                    'icon' => 'fa-handshake',
+                    'class' => 'op-treaty'
+                ];
+            }
+        }
+
+        // 3. Active Operations (Database Driven)
+        $activeOp = $this->opsRepo->findActiveByAllianceId($alliance->id);
+        if ($activeOp) {
+            $userContribution = $this->opsRepo->getUserContribution($activeOp->id, $userId);
+            
+            // Map Type to Icon/Label
+            $reqIcon = 'fa-bolt';
+            $opTitle = 'OPERATION';
+            $opDesc = 'Goal: ' . number_format($activeOp->target_value);
+
+            switch($activeOp->type) {
+                case 'deployment_drill':
+                    $reqIcon = 'fa-users';
+                    $opTitle = 'DEPLOYMENT DRILL';
+                    $opDesc = 'Required: Soldiers (' . number_format($activeOp->target_value) . ')';
+                    break;
+                case 'resource_drive':
+                    $reqIcon = 'fa-coins';
+                    $opTitle = 'RESOURCE DRIVE';
+                    $opDesc = 'Required: Credits (' . number_format($activeOp->target_value) . ')';
+                    break;
+            }
+            
+            $ops[] = [
+                'type' => 'active_op',
+                'id' => $activeOp->id,
+                'title' => $opTitle,
+                'desc' => $opDesc,
+                'progress' => $activeOp->getProgressPercent(),
+                'current' => $activeOp->current_value,
+                'goal' => $activeOp->target_value,
+                'user_contrib' => $userContribution,
+                'deadline' => $activeOp->deadline,
+                'req_icon' => $reqIcon,
+                'meta' => $activeOp->isExpired() ? 'EXPIRED' : 'ACTIVE',
+                'meta_class' => $activeOp->isExpired() ? 'text-danger' : 'text-neon-blue',
+                'icon' => 'fa-tasks',
+                'class' => 'op-active'
+            ];
+        }
+
+        // 4. Fallback
+        if (empty($ops)) {
+            $ops[] = [
+                'type' => 'idle',
+                'title' => 'SYSTEM IDLE',
+                'desc' => 'No active operations.',
+                'meta' => '---',
+                'meta_class' => 'text-muted',
+                'icon' => 'fa-check-circle',
+                'class' => 'op-idle'
+            ];
+        }
+
+        // Calculate DEFCON
         $defcon = $this->calculateDefcon($alliance->id);
 
-        // 3. Determine Objective
+        // Determine Objective
         $objective = $this->determineObjective($alliance, $war);
 
-        // 4. Build Live Feed
+        // Build Live Feed (Real Logs)
         $feed = $this->getLiveFeed($alliance->id);
 
-        // 5. Active Ops (Treaties, Tax, etc)
-        $ops = [];
-        if ($warData) {
-            $ops[] = "WAR: Engagement Active";
-        }
-        // Placeholder for real treaty logic
-        //$treaties = $this->treatyRepo->findActiveByAllianceId($alliance->id);
-        //foreach($treaties as $t) $ops[] = "Treaty: {$t->partner_name} ...";
-        if (empty($ops)) {
-            $ops[] = "Routine Operations";
-        }
-
-        // 6. Badges
+        // Badges
         $badges = $this->prepareBadges($alliance->completed_directives);
 
         return [
@@ -206,6 +278,8 @@ class ViewContextService
             'tag' => $alliance->tag,
             'avatar' => $alliance->profile_picture_url,
             'treasury' => $alliance->bank_credits,
+            'energy' => $alliance->alliance_energy,     // NEW
+            'energy_cap' => $alliance->energy_cap,      // NEW
             'is_leader' => $isLeader,
             'defcon' => $defcon,
             'objective' => $objective,
@@ -407,16 +481,26 @@ class ViewContextService
 
     private function getLiveFeed(int $allianceId): array
     {
-        // In a real app, union query: Bank Logs + Battle Logs + War Logs
-        // For now, fetch recent bank logs
         $logs = [];
         
+        // 1. Bank Logs
         $bankLogs = $this->bankLogRepo->findLogsByAllianceId($allianceId, 5);
         foreach ($bankLogs as $l) {
             $logs[] = [
                 'type' => 'BANK',
                 'text' => ($l->character_name ?? 'System') . " " . ($l->amount >= 0 ? 'deposited' : 'withdrew') . " " . number_format(abs($l->amount)) . " Cr",
                 'time' => strtotime($l->created_at)
+            ];
+        }
+
+        // 2. Energy Logs (NEW)
+        $energyLogs = $this->opsRepo->getRecentLogs($allianceId, 5);
+        foreach ($energyLogs as $l) {
+            $prefix = $l['amount'] >= 0 ? '+' : '';
+            $logs[] = [
+                'type' => 'ENERGY',
+                'text' => ($l['character_name'] ?? 'System') . ": {$prefix}" . number_format($l['amount']) . " AE ({$l['type']})",
+                'time' => strtotime($l['created_at'])
             ];
         }
         

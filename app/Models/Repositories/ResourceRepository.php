@@ -92,8 +92,13 @@ $stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, guards = ? WH
 return $stmt->execute([$newCredits, $newGuards, $userId]);
 }
 
-public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool
-{
+    public function updateSoldiers(int $userId, int $newSoldiers): bool
+    {
+        $stmt = $this->db->prepare("UPDATE user_resources SET soldiers = ? WHERE user_id = ?");
+        return $stmt->execute([$newSoldiers, $userId]);
+    }
+
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool{
 $sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ?, dark_matter = dark_matter + ?, naquadah_crystals = naquadah_crystals + ?, protoform = protoform + ? WHERE user_id = ?";
 $stmt = $this->db->prepare($sql);
 return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);

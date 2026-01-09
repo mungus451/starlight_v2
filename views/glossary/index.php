@@ -12,6 +12,7 @@
     <a class="tab-link" data-tab="armory">Armory</a>
     <a class="tab-link" data-tab="edicts">Edicts</a>
     <a class="tab-link" data-tab="directives">Directives</a>
+    <a class="tab-link" data-tab="theater-ops">Theater Ops</a>
     <a class="tab-link" data-tab="black-market">Black Market</a>
     <a class="tab-link" data-tab="resources">Resources</a>
 </div>
@@ -332,6 +333,53 @@
 
     <div class="alert alert-info mt-4">
         <i class="fas fa-award"></i> <strong>Merit Badges:</strong> Badges upgrade visually as your alliance completes more directives of that type (Bronze &rarr; Silver &rarr; Gold &rarr; Platinum &rarr; Diamond &rarr; Starlight).
+    </div>
+</div>
+
+<!-- ======================= THEATER OPS TAB ======================= -->
+<div id="theater-ops" class="tab-content">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="text-neon-blue"><i class="fas fa-tasks"></i> Theater Operations</h3>
+            <p class="text-muted">Temporary, high-intensity missions that require active contributions from alliance members. Completing these operations grants powerful global buffs.</p>
+        </div>
+    </div>
+
+    <div class="structures-grid">
+        <?php foreach ($allianceOps as $key => $op): ?>
+            <div class="structure-card">
+                <div class="card-header-main">
+                    <div class="card-icon">
+                        <i class="fas <?= $op['icon'] ?> text-neon-blue"></i>
+                    </div>
+                    <div class="card-title-group">
+                        <h3 class="card-title"><?= htmlspecialchars($op['name']) ?></h3>
+                        <span class="card-category text-muted">Alliance Operation</span>
+                    </div>
+                </div>
+
+                <div class="card-body-main">
+                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                        <?= htmlspecialchars($op['description']) ?>
+                    </p>
+
+                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                        <div>
+                            <span class="text-muted">Requirement:</span><br>
+                            <span class="text-warning"><?= $op['requirement'] ?></span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Reward:</span><br>
+                            <span class="text-success"><?= $op['reward'] ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-info-circle"></i> <strong>Alliance Energy (AE):</strong> Participating in operations generates Alliance Energy, which leaders can spend on Tactical Strikes against rival alliances.
     </div>
 </div>
 

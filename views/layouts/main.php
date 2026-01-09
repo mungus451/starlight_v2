@@ -281,12 +281,68 @@
 
             <!-- Active Ops -->
             <div class="uplink-module">
-                <div class="module-title">ACTIVE OPERATIONS</div>
-                <ul class="ops-list">
-                    <?php foreach ($allianceContext['ops'] as $op): ?>
-                        <li><?= htmlspecialchars($op) ?></li>
-                    <?php endforeach; ?>
-                </ul>
+                <div class="module-title">THEATER OPERATIONS</div>
+                
+                <!-- Alliance Energy (AE) -->
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #ffd700; margin-bottom: 2px;">
+                        <span>ALLIANCE ENERGY</span>
+                        <span><?= number_format($allianceContext['energy']) ?> / <?= number_format($allianceContext['energy_cap']) ?></span>
+                    </div>
+                    <div class="energy-bar-container">
+                        <div class="energy-bar-fill" style="width: <?= min(100, ($allianceContext['energy'] / $allianceContext['energy_cap']) * 100) ?>%;"></div>
+                    </div>
+                    <div class="energy-actions">
+                        <button class="btn-donate" onclick="donateTurns()">Donate Turns</button>
+                        <button class="btn-donate" onclick="alert('Resource donation coming soon!')">Donate Res</button>
+                    </div>
+                </div>
+
+                <div class="ops-container">
+                    <?php if (isset($allianceContext['ops']) && is_array($allianceContext['ops'])): ?>
+                        <?php foreach ($allianceContext['ops'] as $op): ?>
+                            <div class="op-card <?= htmlspecialchars($op['class'] ?? '') ?>">
+                                <div class="op-header">
+                                    <i class="fas <?= htmlspecialchars($op['icon']) ?>"></i> 
+                                    <span><?= htmlspecialchars($op['title']) ?></span>
+                                </div>
+                                
+                                <!-- Render Active Op with Progress Bar -->
+                                <?php if (($op['type'] ?? '') === 'active_op'): ?>
+                                    <div class="op-desc" style="margin-bottom: 5px;"><?= htmlspecialchars($op['desc']) ?></div>
+                                    
+                                    <div class="op-progress-container">
+                                        <div class="op-progress-fill" style="width: <?= $op['progress'] ?>%;"></div>
+                                    </div>
+                                    
+                                    <div class="op-contrib-text">
+                                        <span><?= $op['progress'] ?>% Complete</span>
+                                        <span>You: <?= number_format($op['user_contrib']) ?></span>
+                                    </div>
+                                    
+                                    <?php if ($op['meta'] === 'ACTIVE'): 
+                                        $resName = (strpos($op['title'], 'DRILL') !== false) ? 'Soldiers' : 'Resources';
+                                    ?>
+                                        <button class="btn-contribute" onclick="contributeToOp(<?= $op['id'] ?>, '<?= $resName ?>')">
+                                            <i class="fas <?= $op['req_icon'] ?? 'fa-bolt' ?>"></i> Contribute <?= $resName ?>
+                                        </button>
+                                    <?php endif; ?>
+
+                                <?php else: ?>
+                                    <!-- Standard/Legacy Op Display -->
+                                    <div class="op-body">
+                                        <div class="op-desc"><?= htmlspecialchars($op['desc']) ?></div>
+                                        <div class="op-meta <?= htmlspecialchars($op['meta_class'] ?? '') ?>">
+                                            <?= htmlspecialchars($op['meta']) ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-muted small">No data available.</div>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <!-- Merit Badges -->

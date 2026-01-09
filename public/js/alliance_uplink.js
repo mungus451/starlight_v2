@@ -30,3 +30,56 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('starlight_uplink_collapsed', collapsedState);
     });
 });
+
+/**
+ * Handle Turn Donation to Alliance Energy
+ */
+function donateTurns() {
+    const amount = prompt("Enter amount of Turns to donate (1 Turn = 1 AE):");
+    if (!amount || isNaN(amount) || amount <= 0) return;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch('/alliance/ops/donate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `csrf_token=${encodeURIComponent(csrfToken)}&amount=${amount}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Refresh to show new AE and Logs
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => console.error(err));
+}
+
+/**
+ * Handle Contribution to Active Op
+ */
+function contributeToOp(opId, resourceName = 'units') {
+    const amount = prompt(`Enter amount of ${resourceName} to contribute:`);
+    if (!amount || isNaN(amount) || amount <= 0) return;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch('/alliance/ops/contribute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `csrf_token=${encodeURIComponent(csrfToken)}&op_id=${opId}&amount=${amount}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // Refresh to update progress bar
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => console.error(err));
+}
+

@@ -480,3 +480,173 @@
 .text-neon-blue {
     color: var(--uplink-accent);
 }
+
+/* --- Active Ops (Cards) --- */
+.ops-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.op-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 8px 10px;
+    transition: all 0.2s;
+}
+
+.op-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(2px);
+}
+
+.op-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.op-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.op-desc {
+    font-size: 0.7rem;
+    color: var(--uplink-muted);
+}
+
+.op-meta {
+    font-size: 0.65rem;
+    font-weight: bold;
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+/* Specific Card Styles */
+.op-war {
+    border-left: 3px solid #e53e3e; /* Red */
+    background: linear-gradient(90deg, rgba(229, 62, 62, 0.1), transparent);
+}
+
+.op-treaty {
+    border-left: 3px solid #38a169; /* Green */
+    background: linear-gradient(90deg, rgba(56, 161, 105, 0.1), transparent);
+}
+
+.op-buff {
+    border-left: 3px solid #3182ce; /* Blue */
+    background: linear-gradient(90deg, rgba(49, 130, 206, 0.1), transparent);
+}
+
+.op-idle {
+    border-left: 3px solid #718096; /* Gray */
+    opacity: 0.7;
+}
+
+/* Helpers */
+.text-success { color: #48bb78 !important; }
+.text-danger { color: #f56565 !important; }
+.text-warning { color: #ecc94b !important; }
+
+/* --- NEW: Theater Operations Elements --- */
+
+/* Energy Section */
+.energy-bar-container {
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    height: 6px;
+    margin: 5px 0 10px 0;
+    overflow: hidden;
+}
+
+.energy-bar-fill {
+    height: 100%;
+    background: #ffd700; /* Gold/Electric */
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+    width: 0%;
+    transition: width 0.5s ease-out;
+}
+
+.energy-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.btn-donate {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    font-size: 0.7rem;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-donate:hover {
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+/* Active Op Card */
+.op-active {
+    border-left: 3px solid #00f3ff;
+    background: linear-gradient(90deg, rgba(0, 243, 255, 0.1), transparent);
+    padding: 10px;
+}
+
+.op-progress-container {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 8px 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.op-progress-fill {
+    height: 100%;
+    background: #00f3ff;
+    width: 0%;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+    transition: width 0.5s ease-out;
+}
+
+.op-contrib-text {
+    font-size: 0.65rem;
+    color: var(--uplink-muted);
+    display: flex;
+    justify-content: space-between;
+}
+
+.btn-contribute {
+    width: 100%;
+    background: rgba(0, 243, 255, 0.15);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: #00f3ff;
+    font-size: 0.75rem;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+.btn-contribute:hover {
+    background: rgba(0, 243, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+}

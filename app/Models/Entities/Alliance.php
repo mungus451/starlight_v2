@@ -37,6 +37,8 @@ readonly class Alliance
         public readonly float $bank_credits,       
         public readonly ?string $last_compound_at,
         public readonly string $created_at,
+        public readonly int $alliance_energy = 0, // NEW
+        public readonly int $energy_cap = 10000,  // NEW
         public readonly ?string $directive_type = null,
         public readonly int $directive_target = 0,
         public readonly int $directive_start_value = 0,

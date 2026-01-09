@@ -220,6 +220,28 @@ class AllianceRepository
     }
 
     /**
+     * Atomically updates an alliance's energy pool.
+     * Prevents dropping below zero or exceeding the cap.
+     */
+    public function updateEnergyRelative(int $allianceId, int $amountChange): bool
+    {
+        if ($amountChange === 0) return true;
+
+        if ($amountChange > 0) {
+            // Addition: Cap at energy_cap column
+            $sql = "UPDATE alliances SET alliance_energy = LEAST(energy_cap, alliance_energy + :amount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['amount' => $amountChange, 'id' => $allianceId]);
+        } else {
+            // Subtraction: Prevent dropping below zero
+            $absAmount = abs($amountChange);
+            $sql = "UPDATE alliances SET alliance_energy = IF(alliance_energy < :absAmount, 0, alliance_energy - :absAmount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['absAmount' => $absAmount, 'id' => $allianceId]);
+        }
+    }
+
+    /**
      * Gets all alliances from the database.
      * Used by the TurnProcessorService.
      *
@@ -311,6 +333,8 @@ class AllianceRepository
             bank_credits: (float)$row['bank_credits'],
             last_compound_at: $row['last_compound_at'],
             created_at: $row['created_at'],
+            alliance_energy: (int)($row['alliance_energy'] ?? 0),
+            energy_cap: (int)($row['energy_cap'] ?? 10000),
             directive_type: $row['directive_type'] ?? null,
             directive_target: (int)($row['directive_target'] ?? 0),
             directive_start_value: (int)($row['directive_start_value'] ?? 0),
