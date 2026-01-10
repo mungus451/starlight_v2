@@ -11,6 +11,8 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\SpyRepository;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarSpyLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
@@ -38,6 +40,8 @@ class SpyServiceTest extends TestCase
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
     private NotificationService|Mockery\MockInterface $mockNotificationService;
     private EffectService|Mockery\MockInterface $mockEffectService;
+    private WarRepository|Mockery\MockInterface $mockWarRepo;
+    private WarSpyLogRepository|Mockery\MockInterface $mockWarSpyLogRepo;
 
     protected function setUp(): void
     {
@@ -55,6 +59,8 @@ class SpyServiceTest extends TestCase
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
         $this->mockNotificationService = Mockery::mock(NotificationService::class);
         $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockWarRepo = Mockery::mock(WarRepository::class);
+        $this->mockWarSpyLogRepo = Mockery::mock(WarSpyLogRepository::class);
 
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
         $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
@@ -71,7 +77,9 @@ class SpyServiceTest extends TestCase
             $this->mockPowerCalcService,
             $this->mockLevelUpService,
             $this->mockNotificationService,
-            $this->mockEffectService
+            $this->mockEffectService,
+            $this->mockWarRepo,
+            $this->mockWarSpyLogRepo
         );
     }
 
