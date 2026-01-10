@@ -515,47 +515,95 @@ class ContainerFactory
 
 
 
-            // Attack Service
+                        // Attack Service
 
-            AttackService::class => function (ContainerInterface $c) {
 
-                return new AttackService(
 
-                    $c->get(PDO::class),
+                        AttackService::class => function (ContainerInterface $c) {
 
-                    $c->get(Config::class),
 
-                    $c->get(UserRepository::class),
 
-                    $c->get(ResourceRepository::class),
+                            return new AttackService(
 
-                    $c->get(StructureRepository::class),
 
-                    $c->get(StatsRepository::class),
 
-                    $c->get(BattleRepository::class),
+                                $c->get(PDO::class),
 
-                    $c->get(AllianceRepository::class),
 
-                    $c->get(AllianceBankLogRepository::class),
 
-                    $c->get(BountyRepository::class),
+                                $c->get(Config::class),
 
-                    $c->get(ArmoryService::class),
 
-                    $c->get(PowerCalculatorService::class),
 
-                    $c->get(LevelUpService::class),
+                                $c->get(UserRepository::class),
 
-                    $c->get(EventDispatcher::class),
 
-                    $c->get(EffectService::class),
 
-                    $c->get(\App\Models\Services\NetWorthCalculatorService::class)
+                                $c->get(ResourceRepository::class),
 
-                );
 
-            },
+
+                                $c->get(StructureRepository::class),
+
+
+
+                                $c->get(StatsRepository::class),
+
+
+
+                                $c->get(BattleRepository::class),
+
+
+
+                                $c->get(AllianceRepository::class),
+
+
+
+                                $c->get(AllianceBankLogRepository::class),
+
+
+
+                                $c->get(BountyRepository::class),
+
+
+
+                                $c->get(WarRepository::class),
+
+
+
+                                $c->get(WarBattleLogRepository::class),
+
+
+
+                                $c->get(ArmoryService::class),
+
+
+
+                                $c->get(PowerCalculatorService::class),
+
+
+
+                                $c->get(LevelUpService::class),
+
+
+
+                                $c->get(EventDispatcher::class),
+
+
+
+                                $c->get(EffectService::class),
+
+
+
+                                $c->get(\App\Models\Services\NetWorthCalculatorService::class)
+
+
+
+                            );
+
+
+
+                        },
 
 
 

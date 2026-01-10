@@ -27,7 +27,8 @@ class BattleConcludedEvent implements Event
         public readonly string $result,
         public readonly int $prestigeGained,
         public readonly int $guardsKilled,
-        public readonly int $creditsPlundered
+        public readonly int $creditsPlundered,
+        public readonly int $structureDamage = 0 // New field with default
     ) {
     }
 }

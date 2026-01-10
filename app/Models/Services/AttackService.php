@@ -516,26 +516,6 @@ class AttackService
                 }
             }
 
-            // War Logging (If Active War Exists)
-            if ($attacker->alliance_id && $defender->alliance_id && $attacker->alliance_id !== $defender->alliance_id) {
-                $war = $this->warRepo->findActiveWarBetween($attacker->alliance_id, $defender->alliance_id);
-                if ($war) {
-                    // Note: Structure damage calculation is not yet implemented in main battle logic.
-                    $structureDamage = 0; 
-                    
-                    $this->warBattleLogRepo->createLog(
-                        $war->id,
-                        $battleReportId,
-                        $attackerId,
-                        $attacker->alliance_id,
-                        $warPrestigeGained,
-                        $defenderGuardsLost,
-                        $creditsPlundered,
-                        $structureDamage
-                    );
-                }
-            }
-
             // Events
             $event = new BattleConcludedEvent(
                 $battleReportId,
