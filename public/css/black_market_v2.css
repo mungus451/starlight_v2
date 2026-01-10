@@ -281,10 +281,10 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    flex: 1;
+    flex: 1 1 220px; /* Basis of 220px ensures wrapping before overlap */
     justify-content: center;
     position: relative;
-    min-width: 200px; /* Ensure items don't get too squeezed */
+    padding: 0.5rem; /* Add padding for breathing room */
 }
 
 .bm-hud-item:not(:last-child)::after {
