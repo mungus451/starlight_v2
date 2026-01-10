@@ -709,7 +709,7 @@ $capacity = 20; // Default or fetch from config if available, hardcoding 20 for 
                                                 <td class="text-danger"><?= $loan['amount_to_repay'] ?></td>
                                                 <td><span class="badge bg-secondary">Active</span></td>
                                                 <td>
-                                                    <?php if ($state['is_leader']): ?>
+                                                    <?php if ($state['is_leader'] || $perms['can_manage_bank']): ?>
                                                         <form action="/alliance/loan/forgive/<?= $loan['id'] ?>" method="POST" onsubmit="return confirm('Are you sure? This will wipe the debt.');">
                                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                                             <button class="btn btn-sm btn-outline-danger">Forgive</button>
