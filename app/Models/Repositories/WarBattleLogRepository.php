@@ -97,7 +97,26 @@ class WarBattleLogRepository
      */
     public function findByWarId(int $warId, int $limit = 20, int $offset = 0): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM war_battle_logs WHERE war_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        $sql = "
+            SELECT 
+                wbl.*, 
+                u_att.character_name as attacker_name, 
+                u_def.character_name as defender_name,
+                CASE 
+                    WHEN br.attack_result = 'victory' THEN u_att.character_name
+                    WHEN br.attack_result = 'defeat' THEN u_def.character_name
+                    ELSE 'Stalemate'
+                END as victor_name
+            FROM war_battle_logs wbl
+            JOIN battle_reports br ON wbl.battle_report_id = br.id
+            JOIN users u_att ON br.attacker_id = u_att.id
+            JOIN users u_def ON br.defender_id = u_def.id
+            WHERE wbl.war_id = ? 
+            ORDER BY wbl.created_at DESC 
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$warId, $limit, $offset]);
         
         $logs = [];
@@ -138,7 +157,10 @@ class WarBattleLogRepository
             units_killed: (int)$data['units_killed'],
             credits_plundered: (int)$data['credits_plundered'],
             structure_damage: (int)$data['structure_damage'],
-            created_at: $data['created_at']
+            created_at: $data['created_at'],
+            attacker_name: $data['attacker_name'] ?? null,
+            defender_name: $data['defender_name'] ?? null,
+            victor_name: $data['victor_name'] ?? null
         );
     }
 }
