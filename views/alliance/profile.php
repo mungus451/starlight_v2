@@ -196,6 +196,170 @@ $capacity = 20; // Default or fetch from config if available, hardcoding 20 for 
             width: 100%;
         }
     }
+
+    /* --- Widget Headers (Prominent) --- */
+    .dashboard-card h4 {
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(255,255,255,0.05);
+        position: relative;
+    }
+
+    .dashboard-card h4::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 2px;
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent);
+    }
+
+    /* --- Charter Terminal --- */
+    .charter-terminal {
+        background: #020305;
+        border: 1px solid rgba(45, 209, 209, 0.3);
+        box-shadow: 0 0 15px rgba(45, 209, 209, 0.05);
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .charter-header {
+        background: rgba(45, 209, 209, 0.1);
+        border-bottom: 1px solid rgba(45, 209, 209, 0.2);
+        padding: 8px 12px;
+        font-size: 0.7rem;
+        color: var(--accent);
+        display: flex;
+        justify-content: space-between;
+        letter-spacing: 1px;
+    }
+    
+    .charter-body {
+        padding: 20px;
+        color: #a8afd4;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .charter-body::after {
+        content: '_';
+        animation: blink 1s infinite;
+    }
+    
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .charter-terminal::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* --- Intel Stream (Futuristic Ledger) --- */
+    .intel-stream {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+    }
+    
+    /* Vertical connecting line */
+    .intel-stream::before {
+        content: '';
+        position: absolute;
+        left: 24px;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: rgba(255,255,255,0.05);
+        z-index: 0;
+    }
+
+    .intel-log {
+        display: flex;
+        align-items: center;
+        background: rgba(13, 17, 23, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-left: 3px solid transparent; /* Status Color */
+        border-radius: 4px;
+        padding: 10px 15px;
+        position: relative;
+        transition: all 0.2s ease;
+        z-index: 1;
+    }
+    
+    .intel-log:hover {
+        background: rgba(45, 209, 209, 0.05);
+        transform: translateX(4px);
+        box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* Status Colors */
+    .intel-log.type-money { border-left-color: var(--accent-2); }
+    .intel-log.type-alert { border-left-color: var(--bridge-danger); }
+    .intel-log.type-info { border-left-color: var(--accent); }
+
+    /* Icon Container */
+    .intel-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #111;
+        border: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+        box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    
+    .intel-log.type-money .intel-icon { color: var(--accent-2); border-color: rgba(249, 199, 79, 0.3); }
+    .intel-log.type-alert .intel-icon { color: var(--bridge-danger); border-color: rgba(255, 42, 42, 0.3); }
+    .intel-log.type-info .intel-icon { color: var(--accent); border-color: rgba(45, 209, 209, 0.3); }
+
+    .intel-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .intel-meta {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-bottom: 2px;
+        letter-spacing: 1px;
+    }
+
+    .intel-msg {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+    }
+    
+    .intel-amount {
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        margin-left: auto;
+        padding-left: 15px;
+        white-space: nowrap;
+    }
 </style>
 
 <div class="container-full">
@@ -357,41 +521,79 @@ $capacity = 20; // Default or fetch from config if available, hardcoding 20 for 
                     </div>
                 <?php endif; ?>
 
-                <!-- Charter / Description -->
+                <!-- Charter Terminal -->
                 <div class="dashboard-card">
-                    <h4><i class="fas fa-file-contract text-neon-blue"></i> Alliance Charter</h4>
-                    <div class="p-3 bg-darker rounded border border-secondary" style="min-height: 150px; white-space: pre-wrap; color: var(--text);">
-                        <?= !empty($alliance['description']) ? htmlspecialchars($alliance['description']) : '<span class="text-muted fst-italic">No public manifesto established.</span>' ?>
+                    <h4><i class="fas fa-file-code text-neon-blue"></i> Alliance Manifesto</h4>
+                    <div class="charter-terminal">
+                        <div class="charter-header">
+                            <span>FILE: CHARTER.TXT</span>
+                            <span>STATUS: READ_ONLY</span>
+                        </div>
+                        <div class="charter-body">
+                            <?= !empty($alliance['description']) ? htmlspecialchars($alliance['description']) : '<span class="text-muted fst-italic">> SYSTEM_MSG: No data found.</span>' ?>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Activity Feed -->
+            <!-- Right: Live Intel Stream -->
             <div class="col-md-7">
                 <?php if ($state['is_member']): ?>
                     <div class="dashboard-card" style="height: 100%;">
-                        <h4 class="mb-3"><i class="fas fa-satellite-dish text-success"></i> Recent Activity</h4>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="mb-0"><i class="fas fa-satellite-dish text-success"></i> Live Intel Stream</h4>
+                            <span class="badge bg-dark border border-secondary text-muted">SECURE CHANNEL</span>
+                        </div>
                         
-                        <div class="feed-container" style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+                        <div class="feed-container" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
                             <?php if (empty($logs)): ?>
                                 <div class="text-center text-muted py-5">
                                     <i class="fas fa-wind fa-2x mb-3"></i><br>
                                     All quiet on the western front.
                                 </div>
                             <?php else: ?>
-                                <ul class="list-unstyled">
-                                    <?php foreach (array_slice($logs, 0, 15) as $log): ?>
-                                        <li class="mb-3 pb-3 border-bottom border-secondary d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <div class="text-light"><?= htmlspecialchars($log['message']) ?></div>
-                                                <small class="text-muted"><?= $log['date'] ?></small>
+                                <div class="intel-stream">
+                                    <?php foreach (array_slice($logs, 0, 20) as $log): ?>
+                                        <?php 
+                                            // Simple Log Classification
+                                            $msg = strtolower($log['message']);
+                                            $type = 'type-info';
+                                            $icon = 'fa-info';
+                                            
+                                            if (strpos($msg, 'donated') !== false || strpos($msg, 'repaid') !== false) {
+                                                $type = 'type-money';
+                                                $icon = 'fa-coins';
+                                            } elseif (strpos($msg, 'left') !== false || strpos($msg, 'kicked') !== false) {
+                                                $type = 'type-alert';
+                                                $icon = 'fa-user-slash';
+                                            } elseif (strpos($msg, 'joined') !== false) {
+                                                $type = 'type-info';
+                                                $icon = 'fa-user-plus';
+                                            } elseif (strpos($msg, 'loan') !== false) {
+                                                $type = 'type-money';
+                                                $icon = 'fa-hand-holding-usd';
+                                            }
+                                        ?>
+                                        <div class="intel-log <?= $type ?>">
+                                            <div class="intel-icon">
+                                                <i class="fas <?= $icon ?>"></i>
                                             </div>
-                                            <span class="<?= $log['css_class'] ?> fw-bold">
-                                                <?= $log['formatted_amount'] ?>
-                                            </span>
-                                        </li>
+                                            <div class="intel-content">
+                                                <div class="intel-meta">
+                                                    <?= date('H:i', strtotime($log['date'])) ?> // SERVER_LOG
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="intel-msg"><?= htmlspecialchars($log['message']) ?></div>
+                                                    <?php if (!empty($log['formatted_amount']) && $log['formatted_amount'] !== '0'): ?>
+                                                        <div class="intel-amount <?= $log['css_class'] ?>">
+                                                            <?= $log['formatted_amount'] ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
                                     <?php endforeach; ?>
-                                </ul>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
