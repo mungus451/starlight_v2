@@ -497,6 +497,31 @@
                         <span class="advisor-stat-label">Defense</span>
                         <span class="advisor-stat-value"><?= number_format($advisorData['defenseBreakdown']['total']) ?></span>
                     </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Spy Offense</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['spyBreakdown']['total']) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Spy Defense</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['sentryBreakdown']['total']) ?></span>
+                    </div>
+                    
+                    <div class="advisor-stat" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <span class="advisor-stat-label">Soldiers</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->soldiers) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Guards</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->guards) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Spies</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->spies) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Sentries</span>
+                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->sentries) ?></span>
+                    </div>
                 </div>
             </div>
             
