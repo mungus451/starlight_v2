@@ -34,14 +34,15 @@ class WarBattleLogRepository
         int $allianceId,
         int $prestigeGained,
         int $unitsKilled,
-        int $creditsPlundered
+        int $creditsPlundered,
+        int $structureDamage // NEW
     ): int {
         $sql = "
             INSERT INTO war_battle_logs
                 (war_id, battle_report_id, user_id, alliance_id, prestige_gained, 
-                 units_killed, credits_plundered)
+                 units_killed, credits_plundered, structure_damage)
             VALUES
-                (?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?, ?, ?, ?, ?)
         ";
         
         $stmt = $this->db->prepare($sql);
@@ -52,12 +53,73 @@ class WarBattleLogRepository
             $allianceId,
             $prestigeGained,
             $unitsKilled,
-            $creditsPlundered
+            $creditsPlundered,
+            $structureDamage // NEW
         ]);
         
         return (int)$this->db->lastInsertId();
     }
     
+    /**
+     * Retrieves aggregated statistics for a specific war.
+     *
+     * @param int $warId
+     * @return array
+     */
+    public function getWarAggregates(int $warId): array
+    {
+        $sql = "
+            SELECT 
+                COUNT(id) as total_attacks,
+                SUM(credits_plundered) as total_plunder,
+                SUM(units_killed) as total_units_killed,
+                SUM(structure_damage) as total_structure_damage
+            FROM war_battle_logs
+            WHERE war_id = ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$warId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+            'total_attacks' => 0,
+            'total_plunder' => 0,
+            'total_units_killed' => 0,
+            'total_structure_damage' => 0,
+        ];
+    }
+
+    /**
+     * Finds battle logs for a specific war.
+     *
+     * @param int $warId
+     * @param int $limit
+     * @param int $offset
+     * @return WarBattleLog[]
+     */
+    public function findByWarId(int $warId, int $limit = 20, int $offset = 0): array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM war_battle_logs WHERE war_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        $stmt->execute([$warId, $limit, $offset]);
+        
+        $logs = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $logs[] = $this->hydrate($row);
+        }
+        return $logs;
+    }
+
+    /**
+     * Counts battle logs for a specific war.
+     *
+     * @param int $warId
+     * @return int
+     */
+    public function countByWarId(int $warId): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM war_battle_logs WHERE war_id = ?");
+        $stmt->execute([$warId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     /**
      * Helper method to convert a database row into a WarBattleLog entity.
      *

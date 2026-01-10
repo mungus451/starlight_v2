@@ -244,25 +244,53 @@
 
             <!-- War Status (Conditional) -->
             <?php if ($allianceContext['war']): ?>
-                <div class="uplink-module">
-                    <div class="module-title">WAR STATUS: ACTIVE</div>
-                    <div class="war-status-box">
-                        <span class="text-muted" style="font-size:0.7rem;">ENGAGEMENT VS</span>
-                        <span class="war-opponent"><?= htmlspecialchars($allianceContext['war']['opponent']) ?></span>
-                        <div class="war-score-bar">
-                            <div class="war-score-fill" style="width: <?= $allianceContext['war']['progress'] ?>%;"></div>
-                        </div>
-                        <div class="war-score-text">
-                            <?= number_format($allianceContext['war']['score']) ?> / <?= number_format($allianceContext['war']['goal']) ?> GOAL
+                <a href="<?= htmlspecialchars($allianceContext['war']['dashboard_url']) ?>" class="uplink-module-link">
+                    <div class="uplink-module">
+                        <div class="module-title">WAR STATUS: ACTIVE</div>
+                        <div class="war-status-box">
+                            <span class="text-muted" style="font-size:0.7rem;">ENGAGEMENT VS</span>
+                            <span class="war-opponent"><?= htmlspecialchars($allianceContext['war']['opponent']) ?></span>
+                            <div class="war-score-bar">
+                                <div class="war-score-fill" style="width: <?= $allianceContext['war']['progress'] ?>%;"></div>
+                            </div>
+                            <div class="war-score-text" data-war-end-time="<?= htmlspecialchars($allianceContext['war']['end_time']) ?>">
+                                Time Left: --h --m
+                            </div>
                         </div>
                     </div>
-                </div>
+                </a>
             <?php endif; ?>
 
             <!-- Faction Objective -->
             <div class="uplink-module">
                 <div class="module-title">
                     PRIORITY OBJECTIVE
+
+<script>
+    // Minimalist countdown for sidebar
+    document.addEventListener('DOMContentLoaded', function() {
+        const warStatus = document.querySelector('[data-war-end-time]');
+        if (warStatus) {
+            const updateWarTimer = () => {
+                const endTime = new Date(warStatus.dataset.warEndTime + ' UTC').getTime();
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    warStatus.innerHTML = "WAR CONCLUDED";
+                    return;
+                }
+                
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+                warStatus.innerHTML = `Time Left: ${hours}h ${minutes}m`;
+            };
+            updateWarTimer();
+            setInterval(updateWarTimer, 60000); // Update every minute
+        }
+    });
+</script>
                     <?php if ($allianceContext['is_leader']): ?>
                         <a href="/alliance/directive/manage" class="uplink-btn btn-sm" style="margin-left: auto; padding: 2px 6px; font-size: 0.65rem; text-decoration: none; display: inline-block;">SET</a>
                     <?php endif; ?>
@@ -602,5 +630,6 @@
     
 <?php endif; ?>
 
+    <script src="/js/tabs.js?v=<?= time() ?>"></script>
 </body>
 </html>

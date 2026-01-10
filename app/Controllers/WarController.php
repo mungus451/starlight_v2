@@ -58,10 +58,7 @@ class WarController extends BaseController
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
             'target_alliance_id' => 'required|int',
-            'war_name' => 'required|string|min:3|max:100',
-            'casus_belli' => 'nullable|string|max:1000',
-            'goal_key' => 'required|string|in:credits_plundered,units_killed',
-            'goal_threshold' => 'required|int|min:1'
+            'casus_belli' => 'nullable|string|max:1000'
         ]);
 
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
@@ -75,10 +72,7 @@ class WarController extends BaseController
         $response = $this->warService->declareWar(
             $userId,
             $data['target_alliance_id'],
-            $data['war_name'],
-            $data['casus_belli'] ?? '',
-            $data['goal_key'],
-            $data['goal_threshold']
+            $data['casus_belli'] ?? ''
         );
         
         if ($response->isSuccess()) {
@@ -88,5 +82,37 @@ class WarController extends BaseController
         }
         
         $this->redirect('/alliance/war');
+    }
+
+    /**
+     * Displays the War Dashboard for a specific active war.
+     *
+     * @param array $params Contains 'warId' from the route.
+     * @return void
+     */
+    public function showDashboard(array $params): void
+    {
+        $warId = (int)($params['warId'] ?? 0);
+        $viewerAllianceId = $this->session->get('alliance_id');
+
+        if ($warId <= 0 || !$viewerAllianceId) {
+            $this->session->setFlash('error', 'You must be in an alliance to view a war dashboard.');
+            $this->redirect('/alliance/war');
+            return;
+        }
+        
+        $response = $this->warService->getWarDashboardData($warId, $viewerAllianceId);
+
+        if (!$response->isSuccess()) {
+            $this->session->setFlash('error', $response->message);
+            $this->redirect('/alliance/war'); // Redirect to main war page if dashboard fails
+            return;
+        }
+
+        $data = $response->data;
+        $data['layoutMode'] = 'full';
+        $data['title'] = 'War Dashboard'; // Name was removed, use a generic title
+
+        $this->render('alliance/war_dashboard.php', $data);
     }
 }

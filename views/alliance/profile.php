@@ -740,13 +740,12 @@ $capacity = 20; // Default or fetch from config if available, hardcoding 20 for 
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle">
+                    <table class="table table-dark table-hover align-middle w-100">
                         <thead>
                             <tr class="text-muted text-uppercase small">
                                 <th>Name</th>
                                 <th>Role</th>
                                 <th>Joined</th>
-                                <th class="text-end">Management</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -776,44 +775,6 @@ $capacity = 20; // Default or fetch from config if available, hardcoding 20 for 
                                     </td>
                                     <td class="text-muted small">
                                         <?= date('M j, Y', strtotime($member['created_at'] ?? 'now')) ?>
-                                    </td>
-                                    <td class="text-end">
-                                        <?php if ($member['can_be_managed']): ?>
-                                            <div class="dropdown d-inline-block">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                    Manage
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-dark">
-                                                    <?php if ($perms['can_manage_roles']): ?>
-                                                        <li><h6 class="dropdown-header">Assign Role</h6></li>
-                                                        <?php foreach ($roles as $role): 
-                                                            if ($role->name === 'Leader') continue; 
-                                                        ?>
-                                                            <li>
-                                                                <form action="/alliance/role/assign" method="POST">
-                                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                                                    <input type="hidden" name="target_user_id" value="<?= $member['id'] ?>">
-                                                                    <input type="hidden" name="role_id" value="<?= $role->id ?>">
-                                                                    <button class="dropdown-item"><?= htmlspecialchars($role->name) ?></button>
-                                                                </form>
-                                                            </li>
-                                                        <?php endforeach; ?>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                    <?php endif; ?>
-                                                    
-                                                    <?php if ($perms['can_kick']): ?>
-                                                        <li>
-                                                            <form action="/alliance/kick/<?= $member['id'] ?>" method="POST" onsubmit="return confirm('Are you sure you want to kick this member?');">
-                                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                                                                <button class="dropdown-item text-danger"><i class="fas fa-ban me-2"></i> Kick Member</button>
-                                                            </form>
-                                                        </li>
-                                                    <?php endif; ?>
-                                                </ul>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="text-muted small">-</span>
-                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

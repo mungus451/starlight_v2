@@ -72,15 +72,15 @@ $canManageThisMember = ($permissions['can_kick'] || $permissions['can_manage_rol
 && !$isSelf
 && !$isMemberLeader;
 
-$formattedMembers[] = [
-'id' => $member['id'],
-'character_name' => $member['character_name'],
-'role_name' => $member['alliance_role_name'] ?? 'None',
-'role_id' => $member['alliance_role_id'],
-'can_be_managed' => $canManageThisMember
-];
-}
-
+            $formattedMembers[] = [
+                'id' => $member['id'],
+                'character_name' => $member['character_name'],
+                'role_name' => $member['alliance_role_name'] ?? 'None',
+                'role_id' => $member['alliance_role_id'],
+                'profile_picture_url' => $member['profile_picture_url'] ?? null,
+                'can_be_managed' => $canManageThisMember
+            ];
+        }
 // 5. Process Bank Logs (Format Dates)
 $formattedLogs = [];
 foreach ($data['bankLogs'] as $log) {

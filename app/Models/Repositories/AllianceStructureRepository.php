@@ -79,6 +79,53 @@ class AllianceStructureRepository
     }
 
     /**
+     * Finds structures that are eligible to be war objectives.
+     *
+     * @param int $allianceId
+     * @param array $eligibleKeys
+     * @param int $minLevel
+     * @return AllianceStructure[]
+     */
+    public function findEligibleWarObjectives(int $allianceId, array $eligibleKeys, int $minLevel): array
+    {
+        if (empty($eligibleKeys)) {
+            return [];
+        }
+
+        $inClause = implode(',', array_fill(0, count($eligibleKeys), '?'));
+        $sql = "
+            SELECT * FROM alliance_structures 
+            WHERE alliance_id = ? 
+            AND structure_key IN ({$inClause})
+            AND level >= ?
+        ";
+        
+        $params = array_merge([$allianceId], $eligibleKeys, [$minLevel]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        $structures = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $structures[] = $this->hydrate($row);
+        }
+        return $structures;
+    }
+
+    /**
+     * Sets a specific structure as a war objective.
+     *
+     * @param int $structureId
+     * @return bool
+     */
+    public function setAsWarObjective(int $structureId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE alliance_structures SET is_war_objective = 1 WHERE id = ?"
+        );
+        return $stmt->execute([$structureId]);
+    }
+
+    /**
      * Helper method to convert a database row into an AllianceStructure entity.
      *
      * @param array $data
@@ -91,6 +138,7 @@ class AllianceStructureRepository
             alliance_id: (int)$data['alliance_id'],
             structure_key: $data['structure_key'],
             level: (int)$data['level'],
+            is_war_objective: (bool)$data['is_war_objective'],
             created_at: $data['created_at'],
             updated_at: $data['updated_at']
         );

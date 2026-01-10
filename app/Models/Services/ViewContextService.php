@@ -168,13 +168,20 @@ class ViewContextService
             $opponentId = $isDeclarer ? $war->declared_against_alliance_id : $war->declarer_alliance_id;
             
             // War Progress
-            $pct = ($war->goal_threshold > 0) ? ($myScore / $war->goal_threshold) * 100 : 0;
+            $startTime = strtotime($war->start_time);
+            $endTime = strtotime($war->end_time);
+            $now = time();
+            
+            $totalDuration = $endTime - $startTime;
+            $elapsed = $now - $startTime;
+            $pct = ($totalDuration > 0) ? ($elapsed / $totalDuration) * 100 : 0;
             
             $warData = [
                 'opponent' => $opponentName ?? 'Unknown',
                 'progress' => min(100, $pct),
                 'score' => $myScore,
-                'goal' => $war->goal_threshold
+                'end_time' => $war->end_time, // Pass end_time for JS timer
+                'dashboard_url' => '/alliance/war/dashboard/' . $war->id // NEW
             ];
 
             // Add War Op

@@ -371,5 +371,17 @@ return [
     'bank' => [
         'banking_datacenter_regen_reduction_minutes' => 10, // 10 minutes per level
         'max_banking_datacenter_reduction_minutes' => 180 // 3 hours
-    ]
+    ],
+
+    'war' => [
+        'strategic_objective_points' => 2500,
+        'eligible_strategic_targets' => [
+            'fortification',
+            'offense_upgrade',
+            'armory',
+            'planetary_shield',
+            'ion_cannon_network'
+        ],
+        'min_level_for_strategic_targets' => 5
+    ],
 ];

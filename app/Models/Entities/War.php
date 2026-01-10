@@ -27,21 +27,22 @@ readonly class War
      */
     public function __construct(
         public readonly int $id,
-        public readonly string $name,
         public readonly string $war_type,
         public readonly int $declarer_alliance_id,
         public readonly int $declared_against_alliance_id,
         public readonly ?string $casus_belli,
         public readonly string $status,
-        public readonly string $goal_key,
-        public readonly int $goal_threshold,
+        public readonly ?string $goal_key,
+        public readonly ?int $goal_threshold,
         public readonly int $declarer_score,
         public readonly int $defender_score,
         public readonly ?int $winner_alliance_id,
         public readonly string $start_time,
         public readonly ?string $end_time,
         public readonly ?string $declarer_name = null,
-        public readonly ?string $defender_name = null
+        public readonly ?string $declarer_tag = null,
+        public readonly ?string $defender_name = null,
+        public readonly ?string $defender_tag = null
     ) {
     }
 }

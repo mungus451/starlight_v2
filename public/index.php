@@ -261,10 +261,12 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/diplomacy/treaty/break/{id:\d+}', [DiplomacyController::class, 'handleBreakTreaty']);
     $r->addRoute('POST', '/alliance/diplomacy/rivalry/declare', [DiplomacyController::class, 'handleDeclareRivalry']);
     
-    $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
-    $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
+        // Alliance War
+        $r->addRoute(['GET', 'POST'], '/alliance/war', ['App\\Controllers\\WarController', 'show']);
+        $r->addRoute(['POST'], '/alliance/war/declare', ['App\\Controllers\\WarController', 'handleDeclareWar']);
+        $r->addRoute(['GET'], '/alliance/war/dashboard/{warId:\d+}', ['App\\Controllers\\WarController', 'showDashboard']);
 
-    // --- Almanac ---
+        // Alliance Forum
     $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);
     $r->addRoute('GET', '/almanac/search_players', [AlmanacController::class, 'searchPlayers']);
     $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);

@@ -67,7 +67,9 @@ class WarRepository
             SELECT 
                 w.*, 
                 a1.name as declarer_name, 
-                a2.name as defender_name
+                a1.tag as declarer_tag,
+                a2.name as defender_name,
+                a2.tag as defender_tag
             FROM wars w
             JOIN alliances a1 ON w.declarer_alliance_id = a1.id
             JOIN alliances a2 ON w.declared_against_alliance_id = a2.id
@@ -97,20 +99,20 @@ class WarRepository
         string $name,
         int $declarerId,
         int $defenderId,
-        string $casusBelli,
-        string $goalKey,
-        int $goalThreshold
+        string $casusBelli
     ): int {
+        $endTime = date("Y-m-d H:i:s", strtotime("+7 days"));
+
         $sql = "
             INSERT INTO wars 
                 (name, declarer_alliance_id, declared_against_alliance_id, casus_belli, 
-                 status, goal_key, goal_threshold)
+                 status, end_time)
             VALUES
-                (?, ?, ?, ?, 'active', ?, ?)
+                (?, ?, ?, ?, 'active', ?)
         ";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$name, $declarerId, $defenderId, $casusBelli, $goalKey, $goalThreshold]);
+        $stmt->execute([$name, $declarerId, $defenderId, $casusBelli, $endTime]);
         
         return (int)$this->db->lastInsertId();
     }
@@ -147,21 +149,22 @@ class WarRepository
     {
         return new War(
             id: (int)$data['id'],
-            name: $data['name'],
             war_type: $data['war_type'],
             declarer_alliance_id: (int)$data['declarer_alliance_id'],
             declared_against_alliance_id: (int)$data['declared_against_alliance_id'],
             casus_belli: $data['casus_belli'] ?? null,
             status: $data['status'],
-            goal_key: $data['goal_key'],
-            goal_threshold: (int)$data['goal_threshold'],
+            goal_key: $data['goal_key'] ?? null,
+            goal_threshold: isset($data['goal_threshold']) ? (int)$data['goal_threshold'] : null,
             declarer_score: (int)$data['declarer_score'],
             defender_score: (int)$data['defender_score'],
             winner_alliance_id: isset($data['winner_alliance_id']) ? (int)$data['winner_alliance_id'] : null,
             start_time: $data['start_time'],
             end_time: $data['end_time'] ?? null,
             declarer_name: $data['declarer_name'] ?? null,
-            defender_name: $data['defender_name'] ?? null
+            declarer_tag: $data['declarer_tag'] ?? null,
+            defender_name: $data['defender_name'] ?? null,
+            defender_tag: $data['defender_tag'] ?? null
         );
     }
 }

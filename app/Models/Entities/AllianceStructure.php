@@ -21,6 +21,7 @@ readonly class AllianceStructure
         public readonly int $alliance_id,
         public readonly string $structure_key,
         public readonly int $level,
+        public readonly bool $is_war_objective,
         public readonly ?string $created_at,
         public readonly ?string $updated_at
     ) {

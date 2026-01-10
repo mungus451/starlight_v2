@@ -3,6 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\ServiceResponse;
+use App\Core\Permissions;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceRoleRepository;
@@ -11,6 +12,9 @@ use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Repositories\WarHistoryRepository;
 use App\Models\Services\NotificationService;
 use App\Models\Entities\User;
+use App\Models\Repositories\AllianceStructureRepository;
+use App\Core\Config;
+use App\Models\Repositories\WarSpyLogRepository;
 use PDO;
 
 /**
@@ -29,6 +33,10 @@ class WarService
     private WarBattleLogRepository $warLogRepo;
     private WarHistoryRepository $warHistoryRepo;
     private NotificationService $notificationService;
+    private AllianceStructureRepository $allianceStructureRepo;
+    private Config $config;
+    private WarSpyLogRepository $warSpyLogRepo; // NEW
+    private WarBattleLogRepository $warBattleLogRepo; // NEW
 
     public function __construct(
         PDO $db,
@@ -38,7 +46,11 @@ class WarService
         WarRepository $warRepo,
         WarBattleLogRepository $warLogRepo,
         WarHistoryRepository $warHistoryRepo,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        AllianceStructureRepository $allianceStructureRepo,
+        Config $config,
+        WarSpyLogRepository $warSpyLogRepo, // NEW
+        WarBattleLogRepository $warBattleLogRepo // NEW
     ) {
         $this->db = $db;
         $this->userRepo = $userRepo;
@@ -48,6 +60,10 @@ class WarService
         $this->warLogRepo = $warLogRepo;
         $this->warHistoryRepo = $warHistoryRepo;
         $this->notificationService = $notificationService;
+        $this->allianceStructureRepo = $allianceStructureRepo;
+        $this->config = $config;
+        $this->warSpyLogRepo = $warSpyLogRepo; // NEW
+        $this->warBattleLogRepo = $warBattleLogRepo; // NEW
     }
 
     /**
@@ -68,7 +84,7 @@ class WarService
 
         // 2. Check Permissions
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        $canDeclareWar = ($role && $role->can_declare_war);
+        $canDeclareWar = ($role && $role->hasPermission(Permissions::CAN_DECLARE_WAR));
 
         // 3. Fetch Data
         // Fetch alliances for the "Declare War" dropdown (excluding own)
@@ -79,8 +95,8 @@ class WarService
 
         // In a real app, we'd filter these by alliance_id, but for now we return placeholders/global lists
         // as per the original Controller implementation structure.
-        // TODO: Add repository methods to fetch specific wars for this alliance if needed.
-        $activeWars = []; // Placeholder: $this->warRepo->findActiveWarsByAlliance($allianceId);
+        $activeWar = $this->warRepo->findActiveWarByAllianceId($allianceId);
+        $activeWars = $activeWar ? [$activeWar] : [];
         $historicalWars = []; // Placeholder: $this->warHistoryRepo->findByAlliance($allianceId);
 
         return ServiceResponse::success('Data retrieved', [
@@ -99,10 +115,7 @@ class WarService
     public function declareWar(
         int $adminUserId,
         int $targetAllianceId,
-        string $name,
-        string $casusBelli,
-        string $goalKey,
-        int $goalThreshold
+        string $casusBelli
     ): ServiceResponse {
         $adminUser = $this->userRepo->findById($adminUserId);
         if (!$adminUser || $adminUser->alliance_id === null) {
@@ -112,19 +125,14 @@ class WarService
         $declarerAllianceId = $adminUser->alliance_id;
 
         // 1. Permission Check
-        if (!$this->checkPermission($adminUserId, $declarerAllianceId, 'can_declare_war')) {
+        $role = $this->roleRepo->findById($adminUser->alliance_role_id);
+        if (!$role || !$role->hasPermission(Permissions::CAN_DECLARE_WAR)) {
             return ServiceResponse::error('You do not have permission to declare war.');
         }
 
         // 2. Validation
         if ($declarerAllianceId === $targetAllianceId) {
             return ServiceResponse::error('You cannot declare war on your own alliance.');
-        }
-        if (empty(trim($name))) {
-            return ServiceResponse::error('War name cannot be empty.');
-        }
-        if ($goalThreshold <= 0) {
-            return ServiceResponse::error('Goal threshold must be a positive number.');
         }
         
         // 3. Check for existing active war
@@ -133,8 +141,19 @@ class WarService
             return ServiceResponse::error('There is already an active war between your alliances.');
         }
         
-        // 4. Create War
-        $this->warRepo->createWar($name, $declarerAllianceId, $targetAllianceId, $casusBelli, $goalKey, $goalThreshold);
+        // 4. Create War - Generate a generic name
+        $declaringAlliance = $this->allianceRepo->findById($declarerAllianceId);
+        $targetAlliance = $this->allianceRepo->findById($targetAllianceId);
+
+        if (!$declaringAlliance || !$targetAlliance) {
+            return ServiceResponse::error('Could not find one of the alliances.');
+        }
+
+        $genericName = "War of [{$declaringAlliance->tag}] vs [{$targetAlliance->tag}]";
+        $this->warRepo->createWar($genericName, $declarerAllianceId, $targetAllianceId, $casusBelli);
+        
+        // Designate strategic targets for the new war
+        $this->designateStrategicTargets($declarerAllianceId, $targetAllianceId);
         
         // Notify both alliances about the war declaration
         $declaringAlliance = $this->allianceRepo->findById($declarerAllianceId);
@@ -145,7 +164,7 @@ class WarService
                 $targetAllianceId,
                 0,
                 'War Declared!',
-                "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared war: {$name}",
+                "Alliance [{$declaringAlliance->tag}] {$declaringAlliance->name} declared war on you!",
                 "/alliance/war"
             );
             
@@ -153,7 +172,7 @@ class WarService
                 $declarerAllianceId,
                 $adminUserId,
                 'War Declared!',
-                "Your alliance declared war against [{$targetAlliance->tag}] {$targetAlliance->name}: {$name}",
+                "Your alliance declared war against [{$targetAlliance->tag}] {$targetAlliance->name}.",
                 "/alliance/war"
             );
         }
@@ -162,70 +181,138 @@ class WarService
     }
 
     /**
-     * Logs a battle's results into the war system.
+     * Designates strategic targets for both alliances at the start of a war.
+     *
+     * @param int $alliance1Id
+     * @param int $alliance2Id
+     * @return void
      */
-    public function logBattle(
-        int $battleReportId,
-        User $attacker,
-        User $defender,
-        string $attackResult,
-        int $prestigeGained,
-        int $unitsKilled,
-        int $creditsPlundered
-    ): void {
-        if ($attacker->alliance_id === null || $defender->alliance_id === null) {
-            return;
-        }
+    public function designateStrategicTargets(int $alliance1Id, int $alliance2Id): void
+    {
+        $eligible_targets = $this->config->get('game_balance.war.eligible_strategic_targets');
+        $min_level = $this->config->get('game_balance.war.min_level_for_strategic_targets');
 
-        $war = $this->warRepo->findActiveWarBetween($attacker->alliance_id, $defender->alliance_id);
-        if ($war === null) {
-            return;
-        }
+        // Designate for Alliance 1
+        $this->designateTargetForAlliance($alliance1Id, $eligible_targets, $min_level);
 
-        $scoringAllianceId = null;
-        $scoreGained = 0;
-        $isDeclarer = false;
-
-        if ($attackResult === 'victory') {
-            $scoringAllianceId = $attacker->alliance_id;
-            
-            if ($war->goal_key === 'credits_plundered') {
-                $scoreGained = $creditsPlundered;
-            } elseif ($war->goal_key === 'units_killed') {
-                $scoreGained = $unitsKilled;
-            }
-            
-            $isDeclarer = ($scoringAllianceId === $war->declarer_alliance_id);
-        }
-
-        $this->warLogRepo->createLog(
-            $war->id,
-            $battleReportId,
-            $attacker->id,
-            $attacker->alliance_id,
-            $prestigeGained,
-            $unitsKilled,
-            $creditsPlundered
-        );
-        
-        if ($scoreGained > 0 && $scoringAllianceId !== null) {
-            $this->warRepo->updateWarScore($war->id, $isDeclarer, $scoreGained);
-        }
+        // Designate for Alliance 2
+        $this->designateTargetForAlliance($alliance2Id, $eligible_targets, $min_level);
     }
 
     /**
-     * Helper function to check if a user has a specific permission.
+     * Helper function to select and flag a strategic target for a single alliance.
+     *
+     * @param int $allianceId
+     * @param array $eligible_targets
+     * @param int $min_level
+     * @return void
      */
-    private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
+    private function designateTargetForAlliance(int $allianceId, array $eligible_targets, int $min_level): void
     {
-        $user = $this->userRepo->findById($userId);
-        
-        if (!$user || $user->alliance_id !== $allianceId) {
-            return false;
+        $structures = $this->allianceStructureRepo->findEligibleWarObjectives($allianceId, $eligible_targets, $min_level);
+
+        if (empty($structures)) {
+            // No eligible structures, log or handle as needed
+            return;
+        }
+
+        // Randomly select one structure to be the objective
+        $targetStructure = $structures[array_rand($structures)];
+        $this->allianceStructureRepo->setAsWarObjective($targetStructure->id);
+    }
+
+    /**
+     * Logs points for a destroyed strategic objective.
+     *
+     * @param int $warId
+     * @param int $winningAllianceId
+     * @return void
+     */
+    public function logObjectivePoints(int $warId, int $winningAllianceId): void
+    {
+        $points = $this->config->get('game_balance.war.strategic_objective_points', 0);
+        if ($points <= 0) {
+            return;
         }
         
-        $role = $this->roleRepo->findById($user->alliance_role_id);
+        $war = $this->warRepo->findById($warId);
+        if (!$war) {
+            return;
+        }
 
-        return $role && property_exists($role, $permissionName) && $role->{$permissionName} === true;
+        $isDeclarer = ($winningAllianceId === $war->declarer_alliance_id);
+        $this->warRepo->updateWarScore($war->id, $isDeclarer, $points);
+
+        // TODO: Create a nice war log message for this event
+    }
+
+    /**
+     * Retrieves all data required for the War Dashboard view.
+     *
+     * @param int $warId
+     * @param int $viewerAllianceId
+     * @return ServiceResponse
+     */
+    public function getWarDashboardData(int $warId, int $viewerAllianceId): ServiceResponse
+    {
+        $war = $this->warRepo->findById($warId);
+        if (!$war) {
+            return ServiceResponse::error('War not found.');
+        }
+
+        // Ensure the viewer's alliance is part of this war
+        if ($war->declarer_alliance_id !== $viewerAllianceId && $war->declared_against_alliance_id !== $viewerAllianceId) {
+            return ServiceResponse::error('You are not a participant in this war.');
+        }
+
+        // Determine sides
+        $isViewerDeclarer = ($war->declarer_alliance_id === $viewerAllianceId);
+        $yourAllianceId = $viewerAllianceId;
+        $opponentAllianceId = $isViewerDeclarer ? $war->declared_against_alliance_id : $war->declarer_alliance_id;
+
+        $yourAlliance = $this->allianceRepo->findById($yourAllianceId);
+        $opponentAlliance = $this->allianceRepo->findById($opponentAllianceId);
+
+        if (!$yourAlliance || !$opponentAlliance) {
+            return ServiceResponse::error('Could not load alliance data.');
+        }
+
+        // --- Overview Tab Data ---
+        $warAggregates = $this->warBattleLogRepo->getWarAggregates($warId);
+        $yourStrategicTargets = $this->allianceStructureRepo->findByAllianceId($yourAllianceId);
+        $opponentStrategicTargets = $this->allianceStructureRepo->findByAllianceId($opponentAllianceId);
+
+        $overviewData = [
+            'war' => $war,
+            'yourAlliance' => $yourAlliance,
+            'opponentAlliance' => $opponentAlliance,
+            'warAggregates' => $warAggregates,
+            'yourStrategicTargets' => array_filter($yourStrategicTargets, fn($s) => $s->is_war_objective),
+            'opponentStrategicTargets' => array_filter($opponentStrategicTargets, fn($s) => $s->is_war_objective),
+        ];
+
+        // --- Battle Log Tab Data (Placeholder for pagination) ---
+        $battleLogs = $this->warBattleLogRepo->findByWarId($warId, 20, 0);
+        $totalBattleLogs = $this->warBattleLogRepo->countByWarId($warId);
+
+        // --- Intel & Espionage Tab Data (Placeholder for pagination) ---
+        $spyLogs = $this->warSpyLogRepo->findByWarId($warId, 20, 0);
+        $totalSpyLogs = $this->warSpyLogRepo->countByWarId($warId);
+
+        // --- Performance Leaderboard Tab Data (TODO: Implement later) ---
+        $leaderboardData = []; // Placeholder
+
+        return ServiceResponse::success('War Dashboard Data', [
+            'overview' => $overviewData,
+            'battleLogs' => [
+                'logs' => $battleLogs,
+                'total' => $totalBattleLogs
+            ],
+            'spyLogs' => [
+                'logs' => $spyLogs,
+                'total' => $totalSpyLogs
+            ],
+            'leaderboard' => $leaderboardData,
+        ]);
     }
 }
