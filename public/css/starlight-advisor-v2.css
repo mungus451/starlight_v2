@@ -466,6 +466,16 @@ body.advisor-collapsed .advisor-layout-grid {
     margin-bottom: 1rem;
 }
 
+.resource-cost-grid .d-flex {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.resource-cost-grid .d-flex span:last-child {
+    text-align: right;
+    flex: 1 0 auto;
+}
+
 /* Colors & Accents */
 .text-neon-blue { color: #00f3ff; text-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
 .border-neon { border-color: #00f3ff !important; box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
