@@ -151,6 +151,45 @@ class AllianceService
     }
 
     /**
+     * Checks if a user has permission to manage alliance directives.
+     *
+     * @param int $userId
+     * @param int $allianceId
+     * @return bool
+     */
+    public function canManageDirectives(int $userId, int $allianceId): bool
+    {
+        // 1. Check if Alliance Leader
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if ($alliance && $alliance->leader_id === $userId) {
+            return true;
+        }
+
+        // 2. Check Role Permission
+        $user = $this->userRepo->findById($userId);
+        if (!$user) return false;
+        
+        // Ensure user is actually in this alliance
+        if ($user->alliance_id !== $allianceId) return false;
+        
+        $role = $this->roleRepo->findById($user->alliance_role_id);
+        // Using 'CAN_MANAGE_DIPLOMACY' as a proxy for directive management for now
+        return $role && $role->hasPermission(Permissions::CAN_MANAGE_DIPLOMACY);
+    }
+
+    /**
+     * Gets the active directive type for an alliance.
+     * 
+     * @param int $allianceId
+     * @return string|null
+     */
+    public function getAllianceDirectiveType(int $allianceId): ?string
+    {
+        $alliance = $this->allianceRepo->findById($allianceId);
+        return $alliance ? $alliance->directive_type : null;
+    }
+
+    /**
      * Gets all data needed for the paginated alliance list page.
      */
     public function getAlliancePageData(int $page): array

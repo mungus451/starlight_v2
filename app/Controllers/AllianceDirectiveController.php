@@ -3,14 +3,10 @@
 namespace App\Controllers;
 
 use App\Core\Session;
-use App\Core\Permissions;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\AllianceService;
-use App\Models\Repositories\AllianceRoleRepository;
-use App\Models\Repositories\UserRepository;
-use App\Models\Repositories\AllianceRepository; // --- NEW ---
 
 /**
  * Handles Alliance Command Directive actions.
@@ -18,25 +14,16 @@ use App\Models\Repositories\AllianceRepository; // --- NEW ---
 class AllianceDirectiveController extends BaseController
 {
     private AllianceService $allianceService;
-    private AllianceRoleRepository $roleRepo;
-    private UserRepository $userRepo;
-    private AllianceRepository $allianceRepo; // --- NEW ---
 
     public function __construct(
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
         ViewContextService $viewContextService,
-        AllianceService $allianceService,
-        AllianceRoleRepository $roleRepo,
-        UserRepository $userRepo,
-        AllianceRepository $allianceRepo // --- NEW ---
+        AllianceService $allianceService
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->allianceService = $allianceService;
-        $this->roleRepo = $roleRepo;
-        $this->userRepo = $userRepo;
-        $this->allianceRepo = $allianceRepo;
     }
 
     /**
@@ -44,7 +31,7 @@ class AllianceDirectiveController extends BaseController
      */
     public function getOptions(): void
     {
-        if (!$this->isLeaderOrOfficer()) {
+        if (!$this->checkPermission()) {
             $this->jsonResponse(['error' => 'Unauthorized'], 403);
             return;
         }
@@ -60,20 +47,20 @@ class AllianceDirectiveController extends BaseController
      */
     public function showPage(): void
     {
-        if (!$this->isLeaderOrOfficer()) {
+        if (!$this->checkPermission()) {
             $this->session->setFlash('error', 'Unauthorized access.');
             $this->redirect('/dashboard');
             return;
         }
 
         $allianceId = $this->session->get('alliance_id');
-        $alliance = $this->allianceRepo->findById($allianceId);
+        $activeType = $this->allianceService->getAllianceDirectiveType($allianceId);
         $options = $this->allianceService->getDirectiveOptions($allianceId);
 
         $this->render('alliance/directive.php', [
             'title' => 'Alliance Command Center',
             'options' => $options,
-            'activeType' => $alliance->directive_type ?? null
+            'activeType' => $activeType
         ]);
     }
 
@@ -83,7 +70,7 @@ class AllianceDirectiveController extends BaseController
     public function setDirective(): void
     {
         // 1. Authorization
-        if (!$this->isLeaderOrOfficer()) {
+        if (!$this->checkPermission()) {
             $this->jsonResponse(['error' => 'Unauthorized'], 403);
             return;
         }
@@ -107,24 +94,13 @@ class AllianceDirectiveController extends BaseController
         }
     }
 
-    private function isLeaderOrOfficer(): bool
+    private function checkPermission(): bool
     {
         $userId = $this->session->get('user_id');
         $allianceId = $this->session->get('alliance_id');
         
         if (!$userId || !$allianceId) return false;
 
-        // 1. Check if Alliance Leader
-        $alliance = $this->allianceRepo->findById($allianceId);
-        if ($alliance && $alliance->leader_id === $userId) {
-            return true;
-        }
-
-        // 2. Check Role Permission
-        $user = $this->userRepo->findById($userId);
-        if (!$user) return false;
-        
-        $role = $this->roleRepo->findById($user->alliance_role_id);
-        return $role && $role->hasPermission(Permissions::CAN_MANAGE_DIPLOMACY); // Or specific 'can_set_directive' later
+        return $this->allianceService->canManageDirectives($userId, $allianceId);
     }
 }
