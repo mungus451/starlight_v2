@@ -165,7 +165,7 @@ $tickerItems = [
                             <div><h4 style="margin:0;">Safehouse</h4><span class="text-muted small">Grid Ghosting</span></div>
                         </div>
                         <div class="bm-card-body">
-                            <p class="text-muted">Immune to attacks for <span class="text-accent">4h</span>. Attack/Spy breaks silence.</p>
+                            <p class="text-muted">Immune for <span class="text-accent">4h</span>. Attack/Spy breaks silence. <span class="text-warning">12h Total Cycle</span>.</p>
                             
                             <?php if (!empty($isSafehouseCooldown)): ?>
                                 <div class="badge bg-dark border-warning text-warning w-full text-center p-2 mt-auto">
