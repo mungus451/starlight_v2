@@ -41,6 +41,9 @@ function initOscilloscope() {
             canvas.height = height;
         }
 
+        const container = document.querySelector('.command-bridge-container');
+        const isWarMode = container && container.classList.contains('war-mode');
+
         now = Date.now();
         const centerY = height / 2;
 
@@ -48,7 +51,7 @@ function initOscilloscope() {
 
         // Draw Baseline
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(0, 243, 255, 0.2)';
+        ctx.strokeStyle = isWarMode ? 'rgba(255, 42, 42, 0.3)' : 'rgba(0, 243, 255, 0.2)';
         ctx.lineWidth = 1;
         ctx.moveTo(0, centerY);
         ctx.lineTo(width, centerY);
@@ -87,9 +90,10 @@ function initOscilloscope() {
         });
 
         // Draw Scanner Line
-        const scanX = (now % 5000) / 5000 * width; // 5 second scan loop
+        const scanSpeed = isWarMode ? 2500 : 5000; // Faster scan in war
+        const scanX = (now % scanSpeed) / scanSpeed * width;
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.strokeStyle = isWarMode ? 'rgba(255, 50, 50, 0.6)' : 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = 2;
         ctx.moveTo(scanX, 0);
         ctx.lineTo(scanX, height);

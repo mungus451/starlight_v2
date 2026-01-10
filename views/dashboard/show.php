@@ -44,7 +44,7 @@ if ($threat_and_opportunity['active_war']) {
 
 <link rel="stylesheet" href="/css/dashboard_v2.css?v=<?= time() ?>">
 
-<div class="command-bridge-container">
+<div class="command-bridge-container <?= $status_class === 'critical' ? 'war-mode' : '' ?>">
     <!-- Visual Atmosphere -->
     <div class="tactical-grid-overlay"></div>
 
@@ -68,6 +68,11 @@ if ($threat_and_opportunity['active_war']) {
                 <span>SECTOR: 0-ALPHA</span>
                 <div class="system-status <?= $status_class ?>">
                     <i class="fas fa-microchip"></i> <?= $status_label ?>
+                    <?php if ($status_class === 'critical'): ?>
+                        <a href="/alliance/war" class="ms-2 badge bg-danger text-white text-decoration-none">
+                            <i class="fas fa-external-link-alt"></i> WAR_ROOM
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

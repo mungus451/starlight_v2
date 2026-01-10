@@ -428,6 +428,45 @@
     animation: grid-scan 60s linear infinite;
 }
 
+/* War Mode Atmosphere Shift */
+.command-bridge-container.war-mode .tactical-grid-overlay {
+    background-image: 
+        linear-gradient(rgba(255, 50, 50, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 50, 50, 0.08) 1px, transparent 1px);
+    animation: grid-scan 30s linear infinite; /* Faster scan in war */
+}
+
+.command-bridge-container.war-mode .holo-title {
+    color: var(--bridge-danger);
+    text-shadow: 0 0 15px rgba(255, 42, 42, 0.6);
+}
+
+.command-bridge-container.war-mode .holo-planet {
+    background: 
+        radial-gradient(circle at 30% 30%, rgba(255, 50, 50, 0.1), transparent),
+        repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255, 50, 50, 0.2) 6px);
+    box-shadow: 0 0 20px rgba(255, 50, 50, 0.4), inset 0 0 20px rgba(255, 50, 50, 0.2);
+    border-color: rgba(255, 50, 50, 0.3);
+}
+
+.command-bridge-container.war-mode .holo-avatar-overlay {
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.3);
+    border-color: rgba(255, 50, 50, 0.5);
+}
+
+.command-bridge-container.war-mode .bridge-module {
+    border-color: rgba(255, 50, 50, 0.15);
+}
+
+.command-bridge-container.war-mode .bridge-module:hover {
+    box-shadow: 0 5px 20px rgba(255, 50, 50, 0.15);
+    border-color: var(--bridge-danger);
+}
+
+.command-bridge-container.war-mode .module-title {
+    color: var(--bridge-danger);
+}
+
 @keyframes grid-scan {
     0% { transform: perspective(500px) rotateX(20deg) scale(1.5) translateY(0); }
     100% { transform: perspective(500px) rotateX(20deg) scale(1.5) translateY(40px); }
