@@ -10,13 +10,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('armory-dynamic-container');
     if (!container || !window.armoryData) return;
 
-    const state = {
-        unit: 'soldier', // Default
+    const STORAGE_KEY = 'starlight_glossary_armory_state';
+
+    // Default State
+    let state = {
+        unit: 'soldier',
         category: 'all'
     };
 
+    // Load state from localStorage
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+        try {
+            const parsed = JSON.parse(savedState);
+            // Validation: Ensure unit exists
+            if (window.armoryData[parsed.unit]) {
+                state.unit = parsed.unit;
+                
+                // Validation: Ensure category exists for this unit
+                if (parsed.category === 'all' || window.armoryData[parsed.unit].categories[parsed.category]) {
+                    state.category = parsed.category;
+                } else {
+                    state.category = 'all';
+                }
+            }
+        } catch (e) {
+            console.error("Failed to parse armory state", e);
+        }
+    }
+
     // 2. Render Functions
     function render() {
+        // Save current state
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
         container.innerHTML = ''; // Clear current
 
         // A. Unit Navigation (Top Level)
@@ -69,10 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.category === 'all') {
             // Flatten all categories
             Object.values(categories).forEach(cat => {
-                itemsToShow = itemsToShow.concat(Object.values(cat.items));
+                Object.values(cat.items).forEach((item, index) => {
+                    item.__tier = index + 1; // Derive tier from position
+                    itemsToShow.push(item);
+                });
             });
         } else {
-            itemsToShow = Object.values(categories[state.category].items);
+            const cat = categories[state.category];
+            Object.values(cat.items).forEach((item, index) => {
+                item.__tier = index + 1; // Derive tier from position
+                itemsToShow.push(item);
+            });
         }
 
         if (itemsToShow.length === 0) {
@@ -94,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Stats Formatting
         let statsHtml = '';
+        if (item.__tier) statsHtml += `<span class="stat-badge tier">Tier ${item.__tier}</span>`;
         if (item.attack) statsHtml += `<span class="stat-badge attack"><i class="fas fa-crosshairs"></i> ${item.attack}</span>`;
         if (item.defense) statsHtml += `<span class="stat-badge defense"><i class="fas fa-shield-alt"></i> ${item.defense}</span>`;
         if (item.credit_bonus) statsHtml += `<span class="stat-badge eco"><i class="fas fa-coins"></i> +${item.credit_bonus}%</span>`;

@@ -1943,6 +1943,7 @@ details[open] .tier-summary::after {
 .stat-badge.attack { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
 .stat-badge.defense { color: #51cf66; border: 1px solid rgba(81, 207, 102, 0.3); }
 .stat-badge.eco { color: #fcc419; border: 1px solid rgba(252, 196, 25, 0.3); }
+.stat-badge.tier { color: #b197fc; border: 1px solid rgba(177, 151, 252, 0.3); background: rgba(177, 151, 252, 0.05); }
 
 .adb-body {
     display: flex;

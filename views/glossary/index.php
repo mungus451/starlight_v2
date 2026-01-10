@@ -454,6 +454,24 @@
     document.addEventListener('DOMContentLoaded', () => {
         const tabs = document.querySelectorAll('.tab-link');
         const contents = document.querySelectorAll('.tab-content');
+        const GLOSSARY_TAB_KEY = 'starlight_glossary_active_tab';
+
+        // 1. Restore State
+        const savedTab = localStorage.getItem(GLOSSARY_TAB_KEY);
+        if (savedTab) {
+            const targetTab = document.querySelector(`.tab-link[data-tab="${savedTab}"]`);
+            const targetContent = document.getElementById(savedTab);
+
+            if (targetTab && targetContent) {
+                // Deactivate all
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                
+                // Activate saved
+                targetTab.classList.add('active');
+                targetContent.classList.add('active');
+            }
+        }
 
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -465,6 +483,9 @@
                 tab.classList.add('active');
                 const targetId = tab.getAttribute('data-tab');
                 document.getElementById(targetId).classList.add('active');
+                
+                // Save State
+                localStorage.setItem(GLOSSARY_TAB_KEY, targetId);
             });
         });
     });
