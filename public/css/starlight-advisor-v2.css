@@ -7,46 +7,71 @@
 /* --- ADVISOR LAYOUT GRID --- */
 .advisor-layout-grid {
     display: grid;
-    grid-template-columns: 1fr 320px; /* Main content | Advisor */
+    /* 
+       Grid Columns:
+       1fr (Main Content) | 280px (Space reserved for Fixed Advisor Panel)
+       Note: The fixed panel sits visually on top of the 280px column space.
+    */
+    grid-template-columns: 1fr 280px;
     grid-template-rows: auto;
-    gap: 1.5rem;
-    padding-top: 2rem; /* Give some space below the main nav */
+    gap: 0; /* Remove gap as sidebar is flush */
+    padding-top: 0; /* Align with top */
 }
 
 @media (max-width: 1200px) {
     .advisor-layout-grid {
         grid-template-columns: 1fr; /* Stack vertically on smaller screens */
         padding-top: 1rem;
+        gap: 1.5rem;
     }
 }
 
 /* Main content area within the grid */
 .advisor-main-content {
     grid-column: 1 / 2;
+    padding: 1.5rem; /* Add padding here since grid gap is gone */
+    min-width: 0; /* CRITICAL: Allows grid item to shrink below content size */
+    overflow-x: hidden; /* Prevents internal spillover */
 }
 
 /* Advisor panel container */
 .advisor-panel {
-    grid-column: 2 / 3;
-    position: sticky;
-    top: 100px; /* Stick below the main nav */
-    height: calc(100vh - 120px); /* Full height minus some padding */
-    overflow-y: auto;
-    padding: 1.5rem;
-    background-color: rgba(13, 17, 23, 0.9);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    /* Fixed Positioning for Desktop */
+    position: fixed;
+    top: 60px; /* Below Navbar */
+    right: 0;
+    width: 280px;
+    height: calc(100vh - 60px);
+    
+    /* Styling */
+    background-color: rgba(13, 17, 23, 0.95); /* Darker opacity for legibility */
+    border-left: 1px solid var(--border);
+    border-radius: 0; /* Flush edges */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    
+    /* Scrolling & Spacing */
+    overflow-y: auto;
+    padding: 1.5rem;
+    z-index: 800; /* Below modals (1000+) but above page content */
+    
+    /* Box Shadow for depth */
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 1200px) {
     .advisor-panel {
-        grid-column: 1 / -1; /* Full width */
-        position: static; /* No sticky on mobile/tablet */
+        /* Reset to static flow on mobile */
+        position: static;
+        width: 100%;
         height: auto;
         overflow-y: visible;
-        margin-top: 2rem;
+        margin-top: 0;
+        border-left: none;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: none;
+        background-color: rgba(13, 17, 23, 0.9);
     }
 }
 
@@ -276,7 +301,8 @@
 /* --- ARMORY SPECIFIC GRID & CARD STYLES --- */
 .structures-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* Increased to 340px to match Dashboard 'feel' (2 cols on laptops) */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
 
