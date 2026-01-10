@@ -408,8 +408,8 @@
                             'citizen_package' => ['name' => 'Citizen Stimulus', 'desc' => 'Adds ' . number_format($quantities['citizen_package_amount'] ?? 50000) . ' citizens to your population.'],
                             'void_container' => ['name' => 'Void Container', 'desc' => 'A mysterious container from the Void. Contains random loot.'],
                             'shadow_contract' => ['name' => 'Shadow Contract', 'desc' => 'Hires a mercenary fleet for temporary protection.'],
-                            'radar_jamming' => ['name' => 'Radar Jamming', 'desc' => 'Prevents others from spying on you for a short duration.'],
-                            'safehouse' => ['name' => 'Safehouse Protocol', 'desc' => 'Protect your empire from all attacks for 4 hours.'],
+                            'radar_jamming' => ['name' => 'Radar Jamming', 'desc' => 'Blocks all incoming spy attempts for 4 hours.'],
+                            'safehouse' => ['name' => 'Safehouse Protocol', 'desc' => 'Protect your empire from all attacks for 4 hours. 12-hour total cooldown cycle.'],
                             'safehouse_cracker' => ['name' => 'Safehouse Cracker', 'desc' => 'Bypass one enemy safehouse protection.'],
                             'high_risk_buff' => ['name' => 'High Risk Booster', 'desc' => 'Grants significant bonuses but with dangerous side effects.']
                         ];
