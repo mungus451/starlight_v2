@@ -104,7 +104,7 @@ class AllianceStructureServiceTest extends TestCase
         $this->allianceRepo->shouldReceive('findById')->with($allianceId)->andReturn($alliance);
         
         // 5. Mock Owned Structure (Level 26)
-        $owned = new AllianceStructure(1, $allianceId, $structureKey, 26, null, null);
+        $owned = new AllianceStructure(1, $allianceId, $structureKey, 26, false, null, null);
         $this->structRepo->shouldReceive('findByAllianceAndKey')->with($allianceId, $structureKey)->andReturn($owned);
         
         // 6. Expect Bank Update
