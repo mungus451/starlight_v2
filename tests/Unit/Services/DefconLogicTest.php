@@ -68,7 +68,6 @@ class DefconLogicTest extends TestCase
     private function callCalculateDefcon(int $allianceId): int
     {
         $reflection = new ReflectionMethod(ViewContextService::class, 'calculateDefcon');
-        $reflection->setAccessible(true);
         return $reflection->invoke($this->service, $allianceId);
     }
 
