@@ -15,6 +15,8 @@ use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
@@ -43,6 +45,8 @@ class AttackServiceTest extends TestCase
     private AllianceRepository|Mockery\MockInterface $mockAllianceRepo;
     private AllianceBankLogRepository|Mockery\MockInterface $mockBankLogRepo;
     private BountyRepository|Mockery\MockInterface $mockBountyRepo;
+    private WarRepository|Mockery\MockInterface $mockWarRepo;
+    private WarBattleLogRepository|Mockery\MockInterface $mockWarBattleLogRepo;
     private ArmoryService|Mockery\MockInterface $mockArmoryService;
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalcService;
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
@@ -64,6 +68,8 @@ class AttackServiceTest extends TestCase
         $this->mockAllianceRepo = Mockery::mock(AllianceRepository::class);
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockBountyRepo = Mockery::mock(BountyRepository::class);
+        $this->mockWarRepo = Mockery::mock(WarRepository::class);
+        $this->mockWarBattleLogRepo = Mockery::mock(WarBattleLogRepository::class);
         $this->mockArmoryService = Mockery::mock(ArmoryService::class);
         $this->mockPowerCalcService = Mockery::mock(PowerCalculatorService::class);
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
@@ -88,6 +94,8 @@ class AttackServiceTest extends TestCase
             $this->mockAllianceRepo,
             $this->mockBankLogRepo,
             $this->mockBountyRepo,
+            $this->mockWarRepo,
+            $this->mockWarBattleLogRepo,
             $this->mockArmoryService,
             $this->mockPowerCalcService,
             $this->mockLevelUpService,

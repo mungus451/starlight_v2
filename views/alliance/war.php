@@ -24,40 +24,55 @@ $myAlliance = ['tag' => 'STAR', 'name' => 'Starlight Command', 'avatar' => '/img
 
     <?php if (!empty($activeWars)): ?>
         <?php foreach ($activeWars as $war): ?>
-            <!-- 1. SITUATION REPORT -->
-            <div class="dashboard-card war-situation-report mb-4">
-                <h4 class="mb-3 text-center"><i class="fas fa-crosshairs text-danger me-2"></i> Active Conflict: [<?= htmlspecialchars($war->declarer_tag) ?>] vs. [<?= htmlspecialchars($war->defender_tag) ?>]</h4>
-                <div class="row align-items-center">
-                    <!-- Declarer Alliance -->
-                    <div class="col-12 col-md-4 text-center">
-                        <div class="war-alliance-card">
-                            <div class="alliance-tag text-neon-blue">[<?= htmlspecialchars($war->declarer_tag) ?>]</div>
-                            <div class="alliance-name"><?= htmlspecialchars($war->declarer_name) ?></div>
-                            <div class="war-score text-neon-blue"><?= number_format($war->declarer_score) ?></div>
+        <div class="dashboard-card war-score-dashboard mb-4" data-war-id="<?= $war->id ?>">
+            <h3 class="text-center mb-4 text-neon-blue"><i class="fas fa-star-half-alt me-2"></i>War Score</h3>
+            <div class="row align-items-center text-center mb-4">
+                <div class="col-5">
+                    <img id="alliance-a-avatar-<?= $war->id ?>" src="/serve/alliance_avatar/<?= htmlspecialchars($war->declarer_profile_picture_url ?? 'default.png') ?>" class="hex-avatar-lg mb-2 border-neon">
+                    <h4 id="alliance-a-name-<?= $war->id ?>" class="text-neon-blue glitch-text" data-text="[<?= htmlspecialchars($war->declarer_tag) ?>] <?= htmlspecialchars($war->declarer_name) ?>">[<?= htmlspecialchars($war->declarer_tag) ?>] <?= htmlspecialchars($war->declarer_name) ?></h4>
+                </div>
+                <div class="col-2">
+                    <h3 class="text-neon-blue">VS</h3>
+                    <div class="timer-countdown text-muted small" data-end-time="<?= htmlspecialchars($war->end_time) ?>">
+                        --d --h --m
+                    </div>
+                </div>
+                <div class="col-5">
+                    <img id="alliance-b-avatar-<?= $war->id ?>" src="/serve/alliance_avatar/<?= htmlspecialchars($war->defender_profile_picture_url ?? 'default.png') ?>" class="hex-avatar-lg mb-2 border-danger">
+                    <h4 id="alliance-b-name-<?= $war->id ?>" class="text-danger glitch-text" data-text="[<?= htmlspecialchars($war->defender_tag) ?>] <?= htmlspecialchars($war->defender_name) ?>">[<?= htmlspecialchars($war->defender_tag) ?>] <?= htmlspecialchars($war->defender_name) ?></h4>
+                </div>
+            </div>
+
+            <div class="score-breakdown mb-4">
+                <!-- Economy -->
+                <div class="score-category mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-neon-blue"><i class="fas fa-coins me-2"></i>Economy (Plunder)</span>
+                        <div>
+                            <span id="alliance-a-economy-score-<?= $war->id ?>" class="text-neon-blue">0</span> / <span id="alliance-b-economy-score-<?= $war->id ?>" class="text-danger">0</span>
                         </div>
                     </div>
-
-                    <!-- VS Separator & Timer -->
-                    <div class="col-12 col-md-4 text-center">
-                        <div class="vs-separator my-3 my-md-0">VS</div>
-                        <div class="war-timer-card mt-3">
-                            <div class="timer-label">Time Remaining</div>
-                            <div class="timer-countdown" data-end-time="<?= htmlspecialchars($war->end_time) ?>">
-                                --d --h --m
-                            </div>
-                        </div>
+                    <div class="progress bg-dark border border-secondary" style="height: 15px;">
+                        <div id="economy-progress-a-<?= $war->id ?>" class="progress-bar bg-neon-blue" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div id="economy-progress-b-<?= $war->id ?>" class="progress-bar bg-danger" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
+                </div>
+                <!-- Add other categories similarly with war->id suffix -->
+            </div>
 
-                    <!-- Defender Alliance -->
-                    <div class="col-12 col-md-4 text-center">
-                        <div class="war-alliance-card">
-                            <div class="alliance-tag text-danger">[<?= htmlspecialchars($war->defender_tag) ?>]</div>
-                            <div class="alliance-name"><?= htmlspecialchars($war->defender_name) ?></div>
-                            <div class="war-score text-danger"><?= number_format($war->defender_score) ?></div>
-                        </div>
+            <div class="total-score text-center mt-4">
+                <h3 class="mb-3 text-uppercase">Total War Score</h3>
+                <div class="row">
+                    <div class="col-5">
+                        <div id="alliance-a-total-score-<?= $war->id ?>" class="display-4 text-neon-blue glitch-text" data-text="0">0</div>
+                    </div>
+                    <div class="col-2"></div>
+                    <div class="col-5">
+                        <div id="alliance-b-total-score-<?= $war->id ?>" class="display-4 text-danger glitch-text" data-text="0">0</div>
                     </div>
                 </div>
             </div>
+        </div>
         <?php endforeach; ?>
     <?php endif; ?>
 
@@ -173,5 +188,6 @@ $myAlliance = ['tag' => 'STAR', 'name' => 'Starlight Command', 'avatar' => '/img
     </div>
 </div>
 
-<!-- Link to the new JavaScript file -->
+<!-- Link to the new JavaScript files -->
 <script src="/js/war_table.js?v=<?= time() ?>"></script>
+<script src="/js/war_score.js?v=<?= time() ?>"></script>

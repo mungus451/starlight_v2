@@ -265,6 +265,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
         $r->addRoute(['GET', 'POST'], '/alliance/war', ['App\\Controllers\\WarController', 'show']);
         $r->addRoute(['POST'], '/alliance/war/declare', ['App\\Controllers\\WarController', 'handleDeclareWar']);
         $r->addRoute(['GET'], '/alliance/war/dashboard/{warId:\d+}', ['App\\Controllers\\WarController', 'showDashboard']);
+        $r->addRoute(['GET'], '/alliance/war/{warId:\d+}/score', ['App\\Controllers\\WarController', 'getWarScoreData']);
 
         // Alliance Forum
     $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);

@@ -143,6 +143,8 @@ class HighRiskProtocolTest extends TestCase
                 $this->createMock(AllianceRepository::class),
                 $this->createMock(AllianceBankLogRepository::class),
                 $this->createMock(BountyRepository::class),
+                $this->createMock(\App\Models\Repositories\WarRepository::class), // NEW
+                $this->createMock(\App\Models\Repositories\WarBattleLogRepository::class), // NEW
                 $this->createMock(ArmoryService::class),
                 $this->powerService,
                 $this->createMock(LevelUpService::class),

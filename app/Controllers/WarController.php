@@ -6,6 +6,8 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\WarService;
+use App\Services\WarMetricsService;
+use App\Core\JsonResponse;
 use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 
 /**
@@ -16,9 +18,11 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 class WarController extends BaseController
 {
     private WarService $warService;
+    private WarMetricsService $warMetricsService;
 
     public function __construct(
         WarService $warService,
+        WarMetricsService $warMetricsService,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
@@ -26,6 +30,7 @@ class WarController extends BaseController
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->warService = $warService;
+        $this->warMetricsService = $warMetricsService;
     }
 
     /**
@@ -114,5 +119,31 @@ class WarController extends BaseController
         $data['title'] = 'War Dashboard'; // Name was removed, use a generic title
 
         $this->render('alliance/war_dashboard.php', $data);
+    }
+
+    /**
+     * Fetches and returns the war score data for a given war.
+     *
+     * @param array $params Contains 'warId' from the route.
+     * @return void
+     */
+    public function getWarScoreData(array $params): void
+    {
+        $warId = (int)($params['warId'] ?? 0);
+
+        if ($warId <= 0) {
+            JsonResponse::sendError('Invalid war ID.', 400);
+            return;
+        }
+
+        $war = $this->warService->findWarById($warId);
+        if (!$war) {
+            JsonResponse::sendError('War not found.', 404);
+            return;
+        }
+
+        $warScoreDTO = $this->warMetricsService->getWarScore($war);
+
+        JsonResponse::send($warScoreDTO);
     }
 }

@@ -12,6 +12,8 @@ use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
@@ -40,6 +42,8 @@ class AttackService
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private BountyRepository $bountyRepo;
+    private WarRepository $warRepo;
+    private WarBattleLogRepository $warBattleLogRepo;
 
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
@@ -59,6 +63,8 @@ class AttackService
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
         BountyRepository $bountyRepo,
+        WarRepository $warRepo,
+        WarBattleLogRepository $warBattleLogRepo,
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService,
@@ -76,6 +82,8 @@ class AttackService
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->bountyRepo = $bountyRepo;
+        $this->warRepo = $warRepo;
+        $this->warBattleLogRepo = $warBattleLogRepo;
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
@@ -505,6 +513,26 @@ class AttackService
                     $this->resourceRepo->updateResources($attackerId, 0, $amount);
                     $this->bountyRepo->claimBounty($activeBounty['id'], $attackerId);
                     $bountyMsg = " Bounty Claimed! " . number_format($amount) . " Crystals acquired.";
+                }
+            }
+
+            // War Logging (If Active War Exists)
+            if ($attacker->alliance_id && $defender->alliance_id && $attacker->alliance_id !== $defender->alliance_id) {
+                $war = $this->warRepo->findActiveWarBetween($attacker->alliance_id, $defender->alliance_id);
+                if ($war) {
+                    // Note: Structure damage calculation is not yet implemented in main battle logic.
+                    $structureDamage = 0; 
+                    
+                    $this->warBattleLogRepo->createLog(
+                        $war->id,
+                        $battleReportId,
+                        $attackerId,
+                        $attacker->alliance_id,
+                        $warPrestigeGained,
+                        $defenderGuardsLost,
+                        $creditsPlundered,
+                        $structureDamage
+                    );
                 }
             }
 

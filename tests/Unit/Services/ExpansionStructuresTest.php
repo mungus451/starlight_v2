@@ -166,6 +166,8 @@ class ExpansionStructuresTest extends TestCase
         // --- 5. Setup AttackService ---
         $mockAllianceRepo = Mockery::mock(AllianceRepository::class);
         $mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
+        $mockWarRepo = Mockery::mock(\App\Models\Repositories\WarRepository::class); // NEW
+        $mockWarBattleLogRepo = Mockery::mock(\App\Models\Repositories\WarBattleLogRepository::class); // NEW
         
         $this->attackService = new AttackService(
             $this->mockPdo, 
@@ -177,7 +179,9 @@ class ExpansionStructuresTest extends TestCase
             $this->mockBattleRepo, 
             $mockAllianceRepo,
             $mockBankLogRepo,
-            $this->mockBountyRepo, 
+            $this->mockBountyRepo,
+            $mockWarRepo, // Injected
+            $mockWarBattleLogRepo, // Injected
             $this->mockArmoryService,
             $this->powerService, 
             $this->mockLevelUpService, 
