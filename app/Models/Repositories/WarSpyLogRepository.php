@@ -58,7 +58,20 @@ class WarSpyLogRepository
      */
     public function findByWarId(int $warId, int $limit = 20, int $offset = 0): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM war_spy_logs WHERE war_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        $sql = "
+            SELECT 
+                wsl.*, 
+                u_att.character_name as attacker_name, 
+                u_def.character_name as defender_name
+            FROM war_spy_logs wsl
+            LEFT JOIN users u_att ON wsl.attacker_user_id = u_att.id
+            LEFT JOIN users u_def ON wsl.defender_user_id = u_def.id
+            WHERE wsl.war_id = ? 
+            ORDER BY wsl.created_at DESC 
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$warId, $limit, $offset]);
         
         $logs = [];
@@ -100,7 +113,39 @@ class WarSpyLogRepository
             operation_type: $data['operation_type'],
             result: $data['result'],
             created_at: $data['created_at'],
-            updated_at: $data['updated_at']
+            updated_at: $data['updated_at'],
+            attacker_name: $data['attacker_name'] ?? null,
+            defender_name: $data['defender_name'] ?? null
         );
+    }
+
+    /**
+     * Retrieves the top spies for a specific war and alliance based on successful operations.
+     *
+     * @param int $warId
+     * @param int $allianceId
+     * @param int $limit
+     * @return array An array of ['character_name' => string, 'total_value' => int]
+     */
+    public function getTopSpies(int $warId, int $allianceId, int $limit = 5): array
+    {
+        $sql = "
+            SELECT 
+                u.character_name,
+                COUNT(wsl.id) as total_value
+            FROM war_spy_logs wsl
+            JOIN users u ON wsl.attacker_user_id = u.id
+            WHERE wsl.war_id = ? 
+              AND wsl.attacker_alliance_id = ?
+              AND wsl.result = 'success'
+            GROUP BY wsl.attacker_user_id
+            ORDER BY total_value DESC
+            LIMIT ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$warId, $allianceId, $limit]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

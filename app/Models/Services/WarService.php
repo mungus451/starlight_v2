@@ -299,8 +299,21 @@ class WarService
         $spyLogs = $this->warSpyLogRepo->findByWarId($warId, 20, 0);
         $totalSpyLogs = $this->warSpyLogRepo->countByWarId($warId);
 
-        // --- Performance Leaderboard Tab Data (TODO: Implement later) ---
-        $leaderboardData = []; // Placeholder
+        // --- Performance Leaderboard Tab Data ---
+        $leaderboardData = [
+            'your_alliance' => [
+                'vanguard' => $this->warBattleLogRepo->getTopPerformers($warId, $yourAllianceId, 'structure_damage'),
+                'reapers' => $this->warBattleLogRepo->getTopPerformers($warId, $yourAllianceId, 'units_killed'),
+                'marauders' => $this->warBattleLogRepo->getTopPerformers($warId, $yourAllianceId, 'credits_plundered'),
+                'phantoms' => $this->warSpyLogRepo->getTopSpies($warId, $yourAllianceId),
+            ],
+            'opponent_alliance' => [
+                'vanguard' => $this->warBattleLogRepo->getTopPerformers($warId, $opponentAllianceId, 'structure_damage'),
+                'reapers' => $this->warBattleLogRepo->getTopPerformers($warId, $opponentAllianceId, 'units_killed'),
+                'marauders' => $this->warBattleLogRepo->getTopPerformers($warId, $opponentAllianceId, 'credits_plundered'),
+                'phantoms' => $this->warSpyLogRepo->getTopSpies($warId, $opponentAllianceId),
+            ]
+        ];
 
         return ServiceResponse::success('War Dashboard Data', [
             'overview' => $overviewData,

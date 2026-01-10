@@ -14,6 +14,8 @@ use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\NotificationService;
 use App\Models\Services\EffectService;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarSpyLogRepository;
 use App\Models\Entities\UserStructure;
 use PDO;
 use Throwable;
@@ -32,13 +34,15 @@ class SpyService
     private LevelUpService $levelUpService;
     private NotificationService $notificationService;
     private EffectService $effectService;
+    private WarRepository $warRepo;
+    private WarSpyLogRepository $warSpyLogRepo;
 
     public function __construct(
         PDO $db, Config $config, UserRepository $userRepo, ResourceRepository $resourceRepo,
         StructureRepository $structureRepo, StatsRepository $statsRepo, SpyRepository $spyRepo,
         ArmoryService $armoryService, PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService, NotificationService $notificationService,
-        EffectService $effectService
+        EffectService $effectService, WarRepository $warRepo, WarSpyLogRepository $warSpyLogRepo
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -52,6 +56,8 @@ class SpyService
         $this->levelUpService = $levelUpService;
         $this->notificationService = $notificationService;
         $this->effectService = $effectService;
+        $this->warRepo = $warRepo;
+        $this->warSpyLogRepo = $warSpyLogRepo;
     }
     
     // ... getSpyData, getSpyReports, getSpyReport (Keep existing) ...
@@ -273,6 +279,23 @@ class SpyService
                 $stolen_naquadah, $stolen_dark_matter, $intel_naquadah, $intel_dark_matter,
                 $stolen_protoform, $intel_protoform
             );
+
+            // --- War Logging Check ---
+            if ($attacker->alliance_id && $defender->alliance_id) {
+                $activeWar = $this->warRepo->findActiveWarBetween($attacker->alliance_id, $defender->alliance_id);
+                if ($activeWar) {
+                    $this->warSpyLogRepo->createLog(
+                        $activeWar->id,
+                        $reportId,
+                        $attackerId,
+                        $attacker->alliance_id,
+                        $defender->id,
+                        $defender->alliance_id,
+                        'Infiltration', // Or map specific operation types if expanded later
+                        $operation_result
+                    );
+                }
+            }
 
             if ($isCaught) {
                 $notifTitle = "Security Alert: Spy Neutralized";

@@ -163,4 +163,38 @@ class WarBattleLogRepository
             victor_name: $data['victor_name'] ?? null
         );
     }
+
+    /**
+     * Retrieves the top performers for a specific war and alliance based on a metric.
+     *
+     * @param int $warId
+     * @param int $allianceId
+     * @param string $metric 'structure_damage', 'units_killed', or 'credits_plundered'
+     * @param int $limit
+     * @return array An array of ['character_name' => string, 'total_value' => int]
+     */
+    public function getTopPerformers(int $warId, int $allianceId, string $metric, int $limit = 5): array
+    {
+        $allowedMetrics = ['structure_damage', 'units_killed', 'credits_plundered'];
+        if (!in_array($metric, $allowedMetrics)) {
+            throw new \InvalidArgumentException("Invalid metric: $metric");
+        }
+
+        $sql = "
+            SELECT 
+                u.character_name,
+                SUM(wbl.$metric) as total_value
+            FROM war_battle_logs wbl
+            JOIN users u ON wbl.user_id = u.id
+            WHERE wbl.war_id = ? AND wbl.alliance_id = ?
+            GROUP BY wbl.user_id
+            ORDER BY total_value DESC
+            LIMIT ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$warId, $allianceId, $limit]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

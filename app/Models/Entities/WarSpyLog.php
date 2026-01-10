@@ -18,7 +18,9 @@ readonly class WarSpyLog
         public string $operation_type,
         public string $result,
         public string $created_at,
-        public ?string $updated_at
+        public ?string $updated_at,
+        public ?string $attacker_name = null,
+        public ?string $defender_name = null
     ) {
     }
 }

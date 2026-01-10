@@ -735,39 +735,79 @@ class ContainerFactory
 
 
 
-            // Spy Service
+                        // SpyService
 
-            SpyService::class => function (ContainerInterface $c) {
 
-                return new SpyService(
 
-                    $c->get(PDO::class),
+                        SpyService::class => function (ContainerInterface $c) {
 
-                    $c->get(Config::class),
 
-                    $c->get(UserRepository::class),
 
-                    $c->get(ResourceRepository::class),
+                            return new SpyService(
 
-                    $c->get(StructureRepository::class),
 
-                    $c->get(StatsRepository::class),
 
-                    $c->get(SpyRepository::class),
+                                $c->get(PDO::class),
 
-                    $c->get(ArmoryService::class),
 
-                    $c->get(PowerCalculatorService::class),
 
-                    $c->get(LevelUpService::class),
+                                $c->get(Config::class),
 
-                    $c->get(NotificationService::class),
 
-                    $c->get(EffectService::class)
 
-                );
+                                $c->get(UserRepository::class),
 
-            },
+
+
+                                $c->get(ResourceRepository::class),
+
+
+
+                                $c->get(StructureRepository::class),
+
+
+
+                                $c->get(StatsRepository::class),
+
+
+
+                                $c->get(SpyRepository::class),
+
+
+
+                                $c->get(ArmoryService::class),
+
+
+
+                                $c->get(PowerCalculatorService::class),
+
+
+
+                                $c->get(LevelUpService::class),
+
+
+
+                                $c->get(NotificationService::class),
+
+
+
+                                $c->get(EffectService::class),
+
+
+
+                                $c->get(WarRepository::class),
+
+
+
+                                $c->get(WarSpyLogRepository::class)
+
+
+
+                            );
+
+
+
+                        },
 
 
 
