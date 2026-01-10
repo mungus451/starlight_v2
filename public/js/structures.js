@@ -3,24 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     // 1. Category Tab Logic (Central Deck)
     // ==========================================
-    const navButtons = document.querySelectorAll('.structure-nav-btn');
-    const categoryContainers = document.querySelectorAll('.structure-category-container');
-
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Remove active class from all
-            navButtons.forEach(b => b.classList.remove('active'));
-            categoryContainers.forEach(c => c.classList.remove('active'));
-
-            // Activate clicked
-            btn.classList.add('active');
-            const targetId = btn.dataset.tabTarget;
-            const targetContainer = document.getElementById(targetId);
-            if (targetContainer) {
-                targetContainer.classList.add('active');
-            }
+    if (typeof StarlightUtils !== 'undefined') {
+        StarlightUtils.initTabs({
+            navSelector: '.structure-nav-btn',
+            contentSelector: '.structure-category-container',
+            dataAttr: 'tab-target'
         });
-    });
+    }
 
     // ==========================================
     // 2. Shopping Cart / Batch Logic

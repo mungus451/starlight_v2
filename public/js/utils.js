@@ -70,46 +70,99 @@ window.StarlightUtils = {
      * @param {string} defaultTabId Default tab ID to show if no history.
      */
     setupTabs: function(storageKey, defaultTabId) {
-        const navBtns = document.querySelectorAll('.structure-nav-btn');
-        const categories = document.querySelectorAll('.structure-category-container');
+        // Alias for backward compatibility, uses new initTabs logic
+        this.initTabs({
+            navSelector: '.structure-nav-btn',
+            contentSelector: '.structure-category-container',
+            storageKey: storageKey,
+            defaultTab: defaultTabId,
+            dataAttr: 'tab-target'
+        });
+    },
+
+    /**
+     * General tab initialization.
+     * Handles .tab-link (data-tab) and .structure-nav-btn (data-tab-target) by default.
+     * @param {Object} options Configuration options.
+     */
+    initTabs: function(options = {}) {
+        const {
+            navSelector = '.tab-link, .structure-nav-btn',
+            contentSelector = '.tab-content, .structure-category-container',
+            activeClass = 'active',
+            storageKey = null,
+            dataAttr = 'tab', // Primary data attribute (e.g., data-tab)
+            defaultTab = null,
+            onTabChange = null
+        } = options;
+
+        const navBtns = document.querySelectorAll(navSelector);
+        const contents = document.querySelectorAll(contentSelector);
         
         if (navBtns.length === 0) return;
 
         const activateTab = (targetId) => {
-            // Update Buttons
+            if (!targetId) return;
+
             navBtns.forEach(btn => {
-                if (btn.getAttribute('data-tab-target') === targetId) {
-                    btn.classList.add('active');
+                // Check both dataAttr and fallback to data-tab-target for structures
+                const btnId = btn.getAttribute(`data-${dataAttr}`) || btn.getAttribute('data-tab-target');
+                if (btnId === targetId) {
+                    btn.classList.add(activeClass);
                 } else {
-                    btn.classList.remove('active');
+                    btn.classList.remove(activeClass);
                 }
             });
 
-            // Update Content
-            categories.forEach(cat => {
-                if (cat.id === targetId) {
-                    cat.classList.add('active');
+            contents.forEach(content => {
+                if (content.id === targetId) {
+                    content.classList.add(activeClass);
                 } else {
-                    cat.classList.remove('active');
+                    content.classList.remove(activeClass);
                 }
             });
 
-            // Save State
-            localStorage.setItem(storageKey, targetId);
+            if (storageKey) {
+                localStorage.setItem(storageKey, targetId);
+            }
+
+            if (typeof onTabChange === 'function') {
+                onTabChange(targetId);
+            }
         };
 
         // Initialize from storage or default
-        const savedTab = localStorage.getItem(storageKey);
-        if (savedTab && document.getElementById(savedTab)) {
-            activateTab(savedTab);
+        let initialTab = defaultTab;
+        if (storageKey) {
+            const saved = localStorage.getItem(storageKey);
+            if (saved && document.getElementById(saved)) {
+                initialTab = saved;
+            }
+        }
+
+        if (initialTab) {
+            activateTab(initialTab);
         } else {
-            activateTab(defaultTabId);
+            // Find currently active or first
+            const activeBtn = document.querySelector(`${navSelector}.${activeClass}`);
+            if (activeBtn) {
+                const id = activeBtn.getAttribute(`data-${dataAttr}`) || activeBtn.getAttribute('data-tab-target');
+                activateTab(id);
+            }
         }
 
         // Add Listeners
         navBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                activateTab(btn.getAttribute('data-tab-target'));
+            btn.addEventListener('click', (e) => {
+                const targetId = btn.getAttribute(`data-${dataAttr}`) || btn.getAttribute('data-tab-target');
+                if (targetId) {
+                    // Only prevent default if it's an anchor with a hash or no href
+                    const href = btn.getAttribute('href');
+                    if (btn.tagName === 'A' && (!href || href.startsWith('#'))) {
+                        e.preventDefault();
+                    }
+                    activateTab(targetId);
+                }
             });
         });
     }

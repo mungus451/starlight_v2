@@ -5,7 +5,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Tabs
-    initTabs();
+    if (typeof StarlightUtils !== 'undefined') {
+        StarlightUtils.initTabs({
+            navSelector: '.structure-nav-btn',
+            contentSelector: '.structure-category-container',
+            dataAttr: 'tab-target'
+        });
+    }
 
     // 2. Initialize Input Masks (Format as you type)
     const masks = [
@@ -122,19 +128,5 @@ document.addEventListener('DOMContentLoaded', () => {
             display.value = safeAmount.toLocaleString();
             hidden.value = safeAmount;
         }
-    }
-
-    function initTabs() {
-        const tabs = document.querySelectorAll('.structure-nav-btn[data-tab-target]');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                document.querySelectorAll('.structure-category-container').forEach(c => c.classList.remove('active'));
-                const target = document.getElementById(tab.dataset.tabTarget);
-                if (target) target.classList.add('active');
-            });
-        });
     }
 });

@@ -24,31 +24,10 @@ window.Armory = {
      * Standard tab switching logic
      */
     initTabs: function() {
-        const tabs = document.querySelectorAll('.tab-link');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetId = tab.dataset.tab;
-                
-                // Toggle active link
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                // Toggle active content
-                document.querySelectorAll('.tab-content').forEach(c => {
-                    c.classList.remove('active');
-                });
-                document.getElementById(targetId).classList.add('active');
-                
-                // Save state
-                localStorage.setItem('armoryActiveTab', targetId);
+        if (typeof StarlightUtils !== 'undefined') {
+            StarlightUtils.initTabs({
+                storageKey: 'armoryActiveTab'
             });
-        });
-
-        // Restore tab
-        const savedTab = localStorage.getItem('armoryActiveTab');
-        if (savedTab && document.getElementById(savedTab)) {
-            const tabBtn = document.querySelector(`.tab-link[data-tab="${savedTab}"]`);
-            if (tabBtn) tabBtn.click();
         }
     },
 

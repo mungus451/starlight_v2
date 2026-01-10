@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Tabs (Advisor V2)
-    initTabs();
+    if (typeof StarlightUtils !== 'undefined') {
+        StarlightUtils.initTabs();
+    }
 
     // State
     let charts = {};
@@ -237,24 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(tr);
             });
         }
-    }
-
-    // --- Tab Logic ---
-    function initTabs() {
-        const links = document.querySelectorAll('.tab-link, .structure-nav-btn');
-        links.forEach(link => {
-            link.addEventListener('click', () => {
-                const targetId = link.dataset.tabTarget || link.dataset.tab;
-                if (!targetId) return;
-
-                links.forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.tab-content, .structure-category-container').forEach(c => c.classList.remove('active'));
-                
-                link.classList.add('active');
-                const target = document.getElementById(targetId);
-                if (target) target.classList.add('active');
-            });
-        });
     }
 
     // --- Chart Helper ---
