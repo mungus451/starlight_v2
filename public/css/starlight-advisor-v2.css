@@ -189,12 +189,12 @@ body.advisor-collapsed .advisor-layout-grid {
 }
 .advisor-player-info h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #fff;
 }
 .advisor-player-info .advisor-player-level {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--muted);
 }
 
@@ -216,13 +216,13 @@ body.advisor-collapsed .advisor-layout-grid {
 }
 .advisor-stat-label {
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     flex: 1 1 auto; /* Allow label to take available space */
     min-width: 120px; /* Ensure label doesn't get too squeezed */
 }
 .advisor-stat-value {
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #fff;
     text-align: right;
     flex: 1 0 auto; /* Allow value to stay on its own line if needed */
@@ -253,7 +253,7 @@ body.advisor-collapsed .advisor-layout-grid {
 }
 .advisor-pod-header h4 {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -278,31 +278,6 @@ body.advisor-collapsed .advisor-layout-grid {
     transform: rotate(180deg);
 }
 
-/* Quick Links */
-.advisor-quick-links {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-    gap: 0.75rem;
-    padding: 1rem;
-}
-.advisor-quick-link {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 50px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 1.2rem;
-}
-.advisor-quick-link:hover {
-    background: var(--accent);
-    color: #02030a;
-    border-color: var(--accent);
-}
 
 /* Scrollbar for Advisor Panel */
 .advisor-panel::-webkit-scrollbar {
@@ -319,18 +294,18 @@ body.advisor-collapsed .advisor-layout-grid {
 /* Realm News Specific Styles */
 .realm-news-title {
     margin: 0 0 0.5rem 0;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--accent-2);
 }
 .realm-news-content {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--muted);
     line-height: 1.5;
     margin-bottom: 1rem;
 }
 .realm-news-date {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted);
     opacity: 0.7;
     display: block;
@@ -359,7 +334,7 @@ body.advisor-collapsed .advisor-layout-grid {
     align-items: center;
     text-decoration: none;
     color: #fff;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     transition: color 0.2s ease;
 }
 .advisor-battle-link:hover {
