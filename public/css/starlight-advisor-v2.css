@@ -52,11 +52,102 @@
     
     /* Scrolling & Spacing */
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll when collapsing */
     padding: 1.5rem;
     z-index: 800; /* Below modals (1000+) but above page content */
     
     /* Box Shadow for depth */
     box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+    
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.advisor-panel.collapsed {
+    width: 50px;
+    padding: 1.5rem 0; /* Remove horizontal padding */
+}
+
+/* Hide content when collapsed */
+.advisor-panel.collapsed .advisor-header,
+.advisor-panel.collapsed .advisor-core-stats,
+.advisor-panel.collapsed .advisor-pod {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+}
+
+/* Toggle Button (Middle-Left Handle) */
+.advisor-toggle-btn {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    background: rgba(13, 17, 23, 0.95);
+    border: 1px solid var(--border);
+    border-left: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 15px 4px;
+    border-radius: 0 8px 8px 0; /* Rounded on right side initially? No, needs to be on left */
+    /* Wait, this button sits on the border line. 
+       If panel is right-fixed, the button should protrude to the LEFT of the panel. 
+       However, inside the panel (overflow hidden?), absolute positioning relative to panel might clip it.
+       Actually, standard pattern: put it inside, aligned to left edge.
+    */
+    border-radius: 8px 0 0 8px; 
+    transition: all 0.3s;
+    z-index: 801;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.advisor-toggle-btn:hover {
+    color: #fff;
+    background: rgba(0, 243, 255, 0.1);
+}
+
+/* When Collapsed: Button flips and stays visible */
+.advisor-panel.collapsed .advisor-toggle-btn {
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(180deg);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+}
+
+/* 
+   Correction: The Uplink button hangs OFF the side. 
+   For the Advisor panel (right side), the button should visually hang off the LEFT side of the panel.
+   But if overflow is hidden, we can't hang it outside unless we set overflow visible.
+   Let's check .alliance-uplink styles. It uses overflow-y: auto; overflow-x: hidden.
+   The button is absolute.
+   
+   If I place it at `left: 0`, it is inside the panel.
+   To match the "hanging tab" look, the panel needs to be the container.
+   
+   Let's stick to a simple internal toggle for now, or positioned relative to the panel.
+   For the Right Sidebar, the toggle usually sits on the left border.
+*/
+.advisor-toggle-btn {
+    position: absolute;
+    top: 50%;
+    left: 0; /* Aligned to left edge */
+    transform: translateY(-50%);
+    width: 24px;
+    height: 60px;
+    border-right: 1px solid var(--border);
+    border-radius: 0 8px 8px 0; 
+    /* Actually, purely internal 'tab' on the left wall */
+}
+
+/* Layout Grid Adjustment for Collapsed State */
+body.advisor-collapsed .advisor-layout-grid {
+    grid-template-columns: 1fr 50px;
 }
 
 @media (max-width: 1200px) {
@@ -72,6 +163,11 @@
         border-radius: 12px;
         box-shadow: none;
         background-color: rgba(13, 17, 23, 0.9);
+    }
+    
+    /* Hide toggle on mobile */
+    .advisor-toggle-btn {
+        display: none;
     }
 }
 
@@ -110,6 +206,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Allow wrapping for long labels/values */
+    gap: 0.5rem;
     padding: 0.75rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -119,11 +217,15 @@
 .advisor-stat-label {
     color: var(--muted);
     font-size: 0.9rem;
+    flex: 1 1 auto; /* Allow label to take available space */
+    min-width: 120px; /* Ensure label doesn't get too squeezed */
 }
 .advisor-stat-value {
     font-weight: 600;
     font-size: 1rem;
     color: #fff;
+    text-align: right;
+    flex: 1 0 auto; /* Allow value to stay on its own line if needed */
 }
 .advisor-stat-value.accent {
     color: var(--accent-2);

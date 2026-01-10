@@ -415,7 +415,10 @@
     </div>
 
     <?php if (!$this->session->get('is_mobile') && $isLoggedIn && isset($advisorData)): ?>
-        <aside class="advisor-panel">
+        <aside class="advisor-panel" id="advisor-panel">
+            <button class="advisor-toggle-btn" id="advisor-toggle" title="Toggle Advisor">
+                <i class="fas fa-chevron-right"></i>
+            </button>
             <!-- Advisor Header -->
             <div class="advisor-header">
                 <?php if ($advisorData['user']->profile_picture_url): ?>

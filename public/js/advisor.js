@@ -1,5 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
     const ADVISOR_STATE_KEY = 'advisorPodState';
+    const ADVISOR_COLLAPSED_KEY = 'starlight_advisor_collapsed';
+
+    const advisorPanel = document.getElementById('advisor-panel');
+    const advisorToggleBtn = document.getElementById('advisor-toggle');
+    const body = document.body;
+
+    // --- Sidebar Collapse Logic ---
+    if (advisorPanel && advisorToggleBtn) {
+        // 1. Restore State
+        const isCollapsed = localStorage.getItem(ADVISOR_COLLAPSED_KEY) === 'true';
+        if (isCollapsed) {
+            advisorPanel.classList.add('collapsed');
+            body.classList.add('advisor-collapsed');
+        }
+
+        // 2. Toggle Handler
+        advisorToggleBtn.addEventListener('click', () => {
+            advisorPanel.classList.toggle('collapsed');
+            body.classList.toggle('advisor-collapsed');
+            
+            // Save State
+            const collapsedState = advisorPanel.classList.contains('collapsed');
+            localStorage.setItem(ADVISOR_COLLAPSED_KEY, collapsedState);
+        });
+    }
 
     // Function to get the current state from localStorage
     const getAdvisorState = () => {
