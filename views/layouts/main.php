@@ -525,19 +525,6 @@
                 </div>
             </div>
             
-            <!-- Pod: Quick Links -->
-            <div class="advisor-pod">
-                <div class="advisor-pod-header" data-pod-id="quick-links">
-                    <h4><i class="fas fa-link" style="margin-right: 8px;"></i> Quick Links</h4>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="advisor-pod-content advisor-quick-links">
-                    <a href="/structures" class="advisor-quick-link" title="Structures"><i class="fas fa-industry"></i></a>
-                    <a href="/training" class="advisor-quick-link" title="Training"><i class="fas fa-users"></i></a>
-                    <a href="/armory" class="advisor-quick-link" title="Armory"><i class="fas fa-shield-alt"></i></a>
-                    <a href="/bank" class="advisor-quick-link" title="Bank"><i class="fas fa-university"></i></a>
-                </div>
-            </div>
 
             <!-- Pod: Realm News -->
             <div class="advisor-pod">
