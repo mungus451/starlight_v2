@@ -178,8 +178,6 @@ if ($threat_and_opportunity['active_war']) {
                 <?php endif; ?>
             </div>
         </div>
-
-        <!-- Modifiers Module -->
         <div class="bridge-module">
             <div class="module-header">
                 <span class="module-title">System Modifiers</span>

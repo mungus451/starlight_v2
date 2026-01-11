@@ -510,6 +510,49 @@
                 </div>
             </div>
 
+            <!-- Pod: Production Report -->
+            <?php $inc = $advisorData['incomeBreakdown'] ?? []; ?>
+            <div class="advisor-pod">
+                <div class="advisor-pod-header" data-pod-id="production">
+                    <h4><i class="fas fa-industry" style="margin-right: 8px;"></i> Production</h4>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="advisor-pod-content">
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Credits / Turn</span>
+                        <span class="advisor-stat-value text-warning">+<?= number_format($inc['total_credit_income'] ?? 0, 0) ?></span>
+                    </div>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Citizens / Turn</span>
+                        <span class="advisor-stat-value">+<?= number_format($inc['total_citizens'] ?? 0, 0) ?></span>
+                    </div>
+                    <?php if (($inc['research_data_income'] ?? 0) > 0): ?>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Research / Turn</span>
+                        <span class="advisor-stat-value text-info">+<?= number_format($inc['research_data_income'], 0) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (($inc['naquadah_income'] ?? 0) > 0): ?>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Naquadah / Turn</span>
+                        <span class="advisor-stat-value text-neon-blue">+<?= number_format($inc['naquadah_income'], 2) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (($inc['dark_matter_income'] ?? 0) > 0): ?>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Dark Matter / Turn</span>
+                        <span class="advisor-stat-value" style="color: #bc13fe;">+<?= number_format($inc['dark_matter_income'], 0) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (($inc['protoform_income'] ?? 0) > 0): ?>
+                    <div class="advisor-stat">
+                        <span class="advisor-stat-label">Protoform / Turn</span>
+                        <span class="advisor-stat-value text-success">+<?= number_format($inc['protoform_income'], 2) ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Pod: Military -->
             <div class="advisor-pod">
                 <div class="advisor-pod-header" data-pod-id="military">
