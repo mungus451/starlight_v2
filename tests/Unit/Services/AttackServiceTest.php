@@ -296,7 +296,7 @@ class AttackServiceTest extends TestCase
         // We will just check that the method is called with an integer.
         $this->mockResourceRepo->shouldReceive('updateBattleDefender')
             ->once()
-            ->with($defender->id, Mockery::any(), Mockery::type('int'));
+            ->with($defender->id, Mockery::any(), Mockery::type('int'), Mockery::any()); // Added workers arg
             
         // Other mocks
         $this->mockResourceRepo->shouldReceive('updateBattleAttacker');
@@ -304,7 +304,16 @@ class AttackServiceTest extends TestCase
         $this->mockStatsRepo->shouldReceive('updateBattleDefenderStats');
         $this->mockStatsRepo->shouldReceive('incrementBattleStats');
         $this->mockLevelUpService->shouldReceive('grantExperience');
-        $this->mockBattleRepo->shouldReceive('createReport')->andReturn(999);
+        
+        $this->mockBattleRepo->shouldReceive('createReport')
+            ->with(
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), 
+                Mockery::any() // defenderWorkersLost
+            )
+            ->andReturn(999);
+            
         $this->mockDispatcher->shouldReceive('dispatch');
         $this->mockBountyRepo->shouldReceive('findActiveByTargetId')->andReturn(null);
         
@@ -375,7 +384,8 @@ class AttackServiceTest extends TestCase
                 $attackerId, $defenderId, 'plunder', 'defeat', Mockery::any(),
                 0, 0, 0, // losses and plunder
                 10, Mockery::any(), 0, 1000, 800, Mockery::any(), false,
-                1500, 1000 // shield hp and damage
+                1500, 1000, // shield hp and damage
+                Mockery::any() // defenderWorkersLost
             )->andReturn(1000);
 
         // Act
@@ -427,14 +437,23 @@ class AttackServiceTest extends TestCase
         $this->mockDb->shouldReceive('commit');
 
         $this->mockResourceRepo->shouldReceive('updateBattleAttacker');
-        $this->mockResourceRepo->shouldReceive('updateBattleDefender');
+        $this->mockResourceRepo->shouldReceive('updateBattleDefender')
+            ->with(Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any()); // 4 args
+            
         $this->mockStatsRepo->shouldReceive('updateBattleAttackerStats');
         $this->mockStatsRepo->shouldReceive('updateBattleDefenderStats');
         $this->mockStatsRepo->shouldReceive('incrementBattleStats');
         
         $this->mockLevelUpService->shouldReceive('grantExperience');
         
-        $this->mockBattleRepo->shouldReceive('createReport')->andReturn(999);
+        $this->mockBattleRepo->shouldReceive('createReport')
+             ->with(
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), 
+                Mockery::any() // defenderWorkersLost
+            )
+            ->andReturn(999);
         
         $this->mockDispatcher->shouldReceive('dispatch');
 

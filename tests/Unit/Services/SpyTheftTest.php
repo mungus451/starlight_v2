@@ -126,6 +126,11 @@ class SpyTheftTest extends TestCase
             ->once()
             ->with($attackerId, 10000, 10);
 
+        // New: Expect updateSpyDefender due to worker casualties
+        $this->mockResourceRepo->shouldReceive('updateSpyDefender')
+            ->once()
+            ->with($defenderId, Mockery::any(), Mockery::any());
+
         $this->mockStatsRepo->shouldReceive('updateAttackTurns')->once();
         $this->mockStatsRepo->shouldReceive('incrementSpyStats')->once();
         $this->mockLevelUpService->shouldReceive('grantExperience')->once();
@@ -150,10 +155,14 @@ class SpyTheftTest extends TestCase
                 Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), // old optionals
                 Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
                 50.0, 2, 1000.0, 100, // Naquadah/DM (stolen/seen)
-                5.0, 500.0 // Protoform (stolen/seen)
+                5.0, 500.0, // Protoform (stolen/seen)
+                Mockery::any() // worker casualties
             )
             ->once()
             ->andReturn(99);
+
+        // Expect notification for collateral damage
+        $this->mockNotificationService->shouldReceive('sendNotification')->once();
 
         $response = $this->service->conductOperation($attackerId, $defenderName);
 
