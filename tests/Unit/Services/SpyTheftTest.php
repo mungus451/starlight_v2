@@ -101,7 +101,7 @@ class SpyTheftTest extends TestCase
         $this->mockResourceRepo->shouldReceive('findByUserId')->with($defenderId)->andReturn($defenderResources);
 
         $this->mockConfig->shouldReceive('get')->with('game_balance.spy')->andReturn([
-            'cost_per_spy' => 100, 
+            'cost_per_spy' => 0, 
             'attack_turn_cost' => 1,
             'base_success_multiplier' => 100.0, // Ensure success
             'base_success_chance_floor' => 0.0,
@@ -121,7 +121,11 @@ class SpyTheftTest extends TestCase
         $this->mockDb->shouldReceive('beginTransaction');
         $this->mockDb->shouldReceive('commit');
 
-        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')->once();
+        // Expect NO credit deduction
+        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')
+            ->once()
+            ->with($attackerId, 10000, 10);
+
         $this->mockStatsRepo->shouldReceive('updateAttackTurns')->once();
         $this->mockStatsRepo->shouldReceive('incrementSpyStats')->once();
         $this->mockLevelUpService->shouldReceive('grantExperience')->once();

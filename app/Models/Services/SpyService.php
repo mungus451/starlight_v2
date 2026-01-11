@@ -149,17 +149,16 @@ class SpyService
         $xpConfig = $this->config->get('game_balance.xp.rewards');
 
         $spiesSent = $attackerResources->spies;
-        $creditCost = $config['cost_per_spy'] * $spiesSent;
         $turnCost = $config['attack_turn_cost'];
 
         if ($spiesSent <= 0) return ServiceResponse::error('You have no spies to send.');
-        if ($attackerResources->credits < $creditCost) return ServiceResponse::error('You do not have enough credits.');
         if ($attackerStats->attack_turns < $turnCost) return ServiceResponse::error('You do not have enough attack turns.');
 
         // --- Check for Radar Jamming ---
         if ($this->effectService->hasActiveEffect($defender->id, 'jamming')) {
-            $this->safeTransaction(function() use ($attackerId, $attackerResources, $attackerStats, $creditCost, $turnCost, $spiesSent) {
-                $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $spiesSent);
+            $this->safeTransaction(function() use ($attackerId, $attackerResources, $attackerStats, $turnCost, $spiesSent) {
+                // Costs turns, no credits
+                $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits, $spiesSent);
                 $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             });
             return ServiceResponse::success("CRITICAL FAILURE: Target signal is jammed. Operation failed, resources consumed.");
@@ -248,14 +247,15 @@ class SpyService
         // --- Transaction ---
         $this->safeTransaction(function() use (
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
-            $creditCost, $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
+            $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
             $stolen_naquadah, $stolen_dark_matter, $stolen_protoform,
             $intel_credits, $intel_naquadah, $intel_dark_matter, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
             $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
         ) {
-            $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits - $creditCost, $attackerResources->spies - $spiesLost);
+            // Deduct turns, NOT credits
+            $this->resourceRepo->updateSpyAttacker($attackerId, $attackerResources->credits, $attackerResources->spies - $spiesLost);
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
             $this->statsRepo->incrementSpyStats($attackerId, $isSuccess);

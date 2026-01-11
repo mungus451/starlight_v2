@@ -142,7 +142,7 @@ class SpyServiceTest extends TestCase
         $this->mockStructureRepo->shouldReceive('findByUserId')->andReturn($this->createMockStructure($attackerId));
         $this->mockResourceRepo->shouldReceive('findByUserId')->with($defenderId)->andReturn($this->createMockResources($defenderId, 1000, 0));
 
-        $this->mockConfig->shouldReceive('get')->with('game_balance.spy')->andReturn(['cost_per_spy' => 100, 'attack_turn_cost' => 1]);
+        $this->mockConfig->shouldReceive('get')->with('game_balance.spy')->andReturn(['cost_per_spy' => 0, 'attack_turn_cost' => 1]);
         $this->mockConfig->shouldReceive('get')->with('game_balance.xp.rewards')->andReturn([]);
 
         // MOCK JAMMING
@@ -154,7 +154,10 @@ class SpyServiceTest extends TestCase
         $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
         $this->mockDb->shouldReceive('beginTransaction');
         $this->mockDb->shouldReceive('commit');
-        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')->once();
+        // Expect update with ORIGINAL credits (no deduction)
+        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')
+            ->once()
+            ->with($attackerId, 10000, 10);
         $this->mockStatsRepo->shouldReceive('updateAttackTurns')->once();
 
         $response = $this->service->conductOperation($attackerId, $defenderName);
@@ -179,7 +182,7 @@ class SpyServiceTest extends TestCase
         $this->mockResourceRepo->shouldReceive('findByUserId')->with($defenderId)->andReturn($this->createMockResources($defenderId, 10000, 0, 100));
 
         $this->mockConfig->shouldReceive('get')->with('game_balance.spy')->andReturn([
-            'cost_per_spy' => 100, 
+            'cost_per_spy' => 0, 
             'attack_turn_cost' => 1,
             'base_success_multiplier' => 0.01,
             'base_success_chance_floor' => 0.0,
@@ -196,7 +199,11 @@ class SpyServiceTest extends TestCase
         $this->mockDb->shouldReceive('beginTransaction');
         $this->mockDb->shouldReceive('commit');
 
-        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')->once();
+        // Expect NO credit deduction
+        $this->mockResourceRepo->shouldReceive('updateSpyAttacker')
+            ->once()
+            ->with($attackerId, 10000, Mockery::any()); 
+            
         $this->mockResourceRepo->shouldReceive('updateSpyDefender')->once(); // Recovered
         $this->mockStatsRepo->shouldReceive('updateAttackTurns')->once();
         $this->mockStatsRepo->shouldReceive('incrementSpyStats')->once();

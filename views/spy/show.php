@@ -24,7 +24,7 @@
         <div class="header-stat">
             <span>Operation Cost</span>
             <strong>
-                <?= number_format($operation['total_credit_cost']) ?> C / <?= $operation['turn_cost'] ?> Turn
+                <?= $operation['turn_cost'] ?> Turn
             </strong>
         </div>
         <div class="header-stat">
@@ -125,7 +125,7 @@
                 
                 Sends <strong><?= number_format($operation['spies_to_send']) ?> spies</strong>.
                 <br>
-                Cost: <strong><?= number_format($operation['total_credit_cost']) ?> Credits</strong>.
+                Cost: <strong><?= $operation['turn_cost'] ?> Attack Turn</strong>.
             </div>
 
             <div style="display: flex; gap: 1rem;">

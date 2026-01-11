@@ -249,7 +249,7 @@ return [
     // --- Phase 7 ---
     'spy' => [
         'attack_turn_cost' => 1,
-        'cost_per_spy' => 1000, // Credits
+        'cost_per_spy' => 0, // Credits (Now 0 as per new balance)
         'base_power_per_spy' => 1.0, 
         'base_power_per_sentry' => 1.0, 
         'base_success_multiplier' => 1.5,
