@@ -70,6 +70,12 @@
                         <span>Sentries Lost</span>
                         <span class="val-danger">- <?= number_format($report['sentries_lost_defender']) ?></span>
                     </li>
+                    <?php if (($report['defender_workers_lost'] ?? 0) > 0): ?>
+                    <li>
+                        <span>Workers Lost</span>
+                        <span class="val-danger">- <?= number_format($report['defender_workers_lost']) ?></span>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
 

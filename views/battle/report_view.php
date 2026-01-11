@@ -71,6 +71,12 @@
             <span class="stat-label">Casualties</span>
             <span class="stat-val right val-danger">-<?= number_format($report['defender_guards_lost']) ?></span>
         </div>
+
+        <div class="comparison-row">
+            <span class="stat-val left val-muted">0</span>
+            <span class="stat-label">Worker Casualties</span>
+            <span class="stat-val right val-danger">-<?= number_format($report['defender_workers_lost'] ?? 0) ?></span>
+        </div>
     </div>
 
     <?php if ($report['is_winner']): ?>

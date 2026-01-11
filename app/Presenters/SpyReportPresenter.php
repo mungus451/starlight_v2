@@ -100,6 +100,7 @@ class SpyReportPresenter
             // Raw Data
             'spies_lost_attacker' => $report->spies_lost_attacker,
             'sentries_lost_defender' => $report->sentries_lost_defender,
+            'defender_workers_lost' => $report->defender_workers_lost, // Added
             'credits_seen' => $report->credits_seen,
             'naquadah_crystals_stolen' => $report->naquadah_crystals_stolen,
             'dark_matter_stolen' => $report->dark_matter_stolen,
@@ -138,6 +139,10 @@ class SpyReportPresenter
 
         // Line 3: Casualties
         $line3 = "Casualties: <span class='val-danger'>{$fmt($report->spies_lost_attacker)}</span> spies lost vs <span class='val-danger'>{$fmt($report->sentries_lost_defender)}</span> sentries destroyed.";
+        
+        if ($report->defender_workers_lost > 0) {
+            $line3 .= " Collateral damage: <span class='val-danger'>{$fmt($report->defender_workers_lost)}</span> workers liquidated.";
+        }
 
         // Line 4: Result Detail
         $line4 = "";

@@ -124,6 +124,7 @@ class BattleReportPresenter
             'defender_defense_power' => $report->defender_defense_power,
             'attacker_soldiers_lost' => $report->attacker_soldiers_lost,
             'defender_guards_lost' => $report->defender_guards_lost,
+            'defender_workers_lost' => $report->defender_workers_lost, // Added
         ];
     }
 
@@ -156,6 +157,10 @@ class BattleReportPresenter
         // Line 3: Casualties
         $line3 = "{$atkName} suffered <span class='val-danger'>{$fmt($report->attacker_soldiers_lost)}</span> casualties. ";
         $line3 .= "{$defName} suffered <span class='val-danger'>{$fmt($report->defender_guards_lost)}</span> casualties.";
+        
+        if ($report->defender_workers_lost > 0) {
+            $line3 .= " <span class='val-danger'>{$fmt($report->defender_workers_lost)}</span> workers were killed in the crossfire.";
+        }
 
         // Line 4: Economic Impact (Only if meaningful)
         $line4 = "";
