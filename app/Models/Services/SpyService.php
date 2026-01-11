@@ -222,6 +222,15 @@ class SpyService
         $stolen_dark_matter = $isSuccess ? (int)floor($defenderResources->dark_matter * ($config['dark_matter_steal_rate'] ?? 0.02)) : 0;
         $stolen_protoform = $isSuccess ? ($defenderResources->protoform * ($config['protoform_steal_rate'] ?? 0.01)) : 0;
 
+        // --- Worker Casualties (Collateral) ---
+        $workerCasualties = 0;
+        if ($isSuccess || $isCaught) {
+            $casualtyRate = $config['worker_casualty_rate'] ?? 0.01;
+            // If caught, maybe less efficient or just standard chaos
+            $workerCasualties = (int)ceil($defenderResources->workers * $casualtyRate);
+            $workerCasualties = min($defenderResources->workers, $workerCasualties);
+        }
+
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
         $intel_naquadah = $isSuccess ? $defenderResources->naquadah_crystals : null;
         $intel_dark_matter = $isSuccess ? $defenderResources->dark_matter : null;
@@ -249,7 +258,7 @@ class SpyService
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
             $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
-            $stolen_naquadah, $stolen_dark_matter, $stolen_protoform,
+            $stolen_naquadah, $stolen_dark_matter, $stolen_protoform, $workerCasualties,
             $intel_credits, $intel_naquadah, $intel_dark_matter, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
             $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
@@ -265,9 +274,16 @@ class SpyService
                 $this->resourceRepo->updateResources($defender->id, 0, -$stolen_naquadah, -$stolen_dark_matter, -$stolen_protoform);
             }
 
-            if ($isCaught) {
-                if ($sentriesLost > 0) $this->resourceRepo->updateSpyDefender($defender->id, max(0, $defenderResources->sentries - $sentriesLost));
-                $this->levelUpService->grantExperience($defender->id, $defenderXp);
+            // Apply Defender Losses (Sentries + Workers)
+            if ($isCaught || $workerCasualties > 0) {
+                $newSentries = max(0, $defenderResources->sentries - ($isCaught ? $sentriesLost : 0));
+                $newWorkers = max(0, $defenderResources->workers - $workerCasualties);
+                
+                $this->resourceRepo->updateSpyDefender($defender->id, $newSentries, $newWorkers);
+                
+                if ($isCaught) {
+                    $this->levelUpService->grantExperience($defender->id, $defenderXp);
+                }
             }
 
             $reportId = $this->spyRepo->createReport(
@@ -277,7 +293,8 @@ class SpyService
                 $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
                 $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
                 $stolen_naquadah, $stolen_dark_matter, $intel_naquadah, $intel_dark_matter,
-                $stolen_protoform, $intel_protoform
+                $stolen_protoform, $intel_protoform,
+                $workerCasualties // New Param
             );
 
             // --- War Logging Check ---
@@ -301,8 +318,12 @@ class SpyService
                 $notifTitle = "Security Alert: Spy Neutralized";
                 $notifMsg = "An enemy spy from {$attacker->characterName} was intercepted.";
                 if ($sentriesLost > 0) $notifMsg .= " You lost {$sentriesLost} sentries.";
+                if ($workerCasualties > 0) $notifMsg .= " Collateral damage: {$workerCasualties} workers killed.";
                 $notifMsg .= " XP Gained: +{$defenderXp}.";
                 $this->notificationService->sendNotification($defender->id, 'spy', $notifTitle, $notifMsg, "/spy/report/{$reportId}");
+            } elseif ($workerCasualties > 0 && $isSuccess) {
+                // Notify if workers killed even if success (silent sabotage?)
+                $this->notificationService->sendNotification($defender->id, 'spy', "Security Alert: Sabotage Detected", "Enemy spies infiltrated your base. {$workerCasualties} workers were assassinated.", "/spy/report/{$reportId}");
             }
         });
 
@@ -317,6 +338,7 @@ class SpyService
                 $message .= implode(", ", $stolenParts) . ".";
             }
         }
+        if ($workerCasualties > 0) $message .= " Targets eliminated: {$workerCasualties} workers.";
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         
         return ServiceResponse::success($message, ['report_id' => $reportId, 'result' => $operation_result]);

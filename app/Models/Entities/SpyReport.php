@@ -50,6 +50,7 @@ readonly class SpyReport
         public readonly int $spies_lost_attacker,
         public readonly int $sentries_lost_defender,
         public readonly int $defender_total_sentries, // NEW
+        public readonly int $defender_workers_lost = 0, // NEW
         public readonly ?int $credits_seen,
         public readonly ?int $gemstones_seen,
         public readonly ?int $workers_seen,

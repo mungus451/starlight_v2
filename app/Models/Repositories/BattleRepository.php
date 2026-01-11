@@ -55,7 +55,8 @@ class BattleRepository
         int $defenderTotalGuards,
         bool $isHidden = false,
         int $defenderShieldHp = 0,
-        int $shieldDamageDealt = 0
+        int $shieldDamageDealt = 0,
+        int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
             INSERT INTO battle_reports
@@ -63,9 +64,9 @@ class BattleRepository
              attacker_soldiers_lost, defender_guards_lost, credits_plundered,
              experience_gained, war_prestige_gained, net_worth_stolen,
              attacker_offense_power, defender_defense_power, defender_total_guards, is_hidden,
-             defender_shield_hp, shield_damage_dealt, created_at)
+             defender_shield_hp, shield_damage_dealt, defender_workers_lost, created_at)
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
 
         $stmt = $this->db->prepare($sql);
@@ -74,7 +75,7 @@ class BattleRepository
             $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
             $experienceGained, $warPrestigeGained, $netWorthStolen,
             $attackerOffensePower, $defenderDefensePower, $defenderTotalGuards, (int)$isHidden,
-            $defenderShieldHp, $shieldDamageDealt
+            $defenderShieldHp, $shieldDamageDealt, $defenderWorkersLost
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -268,6 +269,7 @@ class BattleRepository
             defender_total_guards: (int)($data['defender_total_guards'] ?? 0),
             defender_shield_hp: (int)($data['defender_shield_hp'] ?? 0),
             shield_damage_dealt: (int)($data['shield_damage_dealt'] ?? 0),
+            defender_workers_lost: (int)($data['defender_workers_lost'] ?? 0), // New
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null,
             is_hidden: (bool)($data['is_hidden'] ?? false)

@@ -74,10 +74,10 @@ $stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, spies = ? WHE
 return $stmt->execute([$newCredits, $newSpies, $userId]);
 }
 
-public function updateSpyDefender(int $userId, int $newSentries): bool
+public function updateSpyDefender(int $userId, int $newSentries, int $newWorkers): bool
 {
-$stmt = $this->db->prepare("UPDATE user_resources SET sentries = ? WHERE user_id = ?");
-return $stmt->execute([$newSentries, $userId]);
+$stmt = $this->db->prepare("UPDATE user_resources SET sentries = ?, workers = ? WHERE user_id = ?");
+return $stmt->execute([$newSentries, $newWorkers, $userId]);
 }
 
 public function updateBattleAttacker(int $userId, int $newCredits, int $newSoldiers): bool
@@ -86,10 +86,10 @@ $stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, soldiers = ? 
 return $stmt->execute([$newCredits, $newSoldiers, $userId]);
 }
 
-public function updateBattleDefender(int $userId, int $newCredits, int $newGuards): bool
+public function updateBattleDefender(int $userId, int $newCredits, int $newGuards, int $newWorkers): bool
 {
-$stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, guards = ? WHERE user_id = ?");
-return $stmt->execute([$newCredits, $newGuards, $userId]);
+$stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, guards = ?, workers = ? WHERE user_id = ?");
+return $stmt->execute([$newCredits, $newGuards, $newWorkers, $userId]);
 }
 
     public function updateSoldiers(int $userId, int $newSoldiers): bool

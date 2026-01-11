@@ -350,6 +350,22 @@ class AttackService
         // Wait, $attackerResources->soldiers matches $soldiersSent.
         // So original was $soldiersSent + $ionCasualties.
         
+        // --- Worker Casualties (Collateral Damage) ---
+        // Logic: Base % of workforce + scaling based on Guard Losses (intensity of battle)
+        $defenderWorkersLost = 0;
+        if ($attackResult === 'victory' || $attackResult === 'defeat') {
+            $baseRate = $config['worker_casualty_rate_base'] ?? 0.02;
+            $damageScalar = $config['worker_casualty_damage_scalar'] ?? 0.05;
+            
+            // Percentage of guards killed
+            $guardLossPercent = ($defenderResources->guards > 0) ? ($defenderGuardsLost / $defenderResources->guards) : 1.0;
+            
+            $totalCasualtyPercent = $baseRate + ($guardLossPercent * $damageScalar);
+            
+            $defenderWorkersLost = (int)ceil($defenderResources->workers * $totalCasualtyPercent);
+            $defenderWorkersLost = min($defenderResources->workers, $defenderWorkersLost);
+        }
+
         // --- Nanite Forge ---
         if ($attackResult === 'victory' && $defenderStructures->nanite_forge_level > 0) {
             $naniteReductionPerLevel = $this->config->get('game_balance.attack.nanite_casualty_reduction_per_level', 0.0);
@@ -462,11 +478,12 @@ class AttackService
                 $this->statsRepo->incrementBattleStats($attackerId, false);
             }
 
-            // Update Defender Resources
+            // Update Defender Resources (Guards + Workers)
             $this->resourceRepo->updateBattleDefender(
                 $defender->id,
                 max(0, $defenderResources->credits - $creditsPlundered),
-                max(0, $defenderResources->guards - $defenderGuardsLost)
+                max(0, $defenderResources->guards - $defenderGuardsLost),
+                max(0, $defenderResources->workers - $defenderWorkersLost)
             );
 
             // Update Defender Stats
@@ -488,7 +505,8 @@ class AttackService
                 $defenderTotalGuardsSnapshot,
                 $isShadowContract,
                 $shieldHp, 
-                $damageToShield 
+                $damageToShield,
+                $defenderWorkersLost
             );
 
             // Alliance Bank

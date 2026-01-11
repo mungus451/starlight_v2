@@ -290,6 +290,10 @@ return [
         'experience_gain_base' => 500,
         'war_prestige_gain_base' => 5,
 
+        // Worker Casualties
+        'worker_casualty_rate_base' => 0.02, // 2% of workers lost on defeat
+        'worker_casualty_damage_scalar' => 0.05, // Additional loss scalar based on guard losses
+
         'nanite_casualty_reduction_per_level' => 0.01,
         'max_nanite_casualty_reduction' => 0.50,
         'shield_hp_per_level' => 25,

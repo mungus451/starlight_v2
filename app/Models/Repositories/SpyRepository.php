@@ -28,25 +28,26 @@ class SpyRepository
         ?int $fortLevel, ?int $offenseLevel, ?int $defenseLevel, ?int $spyLevel, ?int $econLevel, ?int $popLevel, ?int $armoryLevel,
         float $naquadahStolen = 0, int $darkMatterStolen = 0,
         ?float $naquadahSeen = null, ?int $darkMatterSeen = null,
-        float $protoformStolen = 0, ?float $protoformSeen = null
+        float $protoformStolen = 0, ?float $protoformSeen = null,
+        int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
             INSERT INTO spy_reports 
                 (attacker_id, defender_id, operation_result, spies_sent, spies_lost_attacker, sentries_lost_defender,
-                 defender_total_sentries,
+                 defender_total_sentries, defender_workers_lost,
                  credits_seen, naquadah_crystals_stolen, dark_matter_stolen, naquadah_crystals_seen, dark_matter_seen,
                  protoform_stolen, protoform_seen,
                  gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
                  fortification_level_seen, offense_upgrade_level_seen, defense_upgrade_level_seen, 
                  spy_upgrade_level_seen, economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $attackerId, $defenderId, $result, $spiesSent, $spiesLost, $sentriesLost,
-            $defenderTotalSentries,
+            $defenderTotalSentries, $defenderWorkersLost,
             $credits, $naquadahStolen, $darkMatterStolen, $naquadahSeen, $darkMatterSeen,
             $protoformStolen, $protoformSeen,
             $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
@@ -151,6 +152,7 @@ class SpyRepository
             spies_sent: (int)$data['spies_sent'],
             spies_lost_attacker: (int)$data['spies_lost_attacker'],
             sentries_lost_defender: (int)$data['sentries_lost_defender'],
+            defender_workers_lost: (int)($data['defender_workers_lost'] ?? 0), // New
             defender_total_sentries: (int)($data['defender_total_sentries'] ?? 0),
             credits_seen: isset($data['credits_seen']) ? (int)$data['credits_seen'] : null,
             gemstones_seen: isset($data['gemstones_seen']) ? (int)$data['gemstones_seen'] : null,
