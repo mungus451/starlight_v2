@@ -35,14 +35,26 @@
     </div>
 
     <!-- Tab Navigation -->
-    <div id="dashboard-tabs" class="mobile-tabs">
-        <a href="#" class="tab-link active" data-tab="overview">Overview</a>
-        <a href="#" class="tab-link" data-tab="economics">Economics</a>
-        <a href="#" class="tab-link" data-tab="military">Military</a>
-        <a href="#" class="tab-link" data-tab="structures">Structures</a>
+    <div class="tabs-nav mb-3">
+        <a class="tab-link" data-tab="overview">Overview</a>
+        <a class="tab-link" data-tab="economics">Economics</a>
+        <a class="tab-link" data-tab="military">Military</a>
     </div>
+    
+    <a href="/structures" class="btn btn-secondary d-block mb-4">Manage Structures</a>
 
-    <div id="tab-content">
+    <div class="tab-content-container">
         <?php require __DIR__ . '/partials/overview.php'; ?>
+        <?php require __DIR__ . '/partials/economics.php'; ?>
+        <?php require __DIR__ . '/partials/military.php'; ?>
     </div>
 </div>
+
+<script src="/js/utils.js?v=<?= time() ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        StarlightUtils.initTabs({
+            defaultTab: 'overview'
+        });
+    });
+</script>
