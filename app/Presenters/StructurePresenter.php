@@ -37,10 +37,15 @@ class StructurePresenter
         // But for safety, I'll check if keys exist in the passed arrays, otherwise fall back to 0 or hardcoded logic for display.
 
         $grouped = [];
-        $categoryOrder = ['Economy', 'Defense', 'Offense', 'Intel'];
+        $categoryOrder = ['Economy', 'Military', 'Defense', 'Intel', 'Advanced Industry', 'Super Defense'];
 
         foreach ($structureFormulas as $key => $details) {
             $category = $details['category'] ?? 'Uncategorized';
+            
+            // Remap Offense to Military for frontend consistency
+            if ($category === 'Offense') {
+                $category = 'Military';
+            }
             
             // 1. Determine Levels
             $columnName = $key . '_level';

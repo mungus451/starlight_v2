@@ -11,8 +11,7 @@ if (!function_exists('slugify')) {
 }
 
 $categories = array_keys($groupedStructures);
-$firstCategory = $categories[0] ?? 'Economy';
-$firstCategorySlug = slugify($firstCategory);
+$firstCategorySlug = slugify($categories[0] ?? 'economy');
 ?>
 <div class="mobile-content">
     <div class="player-hub" style="margin-bottom: 1rem; padding: 1rem 1rem 1.5rem 1rem; background: transparent; border: none; box-shadow: none;">
@@ -35,20 +34,29 @@ $firstCategorySlug = slugify($firstCategory);
     </div>
 
     <!-- Tab Navigation -->
-    <div id="structure-tabs" class="mobile-tabs structure-tabs">
-        <?php foreach ($categories as $category): 
-            $slug = slugify($category);
-        ?>
-            <a href="#" class="tab-link <?= $slug === $firstCategorySlug ? 'active' : '' ?>" data-category="<?= $slug ?>"><?= htmlspecialchars($category) ?></a>
+    <div class="tabs-nav mb-3">
+        <?php foreach ($categories as $category): ?>
+            <a class="tab-link" data-tab="<?= slugify($category) ?>"><?= htmlspecialchars($category) ?></a>
         <?php endforeach; ?>
     </div>
 
     <!-- Dynamic Content Area -->
-    <div id="tab-content">
-        <?php
-            $structures = $groupedStructures[$firstCategory] ?? [];
-            // Pass csrf_token for forms within the partial
-            require __DIR__ . '/partials/structure_category.php';
-        ?>
+    <div class="tab-content-container">
+        <?php foreach ($categories as $category):
+            $slug = slugify($category);
+            $partialPath = __DIR__ . '/partials/' . $slug . '.php';
+            if (file_exists($partialPath)) {
+                require $partialPath;
+            }
+        endforeach; ?>
     </div>
 </div>
+
+<script src="/js/utils.js?v=<?= time() ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        StarlightUtils.initTabs({
+            defaultTab: '<?= $firstCategorySlug ?>'
+        });
+    });
+</script>
