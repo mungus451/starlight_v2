@@ -21,60 +21,23 @@
     </div>
 
     <!-- Main Tab Navigation -->
-    <div id="embassy-tabs" class="mobile-tabs nested-tabs-container">
-        <a href="#" class="tab-link active" data-tab-target="content-active">Active Directives</a>
-        <a href="#" class="tab-link" data-tab-target="content-available">Available Edicts</a>
+    <div class="tabs-nav mb-3">
+        <a class="tab-link" data-tab="active-directives">Active Directives</a>
+        <a class="tab-link" data-tab="available-edicts">Available Edicts</a>
     </div>
 
     <!-- Main Content Panes -->
-    <div id="tab-content">
-        <!-- Active Edicts Pane -->
-        <div id="content-active" class="nested-tab-content active">
-            <?php if (empty($active_edicts)): ?>
-                <p class="text-center text-muted" style="padding: 2rem;">No active directives.</p>
-            <?php else: ?>
-                <?php foreach ($active_edicts as $edict): ?>
-                    <div class="mobile-card">
-                        <div class="mobile-card-header"><h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($edict->name) ?></h3></div>
-                        <div class="mobile-card-content" style="display: block;">
-                            <p class="structure-description"><?= htmlspecialchars($edict->description) ?></p>
-                            <form action="/embassy/revoke" method="POST" style="margin-top: 1rem;">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                                <input type="hidden" name="edict_key" value="<?= htmlspecialchars($edict->key) ?>">
-                                <button type="submit" class="btn btn-accent"><i class="fas fa-times-circle"></i> Revoke Edict</button>
-                            </form>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-
-        <!-- Available Edicts Pane -->
-        <div id="content-available" class="nested-tab-content">
-            <?php if (empty($available_edicts)): ?>
-                <p class="text-center text-muted" style="padding: 2rem;">No available edicts found.</p>
-            <?php else: ?>
-                <?php foreach ($available_edicts as $edict):
-                    $is_active = in_array($edict->key, $active_keys);
-                ?>
-                    <div class="mobile-card">
-                        <div class="mobile-card-header"><h3><i class="fas fa-file-alt"></i> <?= htmlspecialchars($edict->name) ?></h3></div>
-                        <div class="mobile-card-content" style="display: block;">
-                            <p class="structure-description"><?= htmlspecialchars($edict->description) ?></p>
-                            <?php if ($is_active): ?>
-                                <div class="max-level-notice" style="margin-top: 1rem; background-color: rgba(0, 229, 255, 0.1); border-color: var(--mobile-text-primary); color: var(--mobile-text-primary);">
-                                    <i class="fas fa-check-circle"></i> Already Active
-                                </div>
-                            <?php else: ?>
-                                <form action="/embassy/activate" method="POST" style="margin-top: 1rem;">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                                    <input type="hidden" name="edict_key" value="<?= htmlspecialchars($edict->key) ?>">
-                                    <button type="submit" class="btn"><i class="fas fa-check-circle"></i> Enact Edict</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>    </div>
+    <div class="tab-content-container">
+        <?php require __DIR__ . '/partials/active-directives.php'; ?>
+        <?php require __DIR__ . '/partials/available-edicts.php'; ?>
+    </div>
 </div>
+
+<script src="/js/utils.js?v=<?= time() ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        StarlightUtils.initTabs({
+            defaultTab: 'active-directives'
+        });
+    });
+</script>
