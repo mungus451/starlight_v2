@@ -1,5 +1,6 @@
-<!-- Alliance Selection -->
-<div class="mobile-card">
+<div id="alliances" class="tab-content">
+    <!-- Alliance Selection -->
+    <div class="mobile-card">
     <div class="mobile-card-content" style="display: block;">
         <label class="form-label text-warning text-uppercase fw-bold small">Select Faction</label>
         <select id="alliance-select" class="form-select bg-dark text-light border-secondary">
@@ -78,4 +79,5 @@
             </div>
         </div>
     </div>
+</div>
 </div>

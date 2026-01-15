@@ -5,20 +5,22 @@
     </div>
 
     <!-- Tab Navigation -->
-    <div id="almanac-tabs" class="mobile-tabs">
-        <a href="#" class="tab-link active" data-tab="players">
+    <div class="tabs-nav mb-3">
+        <a class="tab-link" data-tab="players">
             <i class="fas fa-user-astronaut me-2"></i>Players
         </a>
-        <a href="#" class="tab-link" data-tab="alliances">
+        <a class="tab-link" data-tab="alliances">
             <i class="fas fa-users me-2"></i>Alliances
         </a>
     </div>
 
-    <div id="tab-content">
-        <?php require __DIR__ . '/partials/_players.php'; ?>
+    <div class="tab-content-container">
+        <?php require __DIR__ . '/partials/players.php'; ?>
+        <?php require __DIR__ . '/partials/alliances.php'; ?>
     </div>
 </div>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/utils.js?v=<?= time() ?>"></script>
 <script src="/js/almanac.js?v=6"></script>

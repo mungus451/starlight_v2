@@ -1,5 +1,6 @@
-<!-- Player Selection -->
-<div class="mobile-card">
+<div id="players" class="tab-content">
+    <!-- Player Selection -->
+    <div class="mobile-card">
     <div class="mobile-card-content" style="display: block;">
         <label class="form-label text-neon-blue text-uppercase fw-bold small">Select Commander</label>
         <select id="player-select" class="form-select bg-dark text-light border-secondary">
@@ -93,4 +94,5 @@
             <div class="mobile-card-content" style="height: 250px;"><canvas id="player-spy-kd-chart"></canvas></div>
         </div>
     </div>
+</div>
 </div>

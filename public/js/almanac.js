@@ -1,7 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Tabs (Advisor V2)
+    // Initialize Tabs
     if (typeof StarlightUtils !== 'undefined') {
-        StarlightUtils.initTabs();
+        StarlightUtils.initTabs({
+            defaultTab: 'players'
+        });
+    }
+
+    // Dropdown listeners for mobile view
+    const playerSelect = document.getElementById('player-select');
+    if (playerSelect) {
+        playerSelect.addEventListener('change', (e) => {
+            const playerId = e.target.value;
+            if (playerId) {
+                loadPlayerDossier(playerId);
+            }
+        });
+    }
+
+    const allianceSelect = document.getElementById('alliance-select');
+    if (allianceSelect) {
+        allianceSelect.addEventListener('change', (e) => {
+            const allianceId = e.target.value;
+            if (allianceId) {
+                loadAllianceDossier(allianceId);
+            }
+        });
     }
 
     // State
