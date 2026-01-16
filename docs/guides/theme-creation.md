@@ -50,12 +50,12 @@ The original Armory view is located at `views/armory/show.php`. To override it, 
 # Create the necessary sub-folder
 mkdir -p views/themes/hyperion/armory
 
-mkdir -p public/css/hyperion
+mkdir -p public/css/themes/hyperion
 
 # Create the new view file
 touch views/themes/hyperion/armory/show.php
 
-touch public/css/hyperion/hyperion.css
+touch public/css/themes/hyperion/hyperion.css
 ```
 
 ### Step 2: Copy and Modify the Content
