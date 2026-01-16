@@ -110,6 +110,9 @@ class BaseController
         // Determine if it's a mobile request
         $isMobile = $this->session->get('is_mobile', false);
 
+        // Get the current theme from session, default to 'default'
+        $theme = $this->session->get('theme', 'default');
+
         // Extract the data array into local variables for the view
         extract($data);
 
@@ -117,12 +120,22 @@ class BaseController
         ob_start();
 
         // Determine the view path
-        $viewPath = __DIR__ . '/../../views/';
-        if ($isMobile && file_exists(__DIR__ . '/../../views/mobile/' . $view)) {
-            $viewPath .= 'mobile/';
-        }
-        $viewPath .= $view;
+        $baseViewPath = __DIR__ . '/../../views/';
+        $viewPath = $baseViewPath . $view; // Default view path
 
+        // Check for a themed view first
+        if ($theme !== 'default') {
+            $themedViewPath = $baseViewPath . 'themes/' . $theme . '/' . $view;
+            if (file_exists($themedViewPath)) {
+                $viewPath = $themedViewPath;
+            }
+        }
+
+        // Mobile view overrides theme and default
+        if ($isMobile && file_exists($baseViewPath . 'mobile/' . $view)) {
+            $viewPath = $baseViewPath . 'mobile/' . $view;
+        }
+        
         // Include the specific page content
         require $viewPath;
 

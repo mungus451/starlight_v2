@@ -85,6 +85,16 @@
             <li><a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="nav-notification-badge-mobile" class="nav-badge" style="position: relative; top: 0; right: 0; margin-left: 5px;"></span></a></li>
             <li><a href="/glossary"><i class="fas fa-book-open"></i> Game Glossary</a></li>
             <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+            <!-- Theme Switcher -->
+            <li>
+                <form action="/theme/switch" method="post" class="p-2">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                    <select name="theme" class="form-select bg-dark text-light border-secondary" onchange="this.form.submit()">
+                        <option value="default" <?= ($this->session->get('theme', 'default') === 'default') ? 'selected' : '' ?>>Default Theme</option>
+                        <option value="classic" <?= ($this->session->get('theme', 'default') === 'classic') ? 'selected' : '' ?>>Classic Theme</option>
+                    </select>
+                </form>
+            </li>
             <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </nav>
@@ -182,6 +192,16 @@
                     <span class="nav-link"><i class="fas fa-user-astronaut"></i> Account</span>
                     <ul class="nav-submenu" style="left: auto; right: 0; border-radius: 12px 0 12px 12px;">
                         <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
+                        <!-- Theme Switcher -->
+                        <li>
+                            <form action="/theme/switch" method="post" style="padding: 8px 12px;">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                                <select name="theme" class="form-select bg-dark text-light border-secondary" onchange="this.form.submit()">
+                                    <option value="default" <?= ($this->session->get('theme', 'default') === 'default') ? 'selected' : '' ?>>Default Theme</option>
+                                    <option value="classic" <?= ($this->session->get('theme', 'default') === 'classic') ? 'selected' : '' ?>>Classic Theme</option>
+                                </select>
+                            </form>
+                        </li>
                         <li class="submenu-divider"></li>
                         <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                     </ul>

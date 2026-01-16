@@ -45,6 +45,7 @@ use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
 use App\Controllers\GlossaryController;
+use App\Controllers\ThemeController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\MobileViewMiddleware;
 
@@ -109,6 +110,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/register', [AuthController::class, 'showRegister']);
     $r->addRoute('POST', '/register', [AuthController::class, 'handleRegister']);
     $r->addRoute('GET', '/logout', [AuthController::class, 'handleLogout']);
+
+    // --- Theme Switcher ---
+    $r->addRoute('POST', '/theme/switch', [ThemeController::class, 'switch']);
+
 
     // --- Core Game Features ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
