@@ -216,6 +216,10 @@
 <div class="advisor-layout-grid">
 
     <?php if (isset($allianceContext) && !$this->session->get('is_mobile')): ?>
+        <!--
+         ** Alliance Sidebar (`<aside class="alliance-uplink" id="alliance-uplink-panel">`) **
+         * Notes: This sidebar is displayed **only on desktop** (`!$this->session->get('is_mobile')`) and when `isset($allianceContext)` is true. It includes various alliance-related information such as treasury, DEFCON status, war status, objectives, active operations, merit badges, intelligence feed, and quick actions. It also contains an inline JavaScript snippet (lines 273-297) for a war timer.
+        -->
         <aside class="alliance-uplink" id="alliance-uplink-panel">
             <button class="uplink-toggle-btn" id="uplink-toggle" title="Toggle Sidebar">
                 <i class="fas fa-chevron-left"></i>
@@ -236,11 +240,22 @@
                     <div class="uplink-treasury">
                         <i class="fas fa-university"></i> <?= number_format($allianceContext['treasury']) ?> Cr
                     </div>
-                    <div style="margin-top: 10px; font-size: 0.8rem; color: <?= $allianceContext['defcon'] <= 2 ? 'var(--uplink-alert)' : 'var(--uplink-accent)' ?>;">
+                    <div style="margin-top: 10px; margin-bottom: 10px; font-size: 0.8rem; color: <?= $allianceContext['defcon'] <= 2 ? 'var(--uplink-alert)' : 'var(--uplink-accent)' ?>;">
                         DEFCON <?= $allianceContext['defcon'] ?>
+                    </div>
+                    <!-- Quick Actions Buttons -->
+                    <div class="uplink-actions">
+                        <a href="/alliance/profile/<?= $allianceContext['id'] ?>" class="uplink-btn">
+                            <i class="fas fa-home"></i> HQ
+                        </a>
+                        <a href="/alliance/sos/manage" class="uplink-btn alert">
+                            <i class="fas fa-triangle-exclamation"></i> SOS
+                        </a>
                     </div>
                 </div>
             </div>
+
+            <br>
 
             <!-- War Status (Conditional) -->
             <?php if ($allianceContext['war']): ?>
@@ -262,35 +277,9 @@
             <?php endif; ?>
 
             <!-- Faction Objective -->
-            <div class="uplink-module">
+        <!--    <div class="uplink-module">
                 <div class="module-title">
-                    PRIORITY OBJECTIVE
-
-<script>
-    // Minimalist countdown for sidebar
-    document.addEventListener('DOMContentLoaded', function() {
-        const warStatus = document.querySelector('[data-war-end-time]');
-        if (warStatus) {
-            const updateWarTimer = () => {
-                const endTime = new Date(warStatus.dataset.warEndTime + ' UTC').getTime();
-                const now = new Date().getTime();
-                const distance = endTime - now;
-
-                if (distance < 0) {
-                    warStatus.innerHTML = "WAR CONCLUDED";
-                    return;
-                }
-                
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-
-                warStatus.innerHTML = `Time Left: ${hours}h ${minutes}m`;
-            };
-            updateWarTimer();
-            setInterval(updateWarTimer, 60000); // Update every minute
-        }
-    });
-</script>
+                    PRIORITY OBJECTIVE 
                     <?php if ($allianceContext['is_leader']): ?>
                         <a href="/alliance/directive/manage" class="uplink-btn btn-sm" style="margin-left: auto; padding: 2px 6px; font-size: 0.65rem; text-decoration: none; display: inline-block;">SET</a>
                     <?php endif; ?>
@@ -305,7 +294,7 @@
                         <span><?= htmlspecialchars($allianceContext['objective']['label']) ?></span>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Active Ops -->
             <div class="uplink-module">
@@ -389,7 +378,7 @@
             <?php endif; ?>
 
             <!-- Encrypted Feed -->
-            <div class="uplink-module">
+        <!--    <div class="uplink-module">
                 <div class="module-title">INTELLIGENCE FEED</div>
                 <div class="uplink-feed">
                     <?php if (empty($allianceContext['feed'])): ?>
@@ -404,20 +393,13 @@
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Quick Actions -->
-            <div class="uplink-module" style="border-bottom: none;">
+           <!-- <div class="uplink-module" style="border-bottom: none;">
                 <div class="module-title">QUICK LOGISTICS</div>
-                <div class="uplink-actions">
-                    <a href="/alliance/profile/<?= $allianceContext['id'] ?>" class="uplink-btn">
-                        <i class="fas fa-home"></i> HQ
-                    </a>
-                    <a href="/alliance/sos/manage" class="uplink-btn alert">
-                        <i class="fas fa-triangle-exclamation"></i> SOS
-                    </a>
-                </div>
-            </div>
+                
+            </div> -->
         </aside>
     <?php endif; ?>
 
@@ -438,11 +420,21 @@
                 <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
             <?php endif; ?>
 
+            <!--
+             ** Main Content Area **
+             * Location: This is the core area where the specific view file (e.g., `dashboard/show.php`, `structures/show.php`) is injected by the `BaseController`'s `render` method.
+             * Notes: It's wrapped in `div` elements that adjust for `full` or standard layout modes and display flash messages.
+            -->
             <?= $content ?>
         </div>
     </div>
 
     <?php if (!$this->session->get('is_mobile') && $isLoggedIn && isset($advisorData)): ?>
+        <!--
+         ** Advisor Sidebar (`<aside class="advisor-panel" id="advisor-panel">`) **
+         * Location: Lines 338 - 508 (approximately, after content is injected)
+         * Notes: This sidebar is also displayed **only on desktop** (`!$this->session->get('is_mobile')`) and when a user is logged in (`$isLoggedIn`) and `isset($advisorData)` is true. It presents player-specific information like character name, level, core stats (credits, turns, server time), and collapsible pods for resources, production, military, and realm news.
+        -->
         <aside class="advisor-panel" id="advisor-panel">
             <button class="advisor-toggle-btn" id="advisor-toggle" title="Toggle Advisor">
                 <i class="fas fa-chevron-right"></i>
