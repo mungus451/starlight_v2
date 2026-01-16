@@ -3,6 +3,7 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
+use App\Core\Permissions;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ResourceRepository;
@@ -11,6 +12,8 @@ use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
 use PDO;
+
+use App\Models\Repositories\StructureRepository;
 
 /**
  * Handles all "read" logic for Alliances.
@@ -29,6 +32,7 @@ class AllianceService
     private AllianceRoleRepository $roleRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
+    private StructureRepository $structureRepo;
 
     public function __construct(
         PDO $db,
@@ -39,7 +43,8 @@ class AllianceService
         ApplicationRepository $appRepo,
         AllianceRoleRepository $roleRepo,
         AllianceBankLogRepository $bankLogRepo,
-        AllianceLoanRepository $loanRepo
+        AllianceLoanRepository $loanRepo,
+        StructureRepository $structureRepo
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -51,6 +56,137 @@ class AllianceService
         $this->roleRepo = $roleRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
+        $this->structureRepo = $structureRepo;
+    }
+
+    /**
+     * Calculates the current status and targets for all available directives.
+     */
+    public function getDirectiveOptions(int $allianceId): array
+    {
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if (!$alliance) return [];
+
+        // 1. Industry (Total Levels)
+        $currentIndustry = $this->structureRepo->getAggregateStructureLevelForAlliance($allianceId);
+        
+        // 2. Military (Soldiers + Guards)
+        $currentMilitary = $this->resourceRepo->getAggregateUnitsForAlliance($allianceId, ['soldiers', 'guards']);
+        
+        // 3. Intel (Spies + Sentries)
+        $currentIntel = $this->resourceRepo->getAggregateUnitsForAlliance($allianceId, ['spies', 'sentries']);
+        
+        // 4. Treasury
+        $currentTreasury = (int)$alliance->bank_credits;
+        
+        // 5. Recruitment
+        $currentMembers = $this->userRepo->countAllianceMembers($allianceId);
+
+        // Helper to calc target (+10% or min +1)
+        $calcTarget = fn($val) => (int)ceil($val * 1.10) + ($val == 0 ? 1 : 0);
+        $calcRecruitTarget = fn($val) => $val + 1; // +1 Member for recruitment usually
+
+        return [
+            'industry' => [
+                'current' => $currentIndustry,
+                'target' => $calcTarget($currentIndustry),
+                'name' => 'Industrial Revolution',
+                'desc' => 'Increase total structure levels.',
+                'icon' => 'fa-industry'
+            ],
+            'military' => [
+                'current' => $currentMilitary,
+                'target' => $calcTarget($currentMilitary),
+                'name' => 'Total Mobilization',
+                'desc' => 'Train more soldiers and guards.',
+                'icon' => 'fa-fighter-jet'
+            ],
+            'intel' => [
+                'current' => $currentIntel,
+                'target' => $calcTarget($currentIntel),
+                'name' => 'Shadow Protocol',
+                'desc' => 'Expand spy and sentry networks.',
+                'icon' => 'fa-user-secret'
+            ],
+            'treasury' => [
+                'current' => $currentTreasury,
+                'target' => $calcTarget($currentTreasury),
+                'name' => 'Treasury Tithe',
+                'desc' => 'Deposit credits into the bank.',
+                'icon' => 'fa-coins'
+            ],
+            'recruit' => [
+                'current' => $currentMembers,
+                'target' => $calcRecruitTarget($currentMembers),
+                'name' => 'Mass Recruitment',
+                'desc' => 'Recruit new members.',
+                'icon' => 'fa-users'
+            ]
+        ];
+    }
+
+    /**
+     * Sets the active directive for an alliance.
+     *
+     * @param int $allianceId
+     * @param string $type
+     * @return bool
+     */
+    public function setDirective(int $allianceId, string $type): bool
+    {
+        $options = $this->getDirectiveOptions($allianceId);
+        
+        if (!isset($options[$type])) {
+            return false;
+        }
+        
+        $data = $options[$type];
+        
+        return $this->allianceRepo->updateDirective(
+            $allianceId,
+            $type,
+            $data['target'],
+            $data['current']
+        );
+    }
+
+    /**
+     * Checks if a user has permission to manage alliance directives.
+     *
+     * @param int $userId
+     * @param int $allianceId
+     * @return bool
+     */
+    public function canManageDirectives(int $userId, int $allianceId): bool
+    {
+        // 1. Check if Alliance Leader
+        $alliance = $this->allianceRepo->findById($allianceId);
+        if ($alliance && $alliance->leader_id === $userId) {
+            return true;
+        }
+
+        // 2. Check Role Permission
+        $user = $this->userRepo->findById($userId);
+        if (!$user) return false;
+        
+        // Ensure user is actually in this alliance
+        if ($user->alliance_id !== $allianceId) return false;
+        
+        $role = $this->roleRepo->findById($user->alliance_role_id);
+        // Using 'CAN_MANAGE_DIPLOMACY' as a proxy for directive management for now
+        return $role && $role->hasPermission(Permissions::CAN_MANAGE_DIPLOMACY);
+    }
+
+    /**
+     * Gets the active directive type for an alliance.
+     * 
+     * @param int $allianceId
+     * @return string|null
+     */
+    public function getAllianceDirectiveType(int $allianceId): ?string
+    {
+        $alliance = $this->allianceRepo->findById($allianceId);
+        return $alliance ? $alliance->directive_type : null;
     }
 
     /**
@@ -113,7 +249,7 @@ class AllianceService
 
         // Get pending applications (only relevant for those with permission)
         $applications = [];
-        if ($viewerRole && $viewerRole->can_manage_applications) {
+        if ($viewerRole && $viewerRole->hasPermission(Permissions::CAN_MANAGE_APPLICATIONS)) {
             $applications = $this->appRepo->findByAllianceId($allianceId);
         }
 

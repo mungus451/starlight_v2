@@ -178,7 +178,11 @@ class LevelUpServiceTest extends TestCase
             dexterity_points: 0,
             charisma_points: 0,
             deposit_charges: 0,
-            last_deposit_at: null
+            last_deposit_at: null,
+            battles_won: 0,
+            battles_lost: 0,
+            spy_successes: 0,
+            spy_failures: 0
         );
     }
 }

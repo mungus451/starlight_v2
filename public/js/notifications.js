@@ -6,20 +6,17 @@ const NotificationSystem = {
     pollInterval: 15000, // 15 Seconds
     pollTimer: null,
     lastUnreadCount: 0,
+    preferences: null,
 
     init: function() {
-        // 1. Request Permission on first interaction (optional, better to do on button click)
-        // We will lazily request it if the user clicks a "Enable Alerts" button, 
-        // or silently check status here.
-        if ("Notification" in window && Notification.permission === "default") {
-            // Don't spam prompt on load, wait for user intent or high alert
-        }
+        // 1. Load user preferences first, then start checking
+        this.loadPreferences().then(() => {
+            // 2. Initial Check (after preferences loaded)
+            this.check();
 
-        // 2. Initial Check
-        this.check();
-
-        // 3. Start Polling Loop
-        this.startPolling();
+            // 3. Start Polling Loop
+            this.startPolling();
+        });
 
         // 4. Bind "Mark Read" clicks (Delegation)
         const list = document.getElementById('notification-list');
@@ -37,6 +34,30 @@ const NotificationSystem = {
         if (markAllBtn) {
             markAllBtn.addEventListener('click', () => this.markAllAsRead());
         }
+    },
+
+    loadPreferences: function() {
+        return fetch('/notifications/preferences')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load preferences');
+                }
+                return response.json();
+            })
+            .then(data => {
+                this.preferences = data;
+            })
+            .catch(err => {
+                console.error('Failed to load notification preferences:', err);
+                // Set default preferences on error to prevent blocking
+                this.preferences = {
+                    push_notifications_enabled: false,
+                    attack_enabled: true,
+                    spy_enabled: true,
+                    alliance_enabled: true,
+                    system_enabled: true
+                };
+            });
     },
 
     requestPermission: function() {
@@ -62,7 +83,7 @@ const NotificationSystem = {
             .then(data => {
                 this.updateUI(data.unread);
                 
-                // Trigger Push if count increased
+                // Trigger Push if count increased and user has enabled push notifications
                 if (data.unread > this.lastUnreadCount && data.latest) {
                     this.triggerPush(data.latest);
                 }
@@ -75,14 +96,18 @@ const NotificationSystem = {
     updateUI: function(count) {
         // 1. Update Navbar Badge
         const badge = document.getElementById('nav-notification-badge');
-        if (badge) {
-            badge.textContent = count > 0 ? count : '';
-            badge.style.display = count > 0 ? 'inline-block' : 'none';
-            
-            // Optional: Pulse animation class
-            if (count > 0) badge.classList.add('pulse');
-            else badge.classList.remove('pulse');
-        }
+        const mobileBadge = document.getElementById('nav-notification-badge-mobile');
+        
+        const updateElement = (el) => {
+            if (!el) return;
+            el.textContent = count > 0 ? count : '';
+            el.style.display = count > 0 ? 'inline-block' : 'none';
+            if (count > 0) el.classList.add('pulse');
+            else el.classList.remove('pulse');
+        };
+
+        updateElement(badge);
+        updateElement(mobileBadge);
 
         // 2. Update Tab Title (e.g., "(1) Starlight Dominion")
         if (count > 0) {
@@ -94,6 +119,17 @@ const NotificationSystem = {
 
     triggerPush: function(notificationData) {
         if (!("Notification" in window)) return;
+
+        // Check if user has push notifications enabled in preferences
+        if (!this.preferences || !this.preferences.push_notifications_enabled) {
+            return;
+        }
+
+        // Check if user has this specific notification type enabled for push
+        const typeEnabled = this.isTypePushEnabled(notificationData.type);
+        if (!typeEnabled) {
+            return;
+        }
 
         if (Notification.permission === "granted") {
             const notif = new Notification(notificationData.title, {
@@ -107,6 +143,23 @@ const NotificationSystem = {
                 window.location.href = '/notifications';
                 this.close();
             };
+        }
+    },
+
+    isTypePushEnabled: function(type) {
+        if (!this.preferences) return false;
+        
+        switch(type) {
+            case 'attack':
+                return this.preferences.attack_enabled;
+            case 'spy':
+                return this.preferences.spy_enabled;
+            case 'alliance':
+                return this.preferences.alliance_enabled;
+            case 'system':
+                return this.preferences.system_enabled;
+            default:
+                return false;
         }
     },
 

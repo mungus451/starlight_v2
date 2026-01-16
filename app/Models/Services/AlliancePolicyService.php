@@ -2,6 +2,7 @@
 
 namespace App\Models\Services;
 
+use App\Core\Permissions;
 use App\Models\Entities\User;
 use App\Models\Entities\AllianceRole;
 
@@ -19,7 +20,7 @@ class AlliancePolicyService
      * @param AllianceRole $adminRole
      * @param User $targetUser
      * @param AllianceRole|null $targetRole
-     * @param string $permissionName (e.g., 'can_kick_members')
+     * @param int $permission A permission bitmask from App\Core\Permissions
      * @return string|null Null on success, or a string error message on failure.
      */
     private function canManageTarget(
@@ -27,7 +28,7 @@ class AlliancePolicyService
         AllianceRole $adminRole,
         User $targetUser,
         ?AllianceRole $targetRole,
-        string $permissionName
+        int $permission
     ): ?string {
         // 1. Check if admin and target are in the same alliance
         if ($adminUser->alliance_id === null || $adminUser->alliance_id !== $targetUser->alliance_id) {
@@ -35,8 +36,8 @@ class AlliancePolicyService
         }
 
         // 2. Check if admin has the base permission
-        if (!property_exists($adminRole, $permissionName) || $adminRole->{$permissionName} !== true) {
-            return 'You do not have permission to ' . str_replace('_', ' ', $permissionName) . '.';
+        if (!$adminRole->hasPermission($permission)) {
+            return 'You do not have permission to perform this action.';
         }
         
         // 3. Check if target is the Leader
@@ -69,7 +70,7 @@ class AlliancePolicyService
         User $targetUser,
         ?AllianceRole $targetRole
     ): ?string {
-        return $this->canManageTarget($adminUser, $adminRole, $targetUser, $targetRole, 'can_kick_members');
+        return $this->canManageTarget($adminUser, $adminRole, $targetUser, $targetRole, Permissions::CAN_KICK_MEMBERS);
     }
 
     /**
@@ -90,7 +91,7 @@ class AlliancePolicyService
         AllianceRole $newRole
     ): ?string {
         // 1. Run the base management checks (checks for permission, hierarchy, etc.)
-        $manageError = $this->canManageTarget($adminUser, $adminRole, $targetUser, $targetRole, 'can_manage_roles');
+        $manageError = $this->canManageTarget($adminUser, $adminRole, $targetUser, $targetRole, Permissions::CAN_MANAGE_ROLES);
         if ($manageError !== null) {
             return $manageError;
         }

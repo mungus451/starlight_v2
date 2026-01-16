@@ -3,12 +3,14 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
+use App\Core\Permissions;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\AllianceLoanRepository;
@@ -35,6 +37,7 @@ class AllianceManagementService
     private AllianceBankLogRepository $bankLogRepo;
     private AllianceLoanRepository $loanRepo;
     private Logger $logger;
+    private NotificationService $notificationService;
 
     private string $storageRoot;
 
@@ -49,7 +52,8 @@ class AllianceManagementService
         ResourceRepository $resourceRepo,
         AllianceBankLogRepository $bankLogRepo,
         AllianceLoanRepository $loanRepo,
-        Logger $logger
+        Logger $logger,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -62,6 +66,7 @@ class AllianceManagementService
         $this->bankLogRepo = $bankLogRepo;
         $this->loanRepo = $loanRepo;
         $this->logger = $logger;
+        $this->notificationService = $notificationService;
 
         // Define storage root relative to this file
         $this->storageRoot = realpath(__DIR__ . '/../../../storage');
@@ -80,7 +85,7 @@ class AllianceManagementService
      */
     public function updateProfile(int $adminId, int $allianceId, string $description, array $file, bool $removePhoto, bool $isJoinable): ServiceResponse
     {
-        if (!$this->checkPermission($adminId, $allianceId, 'can_edit_profile')) {
+        if (!$this->checkPermission($adminId, $allianceId, Permissions::CAN_EDIT_PROFILE)) {
             return ServiceResponse::error('You do not have permission to edit the profile.');
         }
 
@@ -188,7 +193,7 @@ class AllianceManagementService
         $allianceId = $user->alliance_id;
 
         $userRole = $this->roleRepo->findById($user->alliance_role_id);
-        if (!$userRole || !$userRole->can_manage_roles) {
+        if (!$userRole || !$userRole->hasPermission(Permissions::CAN_MANAGE_ROLES)) {
             return ServiceResponse::error('You do not have permission to manage roles.');
         }
 
@@ -235,15 +240,23 @@ class AllianceManagementService
         try {
             $newAllianceId = $this->allianceRepo->create($name, $tag, $userId);
 
-            $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, [
-                'can_edit_profile' => 1, 'can_manage_applications' => 1, 'can_invite_members' => 1,
-                'can_kick_members' => 1, 'can_manage_roles' => 1, 'can_see_private_board' => 1,
-                'can_manage_forum' => 1, 'can_manage_bank' => 1, 'can_manage_structures' => 1,
-                'can_manage_diplomacy' => 1, 'can_declare_war' => 1
-            ]);
+            $leaderPermissions = 
+                Permissions::CAN_EDIT_PROFILE |
+                Permissions::CAN_MANAGE_APPLICATIONS |
+                Permissions::CAN_INVITE_MEMBERS |
+                Permissions::CAN_KICK_MEMBERS |
+                Permissions::CAN_MANAGE_ROLES |
+                Permissions::CAN_SEE_PRIVATE_BOARD |
+                Permissions::CAN_MANAGE_FORUM |
+                Permissions::CAN_MANAGE_BANK |
+                Permissions::CAN_MANAGE_STRUCTURES |
+                Permissions::CAN_MANAGE_DIPLOMACY |
+                Permissions::CAN_DECLARE_WAR;
             
-            $this->roleRepo->create($newAllianceId, 'Recruit', 10, ['can_invite_members' => 1]);
-            $this->roleRepo->create($newAllianceId, 'Member', 9, []);
+            $leaderRoleId = $this->roleRepo->create($newAllianceId, 'Leader', 1, $leaderPermissions);
+            
+            $this->roleRepo->create($newAllianceId, 'Recruit', 10, Permissions::CAN_INVITE_MEMBERS);
+            $this->roleRepo->create($newAllianceId, 'Member', 9, 0);
 
             $newCredits = $resources->credits - $cost;
             $this->resourceRepo->updateCredits($userId, $newCredits);
@@ -315,7 +328,18 @@ class AllianceManagementService
             return ServiceResponse::error('Leaders must disband the alliance or transfer leadership. You cannot leave.');
         }
 
+        $allianceId = $user->alliance_id;
         $this->userRepo->leaveAlliance($userId);
+        
+        // Notify all alliance members about the departure
+        $this->notificationService->notifyAllianceMembers(
+            $allianceId,
+            $userId,
+            'Member Left Alliance',
+            "{$user->characterName} left the alliance",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success('You have left the alliance.');
     }
 
@@ -332,7 +356,7 @@ class AllianceManagementService
             $targetAllianceId = $app->alliance_id;
             $targetUserId = $app->user_id;
 
-            if (!$this->checkPermission($adminId, $targetAllianceId, 'can_manage_applications')) {
+            if (!$this->checkPermission($adminId, $targetAllianceId, Permissions::CAN_MANAGE_APPLICATIONS)) {
                 return ServiceResponse::error('You do not have permission to do this.');
             }
         } else {
@@ -356,7 +380,17 @@ class AllianceManagementService
         try {
             $this->userRepo->setAlliance($targetUser->id, $targetAllianceId, $recruitRole->id);
             $this->appRepo->deleteByUser($targetUser->id);
+            
             $this->db->commit();
+            
+            // Notify all alliance members about the new member after successful commit
+            $this->notificationService->notifyAllianceMembers(
+                $targetAllianceId,
+                $targetUser->id,
+                'New Alliance Member',
+                "{$targetUser->characterName} joined the alliance",
+                "/alliance/profile"
+            );
         } catch (Throwable $e) {
             $this->db->rollBack();
             $this->logger->error('Accept Application Error: ' . $e->getMessage());
@@ -373,7 +407,7 @@ class AllianceManagementService
             return ServiceResponse::error('Application not found.');
         }
 
-        if (!$this->checkPermission($adminId, $app->alliance_id, 'can_manage_applications')) {
+        if (!$this->checkPermission($adminId, $app->alliance_id, Permissions::CAN_MANAGE_APPLICATIONS)) {
             return ServiceResponse::error('You do not have permission to do this.');
         }
 
@@ -388,7 +422,7 @@ class AllianceManagementService
             return ServiceResponse::error('You must be in an alliance to invite players.');
         }
 
-        if (!$this->checkPermission($inviterId, $inviterUser->alliance_id, 'can_invite_members')) {
+        if (!$this->checkPermission($inviterId, $inviterUser->alliance_id, Permissions::CAN_INVITE_MEMBERS)) {
             return ServiceResponse::error('You do not have permission to invite members.');
         }
         
@@ -440,7 +474,18 @@ class AllianceManagementService
             return ServiceResponse::error($authError);
         }
 
+        $allianceId = $targetUser->alliance_id;
         $this->userRepo->leaveAlliance($targetUserId);
+        
+        // Notify all alliance members about the kick
+        $this->notificationService->notifyAllianceMembers(
+            $allianceId,
+            $targetUserId,
+            'Member Kicked',
+            "{$targetUser->characterName} was kicked from the alliance",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success("{$targetUser->characterName} has been kicked from the alliance.");
     }
 
@@ -470,16 +515,42 @@ class AllianceManagementService
         }
 
         $this->userRepo->setAllianceRole($targetUserId, $newRoleId);
+        
+        // Determine if this is a promotion, demotion, or lateral role change (lower sort_order = higher rank)
+        if ($newRole->sort_order < $targetRole->sort_order) {
+            $notifTitle = 'Member Promoted';
+        } elseif ($newRole->sort_order > $targetRole->sort_order) {
+            $notifTitle = 'Member Demoted';
+        } else {
+            $notifTitle = 'Member Role Changed';
+        }
+        
+        // Notify all alliance members about the role change
+        $this->notificationService->notifyAllianceMembers(
+            $adminUser->alliance_id,
+            $targetUserId,
+            $notifTitle,
+            "{$targetUser->characterName} was assigned the role: {$newRole->name}",
+            "/alliance/profile"
+        );
+        
         return ServiceResponse::success("{$targetUser->characterName}'s role has been updated to {$newRole->name}.");
     }
 
     public function createRole(int $adminId, int $allianceId, string $name, array $permissions): ServiceResponse
     {
-        if (!$this->checkPermission($adminId, $allianceId, 'can_manage_roles')) {
+        if (!$this->checkPermission($adminId, $allianceId, Permissions::CAN_MANAGE_ROLES)) {
             return ServiceResponse::error('You do not have permission to create roles.');
         }
+
+        $permissionsMask = 0;
+        foreach ($permissions as $permissionName => $value) {
+            if ($value && defined(Permissions::class . '::' . $permissionName)) {
+                $permissionsMask |= constant(Permissions::class . '::' . $permissionName);
+            }
+        }
         
-        $this->roleRepo->create($allianceId, $name, 100, $permissions);
+        $this->roleRepo->create($allianceId, $name, 100, $permissionsMask);
         return ServiceResponse::success("Role '{$name}' created.");
     }
 
@@ -490,15 +561,25 @@ class AllianceManagementService
             return ServiceResponse::error('Role not found.');
         }
 
-        if (!$this->checkPermission($adminId, $role->alliance_id, 'can_manage_roles')) {
+        if (!$this->checkPermission($adminId, $role->alliance_id, Permissions::CAN_MANAGE_ROLES)) {
             return ServiceResponse::error('You do not have permission to edit roles.');
         }
         
         if (in_array($role->name, ['Leader', 'Recruit', 'Member'])) {
-            return ServiceResponse::error('You cannot edit default roles.');
+            $alliance = $this->allianceRepo->findById($role->alliance_id);
+            if (!$alliance || $alliance->leader_id !== $adminId) {
+                return ServiceResponse::error('Only the Alliance Leader can edit default roles.');
+            }
         }
 
-        $this->roleRepo->update($roleId, $name, $permissions);
+        $permissionsMask = 0;
+        foreach ($permissions as $permissionName => $value) {
+            if ($value && defined(Permissions::class . '::' . $permissionName)) {
+                $permissionsMask |= constant(Permissions::class . '::' . $permissionName);
+            }
+        }
+
+        $this->roleRepo->update($roleId, $name, $permissionsMask);
         return ServiceResponse::success("Role '{$name}' updated.");
     }
 
@@ -509,7 +590,7 @@ class AllianceManagementService
             return ServiceResponse::error('Role not found.');
         }
 
-        if (!$this->checkPermission($adminId, $role->alliance_id, 'can_manage_roles')) {
+        if (!$this->checkPermission($adminId, $role->alliance_id, Permissions::CAN_MANAGE_ROLES)) {
             return ServiceResponse::error('You do not have permission to delete roles.');
         }
 
@@ -581,6 +662,16 @@ class AllianceManagementService
         }
         
         $this->loanRepo->createLoanRequest($user->alliance_id, $userId, $amount);
+        
+        // Notify alliance members with bank management permission about the loan request
+        $this->notificationService->notifyAllianceMembers(
+            $user->alliance_id,
+            $userId,
+            'Loan Request',
+            "{$user->characterName} requested a loan of " . number_format($amount) . " credits",
+            "/alliance/bank"
+        );
+        
         return ServiceResponse::success('Loan request for ' . number_format($amount) . ' credits has been submitted.');
     }
 
@@ -591,7 +682,7 @@ class AllianceManagementService
             return ServiceResponse::error('Loan not found.');
         }
 
-        if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
+        if (!$this->checkPermission($adminUserId, $loan->alliance_id, Permissions::CAN_MANAGE_BANK)) {
             return ServiceResponse::error('You do not have permission to manage the bank.');
         }
         
@@ -638,7 +729,7 @@ class AllianceManagementService
             return ServiceResponse::error('Loan not found.');
         }
 
-        if (!$this->checkPermission($adminUserId, $loan->alliance_id, 'can_manage_bank')) {
+        if (!$this->checkPermission($adminUserId, $loan->alliance_id, Permissions::CAN_MANAGE_BANK)) {
             return ServiceResponse::error('You do not have permission to manage the bank.');
         }
         
@@ -700,12 +791,55 @@ class AllianceManagementService
         return ServiceResponse::success($msg);
     }
 
-    private function checkPermission(int $userId, int $allianceId, string $permissionName): bool
+    public function forgiveLoan(int $adminUserId, int $loanId): ServiceResponse
+    {
+        $loan = $this->loanRepo->findById($loanId);
+        if (!$loan) {
+            return ServiceResponse::error('Loan not found.');
+        }
+
+        // Strict Check: Only the Alliance Leader can forgive loans
+        $alliance = $this->allianceRepo->findById($loan->alliance_id);
+        if (!$alliance || $alliance->leader_id !== $adminUserId) {
+            return ServiceResponse::error('Only the Alliance Leader can forgive loans.');
+        }
+
+        if ($loan->status !== 'active') {
+            return ServiceResponse::error('This loan is not active.');
+        }
+
+        $borrower = $this->userRepo->findById($loan->user_id);
+        if (!$borrower) {
+            return ServiceResponse::error('Borrower not found.');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Update loan to paid, 0 debt
+            $this->loanRepo->updateLoan($loanId, 'paid', 0);
+            
+            // Log the forgiveness (Amount 0 as no credits moved)
+            $message = "Loan for {$borrower->characterName} forgiven by leader.";
+            $this->bankLogRepo->createLog($loan->alliance_id, $adminUserId, 'loan_forgiveness', 0, $message);
+            
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            $this->logger->error('Alliance Loan Forgive Error: ' . $e->getMessage());
+            return ServiceResponse::error('A database error occurred.');
+        }
+
+        return ServiceResponse::success("Loan for {$borrower->characterName} has been forgiven.");
+    }
+
+    private function checkPermission(int $userId, int $allianceId, int $permission): bool
     {
         $user = $this->userRepo->findById($userId);
-        if (!$user || $user->alliance_id !== $allianceId) return false;
+        if (!$user || $user->alliance_id !== $allianceId) {
+            return false;
+        }
         
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        return $role && property_exists($role, $permissionName) && $role->{$permissionName} === true;
+        return $role && $role->hasPermission($permission);
     }
 }

@@ -106,14 +106,15 @@ if ($response->isSuccess()) {
 // Flash message is set so it appears on next full page load if user refreshes
 $this->session->setFlash('success', $response->message);
 
-$this->jsonResponse([
-'success' => true,
-'message' => $response->message,
-'new_credits' => $response->data['new_credits'],
-'new_owned' => $response->data['new_owned'],
-'item_key' => $response->data['item_key']
-]);
-} else {
+        $this->jsonResponse([
+            'success' => true,
+            'message' => $response->message,
+            'new_credits' => $response->data['new_credits'],
+            'new_crystals' => $response->data['new_crystals'],
+            'new_dark_matter' => $response->data['new_dark_matter'],
+            'new_owned' => $response->data['new_owned'],
+            'item_key' => $response->data['item_key']
+        ]);} else {
 $this->jsonResponse(['success' => false, 'error' => $response->message]);
 }
 } else {
@@ -233,6 +234,95 @@ $this->session->setFlash('error', $response->message);
 $this->redirect('/armory');
 }
 }
+
+    /**
+     * Mobile Specific: Show dedicated management page for a Unit Tier.
+     *
+     * @param array $params ['unit' => 'soldier', 'tier' => '1']
+     */
+    public function showMobileTierManagement(array $params): void
+    {
+        $unitKey = $params['unit'] ?? '';
+        $tier = (int)($params['tier'] ?? 1);
+
+        $userId = $this->session->get('user_id');
+        $rawData = $this->armoryService->getArmoryData($userId);
+        $viewModel = $this->presenter->present($rawData);
+
+        if (!isset($viewModel['armoryConfig'][$unitKey])) {
+            $this->session->setFlash('error', 'Invalid unit type.');
+            $this->redirect('/armory');
+            return;
+        }
+
+        $items = $viewModel['manufacturingData'][$unitKey][$tier] ?? [];
+
+        $this->render('mobile/armory/manage_tier.php', [
+            'title' => 'Manage Armory',
+            'layoutMode' => 'full',
+            'unitKey' => $unitKey,
+            'unitName' => $viewModel['armoryConfig'][$unitKey]['title'],
+            'unitData' => $viewModel['armoryConfig'][$unitKey], // Full config for categories
+            'itemLookup' => $rawData['itemLookup'] ?? [], // For resolving item keys to names
+            'tier' => $tier,
+            'items' => $items,
+            'loadouts' => $viewModel['loadouts'][$unitKey] ?? [],
+            'userResources' => $rawData['userResources']
+        ]);
+    }
+
+    /**
+     * Mobile Specific: Show dedicated loadout management page for a Unit.
+     *
+     * @param array $params ['unit' => 'soldier']
+     */
+    public function showMobileLoadout(array $params): void
+    {
+        $unitKey = $params['unit'] ?? '';
+
+        $userId = $this->session->get('user_id');
+        $rawData = $this->armoryService->getArmoryData($userId);
+        $viewModel = $this->presenter->present($rawData);
+
+        if (!isset($viewModel['armoryConfig'][$unitKey])) {
+            $this->session->setFlash('error', 'Invalid unit type.');
+            $this->redirect('/armory');
+            return;
+        }
+
+        // We need inventory to show which items are owned/equippable
+        $inventory = $rawData['inventory'] ?? [];
+
+        // Build list of eligible items per category for easy view rendering
+        $eligibleItems = [];
+        $categories = $viewModel['armoryConfig'][$unitKey]['categories'];
+        
+        foreach ($categories as $catKey => $catData) {
+            foreach ($catData['items'] as $itemKey => $itemDef) {
+                $ownedCount = $inventory[$itemKey] ?? 0;
+                $isEquipped = ($viewModel['loadouts'][$unitKey][$catKey] ?? '') === $itemKey;
+                
+                $eligibleItems[$catKey][] = [
+                    'key' => $itemKey,
+                    'name' => $itemDef['name'],
+                    'stats' => $itemDef, // Contains raw stats
+                    'owned' => $ownedCount,
+                    'is_equipped' => $isEquipped
+                ];
+            }
+        }
+
+        $this->render('mobile/armory/loadout.php', [
+            'title' => 'Manage Loadout',
+            'layoutMode' => 'full',
+            'unitKey' => $unitKey,
+            'unitName' => $viewModel['armoryConfig'][$unitKey]['title'],
+            'categories' => $categories,
+            'loadout' => $viewModel['loadouts'][$unitKey] ?? [],
+            'eligibleItems' => $eligibleItems,
+            'itemLookup' => $rawData['itemLookup'] ?? []
+        ]);
+    }
 
 /**
 * Helper to detect JSON requests (AJAX).

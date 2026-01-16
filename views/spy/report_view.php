@@ -70,6 +70,12 @@
                         <span>Sentries Lost</span>
                         <span class="val-danger">- <?= number_format($report['sentries_lost_defender']) ?></span>
                     </li>
+                    <?php if (($report['defender_workers_lost'] ?? 0) > 0): ?>
+                    <li>
+                        <span>Workers Lost</span>
+                        <span class="val-danger">- <?= number_format($report['defender_workers_lost']) ?></span>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
 
@@ -80,6 +86,15 @@
                 <?php if ($report['operation_result'] === 'success'): ?>
                     <ul class="card-stats-list">
                         <li><span>Credits</span> <span><?= number_format($report['credits_seen']) ?></span></li>
+                        <?php if ($report['naquadah_crystals_seen'] !== null): ?>
+                            <li><span>Naquadah</span> <span><?= number_format($report['naquadah_crystals_seen'], 2) ?></span></li>
+                        <?php endif; ?>
+                        <?php if ($report['dark_matter_seen'] !== null): ?>
+                            <li><span>Dark Matter</span> <span><?= number_format($report['dark_matter_seen']) ?></span></li>
+                        <?php endif; ?>
+                        <?php if ($report['protoform_seen'] !== null): ?>
+                            <li><span>Protoform</span> <span><?= number_format($report['protoform_seen'], 2) ?></span></li>
+                        <?php endif; ?>
                         <li><span>Soldiers</span> <span><?= number_format($report['soldiers_seen']) ?></span></li>
                         <li><span>Guards</span> <span><?= number_format($report['guards_seen']) ?></span></li>
                         <li><span>Sentries</span> <span><?= number_format($report['sentries_seen']) ?></span></li>
@@ -90,6 +105,21 @@
                     <p style="text-align: center; color: var(--muted); padding: 1rem 0; font-style: italic;">
                         Target defenses prevented intel gathering.
                     </p>
+                <?php endif; ?>
+
+                <?php if ($report['operation_result'] === 'success' && ($report['naquadah_crystals_stolen'] > 0 || $report['dark_matter_stolen'] > 0 || $report['protoform_stolen'] > 0)): ?>
+                    <h4 style="border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--accent-gold);">Stolen Resources</h4>
+                    <ul class="card-stats-list">
+                        <?php if ($report['naquadah_crystals_stolen'] > 0): ?>
+                            <li><span>Naquadah Stolen</span> <span class="val-success">+ <?= number_format($report['naquadah_crystals_stolen'], 2) ?></span></li>
+                        <?php endif; ?>
+                        <?php if ($report['dark_matter_stolen'] > 0): ?>
+                            <li><span>Dark Matter Stolen</span> <span class="val-success">+ <?= number_format($report['dark_matter_stolen']) ?></span></li>
+                        <?php endif; ?>
+                        <?php if ($report['protoform_stolen'] > 0): ?>
+                            <li><span>Protoform Stolen</span> <span class="val-success">+ <?= number_format($report['protoform_stolen'], 2) ?></span></li>
+                        <?php endif; ?>
+                    </ul>
                 <?php endif; ?>
             </div>
         </div>

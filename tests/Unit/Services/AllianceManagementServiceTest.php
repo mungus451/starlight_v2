@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use Tests\Unit\TestCase;
 use App\Models\Services\AllianceManagementService;
 use App\Models\Services\AlliancePolicyService;
+use App\Models\Services\NotificationService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\ApplicationRepository;
@@ -19,6 +20,7 @@ use App\Models\Entities\AllianceRole;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\AllianceApplication;
 use App\Models\Entities\AllianceLoan;
+use App\Core\Permissions;
 use App\Core\Logger;
 use Mockery;
 use PDO;
@@ -41,6 +43,7 @@ class AllianceManagementServiceTest extends TestCase
     private $mockBankLogRepo;
     private $mockLoanRepo;
     private Logger|Mockery\MockInterface $mockLogger;
+    private $mockNotificationService;
 
     protected function setUp(): void
     {
@@ -57,12 +60,16 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockLoanRepo = Mockery::mock(AllianceLoanRepository::class);
         $this->mockLogger = Mockery::mock(Logger::class);
+        $this->mockNotificationService = Mockery::mock(NotificationService::class);
 
         // Handle DB transactions in service
         $this->mockPdo->shouldReceive('beginTransaction')->byDefault();
         $this->mockPdo->shouldReceive('commit')->byDefault();
         $this->mockPdo->shouldReceive('rollBack')->byDefault();
         $this->mockPdo->shouldReceive('inTransaction')->andReturn(true)->byDefault();
+
+        // Allow notification service calls by default
+        $this->mockNotificationService->shouldReceive('notifyAllianceMembers')->byDefault();
 
         $this->service = new AllianceManagementService(
             $this->mockPdo,
@@ -75,7 +82,8 @@ class AllianceManagementServiceTest extends TestCase
             $this->mockResourceRepo,
             $this->mockBankLogRepo,
             $this->mockLoanRepo,
-            $this->mockLogger
+            $this->mockLogger,
+            $this->mockNotificationService
         );
     }
 
@@ -337,7 +345,7 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
         $this->mockRoleRepo->shouldReceive('findById')->with(50)->andReturn($adminRole);
         
-        $this->mockRoleRepo->shouldReceive('create')->with($allianceId, 'NewRole', 100, []);
+        $this->mockRoleRepo->shouldReceive('create')->with($allianceId, 'NewRole', 100, 0);
 
         $response = $this->service->createRole($adminId, $allianceId, 'NewRole', []);
         $this->assertServiceSuccess($response);
@@ -357,7 +365,7 @@ class AllianceManagementServiceTest extends TestCase
         $this->mockUserRepo->shouldReceive('findById')->with($adminId)->andReturn($admin);
         $this->mockRoleRepo->shouldReceive('findById')->with(50)->andReturn($adminRole);
         
-        $this->mockRoleRepo->shouldReceive('update')->with($roleId, 'UpdatedName', []);
+        $this->mockRoleRepo->shouldReceive('update')->with($roleId, 'UpdatedName', 0);
 
         $response = $this->service->updateRole($adminId, $roleId, 'UpdatedName', []);
         $this->assertServiceSuccess($response);
@@ -797,24 +805,26 @@ class AllianceManagementServiceTest extends TestCase
         );
     }
 
+// ... (inside the class)
+
     private function mockRole(int $id, int $alliance_id = 10, string $name = 'Role', array $perms = []): AllianceRole
     {
+        $permissionsMask = 0;
+        foreach ($perms as $permName => $value) {
+            if ($value) {
+                $constName = strtoupper($permName);
+                if (defined(Permissions::class . '::' . $constName)) {
+                    $permissionsMask |= constant(Permissions::class . '::' . $constName);
+                }
+            }
+        }
+        
         $role = new AllianceRole(
             id: $id,
             alliance_id: $alliance_id,
             name: $name,
             sort_order: 50,
-            can_edit_profile: $perms['can_edit_profile'] ?? false,
-            can_manage_applications: $perms['can_manage_applications'] ?? false,
-            can_invite_members: $perms['can_invite_members'] ?? false,
-            can_kick_members: $perms['can_kick_members'] ?? false,
-            can_manage_roles: $perms['can_manage_roles'] ?? false,
-            can_manage_forum: $perms['can_manage_forum'] ?? false,
-            can_manage_bank: $perms['can_manage_bank'] ?? false,
-            can_manage_structures: $perms['can_manage_structures'] ?? false,
-            can_manage_diplomacy: $perms['can_manage_diplomacy'] ?? false,
-            can_declare_war: $perms['can_declare_war'] ?? false,
-            can_see_private_board: $perms['can_see_private_board'] ?? false
+            permissions: $permissionsMask
         );
         return $role;
     }

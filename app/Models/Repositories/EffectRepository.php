@@ -73,4 +73,17 @@ class EffectRepository
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Updates the metadata of an active effect.
+     */
+    public function updateMetadata(int $userId, string $type, array $metadata): void
+    {
+        $stmt = $this->db->prepare("
+            UPDATE user_active_effects 
+            SET metadata = ? 
+            WHERE user_id = ? AND effect_type = ?
+        ");
+        $stmt->execute([json_encode($metadata), $userId, $type]);
+    }
 }

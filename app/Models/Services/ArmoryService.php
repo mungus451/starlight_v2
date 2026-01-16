@@ -137,6 +137,8 @@ class ArmoryService
 
         // 2. Validate & Calculate Logic
         $totalCost = 0;
+        $totalCrystalCost = 0;
+        $totalDarkMatterCost = 0;
         $simulatedInventory = $inventory; // Use to track consumption within batch
         $opsToPerform = []; // ['item_key' => qty]
 
@@ -165,10 +167,14 @@ class ArmoryService
                 return ServiceResponse::error("Armory level too low for {$item['name']}.");
             }
 
-            // Cost
+            // Cost (Credits)
             $baseCost = $item['cost'];
             $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
             $totalCost += ($effectiveUnitCost * $quantity);
+
+            // Cost (Rare Resources) - No discount on materials
+            $totalCrystalCost += ($item['cost_crystals'] ?? 0) * $quantity;
+            $totalDarkMatterCost += ($item['cost_dark_matter'] ?? 0) * $quantity;
 
             // Prereqs
             $prereqKey = $item['requires'] ?? null;
@@ -185,9 +191,15 @@ class ArmoryService
             $opsToPerform[$itemKey] = $quantity;
         }
 
-        // 3. Check Credits
+        // 3. Check Resources
         if ($userResources->credits < $totalCost) {
             return ServiceResponse::error('Insufficient credits for batch. Total cost: ' . number_format($totalCost));
+        }
+        if ($userResources->naquadah_crystals < $totalCrystalCost) {
+            return ServiceResponse::error('Insufficient Naquadah Crystals. Need: ' . number_format($totalCrystalCost));
+        }
+        if ($userResources->dark_matter < $totalDarkMatterCost) {
+            return ServiceResponse::error('Insufficient Dark Matter. Need: ' . number_format($totalDarkMatterCost));
         }
 
         // 4. Execute Transaction
@@ -196,8 +208,13 @@ class ArmoryService
         }
 
         try {
-            // Deduct Credits
-            $this->resourceRepo->updateCredits($userId, $userResources->credits - $totalCost);
+            // Deduct All Resources
+            $this->resourceRepo->updateResources(
+                $userId, 
+                -$totalCost, 
+                -$totalCrystalCost, 
+                -$totalDarkMatterCost
+            );
             
             // Process Items
             foreach ($opsToPerform as $key => $qty) {
@@ -211,7 +228,11 @@ class ArmoryService
             }
             
             $this->db->commit();
-            return ServiceResponse::success("Batch manufacturing successful!", ['total_cost' => $totalCost]);
+            return ServiceResponse::success("Batch manufacturing successful!", [
+                'new_credits' => $userResources->credits - $totalCost,
+                'new_crystals' => $userResources->naquadah_crystals - $totalCrystalCost,
+                'new_dark_matter' => $userResources->dark_matter - $totalDarkMatterCost
+            ]);
 
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -264,9 +285,17 @@ class ArmoryService
         $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
         
         $totalCost = $effectiveUnitCost * $quantity;
+        $totalCrystalCost = ($item['cost_crystals'] ?? 0) * $quantity;
+        $totalDarkMatterCost = ($item['cost_dark_matter'] ?? 0) * $quantity;
         
         if ($userResources->credits < $totalCost) {
             return ServiceResponse::error('You do not have enough credits.');
+        }
+        if ($userResources->naquadah_crystals < $totalCrystalCost) {
+            return ServiceResponse::error('You do not have enough Naquadah Crystals.');
+        }
+        if ($userResources->dark_matter < $totalDarkMatterCost) {
+            return ServiceResponse::error('You do not have enough Dark Matter.');
         }
 
         $prereqKey = $item['requires'] ?? null;
@@ -287,12 +316,22 @@ class ArmoryService
         }
 
         $newCredits = 0;
+        $newCrystals = 0;
+        $newDarkMatter = 0;
         $newOwned = 0;
 
         try {
-            // Deduct Credits
+            // Deduct All Resources
             $newCredits = $userResources->credits - $totalCost;
-            $this->resourceRepo->updateCredits($userId, $newCredits);
+            $newCrystals = $userResources->naquadah_crystals - $totalCrystalCost;
+            $newDarkMatter = $userResources->dark_matter - $totalDarkMatterCost;
+
+            $this->resourceRepo->updateResources(
+                $userId, 
+                -$totalCost, 
+                -$totalCrystalCost, 
+                -$totalDarkMatterCost
+            );
 
             // Deduct Prerequisite Item
             if ($prereqKey) {
@@ -331,6 +370,8 @@ class ArmoryService
 
         return ServiceResponse::success($msg, [
             'new_credits' => $newCredits,
+            'new_crystals' => $newCrystals,
+            'new_dark_matter' => $newDarkMatter,
             'new_owned' => $newOwned,
             'item_key' => $itemKey
         ]);
@@ -411,6 +452,10 @@ class ArmoryService
         
         $baseCost = $item['cost'];
         $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
+
+        // --- NEW: Add special resource costs (no discounts apply) ---
+        $crystalCost = $item['cost_crystals'] ?? 0;
+        $darkMatterCost = $item['cost_dark_matter'] ?? 0;
         
         $reqLevel = $item['armory_level_req'] ?? 0;
         $hasLevel = $armoryLevel >= $reqLevel;
@@ -425,6 +470,10 @@ class ArmoryService
         $item['current_owned'] = (int)($inventory[$itemKey] ?? 0);
         $item['base_cost'] = $baseCost;
         $item['effective_cost'] = $effectiveCost;
+        $item['cost_crystals'] = $crystalCost;
+        $item['cost_crystals_formatted'] = number_format($crystalCost);
+        $item['cost_dark_matter'] = $darkMatterCost;
+        $item['cost_dark_matter_formatted'] = number_format($darkMatterCost);
         $item['armory_level_req'] = $reqLevel;
         $item['has_level'] = $hasLevel;
         $item['can_manufacture'] = $canManufacture;
@@ -443,6 +492,8 @@ class ArmoryService
                 $allItems[$itemKey] = $item;
             }
         }
+        
+        error_log("DEBUG: Armory - Unit: " . ($unitData['unit'] ?? 'unknown') . " - Total Items found: " . count($allItems));
 
         $tieredItems = [];
         foreach ($allItems as $key => $item) {

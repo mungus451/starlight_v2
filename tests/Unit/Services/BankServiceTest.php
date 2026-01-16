@@ -9,9 +9,11 @@ use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\StatsRepository;
+use App\Models\Repositories\StructureRepository;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
+use App\Models\Entities\UserStructure;
 use Mockery;
 use PDO;
 
@@ -29,6 +31,7 @@ class BankServiceTest extends TestCase
     private ResourceRepository|Mockery\MockInterface $mockResourceRepo;
     private UserRepository|Mockery\MockInterface $mockUserRepo;
     private StatsRepository|Mockery\MockInterface $mockStatsRepo;
+    private StructureRepository|Mockery\MockInterface $mockStructureRepo;
 
     protected function setUp(): void
     {
@@ -40,6 +43,7 @@ class BankServiceTest extends TestCase
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
         $this->mockUserRepo = Mockery::mock(UserRepository::class);
         $this->mockStatsRepo = Mockery::mock(StatsRepository::class);
+        $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
 
         // Instantiate service
         $this->service = new BankService(
@@ -47,7 +51,8 @@ class BankServiceTest extends TestCase
             $this->mockConfig,
             $this->mockResourceRepo,
             $this->mockUserRepo,
-            $this->mockStatsRepo
+            $this->mockStatsRepo,
+            $this->mockStructureRepo
         );
     }
 
@@ -73,7 +78,11 @@ class BankServiceTest extends TestCase
             dexterity_points: 0,
             charisma_points: 0,
             deposit_charges: 5,
-            last_deposit_at: null
+            last_deposit_at: null,
+            battles_won: 0,
+            battles_lost: 0,
+            spy_successes: 0,
+            spy_failures: 0
         );
 
         $mockResource = new UserResource(
@@ -90,6 +99,18 @@ class BankServiceTest extends TestCase
             sentries: 5
         );
 
+        $mockStructures = new UserStructure(
+            user_id: $userId,
+            fortification_level: 1,
+            offense_upgrade_level: 1,
+            defense_upgrade_level: 1,
+            spy_upgrade_level: 1,
+            economy_upgrade_level: 1,
+            population_level: 1,
+            armory_level: 1,
+            accounting_firm_level: 1
+        );
+
         $bankConfig = [
             'deposit_max_charges' => 5,
             'deposit_charge_regen_hours' => 24
@@ -99,6 +120,11 @@ class BankServiceTest extends TestCase
             ->once()
             ->with($userId)
             ->andReturn($mockStats);
+
+        $this->mockStructureRepo->shouldReceive('findByUserId')
+            ->once()
+            ->with($userId)
+            ->andReturn($mockStructures);
 
         $this->mockConfig->shouldReceive('get')
             ->once()
@@ -173,7 +199,11 @@ class BankServiceTest extends TestCase
             dexterity_points: 0,
             charisma_points: 0,
             deposit_charges: 5,
-            last_deposit_at: null
+            last_deposit_at: null,
+            battles_won: 0,
+            battles_lost: 0,
+            spy_successes: 0,
+            spy_failures: 0
         );
 
         $this->mockResourceRepo->shouldReceive('findByUserId')
@@ -234,7 +264,11 @@ class BankServiceTest extends TestCase
             dexterity_points: 0,
             charisma_points: 0,
             deposit_charges: 0, // No charges
-            last_deposit_at: null
+            last_deposit_at: null,
+            battles_won: 0,
+            battles_lost: 0,
+            spy_successes: 0,
+            spy_failures: 0
         );
 
         $this->mockResourceRepo->shouldReceive('findByUserId')

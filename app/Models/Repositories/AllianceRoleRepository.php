@@ -21,19 +21,16 @@ class AllianceRoleRepository
      * @param int $allianceId
      * @param string $name
      * @param int $order
-     * @param array $permissions (associative array of permission flags)
+     * @param int $permissions A bitmask of permissions
      * @return int The ID of the new role
      */
-    public function create(int $allianceId, string $name, int $order, array $permissions): int
+    public function create(int $allianceId, string $name, int $order, int $permissions): int
     {
         $sql = "
             INSERT INTO alliance_roles 
-                (alliance_id, name, sort_order, can_edit_profile, can_manage_applications, 
-                 can_invite_members, can_kick_members, can_manage_roles, can_see_private_board, 
-                 can_manage_forum, can_manage_bank, can_manage_structures, can_manage_diplomacy, 
-                 can_declare_war) 
+                (alliance_id, name, sort_order, permissions) 
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (?, ?, ?, ?)
         ";
         
         $stmt = $this->db->prepare($sql);
@@ -41,17 +38,7 @@ class AllianceRoleRepository
             $allianceId,
             $name,
             $order,
-            (int)($permissions['can_edit_profile'] ?? 0),
-            (int)($permissions['can_manage_applications'] ?? 0),
-            (int)($permissions['can_invite_members'] ?? 0),
-            (int)($permissions['can_kick_members'] ?? 0),
-            (int)($permissions['can_manage_roles'] ?? 0),
-            (int)($permissions['can_see_private_board'] ?? 0),
-            (int)($permissions['can_manage_forum'] ?? 0),
-            (int)($permissions['can_manage_bank'] ?? 0),
-            (int)($permissions['can_manage_structures'] ?? 0),
-            (int)($permissions['can_manage_diplomacy'] ?? 0),
-            (int)($permissions['can_declare_war'] ?? 0) // --- NEW ---
+            $permissions
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -115,42 +102,22 @@ class AllianceRoleRepository
      *
      * @param int $roleId
      * @param string $name
-     * @param array $permissions
+     * @param int $permissions
      * @return bool
      */
-    public function update(int $roleId, string $name, array $permissions): bool
+    public function update(int $roleId, string $name, int $permissions): bool
     {
         $sql = "
             UPDATE alliance_roles SET
                 name = ?,
-                can_edit_profile = ?,
-                can_manage_applications = ?,
-                can_invite_members = ?,
-                can_kick_members = ?,
-                can_manage_roles = ?,
-                can_see_private_board = ?,
-                can_manage_forum = ?,
-                can_manage_bank = ?,
-                can_manage_structures = ?,
-                can_manage_diplomacy = ?,
-                can_declare_war = ?
+                permissions = ?
             WHERE id = ?
         ";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             $name,
-            (int)($permissions['can_edit_profile'] ?? 0),
-            (int)($permissions['can_manage_applications'] ?? 0),
-            (int)($permissions['can_invite_members'] ?? 0),
-            (int)($permissions['can_kick_members'] ?? 0),
-            (int)($permissions['can_manage_roles'] ?? 0),
-            (int)($permissions['can_see_private_board'] ?? 0),
-            (int)($permissions['can_manage_forum'] ?? 0),
-            (int)($permissions['can_manage_bank'] ?? 0),
-            (int)($permissions['can_manage_structures'] ?? 0),
-            (int)($permissions['can_manage_diplomacy'] ?? 0),
-            (int)($permissions['can_declare_war'] ?? 0), // --- NEW ---
+            $permissions,
             $roleId
         ]);
     }
@@ -186,23 +153,12 @@ class AllianceRoleRepository
      */
     private function hydrate(array $data): AllianceRole
     {
-        // Hydrate all permission flags as booleans
         return new AllianceRole(
             id: (int)$data['id'],
             alliance_id: (int)$data['alliance_id'],
             name: $data['name'],
             sort_order: (int)$data['sort_order'],
-            can_edit_profile: (bool)$data['can_edit_profile'],
-            can_manage_applications: (bool)$data['can_manage_applications'],
-            can_invite_members: (bool)$data['can_invite_members'],
-            can_kick_members: (bool)$data['can_kick_members'],
-            can_manage_roles: (bool)$data['can_manage_roles'],
-            can_see_private_board: (bool)$data['can_see_private_board'],
-            can_manage_forum: (bool)$data['can_manage_forum'],
-            can_manage_bank: (bool)$data['can_manage_bank'],
-            can_manage_structures: (bool)$data['can_manage_structures'],
-            can_manage_diplomacy: (bool)$data['can_manage_diplomacy'],
-            can_declare_war: (bool)$data['can_declare_war'] // --- NEW ---
+            permissions: (int)$data['permissions']
         );
     }
 }

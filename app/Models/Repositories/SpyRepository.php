@@ -23,25 +23,34 @@ class SpyRepository
         int $spiesLost,
         int $sentriesLost,
         int $defenderTotalSentries,
-        ?int $credits, ?int $gemstones, ?int $workers, ?int $soldiers, ?int $guards, ?int $spies, ?int $sentries,
-        ?int $fortLevel, ?int $offenseLevel, ?int $defenseLevel, ?int $spyLevel, ?int $econLevel, ?int $popLevel, ?int $armoryLevel
+        ?int $credits, 
+        ?int $gemstones, ?int $workers, ?int $soldiers, ?int $guards, ?int $spies, ?int $sentries,
+        ?int $fortLevel, ?int $offenseLevel, ?int $defenseLevel, ?int $spyLevel, ?int $econLevel, ?int $popLevel, ?int $armoryLevel,
+        float $naquadahStolen = 0, int $darkMatterStolen = 0,
+        ?float $naquadahSeen = null, ?int $darkMatterSeen = null,
+        float $protoformStolen = 0, ?float $protoformSeen = null,
+        int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
             INSERT INTO spy_reports 
                 (attacker_id, defender_id, operation_result, spies_sent, spies_lost_attacker, sentries_lost_defender,
-                 defender_total_sentries,
-                 credits_seen, gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
+                 defender_total_sentries, defender_workers_lost,
+                 credits_seen, naquadah_crystals_stolen, dark_matter_stolen, naquadah_crystals_seen, dark_matter_seen,
+                 protoform_stolen, protoform_seen,
+                 gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
                  fortification_level_seen, offense_upgrade_level_seen, defense_upgrade_level_seen, 
                  spy_upgrade_level_seen, economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $attackerId, $defenderId, $result, $spiesSent, $spiesLost, $sentriesLost,
-            $defenderTotalSentries,
-            $credits, $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
+            $defenderTotalSentries, $defenderWorkersLost,
+            $credits, $naquadahStolen, $darkMatterStolen, $naquadahSeen, $darkMatterSeen,
+            $protoformStolen, $protoformSeen,
+            $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
             $fortLevel, $offenseLevel, $defenseLevel, $spyLevel, $econLevel, $popLevel, $armoryLevel
         ]);
 
@@ -111,6 +120,27 @@ class SpyRepository
         return $data ? $this->hydrate($data) : null;
     }
 
+    public function findLatestDefenseByAlliance(int $allianceId): ?array
+    {
+        $sql = "
+            SELECT r.*, 
+                   d.character_name as defender_name, 
+                   a.character_name as attacker_name,
+                   TIMESTAMPDIFF(SECOND, r.created_at, NOW()) as seconds_ago
+            FROM spy_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE d.alliance_id = ?
+            ORDER BY r.created_at DESC
+            LIMIT 1
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     private function hydrate(array $data): SpyReport
     {
         return new SpyReport(
@@ -122,6 +152,7 @@ class SpyRepository
             spies_sent: (int)$data['spies_sent'],
             spies_lost_attacker: (int)$data['spies_lost_attacker'],
             sentries_lost_defender: (int)$data['sentries_lost_defender'],
+            defender_workers_lost: (int)($data['defender_workers_lost'] ?? 0), // New
             defender_total_sentries: (int)($data['defender_total_sentries'] ?? 0),
             credits_seen: isset($data['credits_seen']) ? (int)$data['credits_seen'] : null,
             gemstones_seen: isset($data['gemstones_seen']) ? (int)$data['gemstones_seen'] : null,
@@ -137,6 +168,12 @@ class SpyRepository
             economy_upgrade_level_seen: isset($data['economy_upgrade_level_seen']) ? (int)$data['economy_upgrade_level_seen'] : null,
             population_level_seen: isset($data['population_level_seen']) ? (int)$data['population_level_seen'] : null,
             armory_level_seen: isset($data['armory_level_seen']) ? (int)$data['armory_level_seen'] : null,
+            naquadah_crystals_stolen: isset($data['naquadah_crystals_stolen']) ? (float)$data['naquadah_crystals_stolen'] : 0,
+            dark_matter_stolen: isset($data['dark_matter_stolen']) ? (int)$data['dark_matter_stolen'] : 0,
+            naquadah_crystals_seen: isset($data['naquadah_crystals_seen']) ? (float)$data['naquadah_crystals_seen'] : null,
+            dark_matter_seen: isset($data['dark_matter_seen']) ? (int)$data['dark_matter_seen'] : null,
+            protoform_stolen: isset($data['protoform_stolen']) ? (float)$data['protoform_stolen'] : 0,
+            protoform_seen: isset($data['protoform_seen']) ? (float)$data['protoform_seen'] : null,
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null
         );

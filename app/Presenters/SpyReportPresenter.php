@@ -95,11 +95,19 @@ class SpyReportPresenter
             'icon' => $icon,
             
             'story_html' => $storyHtml,
+            'stolen_summary' => $this->generateStolenSummary($report),
 
             // Raw Data
             'spies_lost_attacker' => $report->spies_lost_attacker,
             'sentries_lost_defender' => $report->sentries_lost_defender,
+            'defender_workers_lost' => $report->defender_workers_lost, // Added
             'credits_seen' => $report->credits_seen,
+            'naquadah_crystals_stolen' => $report->naquadah_crystals_stolen,
+            'dark_matter_stolen' => $report->dark_matter_stolen,
+            'naquadah_crystals_seen' => $report->naquadah_crystals_seen,
+            'dark_matter_seen' => $report->dark_matter_seen,
+            'protoform_stolen' => $report->protoform_stolen,
+            'protoform_seen' => $report->protoform_seen,
             'soldiers_seen' => $report->soldiers_seen,
             'guards_seen' => $report->guards_seen,
             'sentries_seen' => $report->sentries_seen,
@@ -131,11 +139,22 @@ class SpyReportPresenter
 
         // Line 3: Casualties
         $line3 = "Casualties: <span class='val-danger'>{$fmt($report->spies_lost_attacker)}</span> spies lost vs <span class='val-danger'>{$fmt($report->sentries_lost_defender)}</span> sentries destroyed.";
+        
+        if ($report->defender_workers_lost > 0) {
+            $line3 .= " Collateral damage: <span class='val-danger'>{$fmt($report->defender_workers_lost)}</span> workers liquidated.";
+        }
 
         // Line 4: Result Detail
         $line4 = "";
         if ($isSuccess) {
             $line4 = "Full intelligence dossier downloaded.";
+            if ($report->naquadah_crystals_stolen > 0 || $report->dark_matter_stolen > 0 || $report->protoform_stolen > 0) {
+                $stolen = [];
+                if ($report->naquadah_crystals_stolen > 0) $stolen[] = "<strong>" . number_format($report->naquadah_crystals_stolen, 2) . "</strong> Naquadah Crystals";
+                if ($report->dark_matter_stolen > 0) $stolen[] = "<strong>" . number_format($report->dark_matter_stolen) . "</strong> Dark Matter";
+                if ($report->protoform_stolen > 0) $stolen[] = "<strong>" . number_format($report->protoform_stolen, 2) . "</strong> Protoform";
+                $line4 .= " Extracted: " . implode(", ", $stolen) . ".";
+            }
         } else {
             $line4 = "Connection terminated. No data retrieved.";
         }
@@ -147,4 +166,28 @@ class SpyReportPresenter
             <p>{$line4}</p>
         ";
     }
-}
+
+    /**
+     * Generates a brief text summary of stolen resources for list views.
+     */
+    private function generateStolenSummary(SpyReport $report): string
+    {
+        if ($report->operation_result !== 'success') return "";
+        
+                $stolen = [];
+        
+                if ($report->naquadah_crystals_stolen > 0) $stolen[] = "+" . number_format($report->naquadah_crystals_stolen, 2) . " Crystals";
+        
+                if ($report->dark_matter_stolen > 0) $stolen[] = "+" . number_format($report->dark_matter_stolen) . " Dark Matter";
+        
+                if ($report->protoform_stolen > 0) $stolen[] = "+" . number_format($report->protoform_stolen, 2) . " Protoform";
+        
+                
+        
+                return implode(", ", $stolen);
+        
+            }
+        
+        }
+        
+        

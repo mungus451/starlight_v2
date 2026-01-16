@@ -107,20 +107,36 @@ class BaseController
             $data = array_merge($data, $globalContext);
         }
         
+        // Determine if it's a mobile request
+        $isMobile = $this->session->get('is_mobile', false);
+
         // Extract the data array into local variables for the view
         extract($data);
 
         // Start output buffering
         ob_start();
 
+        // Determine the view path
+        $viewPath = __DIR__ . '/../../views/';
+        if ($isMobile && file_exists(__DIR__ . '/../../views/mobile/' . $view)) {
+            $viewPath .= 'mobile/';
+        }
+        $viewPath .= $view;
+
         // Include the specific page content
-        require __DIR__ . '/../../views/' . $view;
+        require $viewPath;
 
         // Get the buffered content
         $content = ob_get_clean();
 
+        // Determine the layout path
+        $layoutPath = __DIR__ . '/../../views/layouts/main.php';
+        if ($isMobile && file_exists(__DIR__ . '/../../views/mobile/layouts/app.php')) {
+            $layoutPath = __DIR__ . '/../../views/mobile/layouts/app.php';
+        }
+        
         // Now, load the main layout
-        require __DIR__ . '/../../views/layouts/main.php';
+        require $layoutPath;
     }
 
     /**

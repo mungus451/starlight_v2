@@ -5,44 +5,53 @@ namespace App\Listeners;
 use App\Core\Events\Event;
 use App\Core\Events\Listener;
 use App\Events\BattleConcludedEvent;
-use App\Models\Services\WarService;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarBattleLogRepository;
 
 /**
- * Listener responsible for logging battle results to the War system
+ * Listener responsible for logging battle results to the war_battle_logs table
  * if the combatants are part of opposing alliances in an active war.
  */
 class WarLoggerListener implements Listener
 {
-    private WarService $warService;
+    private WarRepository $warRepo;
+    private WarBattleLogRepository $warBattleLogRepo;
 
-    /**
-     * @param WarService $warService
-     */
-    public function __construct(WarService $warService)
-    {
-        $this->warService = $warService;
+    public function __construct(
+        WarRepository $warRepo,
+        WarBattleLogRepository $warBattleLogRepo
+    ) {
+        $this->warRepo = $warRepo;
+        $this->warBattleLogRepo = $warBattleLogRepo;
     }
 
-    /**
-     * Handle the BattleConcludedEvent.
-     *
-     * @param Event $event
-     */
     public function handle(Event $event): void
     {
         if (!$event instanceof BattleConcludedEvent) {
             return;
         }
 
-        // Delegate the logic check (active war existence) to the WarService
-        $this->warService->logBattle(
+        // Only log battles between players in alliances
+        if ($event->attacker->alliance_id === null || $event->defender->alliance_id === null) {
+            return;
+        }
+        
+        // Check if there is an active war between these alliances
+        $war = $this->warRepo->findActiveWarBetween($event->attacker->alliance_id, $event->defender->alliance_id);
+        if ($war === null) {
+            return;
+        }
+
+        // Log the battle details directly to the battle log repository
+        $this->warBattleLogRepo->createLog(
+            $war->id,
             $event->reportId,
-            $event->attacker,
-            $event->defender,
-            $event->result,
+            $event->attacker->id,
+            $event->attacker->alliance_id,
             $event->prestigeGained,
             $event->guardsKilled,
-            $event->creditsPlundered
+            $event->creditsPlundered,
+            $event->structureDamage // Assuming this is part of the event now
         );
     }
 }

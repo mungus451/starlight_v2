@@ -1,6 +1,7 @@
 <?php
 // --- Helper variables from the controller ---
 /* @var array[] $reports Array of ViewModels from BattleReportPresenter */
+/* @var array $pagination */
 /* @var int $userId */
 ?>
 
@@ -11,7 +12,7 @@
     </div>
 
     <div class="battle-controls">
-        <span>Showing recent operations</span>
+        <span>Page <?= $pagination['current_page'] ?> of <?= $pagination['total_pages'] ?></span>
         <a href="/battle" class="btn-submit btn-new-op">New Operation</a>
     </div>
 
@@ -57,4 +58,63 @@
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <!-- Pagination -->
+    <?php if ($pagination['total_pages'] > 1): ?>
+    <div class="pagination">
+        <?php
+        $current = $pagination['current_page'];
+        $total = $pagination['total_pages'];
+        
+        // Prev Link
+        if ($current > 1): ?>
+            <a href="?page=<?= $current - 1 ?>">&laquo; Prev</a>
+        <?php endif;
+
+        // Pagination Logic: Max 10 items total (including ellipsis)
+        // We'll show: 1, ..., current-2, current-1, current, current+1, current+2, ..., total
+        // Adjusting to stay within max 10
+        
+        $links = [];
+        if ($total <= 10) {
+            for ($i = 1; $i <= $total; $i++) $links[] = $i;
+        } else {
+            // Always include first
+            $links[] = 1;
+            
+            $start = max(2, $current - 2);
+            $end = min($total - 1, $current + 2);
+            
+            // Adjust start/end to try and show more links if at edges
+            if ($current <= 4) $end = 8;
+            if ($current > $total - 4) $start = $total - 7;
+            
+            if ($start > 2) $links[] = '...';
+            
+            for ($i = $start; $i <= $end; $i++) {
+                $links[] = $i;
+            }
+            
+            if ($end < $total - 1) $links[] = '...';
+            
+            // Always include last
+            $links[] = $total;
+        }
+
+        foreach ($links as $link) {
+            if ($link === '...') {
+                echo '<span style="border:none; background:transparent;">...</span>';
+            } elseif ($link == $current) {
+                echo "<span>$link</span>";
+            } else {
+                echo "<a href=\"?page=$link\">$link</a>";
+            }
+        }
+
+        // Next Link
+        if ($current < $total): ?>
+            <a href="?page=<?= $current + 1 ?>">Next &raquo;</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>

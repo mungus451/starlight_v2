@@ -49,8 +49,9 @@ class BattleController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $page = (int)($vars['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 25);
         
-        $data = $this->attackService->getAttackPageData($userId, $page);
+        $data = $this->attackService->getAttackPageData($userId, $page, $limit);
 
         $data['layoutMode'] = 'full';
 
@@ -96,16 +97,19 @@ class BattleController extends BaseController
     public function showReports(): void
     {
         $userId = $this->session->get('user_id');
+        $page = (int)($_GET['page'] ?? 1);
+        $limit = 10;
         
-        // 1. Get Entities
-        $reportsRaw = $this->attackService->getBattleReports($userId);
+        // 1. Get Paginated Entities
+        $result = $this->attackService->getPaginatedReports($userId, $page, $limit);
         
         // 2. Transform to ViewModel
-        $reportsFormatted = $this->presenter->presentAll($reportsRaw, $userId);
+        $reportsFormatted = $this->presenter->presentAll($result['reports'], $userId);
 
         $this->render('battle/reports.php', [
             'title' => 'Battle Reports',
-            'reports' => $reportsFormatted, // Passed as array, not entities
+            'reports' => $reportsFormatted,
+            'pagination' => $result['pagination'],
             'userId' => $userId,
             'layoutMode' => 'full'
         ]);

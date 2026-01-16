@@ -12,11 +12,15 @@ use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\EffectService;
+use App\Models\Services\NetWorthCalculatorService;
 use App\Core\Events\EventDispatcher;
+use App\Models\Entities\UserResource; // --- NEW IMPORT ---
 use App\Events\BattleConcludedEvent;
 use PDO;
 use Throwable;
@@ -38,12 +42,15 @@ class AttackService
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
     private BountyRepository $bountyRepo;
+    private WarRepository $warRepo;
+    private WarBattleLogRepository $warBattleLogRepo;
 
     private ArmoryService $armoryService;
     private PowerCalculatorService $powerCalculatorService;
     private LevelUpService $levelUpService;
     private EventDispatcher $dispatcher;
     private EffectService $effectService;
+    private NetWorthCalculatorService $nwCalculator;
 
     public function __construct(
         PDO $db,
@@ -56,11 +63,14 @@ class AttackService
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
         BountyRepository $bountyRepo,
+        WarRepository $warRepo,
+        WarBattleLogRepository $warBattleLogRepo,
         ArmoryService $armoryService,
         PowerCalculatorService $powerCalculatorService,
         LevelUpService $levelUpService,
         EventDispatcher $dispatcher,
-        EffectService $effectService
+        EffectService $effectService,
+        NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -72,20 +82,26 @@ class AttackService
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
         $this->bountyRepo = $bountyRepo;
+        $this->warRepo = $warRepo;
+        $this->warBattleLogRepo = $warBattleLogRepo;
         $this->armoryService = $armoryService;
         $this->powerCalculatorService = $powerCalculatorService;
         $this->levelUpService = $levelUpService;
         $this->dispatcher = $dispatcher;
         $this->effectService = $effectService;
+        $this->nwCalculator = $nwCalculator;
     }
 
-    public function getAttackPageData(int $userId, int $page): array
+    public function getAttackPageData(int $userId, int $page, int $limit = 25): array
     {
         $attackerResources = $this->resourceRepo->findByUserId($userId);
         $attackerStats = $this->statsRepo->findByUserId($userId);
         $costs = $this->config->get('game_balance.attack', []);
 
-        $perPage = $this->config->get('app.leaderboard.per_page', 25);
+        // Whitelist the limit to prevent abuse
+        $allowedLimits = [5, 10, 25, 100];
+        $perPage = in_array($limit, $allowedLimits) ? $limit : 25;
+
         $totalTargets = $this->statsRepo->getTotalTargetCount($userId);
         $totalPages = (int)ceil($totalTargets / $perPage);
         $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
@@ -100,7 +116,8 @@ class AttackService
             'targets' => $targets,
             'pagination' => [
                 'currentPage' => $page,
-                'totalPages' => $totalPages
+                'totalPages' => $totalPages,
+                'limit' => $perPage
             ],
             'perPage' => $perPage
         ];
@@ -118,6 +135,26 @@ class AttackService
         });
 
         return $allReports;
+    }
+
+    public function getPaginatedReports(int $userId, int $page, int $limit = 10): array
+    {
+        $total = $this->battleRepo->countUserBattles($userId);
+        $totalPages = (int)ceil($total / $limit);
+        $page = max(1, min($page, $totalPages > 0 ? $totalPages : 1));
+        $offset = ($page - 1) * $limit;
+
+        $reports = $this->battleRepo->getPaginatedUserBattles($userId, $limit, $offset);
+
+        return [
+            'reports' => $reports,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_records' => $total,
+                'limit' => $limit
+            ]
+        ];
     }
 
     public function getBattleReport(int $reportId, int $viewerId): ?\App\Models\Entities\BattleReport
@@ -144,9 +181,43 @@ class AttackService
         }
 
         // Check Active Effects
-        if ($this->effectService->hasActiveEffect($defender->id, 'peace_shield')) {
-            return ServiceResponse::error("Target is under Safehouse protection. Attack prevented.");
+        $shieldEffect = $this->effectService->getEffectDetails($defender->id, 'peace_shield');
+        if ($shieldEffect) {
+            // Check if Attacker has Breach Charges
+            $breachEffect = $this->effectService->getEffectDetails($attackerId, 'safehouse_breach');
+            $breachMeta = ($breachEffect && isset($breachEffect['metadata'])) ? json_decode($breachEffect['metadata'], true) : [];
+            $charges = $breachMeta['charges'] ?? 0;
+
+            if ($charges > 0) {
+                // CONSUME CHARGE
+                $newCharges = $charges - 1;
+                
+                if ($newCharges <= 0) {
+                    $this->effectService->breakEffect($attackerId, 'safehouse_breach');
+                } else {
+                    $this->effectService->updateMetadata($attackerId, 'safehouse_breach', ['charges' => $newCharges]);
+                }
+                // Safehouse Breached - Attack Proceeds
+            } else {
+                $expiresAt = new \DateTime($shieldEffect['expires_at']);
+                $now = new \DateTime();
+                $diff = $now->diff($expiresAt);
+                
+                $timeRemaining = [];
+                if ($diff->d > 0) $timeRemaining[] = $diff->d . 'd';
+                if ($diff->h > 0) $timeRemaining[] = $diff->h . 'h';
+                if ($diff->i > 0) $timeRemaining[] = $diff->i . 'm';
+                
+                if (empty($timeRemaining)) {
+                    $timeStr = "less than a minute";
+                } else {
+                    $timeStr = implode(' ', $timeRemaining);
+                }
+
+                return ServiceResponse::error("Target is under Safehouse protection for another {$timeStr}. Attack prevented.");
+            }
         }
+
         if ($this->effectService->hasActiveEffect($attackerId, 'peace_shield')) {
             $this->effectService->breakEffect($attackerId, 'peace_shield'); 
         }
@@ -173,12 +244,41 @@ class AttackService
             return ServiceResponse::error('You do not have enough attack turns.');
         }
 
+        // --- NEW: Ion Cannon Network (Pre-Battle Damage) ---
+        $ionLevel = $defenderStructures->ion_cannon_network_level ?? 0;
+        $ionCasualties = 0;
+        if ($ionLevel > 0) {
+            $ionDmgPerLevel = $config['ion_cannon_damage_per_level'] ?? 0.001;
+            $maxIonDmg = $config['max_ion_cannon_damage'] ?? 0.05;
+            $ionPercent = min($ionLevel * $ionDmgPerLevel, $maxIonDmg);
+            $ionCasualties = (int)ceil($soldiersSent * $ionPercent);
+            
+            // Reduce attacking force in memory
+            $soldiersSent -= $ionCasualties;
+            if ($soldiersSent < 0) $soldiersSent = 0;
+            
+            // Update resource object for power calc - create a NEW resource object with updated soldiers
+            $attackerResourcesForCalc = new UserResource(
+                user_id: $attackerResources->user_id,
+                credits: $attackerResources->credits,
+                banked_credits: $attackerResources->banked_credits,
+                gemstones: $attackerResources->gemstones,
+                naquadah_crystals: $attackerResources->naquadah_crystals,
+                untrained_citizens: $attackerResources->untrained_citizens,
+                workers: $attackerResources->workers,
+                soldiers: $soldiersSent, // This is the updated value
+                guards: $attackerResources->guards,
+                spies: $attackerResources->spies,
+                sentries: $attackerResources->sentries
+            );
+        }
+
         // Calculate Battle Power
         $offensePowerBreakdown = $this->powerCalculatorService->calculateOffensePower(
-            $attackerId, $attackerResources, $attackerStats, $attackerStructures, $attacker->alliance_id
+            $attackerId, ($ionCasualties > 0 ? $attackerResourcesForCalc : $attackerResources), $attackerStats, $attackerStructures, $attacker->alliance_id
         );
         $offensePower = $offensePowerBreakdown['total'];
-        $originalOffensePower = $offensePower; // Store original for report
+        $originalOffensePower = $offensePower; 
 
         $defensePowerBreakdown = $this->powerCalculatorService->calculateDefensePower(
             $defender->id, $defenderResources, $defenderStats, $defenderStructures, $defender->alliance_id
@@ -203,52 +303,70 @@ class AttackService
             $attackResult = 'stalemate';
         }
 
-        // If the shield absorbed everything, it's an automatic defeat with no defender losses
+        // If shield absorbed everything
         if ($shieldHp > 0 && $offensePower <= 0) {
             $attackResult = 'defeat';
         }
 
-        // --- NEW: RATIO BASED CASUALTY LOGIC ---
-        // Prevent division by zero
+        // --- Ratio Based Casualty Logic ---
         $safeOffense = max(1, $offensePower);
         $safeDefense = max(1, $defensePower);
         $ratio = 1.0;
 
         if ($attackResult === 'victory') {
             $ratio = $safeOffense / $safeDefense;
-            // Attacker is Winner
             $attackerSoldiersLost = $this->calculateWinnerLosses($soldiersSent, $ratio);
-            // Defender is Loser
             $defenderGuardsLost = $this->calculateLoserLosses($defenderResources->guards, $ratio);
         } elseif ($attackResult === 'defeat') {
-            // If shield absorbed all damage, no one loses anything
             if ($shieldHp > 0 && $offensePower <= 0) {
                 $attackerSoldiersLost = 0;
                 $defenderGuardsLost = 0;
             } else {
                 $ratio = $safeDefense / $safeOffense;
-                // Defender is Winner (losses applied to their guards)
                 $defenderGuardsLost = $this->calculateWinnerLosses($defenderResources->guards, $ratio);
-                // Attacker is Loser
                 $attackerSoldiersLost = $this->calculateLoserLosses($soldiersSent, $ratio);
             }
         } else {
-            // Stalemate (High casualties for both)
-            $attackerSoldiersLost = (int)ceil($soldiersSent * 0.15); // Flat 15%
+            $attackerSoldiersLost = (int)ceil($soldiersSent * 0.15);
             $defenderGuardsLost = (int)ceil($defenderResources->guards * 0.15);
         }
 
-        // Apply Casualty Scalar (Global Tuning)
+        // Apply Casualty Scalar
         $casualtyScalar = $config['global_casualty_scalar'] ?? 1.0;
         $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * $casualtyScalar);
         $defenderGuardsLost = (int)ceil($defenderGuardsLost * $casualtyScalar);
 
-        // Hard Caps (Cannot lose more than you have)
+        // Caps
         $attackerSoldiersLost = min($soldiersSent, $attackerSoldiersLost);
         $defenderGuardsLost = min($defenderResources->guards, $defenderGuardsLost);
 
-        // --- NEW: Nanite Forge Casualty Reduction (for Defender) ---
-        $naniteReductionPercent = 0.0;
+        // Add Ion Cannon Casualties to Total Attacker Losses
+        $attackerSoldiersLost += $ionCasualties;
+        // Re-check cap against ORIGINAL amount
+        $attackerSoldiersLost = min($attackerResources->soldiers + $ionCasualties, $attackerSoldiersLost); // Actually original was $soldiersSent + $ionCasualties.
+        // Let's rely on original resource fetch? No, $attackerResources->soldiers was mutated.
+        // We need original count.
+        // Original count = $soldiersSent + $ionCasualties.
+        // Wait, $attackerResources->soldiers matches $soldiersSent.
+        // So original was $soldiersSent + $ionCasualties.
+        
+        // --- Worker Casualties (Collateral Damage) ---
+        // Logic: Base % of workforce + scaling based on Guard Losses (intensity of battle)
+        $defenderWorkersLost = 0;
+        if ($attackResult === 'victory' || $attackResult === 'defeat') {
+            $baseRate = $config['worker_casualty_rate_base'] ?? 0.02;
+            $damageScalar = $config['worker_casualty_damage_scalar'] ?? 0.05;
+            
+            // Percentage of guards killed
+            $guardLossPercent = ($defenderResources->guards > 0) ? ($defenderGuardsLost / $defenderResources->guards) : 1.0;
+            
+            $totalCasualtyPercent = $baseRate + ($guardLossPercent * $damageScalar);
+            
+            $defenderWorkersLost = (int)ceil($defenderResources->workers * $totalCasualtyPercent);
+            $defenderWorkersLost = min($defenderResources->workers, $defenderWorkersLost);
+        }
+
+        // --- Nanite Forge ---
         if ($attackResult === 'victory' && $defenderStructures->nanite_forge_level > 0) {
             $naniteReductionPerLevel = $this->config->get('game_balance.attack.nanite_casualty_reduction_per_level', 0.0);
             $maxNaniteReduction = $this->config->get('game_balance.attack.max_nanite_casualty_reduction', 0.0);
@@ -257,6 +375,11 @@ class AttackService
             $naniteReductionPercent = min($rawReduction, $maxNaniteReduction);
             
             $defenderGuardsLost = (int)ceil($defenderGuardsLost * (1 - $naniteReductionPercent));
+        }
+
+        // --- High Risk Protocol ---
+        if ($this->effectService->hasActiveEffect($attackerId, 'high_risk_protocol')) {
+            $attackerSoldiersLost = (int)ceil($attackerSoldiersLost * 0.90);
         }
 
         // XP Calculation
@@ -273,9 +396,17 @@ class AttackService
             default => 0
         };
 
+        // --- NEW: War College Bonus (XP) ---
+        $warCollegeLevel = $attackerStructures->war_college_level ?? 0;
+        if ($warCollegeLevel > 0) {
+            $xpBonusPerLevel = $config['war_college_xp_bonus_per_level'] ?? 0.02;
+            $xpMultiplier = 1.0 + ($warCollegeLevel * $xpBonusPerLevel);
+            $attackerXpGain = (int)ceil($attackerXpGain * $xpMultiplier);
+        }
+
         // Calculate Gains (Loot)
         $creditsPlundered = 0;
-        $netWorthStolen = 0;
+        $netWorthStolen = 0; 
         $warPrestigeGained = 0;
         $battleTaxAmount = 0;
         $tributeTaxAmount = 0;
@@ -283,7 +414,17 @@ class AttackService
 
         if ($attackResult === 'victory') {
             $creditsPlundered = (int)($defenderResources->credits * $config['plunder_percent']);
-            $netWorthStolen = (int)($defenderStats->net_worth * $config['net_worth_steal_percent']);
+            
+            // --- NEW: Phase Bunker Protection ---
+            $bunkerLevel = $defenderStructures->phase_bunker_level ?? 0;
+            if ($bunkerLevel > 0) {
+                $protPerLevel = $config['phase_bunker_protection_per_level'] ?? 0.005;
+                $maxProt = $config['max_phase_bunker_protection'] ?? 0.20;
+                $protPercent = min($bunkerLevel * $protPerLevel, $maxProt);
+                
+                $creditsPlundered = (int)floor($creditsPlundered * (1.0 - $protPercent));
+            }
+
             $warPrestigeGained = $config['war_prestige_gain_base'];
 
             if ($attacker->alliance_id !== null && $creditsPlundered > 0) {
@@ -295,7 +436,6 @@ class AttackService
 
         $attackerCreditGain = $creditsPlundered - $totalTaxAmount;
 
-        // Snapshot for Narrative
         $defenderTotalGuardsSnapshot = $defenderResources->guards;
 
         $transactionStartedByMe = false;
@@ -306,20 +446,30 @@ class AttackService
 
         try {
             // Update Attacker Resources
+            // Note: $attackerResources->soldiers was mutated, so we use original logic:
+            // Original Soldiers - Total Lost
+            // $soldiersSent (current memory) + $ionCasualties = Original.
+            // $attackerSoldiersLost = Total lost including Ion.
+            // New Total = (Original) - $attackerSoldiersLost.
+            $originalSoldiers = $soldiersSent + $ionCasualties;
+            
             $this->resourceRepo->updateBattleAttacker(
                 $attackerId,
                 $attackerResources->credits + $attackerCreditGain,
-                $attackerResources->soldiers - $attackerSoldiersLost
+                $originalSoldiers - $attackerSoldiersLost
             );
 
             // Update Attacker Stats
             $this->levelUpService->grantExperience($attackerId, $attackerXpGain);
+            
+            $attackerNewNW = $this->nwCalculator->calculateTotalNetWorth($attackerId);
+            
             $this->statsRepo->updateBattleAttackerStats(
                 $attackerId,
-                $attackerStats->attack_turns - $turnCost,
-                $attackerStats->net_worth + $netWorthStolen,
-                $attackerStats->experience + $attackerXpGain,
-                $attackerStats->war_prestige + $warPrestigeGained
+                (int)($attackerStats->attack_turns - $turnCost),
+                (int)$attackerNewNW,
+                (int)($attackerStats->experience + $attackerXpGain),
+                (int)($attackerStats->war_prestige + $warPrestigeGained)
             );
 
             if ($attackResult === 'victory') {
@@ -328,30 +478,35 @@ class AttackService
                 $this->statsRepo->incrementBattleStats($attackerId, false);
             }
 
-            // Update Defender Resources
+            // Update Defender Resources (Guards + Workers)
             $this->resourceRepo->updateBattleDefender(
                 $defender->id,
                 max(0, $defenderResources->credits - $creditsPlundered),
-                max(0, $defenderResources->guards - $defenderGuardsLost)
+                max(0, $defenderResources->guards - $defenderGuardsLost),
+                max(0, $defenderResources->workers - $defenderWorkersLost)
             );
 
             // Update Defender Stats
             $this->levelUpService->grantExperience($defender->id, $defenderXpGain);
+            
+            $defenderNewNW = $this->nwCalculator->calculateTotalNetWorth($defender->id);
+            
             $this->statsRepo->updateBattleDefenderStats(
                 $defender->id,
-                max(0, $defenderStats->net_worth - $netWorthStolen)
+                $defenderNewNW
             );
 
             // Create Battle Report
             $battleReportId = $this->battleRepo->createReport(
-                $attackerId, $defender->id, $attackType, $attackResult, $soldiersSent,
+                $attackerId, $defender->id, $attackType, $attackResult, ($soldiersSent + $ionCasualties),
                 $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
                 $attackerXpGain, $warPrestigeGained, $netWorthStolen,
                 (int)$originalOffensePower, (int)$defensePower, 
                 $defenderTotalGuardsSnapshot,
                 $isShadowContract,
-                $shieldHp, // NEW
-                $damageToShield // NEW
+                $shieldHp, 
+                $damageToShield,
+                $defenderWorkersLost
             );
 
             // Alliance Bank
@@ -420,7 +575,7 @@ class AttackService
      * Calculates casualties for the WINNER of the battle.
      * Logic: The higher the ratio (more overwhelming), the fewer losses.
      */
-    private function calculateWinnerLosses(int $unitCount, float $ratio): int
+    public function calculateWinnerLosses(int $unitCount, float $ratio): int
     {
         // Base loss factor: 5% at 1:1 ratio.
         // Formula: 0.05 / Ratio.
@@ -443,7 +598,7 @@ class AttackService
      * Logic: The higher the ratio (more overwhelmed), the higher the losses.
      * Wipeout Rule: If Ratio > 10, they lose everything.
      */
-    private function calculateLoserLosses(int $unitCount, float $ratio): int
+    public function calculateLoserLosses(int $unitCount, float $ratio): int
     {
         if ($unitCount <= 0) return 0;
 

@@ -69,7 +69,17 @@ class StructureRepository
             'naquadah_mining_complex_level',
             'protoform_vat_level',
             'weapon_vault_level',
-            'embassy_level'
+            'embassy_level',
+            'fusion_plant_level',
+            'orbital_trade_port_level',
+            'banking_datacenter_level',
+            'cloning_vats_level',
+            'war_college_level',
+            'mercenary_outpost_level',
+            'phase_bunker_level',
+            'ion_cannon_network_level',
+            'neural_uplink_level',
+            'subspace_scanner_level'
         ];
 
         if (!in_array($columnName, $allowedColumns)) {
@@ -85,6 +95,42 @@ class StructureRepository
         return $stmt->execute([$newLevel, $userId]);
     }
 
+
+    /**
+     * Sums the levels of ALL structures for all members of an alliance.
+     *
+     * @param int $allianceId
+     * @return int
+     */
+    public function getAggregateStructureLevelForAlliance(int $allianceId): int
+    {
+        // Sum all columns that end in '_level'
+        $columns = [
+            'fortification_level', 'offense_upgrade_level', 'defense_upgrade_level',
+            'spy_upgrade_level', 'economy_upgrade_level', 'population_level',
+            'armory_level', 'accounting_firm_level', 'quantum_research_lab_level',
+            'nanite_forge_level', 'dark_matter_siphon_level', 'planetary_shield_level',
+            'naquadah_mining_complex_level', 'protoform_vat_level', 'weapon_vault_level',
+            'embassy_level', 'fusion_plant_level', 'orbital_trade_port_level',
+            'banking_datacenter_level', 'cloning_vats_level', 'war_college_level',
+            'mercenary_outpost_level', 'phase_bunker_level', 'ion_cannon_network_level',
+            'neural_uplink_level', 'subspace_scanner_level'
+        ];
+
+        $sumExpr = implode(' + ', array_map(fn($c) => "s.$c", $columns));
+
+        $sql = "
+            SELECT SUM($sumExpr) as total
+            FROM user_structures s
+            JOIN users u ON s.user_id = u.id
+            WHERE u.alliance_id = ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+
+        return (int)$stmt->fetchColumn();
+    }
 
     /**
      * Helper method to convert a database row (array) into a UserStructure entity.
@@ -106,13 +152,23 @@ class StructureRepository
             accounting_firm_level: (int)$data['accounting_firm_level'],
             quantum_research_lab_level: (int)($data['quantum_research_lab_level'] ?? 0),
             nanite_forge_level: (int)($data['nanite_forge_level'] ?? 0),
-                        dark_matter_siphon_level: (int)($data['dark_matter_siphon_level'] ?? 0),
-                        planetary_shield_level: (int)($data['planetary_shield_level'] ?? 0),
-                        naquadah_mining_complex_level: (int)($data['naquadah_mining_complex_level'] ?? 0),
-                        protoform_vat_level: (int)($data['protoform_vat_level'] ?? 0),
-                        weapon_vault_level: (int)($data['weapon_vault_level'] ?? 0),
-                        embassy_level: (int)($data['embassy_level'] ?? 0)
-                    );
-                }
+            dark_matter_siphon_level: (int)($data['dark_matter_siphon_level'] ?? 0),
+            planetary_shield_level: (int)($data['planetary_shield_level'] ?? 0),
+            naquadah_mining_complex_level: (int)($data['naquadah_mining_complex_level'] ?? 0),
+            protoform_vat_level: (int)($data['protoform_vat_level'] ?? 0),
+            weapon_vault_level: (int)($data['weapon_vault_level'] ?? 0),
+            embassy_level: (int)($data['embassy_level'] ?? 0),
+            fusion_plant_level: (int)($data['fusion_plant_level'] ?? 0),
+            orbital_trade_port_level: (int)($data['orbital_trade_port_level'] ?? 0),
+            banking_datacenter_level: (int)($data['banking_datacenter_level'] ?? 0),
+            cloning_vats_level: (int)($data['cloning_vats_level'] ?? 0),
+            war_college_level: (int)($data['war_college_level'] ?? 0),
+            mercenary_outpost_level: (int)($data['mercenary_outpost_level'] ?? 0),
+            phase_bunker_level: (int)($data['phase_bunker_level'] ?? 0),
+            ion_cannon_network_level: (int)($data['ion_cannon_network_level'] ?? 0),
+            neural_uplink_level: (int)($data['neural_uplink_level'] ?? 0),
+            subspace_scanner_level: (int)($data['subspace_scanner_level'] ?? 0),
+        );
+    }
             }
             

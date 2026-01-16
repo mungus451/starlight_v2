@@ -53,18 +53,42 @@ class AllianceRepositoryTest extends TestCase
     public function testUpdateBankCreditsRelativeExecutesAtomicUpdate(): void
     {
         $allianceId = 1;
-        $amount = 500;
+        $amount = 500.0;
+        $cap = '1000000000000000000000000000000000000000000000000000000000000'; // 1.0e60 formatted as string
+        $amountStr = '500';
 
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with([$amount, $allianceId])
+            ->with(['cap' => $cap, 'amount' => $amountStr, 'id' => $allianceId])
             ->andReturn(true);
 
-        // Verify SQL contains atomic update
+        // Verify SQL contains atomic update for positive amount with CAP
         $this->mockDb->shouldReceive('prepare')
             ->once()
-            ->with(Mockery::pattern('/bank_credits\s*=\s*GREATEST\(0,\s*CAST\(bank_credits AS SIGNED\)\s*\+\s*CAST\(\? AS SIGNED\)\)/s')) // /s for dotall (newlines)
+            ->with(Mockery::pattern('/UPDATE alliances SET bank_credits = LEAST\(:cap, bank_credits \+ :amount\) WHERE id = :id/'))
+            ->andReturn($mockStmt);
+
+        $this->repository->updateBankCreditsRelative($allianceId, $amount);
+        $this->assertTrue(true);
+    }
+
+    public function testUpdateBankCreditsRelativeHandlesNegativeUpdate(): void
+    {
+        $allianceId = 1;
+        $amount = -500.0;
+        $amountStr = '500';
+
+        $mockStmt = Mockery::mock(PDOStatement::class);
+        $mockStmt->shouldReceive('execute')
+            ->once()
+            ->with(['absAmount1' => $amountStr, 'absAmount2' => $amountStr, 'id' => $allianceId])
+            ->andReturn(true);
+
+        // Verify SQL contains logic for negative amount (no casting)
+        $this->mockDb->shouldReceive('prepare')
+            ->once()
+            ->with(Mockery::pattern('/UPDATE alliances SET bank_credits = IF\(bank_credits < :absAmount1, 0, bank_credits - :absAmount2\) WHERE id = :id/'))
             ->andReturn($mockStmt);
 
         $this->repository->updateBankCreditsRelative($allianceId, $amount);

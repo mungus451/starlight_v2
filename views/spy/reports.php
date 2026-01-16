@@ -35,6 +35,9 @@
                     </div>
                     <div style="font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem;">
                         ID: #<?= $report['id'] ?>
+                        <?php if (!empty($report['stolen_summary'])): ?>
+                            | <span style="color: var(--accent-gold);"><?= $report['stolen_summary'] ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
 

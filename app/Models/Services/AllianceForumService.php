@@ -3,11 +3,13 @@
 namespace App\Models\Services;
 
 use App\Core\Config;
+use App\Core\Permissions;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\UserRepository;
 use App\Models\Repositories\AllianceRoleRepository;
 use App\Models\Repositories\AllianceForumTopicRepository;
 use App\Models\Repositories\AllianceForumPostRepository;
+use App\Models\Services\NotificationService;
 use PDO;
 use Throwable;
 
@@ -25,6 +27,7 @@ class AllianceForumService
     private AllianceRoleRepository $roleRepo;
     private AllianceForumTopicRepository $topicRepo;
     private AllianceForumPostRepository $postRepo;
+    private NotificationService $notificationService;
 
     public function __construct(
         PDO $db,
@@ -32,7 +35,8 @@ class AllianceForumService
         UserRepository $userRepo,
         AllianceRoleRepository $roleRepo,
         AllianceForumTopicRepository $topicRepo,
-        AllianceForumPostRepository $postRepo
+        AllianceForumPostRepository $postRepo,
+        NotificationService $notificationService
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -40,6 +44,7 @@ class AllianceForumService
         $this->roleRepo = $roleRepo;
         $this->topicRepo = $topicRepo;
         $this->postRepo = $postRepo;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -60,8 +65,7 @@ class AllianceForumService
 
         // 2. Determine Permissions
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        $canManage = ($role && $role->can_manage_forum);
-
+        
         // 3. Fetch Topics
         $perPage = $this->config->get('app.forum.topics_per_page', 25);
         $totalTopics = $this->topicRepo->getCountByAllianceId($user->alliance_id);
@@ -75,7 +79,7 @@ class AllianceForumService
         return ServiceResponse::success('Data retrieved', [
             'topics' => $topics,
             'allianceId' => $user->alliance_id,
-            'canManageForum' => $canManage,
+            'permissions' => $role, // Pass the whole role object as permissions
             'pagination' => [
                 'currentPage' => $page,
                 'totalPages' => $totalPages
@@ -107,7 +111,7 @@ class AllianceForumService
 
         // 3. Determine Permissions
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        $canManage = ($role && $role->can_manage_forum);
+        $canManage = ($role && $role->hasPermission(Permissions::CAN_MANAGE_FORUM));
 
         // 4. Fetch Posts
         $posts = $this->postRepo->findAllByTopicId($topicId);
@@ -144,7 +148,17 @@ class AllianceForumService
         try {
             $newTopicId = $this->topicRepo->createTopic($user->alliance_id, $userId, $title);
             $this->postRepo->createPost($newTopicId, $user->alliance_id, $userId, $content);
+            
             $this->db->commit();
+            
+            // Send notifications to all alliance members after successful commit (except the topic creator)
+            $this->notificationService->notifyAllianceMembers(
+                $user->alliance_id,
+                $userId,
+                'New Forum Topic',
+                "{$user->characterName} created topic \"{$title}\"",
+                "/alliance/forum/topic/{$newTopicId}"
+            );
             
             return ServiceResponse::success('Topic created successfully.', ['topic_id' => $newTopicId]);
 
@@ -181,7 +195,21 @@ class AllianceForumService
         try {
             $this->postRepo->createPost($topicId, $user->alliance_id, $userId, $content);
             $this->topicRepo->updateLastReply($topicId, $userId);
+            
             $this->db->commit();
+            
+            // Get users who have participated in this topic and send notifications after successful commit
+            $participantIds = $this->postRepo->getTopicParticipantIds($topicId);
+            
+            // Send notifications only to users who have participated in the topic (except the poster)
+            $this->notificationService->notifySpecificUsers(
+                $participantIds,
+                $userId,
+                'New Forum Post',
+                "{$user->characterName} posted in \"{$topic->title}\"",
+                "/alliance/forum/topic/{$topicId}"
+            );
+            
             return ServiceResponse::success('Reply posted successfully.');
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
@@ -231,7 +259,7 @@ class AllianceForumService
         if (!$topic || $topic->alliance_id !== $user->alliance_id) return ['allowed' => false, 'message' => 'Access denied.'];
 
         $role = $this->roleRepo->findById($user->alliance_role_id);
-        if ($role && $role->can_manage_forum) return ['allowed' => true, 'message' => ''];
+        if ($role && $role->hasPermission(Permissions::CAN_MANAGE_FORUM)) return ['allowed' => true, 'message' => ''];
 
         return ['allowed' => false, 'message' => 'Permission denied.'];
     }

@@ -36,6 +36,7 @@ use App\Controllers\AllianceSettingsController;
 use App\Controllers\AllianceRoleController;
 use App\Controllers\AllianceStructureController;
 use App\Controllers\AllianceForumController;
+use App\Controllers\AlmanacController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
 use App\Controllers\CurrencyConverterController;
@@ -43,7 +44,9 @@ use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
+use App\Controllers\GlossaryController;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\MobileViewMiddleware;
 
 use App\Core\Exceptions\RedirectException;
 use App\Core\Exceptions\TerminateException;
@@ -109,6 +112,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Core Game Features ---
     $r->addRoute('GET', '/dashboard', [DashboardController::class, 'show']);
+    $r->addRoute('GET', '/glossary', [GlossaryController::class, 'index']);
     $r->addRoute('GET', '/profile/{id:\d+}', [ProfileController::class, 'show']);
     $r->addRoute('GET', '/serve/avatar/{filename}', [FileController::class, 'showAvatar']);
     $r->addRoute('GET', '/serve/alliance_avatar/{filename}', [FileController::class, 'showAllianceAvatar']);
@@ -126,6 +130,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // The Undermarket (Actions)
     $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
     $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
     $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
     $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
     $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
@@ -157,6 +162,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/settings/email', [SettingsController::class, 'handleEmail']);
     $r->addRoute('POST', '/settings/password', [SettingsController::class, 'handlePassword']);
     $r->addRoute('POST', '/settings/security', [SettingsController::class, 'handleSecurity']);
+    $r->addRoute('POST', '/settings/notifications', [SettingsController::class, 'handleNotifications']);
 
     // --- PvP ---
     $r->addRoute('GET', '/spy', [SpyController::class, 'show']);
@@ -191,6 +197,19 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/alliance/create', [AllianceController::class, 'showCreateForm']);
     $r->addRoute('POST', '/alliance/create', [AllianceController::class, 'handleCreate']);
 
+    // Directives (Command Center)
+    $r->addRoute('GET', '/alliance/directive/manage', [\App\Controllers\AllianceDirectiveController::class, 'showPage']);
+    $r->addRoute('GET', '/alliance/directive/options', [\App\Controllers\AllianceDirectiveController::class, 'getOptions']);
+    $r->addRoute('POST', '/alliance/directive/set', [\App\Controllers\AllianceDirectiveController::class, 'setDirective']);
+
+    // Alliance Operations (Theater Ops)
+    $r->addRoute('POST', '/alliance/ops/donate', [\App\Controllers\AllianceOperationsController::class, 'donateTurns']);
+    $r->addRoute('POST', '/alliance/ops/contribute', ['App\Controllers\AllianceOperationsController', 'contributeToOp']);
+
+    // Alliance SOS
+    $r->addRoute('GET', '/alliance/sos/manage', ['App\Controllers\AllianceSOSController', 'showPage']);
+    $r->addRoute('POST', '/alliance/sos/broadcast', ['App\Controllers\AllianceSOSController', 'broadcast']);
+    
     // Refactored: Recruitment (Applications & Invites) -> AllianceApplicationController
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceApplicationController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceApplicationController::class, 'handleCancelApp']);
@@ -209,6 +228,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/loan/approve/{id:\d+}', [AllianceFundingController::class, 'handleLoanApprove']);
     $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceFundingController::class, 'handleLoanDeny']);
     $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceFundingController::class, 'handleLoanRepay']);
+    $r->addRoute('POST', '/alliance/loan/forgive/{id:\d+}', [AllianceFundingController::class, 'handleForgiveLoan']);
     
     // Refactored: Settings -> AllianceSettingsController
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
@@ -241,74 +261,156 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/diplomacy/treaty/break/{id:\d+}', [DiplomacyController::class, 'handleBreakTreaty']);
     $r->addRoute('POST', '/alliance/diplomacy/rivalry/declare', [DiplomacyController::class, 'handleDeclareRivalry']);
     
-    $r->addRoute('GET', '/alliance/war', [WarController::class, 'show']);
-    $r->addRoute('POST', '/alliance/war/declare', [WarController::class, 'handleDeclareWar']);
+        // Alliance War
+        $r->addRoute(['GET', 'POST'], '/alliance/war', ['App\\Controllers\\WarController', 'show']);
+        $r->addRoute(['POST'], '/alliance/war/declare', ['App\\Controllers\\WarController', 'handleDeclareWar']);
+        $r->addRoute(['GET'], '/alliance/war/dashboard/{warId:\d+}', ['App\\Controllers\\WarController', 'showDashboard']);
+        $r->addRoute(['GET'], '/alliance/war/{warId:\d+}/score', ['App\\Controllers\\WarController', 'getWarScoreData']);
 
-    // --- Notification System ---
+        // Alliance Forum
+    $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);
+    $r->addRoute('GET', '/almanac/search_players', [AlmanacController::class, 'searchPlayers']);
+    $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
+    $r->addRoute('GET', '/almanac/get_player_dossier', [AlmanacController::class, 'getPlayerDossier']);
+    $r->addRoute('GET', '/almanac/get_alliance_dossier', [AlmanacController::class, 'getAllianceDossier']);
+    $r->addRoute('GET', '/almanac/mobile_tab', [AlmanacController::class, 'getMobileTabData']);
+
+    // --- Embassy (Directives) ---
     $r->addRoute('GET', '/notifications', [NotificationController::class, 'index']);
     $r->addRoute('GET', '/notifications/check', [NotificationController::class, 'check']);
+    $r->addRoute('GET', '/notifications/preferences', [NotificationController::class, 'getPreferences']);
     $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
     $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
+
+    // --- MOBILE AJAX ROUTES ---
+    $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
+    $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
+    $r->addRoute('GET', '/armory/mobile/manage/{unit:[a-zA-Z-]+}/{tier:\d+}', [ArmoryController::class, 'showMobileTierManagement']);
+    $r->addRoute('GET', '/armory/mobile/loadout/{unit:[a-zA-Z-]+}', [ArmoryController::class, 'showMobileLoadout']);
 });
 
 // 7. Dispatch
+
 try {
-    $httpMethod = $_SERVER['REQUEST_METHOD'];
-    $uri = $_SERVER['REQUEST_URI'];
 
-    if (false !== $pos = strpos($uri, '?')) {
-        $uri = substr($uri, 0, $pos);
-    }
-    $uri = rawurldecode($uri);
+    $container->get(MobileViewMiddleware::class)->handle(function() use ($container, $dispatcher) {
 
-    $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+        $httpMethod = $_SERVER['REQUEST_METHOD'];
 
-    switch ($routeInfo[0]) {
-        case FastRoute\Dispatcher::NOT_FOUND:
-            http_response_code(404);
-            echo '404 - Page Not Found';
-            break;
+        $uri = $_SERVER['REQUEST_URI'];
 
-        case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-            http_response_code(405);
-            echo '405 - Method Not Allowed';
-            break;
 
-        case FastRoute\Dispatcher::FOUND:
-            $handler = $routeInfo[1];
-            $vars = $routeInfo[2];
 
-            // --- Auth Middleware Logic ---
-            $protectedPrefixes = [
-                '/dashboard', '/bank', '/training', '/structures', '/armory',
-                '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
-                '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
-                '/leaderboard', '/embassy', '/generals'
-            ];
-            
-            $isProtected = false;
-            foreach ($protectedPrefixes as $prefix) {
-                if (str_starts_with($uri, $prefix)) {
-                    $isProtected = true;
-                    break;
+        if (false !== $pos = strpos($uri, '?')) {
+
+            $uri = substr($uri, 0, $pos);
+
+        }
+
+        $uri = rawurldecode($uri);
+
+
+
+        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+
+
+        switch ($routeInfo[0]) {
+
+            case FastRoute\Dispatcher::NOT_FOUND:
+
+                http_response_code(404);
+
+                echo '404 - Page Not Found';
+
+                break;
+
+
+
+            case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+
+                http_response_code(405);
+
+                echo '405 - Method Not Allowed';
+
+                break;
+
+
+
+            case FastRoute\Dispatcher::FOUND:
+
+                $handler = $routeInfo[1];
+
+                $vars = $routeInfo[2];
+
+
+
+                // --- Auth Middleware Logic ---
+
+                $protectedPrefixes = [
+
+                    '/dashboard', '/bank', '/training', '/structures', '/armory',
+
+                    '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
+
+                    '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
+
+                    '/leaderboard', '/embassy', '/generals', '/almanac', '/glossary'
+
+                ];
+
+                
+
+                $isProtected = false;
+
+                foreach ($protectedPrefixes as $prefix) {
+
+                    if (str_starts_with($uri, $prefix)) {
+
+                        $isProtected = true;
+
+                        break;
+
+                    }
+
                 }
-            }
 
-            if ($isProtected) {
-                $container->get(AuthMiddleware::class)->handle();
-            }
 
-            // --- Dispatch Controller ---
-            [$class, $method] = $handler;
-            
-            if ($container->has($class)) {
-                $controller = $container->get($class);
-                call_user_func_array([$controller, $method], [$vars]);
-            } else {
-                throw new Exception("Controller class $class not found in DI container.");
-            }
-            break;
-    }
+
+                if ($isProtected) {
+
+                    $container->get(AuthMiddleware::class)->handle();
+
+                }
+
+
+
+                // --- Dispatch Controller ---
+
+                [$class, $method] = $handler;
+
+                
+
+                if ($container->has($class)) {
+
+                    $controller = $container->get($class);
+
+                    call_user_func_array([$controller, $method], [$vars]);
+
+                } else {
+
+                    throw new Exception("Controller class $class not found in DI container.");
+
+                }
+
+                break;
+
+        }
+
+    }); // End MobileViewMiddleware handle closure
+
+
+
 } catch (RedirectException $e) {
     // Handle graceful redirect
     header("Location: " . $e->getMessage());

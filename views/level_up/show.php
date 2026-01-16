@@ -1,59 +1,148 @@
 <?php
-// --- Helper variables from the controller ---
+// --- Level Up View ---
 /* @var \App\Models\Entities\UserStats $stats */
 /* @var array $costs */
+/* @var string $csrf_token */
+
+// Stat Configuration
+$statConfig = [
+    'strength' => [
+        'icon' => 'fas fa-fist-raised',
+        'color' => 'var(--accent-red)',
+        'desc' => 'Increases raw damage output in battles.',
+        'current' => $stats->strength_points
+    ],
+    'constitution' => [
+        'icon' => 'fas fa-heart',
+        'color' => 'var(--accent-green)',
+        'desc' => 'Boosts maximum health and defense.',
+        'current' => $stats->constitution_points
+    ],
+    'wealth' => [
+        'icon' => 'fas fa-coins',
+        'color' => 'var(--accent-2)', // Gold
+        'desc' => 'Enhances passive income generation.',
+        'current' => $stats->wealth_points
+    ],
+    'dexterity' => [
+        'icon' => 'fas fa-running',
+        'color' => '#00f3ff', // Cyan
+        'desc' => 'Improves dodge chance and initiative.',
+        'current' => $stats->dexterity_points
+    ],
+    'charisma' => [
+        'icon' => 'fas fa-user-tie',
+        'color' => '#b794f4', // Purple
+        'desc' => 'Reduces costs and improves diplomacy.',
+        'current' => $stats->charisma_points
+    ]
+];
 ?>
 
-<!-- No outer container; main.php provides .container -->
-
-<h1>Level Up</h1>
-
-<div class="resource-header-card" style="max-width: 600px; margin-left: auto; margin-right: auto;">
-    <div class="header-stat">
-        <span>Available Points</span>
-        <strong class="accent-green" id="available-points" data-points="<?= $stats->level_up_points ?>">
-            <?= number_format($stats->level_up_points) ?>
-        </strong>
+<div class="structures-page-content">
+    
+    <!-- 1. Page Header -->
+    <div class="page-header-container">
+        <h1 class="page-title-neon">Command Authorization</h1>
+        <p class="page-subtitle-tech">
+            Bio-Augmentation // Neural Remapping // Stat Allocation
+        </p>
+        <div class="flex-center gap-2 mt-2">
+            <div class="badge bg-dark border-secondary">
+                Current Level <?= $stats->level ?>
+            </div>
+            <div class="badge bg-dark border-success">
+                Available Points: <span id="header-points-display"><?= number_format($stats->level_up_points) ?></span>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="item-grid" style="grid-template-columns: 1fr; max-width: 800px; margin: 0 auto;">
-    <div class="item-card">
-        <h4>Allocate Points (Cost: <?= $costs['cost_per_point'] ?> per stat)</h4>
+    <!-- 2. Main Form Wrapper -->
+    <form action="/level-up/spend" method="POST" id="level-up-form">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
         
-        <form action="/level-up/spend" method="POST" id="level-up-form">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            
-            <div class="stat-grid">
-                <div class="form-group">
-                    <label for="strength">Strength (Current: <?= $stats->strength_points ?>)</label>
-                    <input type="number" name="strength" id="strength" class="stat-input" min="0" value="0" data-cost="<?= $costs['cost_per_point'] ?>">
-                </div>
-                <div class="form-group">
-                    <label for="constitution">Constitution (Current: <?= $stats->constitution_points ?>)</label>
-                    <input type="number" name="constitution" id="constitution" class="stat-input" min="0" value="0" data-cost="<?= $costs['cost_per_point'] ?>">
-                </div>
-                <div class="form-group">
-                    <label for="wealth">Wealth (Current: <?= $stats->wealth_points ?>)</label>
-                    <input type="number" name="wealth" id="wealth" class="stat-input" min="0" value="0" data-cost="<?= $costs['cost_per_point'] ?>">
-                </div>
-                <div class="form-group">
-                    <label for="dexterity">Dexterity (Current: <?= $stats->dexterity_points ?>)</label>
-                    <input type="number" name="dexterity" id="dexterity" class="stat-input" min="0" value="0" data-cost="<?= $costs['cost_per_point'] ?>">
-                </div>
-                <div class="form-group">
-                    <label for="charisma">Charisma (Current: <?= $stats->charisma_points ?>)</label>
-                    <input type="number" name="charisma" id="charisma" class="stat-input" min="0" value="0" data-cost="<?= $costs['cost_per_point'] ?>">
-                </div>
-            </div>
-            
-            <div class="stat-total">
-                Total to Spend: <span id="total-to-spend">0</span> / <?= number_format($stats->level_up_points) ?>
-            </div>
+        <div class="structures-grid">
+            <?php foreach ($statConfig as $key => $config): ?>
+                <div class="structure-card">
+                    <!-- Header -->
+                    <div class="card-header-main">
+                        <span class="card-icon" style="color: <?= $config['color'] ?>; border-color: <?= $config['color'] ?>33; background: <?= $config['color'] ?>11;">
+                            <i class="<?= $config['icon'] ?>"></i>
+                        </span>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= ucfirst($key) ?></h3>
+                            <p class="card-level" style="color: <?= $config['color'] ?>;">
+                                Current: <?= number_format($config['current']) ?>
+                            </p>
+                        </div>
+                    </div>
 
-            <button type="submit" class="btn-submit" id="spend-points-btn" disabled>Spend Points</button>
-        </form>
-    </div>
+                    <!-- Body -->
+                    <div class="card-body-main">
+                        <p class="card-description" style="min-height: 40px;">
+                            <?= htmlspecialchars($config['desc']) ?>
+                        </p>
+                        
+                        <div class="resource-cost-grid">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Cost per point:</span>
+                                <span class="text-warning font-weight-bold">1 Point</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer (Input) -->
+                    <div class="card-footer-actions p-3 pt-0">
+                        <div class="d-flex align-items-center gap-2" style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 6px; border: 1px solid var(--border);">
+                            <button type="button" class="btn btn-sm btn-outline-warning btn-dec" data-target="<?= $key ?>">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            
+                            <input type="number" 
+                                   name="<?= $key ?>" 
+                                   id="<?= $key ?>" 
+                                   class="form-control stat-input text-center p-1" 
+                                   value="0" 
+                                   min="0" 
+                                   max="<?= $stats->level_up_points ?>"
+                                   style="border: none; background: transparent; height: 30px; font-size: 1.1rem; font-weight: bold;">
+                            
+                            <button type="button" class="btn btn-sm btn-outline-success btn-inc" data-target="<?= $key ?>">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Sticky Footer for Confirmation -->
+        <div class="hud-floating-bar" id="level-up-hud" style="bottom: 20px; right: 20px; left: auto; width: 300px; display: block; animation: none;">
+            <div class="hud-header">
+                <h3><i class="fas fa-dna"></i> Augmentation Queue</h3>
+            </div>
+            
+            <div class="hud-content p-3">
+                <div class="hud-total-row mb-2">
+                    <span>Available:</span>
+                    <strong class="text-success"><?= number_format($stats->level_up_points) ?></strong>
+                </div>
+                <div class="hud-total-row mb-3">
+                    <span>Allocated:</span>
+                    <strong class="text-warning" id="total-allocated">0</strong>
+                </div>
+                
+                <div class="progress mb-3" style="height: 6px; background: rgba(255,255,255,0.1);">
+                    <div class="progress-bar bg-warning" id="allocation-bar" style="width: 0%;"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="btn-confirm" disabled>
+                    <i class="fas fa-check-circle"></i> Confirm Upgrades
+                </button>
+            </div>
+        </div>
+
+    </form>
 </div>
 
-<script src="/js/level_up.js"></script>
+<script src="/js/level_up.js?v=<?= time() ?>"></script>

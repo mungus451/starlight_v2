@@ -7,6 +7,7 @@ use App\Core\ServiceResponse;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\UserRepository;
+use App\Models\Repositories\StructureRepository; // --- NEW DEPENDENCY ---
 use PDO;
 use Throwable;
 use DateTime;
@@ -23,19 +24,22 @@ class BankService
     private ResourceRepository $resourceRepo;
     private UserRepository $userRepo;
     private StatsRepository $statsRepo;
+    private StructureRepository $structureRepo; // --- NEW PROPERTY ---
 
     public function __construct(
         PDO $db,
         Config $config,
         ResourceRepository $resourceRepo,
         UserRepository $userRepo,
-        StatsRepository $statsRepo
+        StatsRepository $statsRepo,
+        StructureRepository $structureRepo // --- NEW INJECTION ---
     ) {
         $this->db = $db;
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
         $this->userRepo = $userRepo;
         $this->statsRepo = $statsRepo;
+        $this->structureRepo = $structureRepo;
     }
 
     /**
@@ -45,6 +49,7 @@ class BankService
     public function getBankData(int $userId): array
     {
         $stats = $this->statsRepo->findByUserId($userId);
+        $structures = $this->structureRepo->findByUserId($userId); // --- FETCH STRUCTURES ---
         $bankConfig = $this->config->get('bank');
         
         // --- Calculate Charge Regeneration ---
@@ -59,7 +64,16 @@ class BankService
             $diffSeconds = $now->getTimestamp() - $lastDepositTime->getTimestamp();
             $hoursPassed = $diffSeconds / 3600;
             
-            $regenHours = $bankConfig['deposit_charge_regen_hours'];
+            // --- NEW: Banking Datacenter Logic ---
+            $baseRegenHours = $bankConfig['deposit_charge_regen_hours'];
+            $bankingLevel = $structures->banking_datacenter_level ?? 0;
+            
+            $reductionMinutes = $bankingLevel * ($bankConfig['banking_datacenter_regen_reduction_minutes'] ?? 10);
+            $maxReduction = $bankConfig['max_banking_datacenter_reduction_minutes'] ?? 180;
+            $reductionMinutes = min($reductionMinutes, $maxReduction);
+            
+            $regenHours = $baseRegenHours - ($reductionMinutes / 60);
+            if ($regenHours < 0.5) $regenHours = 0.5; // Minimum 30 mins to prevent bugs
             
             // Floor to get full cycles passed
             $chargesToRegen = (int)floor($hoursPassed / $regenHours);

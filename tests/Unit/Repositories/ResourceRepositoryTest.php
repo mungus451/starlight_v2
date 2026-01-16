@@ -202,18 +202,19 @@ class ResourceRepositoryTest extends TestCase
         $userId = 1;
         $newCredits = 80000;
         $newGuards = 40;
+        $newWorkers = 10;
 
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with([$newCredits, $newGuards, $userId])
+            ->with([$newCredits, $newGuards, $newWorkers, $userId])
             ->andReturn(true);
 
         $this->mockDb->shouldReceive('prepare')
             ->once()
             ->andReturn($mockStmt);
 
-        $result = $this->repository->updateBattleDefender($userId, $newCredits, $newGuards);
+        $result = $this->repository->updateBattleDefender($userId, $newCredits, $newGuards, $newWorkers);
 
         $this->assertTrue($result);
     }
@@ -249,19 +250,20 @@ class ResourceRepositoryTest extends TestCase
     {
         $userId = 1;
         $newSentries = 8;
+        $newWorkers = 5;
 
         $mockStmt = Mockery::mock(PDOStatement::class);
         $mockStmt->shouldReceive('execute')
             ->once()
-            ->with([$newSentries, $userId])
+            ->with([$newSentries, $newWorkers, $userId])
             ->andReturn(true);
 
         $this->mockDb->shouldReceive('prepare')
             ->once()
-            ->with("UPDATE user_resources SET sentries = ? WHERE user_id = ?")
+            ->with("UPDATE user_resources SET sentries = ?, workers = ? WHERE user_id = ?")
             ->andReturn($mockStmt);
 
-        $result = $this->repository->updateSpyDefender($userId, $newSentries);
+        $result = $this->repository->updateSpyDefender($userId, $newSentries, $newWorkers);
 
         $this->assertTrue($result);
     }

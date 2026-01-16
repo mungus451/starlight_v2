@@ -24,16 +24,39 @@ class DashboardPresenter
         }
 
         // 2. Format Resources (Optional but cleaner)
-        // We can pass through the rest or format specific complex structures here.
-        // For now, we focus on the remediation of the specific violations (Effects Logic).
-
+        $data['formatted_naquadah_crystals'] = $this->abbreviateNumber($data['naquadah_crystals'] ?? 0);
+        $data['formatted_naquadah_per_turn'] = $this->abbreviateNumber($data['naquadah_per_turn'] ?? 0);        
+        $data['formatted_net_worth'] = $this->abbreviateNumber($data['net_worth'] ?? 0);
         return $data;
-    }
-
-    /**
-     * Enriches the effects array with UI properties and formatted time strings.
-     */
-    private function presentEffects(array $effects): array
+        }
+        
+        /**
+        * Formats a number into a shorter, more readable representation
+        * (e.g., 1000 -> 1K, 1500000 -> 1.5M).
+        *
+        * @param int|float $number The number to format
+        * @return string The abbreviated number
+        */
+        private function abbreviateNumber($number): string
+        {
+        if ($number < 1000) {
+        return (string) number_format($number, 0);
+        }
+        
+        $suffixes = ['', 'K', 'M', 'B', 'T'];
+        $suffixIndex = 0;
+        
+        while ($number >= 1000 && $suffixIndex < count($suffixes) - 1) {
+        $number /= 1000;
+        $suffixIndex++;
+        }
+        
+        return sprintf('%.1f', $number) . $suffixes[$suffixIndex];
+        }
+        
+        /**
+        * Enriches the effects array with UI properties and formatted time strings.
+        */    private function presentEffects(array $effects): array
     {
         $now = new DateTime();
         $enriched = [];
@@ -50,6 +73,51 @@ class DashboardPresenter
                     $effect['ui_icon'] = 'fa-shield-alt';
                     $effect['ui_label'] = 'Peace Shield';
                     $effect['ui_color'] = 'text-success';
+                    break;
+                case 'safehouse_cooldown':
+                    $effect['ui_icon'] = 'fa-user-clock';
+                    $effect['ui_label'] = 'Safehouse Cooldown';
+                    $effect['ui_color'] = 'text-warning';
+                    break;
+                case 'safehouse_breach':
+                    $effect['ui_icon'] = 'fa-key';
+                    $effect['ui_label'] = 'Breach Permit';
+                    $effect['ui_color'] = 'text-info';
+                    break;
+                case 'high_risk_protocol':
+                    $effect['ui_icon'] = 'fa-biohazard';
+                    $effect['ui_label'] = 'High Risk Protocol';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'void_offense_boost':
+                    $effect['ui_icon'] = 'fa-fist-raised';
+                    $effect['ui_label'] = 'Adrenaline Injectors';
+                    $effect['ui_color'] = 'text-success';
+                    break;
+                case 'void_resource_boost':
+                    $effect['ui_icon'] = 'fa-industry';
+                    $effect['ui_label'] = 'Nanite Overclock';
+                    $effect['ui_color'] = 'text-success';
+                    break;
+                case 'void_defense_penalty':
+                    $effect['ui_icon'] = 'fa-shield-virus';
+                    $effect['ui_label'] = 'Shield Virus';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'safehouse_block':
+                    $effect['ui_icon'] = 'fa-lock';
+                    $effect['ui_label'] = 'Safehouse Beacon';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'radiation_sickness':
+                    $effect['ui_icon'] = 'fa-radiation';
+                    $effect['ui_label'] = 'Radiation Sickness';
+                    $effect['ui_color'] = 'text-danger';
+                    break;
+                case 'quantum_scrambler':
+                    $effect['ui_icon'] = 'fa-satellite';
+                    $effect['ui_label'] = 'Quantum Scrambler';
+                    $effect['ui_color'] = 'text-info';
                     break;
                 case 'wounded':
                     $effect['ui_icon'] = 'fa-user-injured';

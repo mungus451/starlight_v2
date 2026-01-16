@@ -53,16 +53,36 @@ ORDER BY b.amount DESC
 LIMIT ?
 ";
 $stmt = $this->db->prepare($sql);
-$stmt->bindParam(1, $limit, PDO::PARAM_INT);
-$stmt->execute();
+        $stmt->bindParam(1, $limit, PDO::PARAM_INT);
+        $stmt->execute();
 
-return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-/**
-* Finds the highest active bounty on a specific target (if any).
-* Used by AttackService to check if a win results in a payout.
-*
+    /**
+     * Gets the single highest active bounty.
+     *
+     * @return array|null
+     */
+    public function getHighestActiveBounty(): ?array
+    {
+        $sql = "
+            SELECT b.*, u.character_name as target_name
+            FROM bounties b
+            JOIN users u ON b.target_id = u.id
+            WHERE b.status = 'active'
+            ORDER BY b.amount DESC
+            LIMIT 1
+        ";
+        $stmt = $this->db->query($sql);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result ?: null;
+    }
+
+    /**
+     * Finds the highest active bounty on a specific target (if any).
+     * Used by AttackService to check if a win results in a payout.*
 * @param int $targetId
 * @return array|null
 */

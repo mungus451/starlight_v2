@@ -6,6 +6,8 @@ use App\Core\Config;
 use App\Core\ServiceResponse;
 use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\AllianceRepository;
+use App\Models\Repositories\UserRepository;
+use App\Models\Services\NetWorthCalculatorService;
 
 /**
  * Handles logic for retrieving and paginating leaderboard data.
@@ -16,15 +18,21 @@ class LeaderboardService
     private Config $config;
     private StatsRepository $statsRepo;
     private AllianceRepository $allianceRepo;
+    private NetWorthCalculatorService $nwCalculator;
+    private UserRepository $userRepo;
 
     public function __construct(
         Config $config,
         StatsRepository $statsRepo,
-        AllianceRepository $allianceRepo
+        AllianceRepository $allianceRepo,
+        NetWorthCalculatorService $nwCalculator,
+        UserRepository $userRepo
     ) {
         $this->config = $config;
         $this->statsRepo = $statsRepo;
         $this->allianceRepo = $allianceRepo;
+        $this->nwCalculator = $nwCalculator;
+        $this->userRepo = $userRepo;
     }
 
     /**
@@ -50,6 +58,20 @@ class LeaderboardService
             // Alliances currently only sort by Net Worth (default)
             $totalItems = $this->allianceRepo->getTotalCount();
             $data = $this->allianceRepo->getLeaderboardAlliances($perPage, $offset);
+
+            // Recalculate Net Worth for current page of alliances
+            foreach ($data as &$alliance) {
+                if (isset($alliance['id'])) {
+                    $memberIds = $this->userRepo->getMemberIdsByAllianceId($alliance['id']);
+                    $totalNw = 0;
+                    foreach ($memberIds as $memberId) {
+                        $totalNw += $this->nwCalculator->calculateTotalNetWorth($memberId);
+                    }
+                    $alliance['net_worth'] = $totalNw;
+                }
+            }
+            unset($alliance);
+
         } else {
             // Players support dynamic sorting
             $type = 'players';
@@ -66,6 +88,14 @@ class LeaderboardService
 
             $totalItems = $this->statsRepo->getTotalPlayerCount();
             $data = $this->statsRepo->getLeaderboardPlayers($sortKey, $perPage, $offset);
+
+            // Recalculate Net Worth for current page
+            foreach ($data as &$player) {
+                if (isset($player['user_id'])) {
+                    $player['net_worth'] = $this->nwCalculator->calculateTotalNetWorth($player['user_id']);
+                }
+            }
+            unset($player);
         }
 
         // 3. Calculate Pagination Metadata

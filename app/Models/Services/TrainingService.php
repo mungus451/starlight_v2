@@ -5,6 +5,7 @@ namespace App\Models\Services;
 use App\Core\Config;
 use App\Core\ServiceResponse; // --- NEW IMPORT ---
 use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository; // --- NEW DEPENDENCY ---
 use PDO;
 
 /**
@@ -17,6 +18,7 @@ class TrainingService
     private Config $config;
     private ResourceRepository $resourceRepo;
     private GeneralService $generalService;
+    private StructureRepository $structureRepo; // --- NEW PROPERTY ---
 
     /**
      * DI Constructor.
@@ -25,15 +27,18 @@ class TrainingService
      * @param Config $config
      * @param ResourceRepository $resourceRepo
      * @param GeneralService $generalService
+     * @param StructureRepository $structureRepo
      */
     public function __construct(
         Config $config, 
         ResourceRepository $resourceRepo,
-        GeneralService $generalService
+        GeneralService $generalService,
+        StructureRepository $structureRepo // --- NEW INJECTION ---
     ) {
         $this->config = $config;
         $this->resourceRepo = $resourceRepo;
         $this->generalService = $generalService;
+        $this->structureRepo = $structureRepo;
     }
 
     /**
@@ -45,12 +50,102 @@ class TrainingService
     public function getTrainingData(int $userId): array
     {
         $resources = $this->resourceRepo->findByUserId($userId);
-        $costs = $this->config->get('game_balance.training', []);
+        // Use dynamic costs
+        $costs = $this->calculateDiscountedCosts($userId);
+        
+        // Enrich with UI data (Stats, Descriptions)
+        $units = $this->enrichUnitData($costs);
 
         return [
             'resources' => $resources,
-            'costs' => $costs
+            'costs' => $costs, // Kept for backward compat if needed, but 'units' is preferred
+            'units' => $units
         ];
+    }
+
+    private function enrichUnitData(array $costs): array
+    {
+        $info = [
+            'workers' => [
+                'name' => 'Worker',
+                'role' => 'Economy',
+                'atk' => 0, 
+                'def' => 0,
+                'desc' => 'The backbone of your economy. Each worker generates passive credit income every turn.',
+                'icon' => 'fas fa-hammer'
+            ],
+            'soldiers' => [
+                'name' => 'Soldier',
+                'role' => 'Offense',
+                'atk' => $this->config->get('game_balance.attack.power_per_soldier', 1), 
+                'def' => 0, 
+                'desc' => 'Frontline troops trained for offensive operations. High casualty rate, high impact.',
+                'icon' => 'fas fa-crosshairs'
+            ],
+            'guards' => [
+                'name' => 'Guard',
+                'role' => 'Defense',
+                'atk' => 0, 
+                'def' => $this->config->get('game_balance.attack.power_per_guard', 1),
+                'desc' => 'Defensive specialists trained to protect your territory and resources from invasion.',
+                'icon' => 'fas fa-shield-alt'
+            ],
+            'spies' => [
+                'name' => 'Spy',
+                'role' => 'Intel',
+                'atk' => $this->config->get('game_balance.spy.base_power_per_spy', 1), 
+                'def' => 0,
+                'desc' => 'Covert operatives used to infiltrate enemy empires, gather intel, and sabotage systems.',
+                'icon' => 'fas fa-user-secret'
+            ],
+            'sentries' => [
+                'name' => 'Sentry',
+                'role' => 'Intel',
+                'atk' => 0, 
+                'def' => $this->config->get('game_balance.spy.base_power_per_sentry', 1),
+                'desc' => 'Counter-espionage units specialized in detecting and neutralizing enemy infiltrators.',
+                'icon' => 'fas fa-eye'
+            ],
+        ];
+
+        $enriched = [];
+        foreach ($costs as $key => $cost) {
+            // Skip non-unit keys if any exist in the array
+            if (!isset($info[$key])) continue;
+
+            $enriched[$key] = array_merge($cost, $info[$key]);
+        }
+        
+        return $enriched;
+    }
+
+    private function calculateDiscountedCosts(int $userId): array
+    {
+        $costs = $this->config->get('game_balance.training', []);
+        // Fetch structures - handle potential null if user not fully initialized, though unlikely here
+        $structures = $this->structureRepo->findByUserId($userId);
+        
+        if (!$structures) return $costs;
+
+        $cloningLevel = $structures->cloning_vats_level ?? 0;
+        
+        if ($cloningLevel > 0) {
+            $discountPerLevel = $costs['cloning_vats_discount_per_level'] ?? 0.01;
+            $maxDiscount = $costs['cloning_vats_max_discount'] ?? 0.40;
+            
+            $discountPct = min($cloningLevel * $discountPerLevel, $maxDiscount);
+            $multiplier = 1.0 - $discountPct;
+            
+            // Apply to Soldiers and Guards credits only
+            if (isset($costs['soldiers']['credits'])) {
+                $costs['soldiers']['credits'] = (int)floor($costs['soldiers']['credits'] * $multiplier);
+            }
+            if (isset($costs['guards']['credits'])) {
+                $costs['guards']['credits'] = (int)floor($costs['guards']['credits'] * $multiplier);
+            }
+        }
+        
+        return $costs;
     }
 
     /**
@@ -69,7 +164,9 @@ class TrainingService
         }
 
         // 2. Validation 2: Unit Type & Costs
-        $unitCost = $this->config->get('game_balance.training.' . $unitType);
+        // Use discounted costs
+        $allCosts = $this->calculateDiscountedCosts($userId);
+        $unitCost = $allCosts[$unitType] ?? null;
         
         if (is_null($unitCost)) {
             return ServiceResponse::error('Invalid unit type selected.');

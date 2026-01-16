@@ -226,6 +226,6 @@ class NpcServiceTest extends TestCase
 
     private function createMockStats(int $userId, int $attackTurns): UserStats
     {
-        return new UserStats($userId, 1, 0, 0, 0, 0, $attackTurns, 0, 0, 0, 0, 0, 0, 0, null);
+        return new UserStats($userId, 1, 0, 0, 0, 0, $attackTurns, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, 0, 0);
     }
 }

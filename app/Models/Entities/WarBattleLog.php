@@ -29,7 +29,10 @@ readonly class WarBattleLog
         public readonly int $units_killed,
         public readonly int $credits_plundered,
         public readonly int $structure_damage,
-        public readonly string $created_at
+        public readonly string $created_at,
+        public readonly ?string $attacker_name = null, // NEW
+        public readonly ?string $defender_name = null, // NEW
+        public readonly ?string $victor_name = null    // NEW
     ) {
     }
 }

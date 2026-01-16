@@ -62,5 +62,108 @@ window.StarlightUtils = {
                  e.target.setSelectionRange(newCursorPosition, newCursorPosition);
             }
         });
+    },
+
+    /**
+     * Initializes tab navigation with localStorage persistence.
+     * @param {string} storageKey Unique key for localStorage.
+     * @param {string} defaultTabId Default tab ID to show if no history.
+     */
+    setupTabs: function(storageKey, defaultTabId) {
+        // Alias for backward compatibility, uses new initTabs logic
+        this.initTabs({
+            navSelector: '.structure-nav-btn',
+            contentSelector: '.structure-category-container',
+            storageKey: storageKey,
+            defaultTab: defaultTabId,
+            dataAttr: 'tab-target'
+        });
+    },
+
+    /**
+     * General tab initialization.
+     * Handles .tab-link (data-tab) and .structure-nav-btn (data-tab-target) by default.
+     * @param {Object} options Configuration options.
+     */
+    initTabs: function(options = {}) {
+        const {
+            navSelector = '.tab-link, .structure-nav-btn',
+            contentSelector = '.tab-content, .structure-category-container',
+            activeClass = 'active',
+            storageKey = null,
+            dataAttr = 'tab', // Primary data attribute (e.g., data-tab)
+            defaultTab = null,
+            onTabChange = null
+        } = options;
+
+        const navBtns = document.querySelectorAll(navSelector);
+        const contents = document.querySelectorAll(contentSelector);
+        
+        if (navBtns.length === 0) return;
+
+        const activateTab = (targetId) => {
+            if (!targetId) return;
+
+            navBtns.forEach(btn => {
+                // Check both dataAttr and fallback to data-tab-target for structures
+                const btnId = btn.getAttribute(`data-${dataAttr}`) || btn.getAttribute('data-tab-target');
+                if (btnId === targetId) {
+                    btn.classList.add(activeClass);
+                } else {
+                    btn.classList.remove(activeClass);
+                }
+            });
+
+            contents.forEach(content => {
+                if (content.id === targetId) {
+                    content.classList.add(activeClass);
+                } else {
+                    content.classList.remove(activeClass);
+                }
+            });
+
+            if (storageKey) {
+                localStorage.setItem(storageKey, targetId);
+            }
+
+            if (typeof onTabChange === 'function') {
+                onTabChange(targetId);
+            }
+        };
+
+        // Initialize from storage or default
+        let initialTab = defaultTab;
+        if (storageKey) {
+            const saved = localStorage.getItem(storageKey);
+            if (saved && document.getElementById(saved)) {
+                initialTab = saved;
+            }
+        }
+
+        if (initialTab) {
+            activateTab(initialTab);
+        } else {
+            // Find currently active or first
+            const activeBtn = document.querySelector(`${navSelector}.${activeClass}`);
+            if (activeBtn) {
+                const id = activeBtn.getAttribute(`data-${dataAttr}`) || activeBtn.getAttribute('data-tab-target');
+                activateTab(id);
+            }
+        }
+
+        // Add Listeners
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = btn.getAttribute(`data-${dataAttr}`) || btn.getAttribute('data-tab-target');
+                if (targetId) {
+                    // Only prevent default if it's an anchor with a hash or no href
+                    const href = btn.getAttribute('href');
+                    if (btn.tagName === 'A' && (!href || href.startsWith('#'))) {
+                        e.preventDefault();
+                    }
+                    activateTab(targetId);
+                }
+            });
+        });
     }
 };

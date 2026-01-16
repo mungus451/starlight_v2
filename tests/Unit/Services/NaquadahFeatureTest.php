@@ -19,6 +19,8 @@ use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Services\EmbassyService;
 use App\Models\Services\ArmoryService;
+use App\Models\Services\EffectService; // Import EffectService
+use App\Models\Services\NetWorthCalculatorService; // NEW
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStructure;
 use App\Models\Entities\UserStats;
@@ -30,6 +32,7 @@ class NaquadahFeatureTest extends TestCase
     /**
      * Test 1: StructureService should deduct Naquadah Crystals when upgrading
      */
+    private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator; // NEW
     public function testUpgradeStructure_DeductsNaquadah_WhenAffordable(): void
     {
         // 1. Arrange Dependencies
@@ -153,11 +156,15 @@ class NaquadahFeatureTest extends TestCase
         $mockStructDefRepo = Mockery::mock(AllianceStructureDefinitionRepository::class);
         $mockEdictRepo = Mockery::mock(EdictRepository::class);
         $mockGeneralRepo = Mockery::mock(GeneralRepository::class);
+        $mockEffectService = Mockery::mock(EffectService::class); // Mock EffectService
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
         $mockGeneralRepo->shouldReceive('findByUserId')->andReturn([]);
         $mockGeneralRepo->shouldReceive('countByUserId')->andReturn(0);
         $mockConfig->shouldReceive('get')->with('game_balance.generals', [])->andReturn([]); // Fix missing config too
+
+        // Mock Effect Service
+        $mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false);
 
         $service = new PowerCalculatorService(
             $mockConfig,
@@ -165,7 +172,8 @@ class NaquadahFeatureTest extends TestCase
             $mockAllianceStructRepo,
             $mockStructDefRepo,
             $mockEdictRepo,
-            $mockGeneralRepo
+            $mockGeneralRepo,
+            $mockEffectService // Inject EffectService
         );
 
         $userId = 1;
@@ -214,7 +222,11 @@ class NaquadahFeatureTest extends TestCase
             dexterity_points: 0,
             charisma_points: 0,
             deposit_charges: 0,
-            last_deposit_at: null
+            last_deposit_at: null,
+            battles_won: 0,
+            battles_lost: 0,
+            spy_successes: 0,
+            spy_failures: 0
         );
 
         // Structure Level 5
@@ -265,6 +277,9 @@ class NaquadahFeatureTest extends TestCase
 
         $mockEdictRepo->shouldReceive('findActiveByUserId')->andReturn([]);
 
+        $this->mockNwCalculator = Mockery::mock(NetWorthCalculatorService::class); // NEW
+        $this->mockNwCalculator->shouldReceive('calculateTotalNetWorth')->andReturn(100000); // Arbitrary value
+
         $service = new TurnProcessorService(
             $mockDb,
             $mockConfig,
@@ -278,7 +293,8 @@ class NaquadahFeatureTest extends TestCase
             $mockGeneralRepo,
             $mockScientistRepo,
             $mockEdictRepo,
-            $mockEmbassyService
+            $mockEmbassyService,
+            $this->mockNwCalculator // NEW, cast to type
         );
 
         $userId = 123;
@@ -305,7 +321,7 @@ class NaquadahFeatureTest extends TestCase
         // Use real entities for return values
         $resources = new UserResource($userId, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0);
         $structures = new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0); 
-        $stats = new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null);
+        $stats = new UserStats($userId, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, 0, 0);
 
         $mockResourceRepo->shouldReceive('findByUserId')->andReturn($resources);
         $mockStructureRepo->shouldReceive('findByUserId')->andReturn($structures);
@@ -328,7 +344,7 @@ class NaquadahFeatureTest extends TestCase
         $mockPowerCalc->shouldReceive('calculateIncomePerTurn')->andReturn($mockIncomeData);
 
         // Mock Upkeep
-        $mockGeneralRepo->shouldReceive('getGeneralCount')->with($userId)->andReturn(0);
+        $mockGeneralRepo->shouldReceive('countByUserId')->with($userId)->andReturn(0);
         $mockScientistRepo->shouldReceive('getActiveScientistCount')->with($userId)->andReturn(0);
 
         // Mock DB Transaction
@@ -352,6 +368,7 @@ class NaquadahFeatureTest extends TestCase
             ->andReturn(true);
 
         $mockStatsRepo->shouldReceive('applyTurnAttackTurn')->once()->andReturn(true);
+        $mockStatsRepo->shouldReceive('updateNetWorth')->once()->with($userId, 100000);
 
         // 3. Act
         $service->processAllUsers();

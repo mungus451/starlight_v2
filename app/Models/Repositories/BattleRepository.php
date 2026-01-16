@@ -55,7 +55,8 @@ class BattleRepository
         int $defenderTotalGuards,
         bool $isHidden = false,
         int $defenderShieldHp = 0,
-        int $shieldDamageDealt = 0
+        int $shieldDamageDealt = 0,
+        int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
             INSERT INTO battle_reports
@@ -63,9 +64,9 @@ class BattleRepository
              attacker_soldiers_lost, defender_guards_lost, credits_plundered,
              experience_gained, war_prestige_gained, net_worth_stolen,
              attacker_offense_power, defender_defense_power, defender_total_guards, is_hidden,
-             defender_shield_hp, shield_damage_dealt, created_at)
+             defender_shield_hp, shield_damage_dealt, defender_workers_lost, created_at)
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
 
         $stmt = $this->db->prepare($sql);
@@ -74,7 +75,7 @@ class BattleRepository
             $attackerSoldiersLost, $defenderGuardsLost, $creditsPlundered,
             $experienceGained, $warPrestigeGained, $netWorthStolen,
             $attackerOffensePower, $defenderDefensePower, $defenderTotalGuards, (int)$isHidden,
-            $defenderShieldHp, $shieldDamageDealt
+            $defenderShieldHp, $shieldDamageDealt, $defenderWorkersLost
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -150,6 +151,101 @@ class BattleRepository
     }
 
     /**
+     * Finds the 5 most recent, non-hidden battle reports realm-wide.
+     *
+     * @return BattleReport[]
+     */
+    public function findLatestGlobal(): array
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.is_hidden = 0
+            ORDER BY r.created_at DESC
+            LIMIT 5
+        ";
+        
+        $stmt = $this->db->query($sql);
+        
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
+     * Retrieves paginated battle reports for a user (either attacker or defender).
+     */
+    public function getPaginatedUserBattles(int $userId, int $limit, int $offset): array
+    {
+        $sql = "
+            SELECT r.*, d.character_name as defender_name, a.character_name as attacker_name
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE r.attacker_id = ? OR r.defender_id = ?
+            ORDER BY r.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(3, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(4, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $reports = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $reports[] = $this->hydrate($row);
+        }
+        return $reports;
+    }
+
+    /**
+     * Counts total battles for a user.
+     */
+    public function countUserBattles(int $userId): int
+    {
+        $sql = "SELECT COUNT(*) FROM battle_reports WHERE attacker_id = ? OR defender_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId, $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Finds the most recent battle report where a member of the given alliance was the defender.
+     *
+     * @param int $allianceId
+     * @return BattleReport|null
+     */
+    public function findLatestDefenseByAlliance(int $allianceId): ?array
+    {
+        $sql = "
+            SELECT r.*, 
+                   d.character_name as defender_name, 
+                   a.character_name as attacker_name,
+                   TIMESTAMPDIFF(SECOND, r.created_at, NOW()) as seconds_ago
+            FROM battle_reports r
+            JOIN users d ON r.defender_id = d.id
+            JOIN users a ON r.attacker_id = a.id
+            WHERE d.alliance_id = ?
+            ORDER BY r.created_at DESC
+            LIMIT 1
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        // Return raw array to access seconds_ago, or modify hydrate/entity.
+        // For minimal impact, I'll return the raw array here since ViewContextService calculates logic.
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
      * Helper method to convert a database row into a BattleReport entity.
      */
     private function hydrate(array $data): BattleReport
@@ -173,6 +269,7 @@ class BattleRepository
             defender_total_guards: (int)($data['defender_total_guards'] ?? 0),
             defender_shield_hp: (int)($data['defender_shield_hp'] ?? 0),
             shield_damage_dealt: (int)($data['shield_damage_dealt'] ?? 0),
+            defender_workers_lost: (int)($data['defender_workers_lost'] ?? 0), // New
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null,
             is_hidden: (bool)($data['is_hidden'] ?? false)

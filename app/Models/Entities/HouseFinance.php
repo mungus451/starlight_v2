@@ -11,7 +11,8 @@ readonly class HouseFinance
     public function __construct(
         public readonly int $id,
         public readonly float $credits_taxed,
-        public readonly float $crystals_taxed
+        public readonly float $crystals_taxed,
+        public readonly float $dark_matter_taxed = 0.0
     ) {
     }
 }

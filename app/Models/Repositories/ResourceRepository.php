@@ -74,10 +74,10 @@ $stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, spies = ? WHE
 return $stmt->execute([$newCredits, $newSpies, $userId]);
 }
 
-public function updateSpyDefender(int $userId, int $newSentries): bool
+public function updateSpyDefender(int $userId, int $newSentries, int $newWorkers): bool
 {
-$stmt = $this->db->prepare("UPDATE user_resources SET sentries = ? WHERE user_id = ?");
-return $stmt->execute([$newSentries, $userId]);
+$stmt = $this->db->prepare("UPDATE user_resources SET sentries = ?, workers = ? WHERE user_id = ?");
+return $stmt->execute([$newSentries, $newWorkers, $userId]);
 }
 
 public function updateBattleAttacker(int $userId, int $newCredits, int $newSoldiers): bool
@@ -86,34 +86,70 @@ $stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, soldiers = ? 
 return $stmt->execute([$newCredits, $newSoldiers, $userId]);
 }
 
-public function updateBattleDefender(int $userId, int $newCredits, int $newGuards): bool
+public function updateBattleDefender(int $userId, int $newCredits, int $newGuards, int $newWorkers): bool
 {
-$stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, guards = ? WHERE user_id = ?");
-return $stmt->execute([$newCredits, $newGuards, $userId]);
+$stmt = $this->db->prepare("UPDATE user_resources SET credits = ?, guards = ?, workers = ? WHERE user_id = ?");
+return $stmt->execute([$newCredits, $newGuards, $newWorkers, $userId]);
 }
 
-public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool
-{
+    public function updateSoldiers(int $userId, int $newSoldiers): bool
+    {
+        $stmt = $this->db->prepare("UPDATE user_resources SET soldiers = ? WHERE user_id = ?");
+        return $stmt->execute([$newSoldiers, $userId]);
+    }
+
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool{
 $sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ?, dark_matter = dark_matter + ?, naquadah_crystals = naquadah_crystals + ?, protoform = protoform + ? WHERE user_id = ?";
 $stmt = $this->db->prepare($sql);
 return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);
 }
 
-public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null): bool
-{
-$updates = [];
-$params = [];
-if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
-if ($naquadahCrystalsChange !== null) { $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change"; $params[':naquadah_crystals_change'] = $naquadahCrystalsChange; }
-if ($darkMatterChange !== null) { $updates[] = "dark_matter = dark_matter + :dark_matter_change"; $params[':dark_matter_change'] = $darkMatterChange; }
-if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
-if (empty($updates)) return true;
-$params[':user_id'] = $userId;
-$sql = "UPDATE user_resources SET " . implode(', ', $updates) . " WHERE user_id = :user_id";
-$stmt = $this->db->prepare($sql);
-return $stmt->execute($params);
-}
+    /**
+     * Sums the count of specified unit types for all members of an alliance.
+     *
+     * @param int $allianceId
+     * @param array $unitColumns e.g. ['soldiers', 'guards']
+     * @return int
+     */
+    public function getAggregateUnitsForAlliance(int $allianceId, array $unitColumns): int
+    {
+        // Sanitize columns to prevent SQL injection (though array input is trusted from service)
+        $allowed = ['soldiers', 'guards', 'spies', 'sentries', 'workers'];
+        $cols = array_intersect($unitColumns, $allowed);
+        if (empty($cols)) return 0;
 
+        $sumExpr = implode(' + ', array_map(fn($c) => "r.$c", $cols));
+        
+        $sql = "
+            SELECT SUM($sumExpr) as total
+            FROM user_resources r
+            JOIN users u ON r.user_id = u.id
+            WHERE u.alliance_id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$allianceId]);
+        
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
+    {
+        $updates = [];
+        $params = [];
+        if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
+        if ($naquadahCrystalsChange !== null) { $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change"; $params[':naquadah_crystals_change'] = $naquadahCrystalsChange; }
+        if ($darkMatterChange !== null) { $updates[] = "dark_matter = dark_matter + :dark_matter_change"; $params[':dark_matter_change'] = $darkMatterChange; }
+        if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
+        if ($researchDataChange !== null) { $updates[] = "research_data = research_data + :research_data_change"; $params[':research_data_change'] = $researchDataChange; }
+        
+        if (empty($updates)) return true;
+        
+        $params[':user_id'] = $userId;
+        $sql = "UPDATE user_resources SET " . implode(', ', $updates) . " WHERE user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
 private function hydrate(array $data): UserResource
 {
 return new UserResource(
@@ -128,10 +164,10 @@ soldiers: (int)$data['soldiers'],
 guards: (int)$data['guards'],
 spies: (int)$data['spies'],
 sentries: (int)$data['sentries'],
-untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
-research_data: (int)($data['research_data'] ?? 0),
-dark_matter: (int)($data['dark_matter'] ?? 0),
-protoform: (float)($data['protoform'] ?? 0.0)
-);
-}
+            untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
+            research_data: (int)($data['research_data'] ?? 0),
+            dark_matter: (float)($data['dark_matter'] ?? 0.0),
+            protoform: (float)($data['protoform'] ?? 0.0)
+        );
+    }
 }

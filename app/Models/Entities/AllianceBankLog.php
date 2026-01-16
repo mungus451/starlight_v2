@@ -22,7 +22,7 @@ readonly class AllianceBankLog
         public readonly int $alliance_id,
         public readonly ?int $user_id,
         public readonly string $log_type,
-        public readonly int $amount,
+        public readonly float $amount,
         public readonly string $message,
         public readonly string $created_at,
         public readonly ?string $character_name = null

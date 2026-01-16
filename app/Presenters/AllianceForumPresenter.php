@@ -2,6 +2,7 @@
 
 namespace App\Presenters;
 
+use App\Core\Permissions;
 use DateTime;
 
 /**
@@ -17,6 +18,12 @@ class AllianceForumPresenter
      */
     public function presentIndex(array $data): array
     {
+        // 1. Format Permissions
+        $role = $data['permissions'] ?? null;
+        $data['perms'] = [
+            'can_manage_forum' => $role && $role->hasPermission(Permissions::CAN_MANAGE_FORUM)
+        ];
+
         if (!empty($data['topics'])) {
             $presentedTopics = [];
             foreach ($data['topics'] as $topic) {
@@ -44,7 +51,13 @@ class AllianceForumPresenter
      */
     public function presentTopic(array $data): array
     {
-        // Format Topic Date
+        // 1. Format Permissions
+        $canManage = $data['canManageForum'] ?? false;
+        $data['perms'] = [
+            'can_manage_forum' => $canManage
+        ];
+
+        // 2. Format Topic Date
         if (isset($data['topic'])) {
             $obj = $this->toMutable($data['topic']);
             $obj->formatted_created_at = (new DateTime($obj->created_at))->format('M d, Y');

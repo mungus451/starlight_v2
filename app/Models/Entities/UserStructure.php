@@ -35,6 +35,16 @@ readonly class UserStructure
         public readonly int $protoform_vat_level = 0,
         public readonly int $weapon_vault_level = 0,
         public readonly int $embassy_level = 0,
+        public readonly int $fusion_plant_level = 0,
+        public readonly int $orbital_trade_port_level = 0,
+        public readonly int $banking_datacenter_level = 0,
+        public readonly int $cloning_vats_level = 0,
+        public readonly int $war_college_level = 0,
+        public readonly int $mercenary_outpost_level = 0,
+        public readonly int $phase_bunker_level = 0,
+        public readonly int $ion_cannon_network_level = 0,
+        public readonly int $neural_uplink_level = 0,
+        public readonly int $subspace_scanner_level = 0,
     ) {
     }
 }

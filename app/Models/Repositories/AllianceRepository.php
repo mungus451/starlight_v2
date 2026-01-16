@@ -29,6 +29,30 @@ class AllianceRepository
     }
 
     /**
+     * Searches for alliances by name (partial match).
+     * Used for Autocomplete.
+     * 
+     * @return array Array of ['id', 'name', 'tag', 'profile_picture_url']
+     */
+    public function searchByName(string $query, int $limit = 10): array
+    {
+        $sql = "
+            SELECT id, name, tag, profile_picture_url 
+            FROM alliances 
+            WHERE name LIKE ? 
+            ORDER BY name ASC 
+            LIMIT ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $term = '%' . $query . '%';
+        $stmt->bindParam(1, $term, PDO::PARAM_STR);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Finds an alliance by its ID.
      */
     public function findById(int $id): ?Alliance
@@ -154,19 +178,67 @@ class AllianceRepository
      * (e.g., amountChange = +1000 or -500)
      *
      * @param int $allianceId
-     * @param int $amountChange The (positive or negative) amount to change the balance by.
+     * @param float $amountChange The (positive or negative) amount to change the balance by.
      * @return bool
      */
-    public function updateBankCreditsRelative(int $allianceId, int $amountChange): bool
+    public function updateBankCreditsRelative(int $allianceId, float $amountChange): bool
     {
-        $sql = "
-            UPDATE alliances 
-            SET bank_credits = GREATEST(0, CAST(bank_credits AS SIGNED) + CAST(? AS SIGNED)) 
-            WHERE id = ?
-        ";
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$amountChange, $allianceId]);
+        if ($amountChange === 0.0) {
+            return true;
+        }
+
+        // Hard Cap: 10^60 (Safe limit for DECIMAL(60,0))
+        // We use a string literal to avoid floating point imprecision at this scale
+        $safeCap = '1' . str_repeat('0', 60);
+
+        // Convert amount to string to ensure full precision
+        $amountStr = number_format($amountChange, 0, '.', '');
+
+        if ($amountChange > 0) {
+            // Addition: Cap at safe limit
+            $sql = "UPDATE alliances SET bank_credits = LEAST(:cap, bank_credits + :amount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'cap' => $safeCap, 
+                'amount' => $amountStr, 
+                'id' => $allianceId
+            ]);
+        } else {
+            // Subtraction: Prevent dropping below zero
+            // FIX: Use distinct parameter names for each placeholder to prevent PDO HY093 errors
+            $absChange = abs($amountChange);
+            $absStr = number_format($absChange, 0, '.', '');
+            
+            $sql = "UPDATE alliances SET bank_credits = IF(bank_credits < :absAmount1, 0, bank_credits - :absAmount2) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'absAmount1' => $absStr, 
+                'absAmount2' => $absStr, 
+                'id' => $allianceId
+            ]);
+        }
+    }
+
+    /**
+     * Atomically updates an alliance's energy pool.
+     * Prevents dropping below zero or exceeding the cap.
+     */
+    public function updateEnergyRelative(int $allianceId, int $amountChange): bool
+    {
+        if ($amountChange === 0) return true;
+
+        if ($amountChange > 0) {
+            // Addition: Cap at energy_cap column
+            $sql = "UPDATE alliances SET alliance_energy = LEAST(energy_cap, alliance_energy + :amount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['amount' => $amountChange, 'id' => $allianceId]);
+        } else {
+            // Subtraction: Prevent dropping below zero
+            $absAmount = abs($amountChange);
+            $sql = "UPDATE alliances SET alliance_energy = IF(alliance_energy < :absAmount, 0, alliance_energy - :absAmount) WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(['absAmount' => $absAmount, 'id' => $allianceId]);
+        }
     }
 
     /**
@@ -187,6 +259,18 @@ class AllianceRepository
     }
 
     /**
+     * Retrieves a lightweight list of ID and Name/Tag for all alliances.
+     * Used for Almanac Dropdowns.
+     * 
+     * @return array Array of ['id', 'name', 'tag']
+     */
+    public function getAllAlliancesSimple(): array
+    {
+        $stmt = $this->db->query("SELECT id, name, tag FROM alliances ORDER BY name ASC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Updates an alliance's last_compound_at timestamp.
      * Used by the TurnProcessorService after applying interest.
      *
@@ -202,22 +286,60 @@ class AllianceRepository
     }
 
     /**
+     * Updates an alliance's total net worth.
+     * Used by the TurnProcessorService after aggregating member stats.
+     *
+     * @param int $allianceId
+     * @param int $netWorth
+     * @return bool
+     */
+    public function updateNetWorth(int $allianceId, int $netWorth): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE alliances SET net_worth = ? WHERE id = ?"
+        );
+        return $stmt->execute([$netWorth, $allianceId]);
+    }
+
+    public function updateDirective(int $allianceId, string $type, int $target, int $startValue): bool
+    {
+        $sql = "
+            UPDATE alliances 
+            SET directive_type = ?, 
+                directive_target = ?, 
+                directive_start_value = ?, 
+                directive_started_at = NOW()
+            WHERE id = ?
+        ";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$type, $target, $startValue, $allianceId]);
+    }
+
+    /**
      * Helper method to convert a database row into an Alliance entity.
      */
-    private function hydrate(array $data): Alliance
+    private function hydrate(array $row): Alliance
     {
         return new Alliance(
-            id: (int)$data['id'],
-            name: $data['name'],
-            tag: $data['tag'],
-            description: $data['description'] ?? null,
-            profile_picture_url: $data['profile_picture_url'] ?? null,
-            is_joinable: (bool)$data['is_joinable'],
-            leader_id: (int)$data['leader_id'],
-            net_worth: (int)$data['net_worth'],
-            bank_credits: (int)$data['bank_credits'],
-            last_compound_at: $data['last_compound_at'] ?? null,
-            created_at: $data['created_at']
+            id: (int)$row['id'],
+            name: $row['name'],
+            tag: $row['tag'],
+            description: $row['description'] ?? null,
+            profile_picture_url: $row['profile_picture_url'] ?? null,
+            is_joinable: (bool)$row['is_joinable'],
+            leader_id: (int)$row['leader_id'],
+            net_worth: (int)$row['net_worth'],
+            bank_credits: (float)$row['bank_credits'],
+            last_compound_at: $row['last_compound_at'] ?? null,
+            created_at: $row['created_at'],
+            alliance_energy: (int)($row['alliance_energy'] ?? 0),
+            energy_cap: (int)($row['energy_cap'] ?? 10000),
+            directive_type: $row['directive_type'] ?? null,
+            directive_target: (int)($row['directive_target'] ?? 0),
+            directive_start_value: (int)($row['directive_start_value'] ?? 0),
+            directive_started_at: $row['directive_started_at'] ?? null,
+            completed_directives: json_decode($row['completed_directives'] ?? '{}', true) ?? []
         );
     }
 }

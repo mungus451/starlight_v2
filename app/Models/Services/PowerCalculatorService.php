@@ -10,11 +10,13 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\GeneralRepository;
+use App\Models\Services\EffectService;
 
 /**
  * Handles all complex game logic calculations for power, income, etc.
  * * Refactored Phase 3: Added Edict Modifiers.
  * * Phase 4: Added General Modifiers.
+ * * Phase 5: Added Effect Modifiers (High Risk Protocol).
  */
 class PowerCalculatorService
 {
@@ -24,6 +26,7 @@ class PowerCalculatorService
     private AllianceStructureDefinitionRepository $structDefRepo;
     private EdictRepository $edictRepo;
     private GeneralRepository $generalRepo;
+    private EffectService $effectService;
     private array $generalConfig;
 
     /** @var array|null Cached structure definitions keyed by structure_key */
@@ -47,7 +50,8 @@ class PowerCalculatorService
         AllianceStructureRepository $allianceStructRepo,
         AllianceStructureDefinitionRepository $structDefRepo,
         EdictRepository $edictRepo,
-        GeneralRepository $generalRepo
+        GeneralRepository $generalRepo,
+        EffectService $effectService
     ) {
         $this->config = $config;
         $this->armoryService = $armoryService;
@@ -55,6 +59,7 @@ class PowerCalculatorService
         $this->structDefRepo = $structDefRepo;
         $this->edictRepo = $edictRepo;
         $this->generalRepo = $generalRepo;
+        $this->effectService = $effectService;
         $this->generalConfig = $this->config->get('game_balance.generals', []);
     }
 
@@ -162,6 +167,13 @@ class PowerCalculatorService
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['offense_mult'];
         
+        // Void Buff Check
+        $voidBuffMultiplier = 1.0;
+        if ($this->effectService->hasActiveEffect($userId, 'void_offense_boost')) {
+            $voidBuffMultiplier = 1.10; // +10%
+            $totalMultiplier *= $voidBuffMultiplier;
+        }
+
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -175,6 +187,7 @@ class PowerCalculatorService
             'edict_bonus_pct' => $edictBonusPercent,
             'general_flat' => $genBonuses['flat_offense'],
             'general_mult' => $genBonuses['offense_mult'],
+            'void_buff_mult' => $voidBuffMultiplier,
             'structure_level' => $structures->offense_upgrade_level,
             'stat_points' => $stats->strength_points,
             'unit_count' => $soldiers,
@@ -229,6 +242,13 @@ class PowerCalculatorService
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['defense_mult'];
         
+        // Void Debuff Check
+        $voidDebuffMultiplier = 1.0;
+        if ($this->effectService->hasActiveEffect($userId, 'void_defense_penalty')) {
+            $voidDebuffMultiplier = 0.70; // -30%
+            $totalMultiplier *= $voidDebuffMultiplier;
+        }
+
         $totalPower = $totalBasePower * $totalMultiplier;
 
         return [
@@ -242,6 +262,7 @@ class PowerCalculatorService
             'edict_bonus_pct' => $edictBonusPercent,
             'general_flat' => $genBonuses['flat_defense'],
             'general_mult' => $genBonuses['defense_mult'],
+            'void_debuff_mult' => $voidDebuffMultiplier,
             'fort_level' => $structures->fortification_level,
             'def_level' => $structures->defense_upgrade_level,
             'stat_points' => $stats->constitution_points,
@@ -318,19 +339,23 @@ class PowerCalculatorService
         
         // Apply "Total Income" scalar (e.g. Scorched Earth)
         $finalIncomeScalar = 1.0 + $edictTotalIncomeMultiplier;
+
+        // High Risk Protocol Bonus (+50%)
+        if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
+            $finalIncomeScalar += 0.5;
+            $detailedBreakdown[] = [ 'label' => "High Risk Protocol", 'value' => "+50%", 'type' => 'scalar' ];
+        }
+
+        // Radiation Sickness Debuff (-20%)
+        if ($this->effectService->hasActiveEffect($userId, 'radiation_sickness')) {
+            $finalIncomeScalar -= 0.2;
+            $detailedBreakdown[] = [ 'label' => "Radiation Sickness", 'value' => "-20%", 'type' => 'scalar' ];
+        }
+
         $totalCreditIncome = (int)floor($totalCreditIncome * $finalIncomeScalar);
         
-        $detailedBreakdown = [
-            [ 'label' => "Base from Economy", 'value' => $econIncome, 'type' => 'base' ],
-            [ 'label' => "Base from Workers", 'value' => $workerIncome, 'type' => 'base' ],
-            [ 'label' => "Base from Armory", 'value' => $armoryBonus, 'type' => 'base' ],
-            [ 'label' => "Subtotal (Base)", 'value' => $baseProduction, 'type' => 'subtotal' ],
-            [ 'label' => "Wealth Bonus", 'value' => $amountFromWealth, 'type' => 'bonus' ],
-            [ 'label' => "Accounting Firm", 'value' => $amountFromAccounting, 'type' => 'bonus' ],
-            [ 'label' => "Alliance Structures", 'value' => $amountFromAlliance, 'type' => 'bonus' ],
-            [ 'label' => "Edicts", 'value' => $amountFromEdicts, 'type' => 'bonus' ],
-            [ 'label' => "Total Scalar", 'value' => ($edictTotalIncomeMultiplier * 100) . "%", 'type' => 'scalar' ]
-        ];
+        $detailedBreakdown[] = [ 'label' => "Total Scalar", 'value' => (($finalIncomeScalar - 1) * 100) . "%", 'type' => 'scalar' ];
+
 
         // 6. Interest Income
         $rawInterest = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
@@ -362,6 +387,49 @@ class PowerCalculatorService
 
         // 11. Protoform (Affected by Edict Resource Multiplier)
         $protoformIncome = $structures->protoform_vat_level * ($config['protoform_per_vat_level'] ?? 0) * $edictResourceMultiplier;
+
+        // --- NEW: FUSION PLANT BONUS ---
+        // Multiplies all "collector" outputs.
+        // Applies to: Credits (Base), Research, DM, Naquadah, Protoform.
+        $fusionLevel = $structures->fusion_plant_level ?? 0;
+        if ($fusionLevel > 0) {
+            $fusionBonusPerLevel = $config['fusion_plant_bonus_per_level'] ?? 0.005;
+            $fusionMultiplier = 1.0 + ($fusionLevel * $fusionBonusPerLevel);
+            
+            // Apply to Credits (Base Production part only, or Total? User said "output of collectors")
+            // Base Production is the output of collectors (Mines/Workers).
+            // So we scale baseProduction before it hits the additive multipliers? 
+            // Or just scale the final sum? 
+            // Scaling baseProduction effectively scales the total derived from it.
+            // Let's scale the *final* amounts for simplicity and impact.
+            
+            $totalCreditIncome = (int)floor($totalCreditIncome * $fusionMultiplier);
+            $researchDataIncome = (int)floor($researchDataIncome * $fusionMultiplier);
+            $darkMatterIncome *= $fusionMultiplier;
+            $naquadahIncome *= $fusionMultiplier;
+            $protoformIncome *= $fusionMultiplier;
+
+            $detailedBreakdown[] = [ 
+                'label' => "Fusion Plant (Lvl {$fusionLevel})", 
+                'value' => "+" . number_format(($fusionMultiplier - 1) * 100, 1) . "%", 
+                'type' => 'scalar' 
+            ];
+        }
+
+        // --- VOID BUFF: Resource Boost (+25%) ---
+        if ($this->effectService->hasActiveEffect($userId, 'void_resource_boost')) {
+            $boost = 1.25;
+            $totalCreditIncome = (int)floor($totalCreditIncome * $boost);
+            // $interestIncome usually excluded from resource boosts? User said "Resource Generation". Interest is passive. I'll include it for now to be generous.
+            $interestIncome = (int)floor($interestIncome * $boost); 
+            $totalCitizenIncome = (int)floor($totalCitizenIncome * $boost);
+            $researchDataIncome = (int)floor($researchDataIncome * $boost);
+            $darkMatterIncome *= $boost;
+            $naquadahIncome *= $boost;
+            $protoformIncome *= $boost;
+            
+            $detailedBreakdown[] = [ 'label' => "Void Resource Buff", 'value' => "+25%", 'type' => 'scalar' ];
+        }
 
         return [
             'total_credit_income' => $totalCreditIncome,
@@ -430,12 +498,24 @@ class PowerCalculatorService
         $totalBase = $base + $armory;
         $structBonus = $structures->spy_upgrade_level * $config['defense_power_per_level'];
         
+        // --- NEW: Neural Uplink Bonus ---
+        $neuralLevel = $structures->neural_uplink_level ?? 0;
+        if ($neuralLevel > 0) {
+            $neuralBonus = $neuralLevel * ($config['neural_uplink_bonus_per_level'] ?? 0.02);
+            $structBonus += $neuralBonus;
+        }
+        
         // Edict Sentry Bonus
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonus = $edictBonuses['spy_defense_percent'] ?? 0.0;
 
         $total = $totalBase * (1 + $structBonus + $edictBonus);
         
+        // Quantum Scrambler (+50%)
+        if ($this->effectService->hasActiveEffect($userId, 'quantum_scrambler')) {
+            $total = (int)ceil($total * 1.5);
+        }
+
         return [
             'total' => (int)$total,
             'base_unit_power' => (int)$base,

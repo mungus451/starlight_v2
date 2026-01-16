@@ -14,6 +14,7 @@ use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Services\EmbassyService;
+use App\Models\Services\NetWorthCalculatorService;
 use PDO;
 use Throwable;
 
@@ -37,6 +38,7 @@ class TurnProcessorService
     private ScientistRepository $scientistRepo;
     private EdictRepository $edictRepo;
     private EmbassyService $embassyService;
+    private NetWorthCalculatorService $nwCalculator;
 
     private AllianceRepository $allianceRepo;
     private AllianceBankLogRepository $bankLogRepo;
@@ -61,7 +63,8 @@ class TurnProcessorService
         GeneralRepository $generalRepo,
         ScientistRepository $scientistRepo,
         EdictRepository $edictRepo,
-        EmbassyService $embassyService
+        EmbassyService $embassyService,
+        NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
         $this->config = $config;
@@ -76,6 +79,7 @@ class TurnProcessorService
 
         $this->powerCalculatorService = $powerCalculatorService;
         $this->embassyService = $embassyService;
+        $this->nwCalculator = $nwCalculator;
 
         $this->allianceRepo = $allianceRepo;
         $this->bankLogRepo = $bankLogRepo;
@@ -177,7 +181,7 @@ class TurnProcessorService
             $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
             // 5. Calculate and apply UNIT upkeep (Generals/Scientists)
-            $generalCount = $this->generalRepo->getGeneralCount($userId);
+            $generalCount = $this->generalRepo->countByUserId($userId);
             $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
 
             $generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);
@@ -226,16 +230,9 @@ class TurnProcessorService
                     }
                 } elseif ($def->upkeep_resource === 'energy') {
                     // Energy is in user_stats
-                    // We haven't modified energy yet (only attack_turns).
-                    $currentEnergy = $stats->energy; // + regen? Energy regen isn't implemented here yet.
+                    $currentEnergy = $stats->energy;
                     if ($currentEnergy >= $cost) {
-                        // We need a method to update energy.
-                        // statsRepo->updateEnergy($userId, -$cost)?
-                        // Let's assume statsRepo has a generic update or we need to add one.
-                        // For now, I'll assume we can update it directly via SQL if needed, but let's check StatsRepo.
-                        // I'll skip implementation detail and assume we can deduct energy.
-                        // If not, I'll log a warning and skip deduction to avoid crash.
-                        // NOTE: Energy logic placeholder.
+                        $this->statsRepo->updateEnergy($userId, -1 * $cost);
                         $canAfford = true; 
                     }
                 } else {
@@ -249,7 +246,12 @@ class TurnProcessorService
                 }
             }
 
-            // 7. Commit if we own the transaction
+            // 7. Update Net Worth
+            // We calculate this after all income and expenses have been applied to get the accurate state.
+            $newNetWorth = $this->nwCalculator->calculateTotalNetWorth($userId);
+            $this->statsRepo->updateNetWorth($userId, (int)$newNetWorth);
+
+            // 8. Commit if we own the transaction
             if ($transactionStartedByMe) {
                 $this->db->commit();
             }
@@ -276,61 +278,60 @@ return false;
 }
 }
 
-/**
-* Processes turn-based interest for all alliances.
-*
-* @return int The number of alliances successfully processed.
-*/
-private function processAllAlliances(): int
-{
-$alliances = $this->allianceRepo->getAllAlliances();
-$interestRate = $this->treasuryConfig['bank_interest_rate'] ?? 0;
-$processedCount = 0;
+    /**
+     * Processes turn-based interest AND Net Worth updates for all alliances.
+     *
+     * @return int The number of alliances successfully processed.
+     */
+    private function processAllAlliances(): int
+    {
+        $alliances = $this->allianceRepo->getAllAlliances();
+        $interestRate = $this->treasuryConfig['bank_interest_rate'] ?? 0;
+        $processedCount = 0;
 
-if ($interestRate <= 0) {
-return 0; // Interest is disabled
-}
+        foreach ($alliances as $alliance) {
+            $transactionStartedByMe = false;
+            try {
+                if (!$this->db->inTransaction()) {
+                    $this->db->beginTransaction();
+                    $transactionStartedByMe = true;
+                }
 
-foreach ($alliances as $alliance) {
-// Ensure we have a valid bank balance to calculate on
-if ($alliance->bank_credits <= 0) {
-continue;
-}
+                // --- 1. Net Worth Calculation (FIX) ---
+                // Calculate total net worth of all members
+                $totalNetWorth = $this->userRepo->sumNetWorthByAllianceId($alliance->id);
+                $this->allianceRepo->updateNetWorth($alliance->id, $totalNetWorth);
 
-$interestGained = (int)floor($alliance->bank_credits * $interestRate);
+                // --- 2. Bank Interest Logic ---
+                if ($interestRate > 0 && $alliance->bank_credits > 0) {
+                    $interestGained = (int)floor($alliance->bank_credits * $interestRate);
 
-if ($interestGained > 0) {
-$transactionStartedByMe = false;
-try {
-if (!$this->db->inTransaction()) {
-$this->db->beginTransaction();
-$transactionStartedByMe = true;
-}
+                    if ($interestGained > 0) {
+                        // Add interest to bank
+                        $this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
 
-// 1. Add interest to bank
-$this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
+                        // Log the transaction
+                        $message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
+                        $this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
 
-// 2. Log the transaction
-$message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
-$this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
+                        // Update compound timestamp
+                        $this->allianceRepo->updateLastCompoundAt($alliance->id);
+                    }
+                }
 
-// 3. Update compound timestamp
-$this->allianceRepo->updateLastCompoundAt($alliance->id);
+                if ($transactionStartedByMe) {
+                    $this->db->commit();
+                }
+                $processedCount++;
 
-if ($transactionStartedByMe) {
-$this->db->commit();
-}
-$processedCount++;
+            } catch (Throwable $e) {
+                if ($transactionStartedByMe && $this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                error_log("Failed to process turn for alliance {$alliance->id}: " . $e->getMessage());
+            }
+        }
 
-} catch (Throwable $e) {
-if ($transactionStartedByMe && $this->db->inTransaction()) {
-$this->db->rollBack();
-}
-error_log("Failed to process turn for alliance {$alliance->id}: " . $e->getMessage());
-}
-}
-}
-
-return $processedCount;
-}
+        return $processedCount;
+    }
 }

@@ -1,113 +1,283 @@
 /**
  * Black Market Converter - Client-Side Logic
  *
- * This script handles the input masking and live calculation display for the
- * currency converter. It uses a modified version of the StarlightUtils logic
- * to support floating-point numbers for Naquadah Crystals.
+ * This script handles the input masking, live calculation, ghost balances,
+ * market graphs, and reactor core interactions.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
     const conversionRate = 100.0;
     const feePercentage = 0.10;
+    
+    // Store graph instances to update them later
+    const graphInstances = {};
 
-    /**
-     * A float-compatible version of StarlightUtils.unformatNumber.
-     * Removes all non-digit characters except for one decimal point.
-     * @param {string} str A formatted string, e.g., "1,000.50"
-     * @returns {string} A raw number string, e.g., "1000.50"
-     */
+    // --- Helper Functions ---
+
     function unformatFloat(str) {
         if (typeof str !== 'string' || !str) return '0';
-        // Keep digits and one decimal point
         return str.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');
     }
 
-    /**
-     * A float-compatible version of StarlightUtils.formatNumber.
-     * Formats a raw number string into a comma-separated string, preserving decimals.
-     * @param {string} numStr The number string to format.
-     * @returns {string} A formatted number string (e.g., "1,000,000.5000").
-     */
     function formatFloat(numStr) {
         if (typeof numStr !== 'string' || numStr === '') return '';
         const parts = numStr.split('.');
-        // Format the integer part
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         return parts.join('.');
     }
 
-    /**
-     * Sets up a two-way binding input mask for float values.
-     * @param {HTMLElement} displayInput The visible input field.
-     * @param {HTMLElement} hiddenInput The hidden input to store the raw value.
-     * @param {Function} onUpdate A callback function to run after the value is updated.
-     */
-    function setupFloatInputMask(displayInput, hiddenInput, onUpdate) {
-        if (!displayInput || !hiddenInput) return;
+    // --- Ghost Balance System ---
+    function updateGhostBalance(resourceType, currentAmount, changeAmount) {
+        const walletEl = document.getElementById(`wallet-${resourceType}`);
+        const ghostEl = document.getElementById(`ghost-${resourceType}`);
+        
+        if (!walletEl || !ghostEl) return;
 
-        // Set initial value from hidden input if it exists
-        if (hiddenInput.value) {
-            displayInput.value = formatFloat(hiddenInput.value);
+        const currentVal = parseFloat(walletEl.dataset.raw);
+        const futureVal = currentVal + changeAmount;
+        
+        if (changeAmount === 0) {
+            ghostEl.classList.remove('visible');
+            return;
         }
 
-        displayInput.addEventListener('input', (e) => {
-            const cursorStart = e.target.selectionStart;
-            const originalLength = e.target.value.length;
+        ghostEl.textContent = formatFloat(futureVal.toFixed(resourceType === 'credits' ? 2 : 4));
+        ghostEl.className = 'balance-ghost visible';
+        
+        if (changeAmount > 0) {
+            ghostEl.classList.add('positive');
+            ghostEl.innerHTML += ' <i class="fas fa-arrow-up"></i>';
+        } else {
+            ghostEl.classList.add('negative');
+            ghostEl.innerHTML += ' <i class="fas fa-arrow-down"></i>';
+        }
+    }
 
-            const rawValue = unformatFloat(e.target.value);
-            
-            // Update hidden source of truth
-            hiddenInput.value = rawValue || '0';
+    /**
+     * Sets up input mask + logic for Converter
+     */
+    function setupConverterInput(displayId, hiddenId, type) {
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
+        if (!display || !hidden) return;
 
-            const formattedValue = formatFloat(rawValue);
-            e.target.value = formattedValue;
-            
-            const newLength = formattedValue.length;
-            const lengthDifference = newLength - originalLength;
-            
-            if (cursorStart !== null) {
-                const newCursorPosition = Math.max(0, cursorStart + lengthDifference);
-                e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+        const updateCalc = (val) => {
+            const amount = parseFloat(val) || 0;
+            let fee, afterFee, receive, sourceRes, targetRes;
+
+            if (type === 'c2cry') {
+                fee = amount * feePercentage;
+                afterFee = amount - fee;
+                receive = afterFee / conversionRate;
+                sourceRes = 'credits';
+                targetRes = 'crystals';
+                
+                const feeEl = document.getElementById('c2cry-fee');
+                const recEl = document.getElementById('c2cry-receive');
+                if(feeEl) feeEl.textContent = formatFloat(fee.toFixed(2)) + ' Credits';
+                if(recEl) recEl.textContent = receive.toFixed(4) + ' 💎';
+
+            } else { // cry2c
+                fee = amount * feePercentage;
+                afterFee = amount - fee;
+                receive = afterFee * conversionRate;
+                sourceRes = 'crystals';
+                targetRes = 'credits';
+
+                const feeEl = document.getElementById('cry2c-fee');
+                const recEl = document.getElementById('cry2c-receive');
+                if(feeEl) feeEl.textContent = fee.toFixed(4) + ' 💎';
+                if(recEl) recEl.textContent = formatFloat(receive.toFixed(2)) + ' Credits';
             }
-            
-            // Run the calculation callback
-            if (onUpdate) {
-                onUpdate(parseFloat(rawValue) || 0);
-            }
+
+            // Update Ghosts
+            updateGhostBalance(sourceRes, 0, -amount);
+            updateGhostBalance(targetRes, 0, receive);
+        };
+
+        display.addEventListener('input', (e) => {
+            const raw = unformatFloat(e.target.value);
+            hidden.value = raw;
+            e.target.value = formatFloat(raw);
+            updateCalc(raw);
+        });
+
+        // Range Toggles
+        const toggles = document.querySelectorAll(`.btn-range[data-target="${displayId}"]`);
+        toggles.forEach(btn => {
+            btn.addEventListener('click', () => {
+                let max = 0;
+                if (type === 'c2cry') {
+                    max = parseFloat(document.getElementById('wallet-credits').dataset.raw);
+                } else {
+                    max = parseFloat(document.getElementById('wallet-crystals').dataset.raw);
+                }
+                
+                const percent = parseFloat(btn.dataset.percent);
+                const val = (max * percent).toFixed(2);
+                
+                hidden.value = val;
+                display.value = formatFloat(val);
+                updateCalc(val);
+            });
         });
     }
 
-    // --- Credits to Crystals Conversion ---
-    const creditsDisplay = document.getElementById('credits-amount-display');
-    const creditsHidden = document.getElementById('credits-amount-hidden');
-    const c2cryFeeEl = document.getElementById('c2cry-fee');
-    const c2cryAfterFeeEl = document.getElementById('c2cry-after-fee');
-    const c2cryReceiveEl = document.getElementById('c2cry-receive');
+    setupConverterInput('credits-amount-display', 'credits-amount-hidden', 'c2cry');
+    setupConverterInput('crystals-amount-display', 'crystals-amount-hidden', 'cry2c');
 
-    setupFloatInputMask(creditsDisplay, creditsHidden, (amount) => {
-        const fee = amount * feePercentage;
-        const afterFee = amount - fee;
-        const receive = afterFee / conversionRate;
 
-        c2cryFeeEl.textContent = `${formatFloat(fee.toFixed(2))} Credits`;
-        c2cryAfterFeeEl.textContent = `${formatFloat(afterFee.toFixed(2))} Credits`;
-        c2cryReceiveEl.textContent = `${receive.toFixed(4)} 💎`;
-    });
+    // --- Reactor Core Logic ---
+    function setupReactor(sliderId, displayId, hiddenId, coreId, type) {
+        const slider = document.getElementById(sliderId);
+        const display = document.getElementById(displayId);
+        const hidden = document.getElementById(hiddenId);
+        const core = document.getElementById(coreId);
+        const graphId = `graph-syn-${type}`;
+        
+        if (!slider || !display) return;
 
-    // --- Crystals to Credits Conversion ---
-    const crystalsDisplay = document.getElementById('crystals-amount-display');
-    const crystalsHidden = document.getElementById('crystals-amount-hidden');
-    const cry2cFeeEl = document.getElementById('cry2c-fee');
-    const cry2cAfterFeeEl = document.getElementById('cry2c-after-fee');
-    const cry2cReceiveEl = document.getElementById('cry2c-receive');
+        const updateReactor = (val, fromInput = false) => {
+            hidden.value = val;
+            
+            // Sync slider if update came from text input
+            if (fromInput) {
+                slider.value = val;
+            } else {
+                display.value = formatFloat(val.toString());
+            }
+            
+            // Core Animation
+            if (val > 0) {
+                core.classList.add('active');
+            } else {
+                core.classList.remove('active');
+            }
 
-    setupFloatInputMask(crystalsDisplay, crystalsHidden, (amount) => {
-        const fee = amount * feePercentage;
-        const afterFee = amount - fee;
-        const receive = afterFee * conversionRate;
+            // Update Graph Intensity based on slider percentage
+            if (graphInstances[graphId]) {
+                const max = parseFloat(slider.max) || 100;
+                const percent = Math.min(val / max, 1);
+                // Base volatility 20, max 100
+                graphInstances[graphId].updateIntensity(20 + (percent * 80));
+            }
 
-        cry2cFeeEl.textContent = `${fee.toFixed(4)} 💎`;
-        cry2cAfterFeeEl.textContent = `${afterFee.toFixed(4)} 💎`;
-        cry2cReceiveEl.textContent = `${formatFloat(receive.toFixed(2))} Credits`;
-    });
+            // Calc Output
+            let base, fee, receive;
+            if (type === 'credits') {
+                base = val / 10000;
+                // Update Ghost: Credits down, DM up
+                updateGhostBalance('credits', 0, -val);
+            } else {
+                base = val / 10;
+                updateGhostBalance('crystals', 0, -val);
+            }
+            
+            fee = base * 0.3;
+            receive = base * 0.7;
+            
+            updateGhostBalance('dm', 0, receive);
+
+            const recEl = document.getElementById(`syn-${type}-receive`);
+            const feeEl = document.getElementById(`syn-${type}-fee`);
+            
+            if(recEl) recEl.textContent = receive.toFixed(4) + ' DM';
+            if(feeEl) feeEl.textContent = fee.toFixed(4) + ' DM';
+        };
+
+        // Slider -> Input
+        slider.addEventListener('input', (e) => {
+            updateReactor(parseFloat(e.target.value));
+        });
+
+        // Input -> Slider
+        display.addEventListener('input', (e) => {
+            const raw = unformatFloat(e.target.value);
+            // Cap at max
+            let val = parseFloat(raw) || 0;
+            const max = parseFloat(slider.max);
+            if (val > max) val = max;
+
+            // Update without re-formatting the display immediately to avoid cursor jump issues
+            hidden.value = val;
+            slider.value = val;
+            
+            // Manually trigger reactor update logic but flag it came from input
+            updateReactor(val, true);
+        });
+        
+        // Format on blur
+        display.addEventListener('blur', (e) => {
+             const raw = unformatFloat(e.target.value);
+             e.target.value = formatFloat(raw);
+        });
+    }
+
+    setupReactor('slider-syn-credits', 'syn-credits-display', 'syn-credits-hidden', 'core-credits', 'credits');
+    setupReactor('slider-syn-crystals', 'syn-crystals-display', 'syn-crystals-hidden', 'core-crystals', 'crystals');
+
+
+    // --- Market Pulse Graph (Canvas) ---
+    function initMarketGraph(canvasId, color) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        let width = canvas.offsetWidth;
+        let height = canvas.offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const dataPoints = [];
+        const maxPoints = 50;
+        let y = height / 2;
+        let volatility = 20; // Default volatility
+
+        for (let i = 0; i < maxPoints; i++) dataPoints.push(y);
+
+        function draw() {
+            // Shift
+            dataPoints.shift();
+            // Jitter
+            y += (Math.random() - 0.5) * volatility;
+            y = Math.max(10, Math.min(height - 10, y));
+            dataPoints.push(y);
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.beginPath();
+            ctx.moveTo(0, dataPoints[0]);
+
+            for (let i = 1; i < maxPoints; i++) {
+                const x = (i / (maxPoints - 1)) * width;
+                ctx.lineTo(x, dataPoints[i]);
+            }
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.stroke();
+
+            // Fill area
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fillStyle = color + '33'; // Higher opacity (hex 33 is ~20%)
+            ctx.fill();
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        // Register instance for external control
+        graphInstances[canvasId] = {
+            updateIntensity: (newVol) => { volatility = newVol; }
+        };
+    }
+
+    initMarketGraph('graph-credits', '#f9c74f');
+    initMarketGraph('graph-crystals', '#00f3ff');
+    initMarketGraph('graph-syn-credits', '#bc13fe');
+    initMarketGraph('graph-syn-crystals', '#bc13fe');
+
 });

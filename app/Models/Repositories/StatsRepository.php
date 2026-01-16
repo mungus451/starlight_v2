@@ -50,6 +50,16 @@ class StatsRepository
     }
 
     /**
+     * Updates only the net worth of a user.
+     * Used by the NetWorthCalculatorService in the turn processor.
+     */
+    public function updateNetWorth(int $userId, int $newNetWorth): bool
+    {
+        $stmt = $this->db->prepare("UPDATE user_stats SET net_worth = ? WHERE user_id = ?");
+        return $stmt->execute([$newNetWorth, $userId]);
+    }
+
+    /**
      * Atomically increments battle win/loss counters.
      */
     public function incrementBattleStats(int $userId, bool $isVictory): bool
@@ -88,6 +98,14 @@ class StatsRepository
     {
         $stmt = $this->db->prepare("UPDATE user_stats SET deposit_charges = ?, last_deposit_at = NOW() WHERE user_id = ?");
         return $stmt->execute([$newCharges, $userId]);
+    }
+
+    public function updateEnergy(int $userId, int $delta): bool
+    {
+        // Prevent energy from dropping below 0 is handled by application logic usually, 
+        // but DB constraints might apply. For now, just simple arithmetic.
+        $stmt = $this->db->prepare("UPDATE user_stats SET energy = energy + ? WHERE user_id = ?");
+        return $stmt->execute([$delta, $userId]);
     }
 
     public function regenerateDepositCharges(int $userId, int $chargesToRegen): bool
@@ -133,6 +151,58 @@ class StatsRepository
         $stmt->bindParam(2, $limit, PDO::PARAM_INT);
         $stmt->bindParam(3, $offset, PDO::PARAM_INT);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Finds the user ranked immediately above the given user in net worth.
+     *
+     * @param UserStats $currentUserStats
+     * @return array|null
+     */
+    public function findRivalByNetWorth(UserStats $currentUserStats): ?array
+    {
+        $sql = "
+            SELECT u.character_name, s.net_worth
+            FROM user_stats s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.net_worth > ?
+            ORDER BY s.net_worth ASC
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$currentUserStats->net_worth]);
+        $rival = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $rival ?: null;
+    }
+
+    /**
+     * Finds viable targets for NPC aggression.
+     * Excludes the NPC itself. Prioritizes high net worth targets within a reasonable range.
+     *
+     * @param int $npcId
+     * @param int $limit
+     * @return array
+     */
+    public function findTargetsForNpc(int $npcId, int $limit = 5): array
+    {
+        // Simple logic: Find top N richest players who are not this NPC.
+        // Future enhancement: Add power range logic (e.g. +/- 50% power)
+        $sql = "
+            SELECT u.id, u.character_name, s.net_worth, r.credits, r.soldiers
+            FROM users u
+            JOIN user_stats s ON u.id = s.user_id
+            JOIN user_resources r ON u.id = r.user_id
+            WHERE u.id != ? AND u.is_npc = 0
+            ORDER BY s.net_worth DESC
+            LIMIT ?
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(1, $npcId, PDO::PARAM_INT);
+        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -214,11 +284,11 @@ class StatsRepository
             dexterity_points: (int)$data['dexterity_points'],
             charisma_points: (int)$data['charisma_points'],
             deposit_charges: (int)$data['deposit_charges'],
-            last_deposit_at: $data['last_deposit_at']
-            // Note: We don't necessarily need to hydrate the new columns into the Entity 
-            // if they are only used for leaderboards/stats display via raw arrays.
-            // But if we wanted them on the Entity, we'd add them to UserStats class definition.
-            // For now, they live in the DB and are accessed via specialized queries.
+            last_deposit_at: $data['last_deposit_at'],
+            battles_won: (int)($data['battles_won'] ?? 0),
+            battles_lost: (int)($data['battles_lost'] ?? 0),
+            spy_successes: (int)($data['spy_successes'] ?? 0),
+            spy_failures: (int)($data['spy_failures'] ?? 0)
         );
     }
 }

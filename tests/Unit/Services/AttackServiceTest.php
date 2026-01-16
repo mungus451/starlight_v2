@@ -15,10 +15,13 @@ use App\Models\Repositories\BattleRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\BountyRepository;
+use App\Models\Repositories\WarRepository;
+use App\Models\Repositories\WarBattleLogRepository;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelUpService;
 use App\Models\Services\EffectService;
+use App\Models\Services\NetWorthCalculatorService;
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
 use App\Models\Entities\UserStats;
@@ -42,11 +45,14 @@ class AttackServiceTest extends TestCase
     private AllianceRepository|Mockery\MockInterface $mockAllianceRepo;
     private AllianceBankLogRepository|Mockery\MockInterface $mockBankLogRepo;
     private BountyRepository|Mockery\MockInterface $mockBountyRepo;
+    private WarRepository|Mockery\MockInterface $mockWarRepo;
+    private WarBattleLogRepository|Mockery\MockInterface $mockWarBattleLogRepo;
     private ArmoryService|Mockery\MockInterface $mockArmoryService;
     private PowerCalculatorService|Mockery\MockInterface $mockPowerCalcService;
     private LevelUpService|Mockery\MockInterface $mockLevelUpService;
     private EventDispatcher|Mockery\MockInterface $mockDispatcher;
     private EffectService|Mockery\MockInterface $mockEffectService;
+    private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator;
 
     protected function setUp(): void
     {
@@ -62,13 +68,20 @@ class AttackServiceTest extends TestCase
         $this->mockAllianceRepo = Mockery::mock(AllianceRepository::class);
         $this->mockBankLogRepo = Mockery::mock(AllianceBankLogRepository::class);
         $this->mockBountyRepo = Mockery::mock(BountyRepository::class);
+        $this->mockWarRepo = Mockery::mock(WarRepository::class);
+        $this->mockWarBattleLogRepo = Mockery::mock(WarBattleLogRepository::class);
         $this->mockArmoryService = Mockery::mock(ArmoryService::class);
         $this->mockPowerCalcService = Mockery::mock(PowerCalculatorService::class);
         $this->mockLevelUpService = Mockery::mock(LevelUpService::class);
         $this->mockDispatcher = Mockery::mock(EventDispatcher::class);
         $this->mockEffectService = Mockery::mock(EffectService::class);
+        $this->mockNwCalculator = $this->createMock(NetWorthCalculatorService::class);
 
         $this->mockEffectService->shouldReceive('hasActiveEffect')->andReturn(false)->byDefault();
+        $this->mockEffectService->shouldReceive('getEffectDetails')->andReturn(null)->byDefault();
+
+        // Mock NW Calculator to return a default value, as specific NW logic isn't central to most AttackService tests
+        $this->mockNwCalculator->method('calculateTotalNetWorth')->willReturn(1000000.0);
 
         $this->service = new AttackService(
             $this->mockDb,
@@ -81,11 +94,14 @@ class AttackServiceTest extends TestCase
             $this->mockAllianceRepo,
             $this->mockBankLogRepo,
             $this->mockBountyRepo,
+            $this->mockWarRepo,
+            $this->mockWarBattleLogRepo,
             $this->mockArmoryService,
             $this->mockPowerCalcService,
             $this->mockLevelUpService,
             $this->mockDispatcher,
-            $this->mockEffectService
+            $this->mockEffectService,
+            $this->mockNwCalculator // New dependency, cast to type
         );
     }
 
@@ -151,21 +167,26 @@ class AttackServiceTest extends TestCase
     public function testConductAttackBlockedByPeaceShield(): void
     {
         $attackerId = 1;
-        $defenderName = 'Defender';
         $defenderId = 2;
+        $targetName = 'TargetUser';
 
-        $defender = $this->createMockUser($defenderId, $defenderName, null);
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with($defenderName)->andReturn($defender);
+        $this->mockUserRepo->shouldReceive('findByCharacterName')
+            ->with($targetName)
+            ->andReturn($this->createMockUser($defenderId, 'TargetUser', null));
 
-        $this->mockEffectService->shouldReceive('hasActiveEffect')
-            ->once()
+        // Mock Effect Details with future expiry (1 hour from now)
+        $future = (new \DateTime())->modify('+1 hour')->format('Y-m-d H:i:s');
+        $this->mockEffectService->shouldReceive('getEffectDetails')
             ->with($defenderId, 'peace_shield')
-            ->andReturn(true);
+            ->once()
+            ->andReturn(['expires_at' => $future]);
 
-        $response = $this->service->conductAttack($attackerId, $defenderName, 'plunder');
+        $response = $this->service->conductAttack($attackerId, $targetName, 'plunder');
 
         $this->assertFalse($response->isSuccess());
-        $this->assertStringContainsString('Safehouse protection', $response->message);
+        // Message should contain "1h" or "59m" roughly
+        $this->assertStringContainsString('Target is under Safehouse protection for another', $response->message);
+        $this->assertStringContainsString('Attack prevented.', $response->message);
     }
 
     public function testConductAttackCalculatesAllianceTaxesOnVictory(): void
@@ -275,7 +296,7 @@ class AttackServiceTest extends TestCase
         // We will just check that the method is called with an integer.
         $this->mockResourceRepo->shouldReceive('updateBattleDefender')
             ->once()
-            ->with($defender->id, Mockery::any(), Mockery::type('int'));
+            ->with($defender->id, Mockery::any(), Mockery::type('int'), Mockery::any()); // Added workers arg
             
         // Other mocks
         $this->mockResourceRepo->shouldReceive('updateBattleAttacker');
@@ -283,7 +304,16 @@ class AttackServiceTest extends TestCase
         $this->mockStatsRepo->shouldReceive('updateBattleDefenderStats');
         $this->mockStatsRepo->shouldReceive('incrementBattleStats');
         $this->mockLevelUpService->shouldReceive('grantExperience');
-        $this->mockBattleRepo->shouldReceive('createReport')->andReturn(999);
+        
+        $this->mockBattleRepo->shouldReceive('createReport')
+            ->with(
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), 
+                Mockery::any() // defenderWorkersLost
+            )
+            ->andReturn(999);
+            
         $this->mockDispatcher->shouldReceive('dispatch');
         $this->mockBountyRepo->shouldReceive('findActiveByTargetId')->andReturn(null);
         
@@ -354,7 +384,8 @@ class AttackServiceTest extends TestCase
                 $attackerId, $defenderId, 'plunder', 'defeat', Mockery::any(),
                 0, 0, 0, // losses and plunder
                 10, Mockery::any(), 0, 1000, 800, Mockery::any(), false,
-                1500, 1000 // shield hp and damage
+                1500, 1000, // shield hp and damage
+                Mockery::any() // defenderWorkersLost
             )->andReturn(1000);
 
         // Act
@@ -406,14 +437,23 @@ class AttackServiceTest extends TestCase
         $this->mockDb->shouldReceive('commit');
 
         $this->mockResourceRepo->shouldReceive('updateBattleAttacker');
-        $this->mockResourceRepo->shouldReceive('updateBattleDefender');
+        $this->mockResourceRepo->shouldReceive('updateBattleDefender')
+            ->with(Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any()); // 4 args
+            
         $this->mockStatsRepo->shouldReceive('updateBattleAttackerStats');
         $this->mockStatsRepo->shouldReceive('updateBattleDefenderStats');
         $this->mockStatsRepo->shouldReceive('incrementBattleStats');
         
         $this->mockLevelUpService->shouldReceive('grantExperience');
         
-        $this->mockBattleRepo->shouldReceive('createReport')->andReturn(999);
+        $this->mockBattleRepo->shouldReceive('createReport')
+             ->with(
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(),
+                Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), Mockery::any(), 
+                Mockery::any() // defenderWorkersLost
+            )
+            ->andReturn(999);
         
         $this->mockDispatcher->shouldReceive('dispatch');
 
@@ -447,7 +487,7 @@ class AttackServiceTest extends TestCase
 
     private function createMockStats(int $userId): UserStats
     {
-        return new UserStats($userId, 5, 1000, 500000, 100, 100, 50, 0, 0, 0, 0, 0, 0, 5, null);
+        return new UserStats($userId, 5, 1000, 500000, 100, 100, 50, 0, 0, 0, 0, 0, 0, 5, null, 0, 0, 0, 0);
     }
 
     private function createMockStructure(int $userId, int $naniteForgeLevel = 0, int $shieldLevel = 0): UserStructure

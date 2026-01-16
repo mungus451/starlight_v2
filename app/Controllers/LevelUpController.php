@@ -45,6 +45,7 @@ class LevelUpController extends BaseController
     {
         $userId = $this->session->get('user_id');
         $data = $this->levelUpService->getLevelUpData($userId);
+        $data['layoutMode'] = 'full';
 
         $this->render('level_up/show.php', $data + ['title' => 'Level Up']);
     }

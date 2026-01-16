@@ -45,11 +45,16 @@ class NotificationController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        $notifications = $this->notificationService->getRecentNotifications($userId, 50);
+        // Get page number from query string, default to 1
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 20; // Items per page
+        
+        $data = $this->notificationService->getPaginatedNotifications($userId, $page, $perPage);
 
         $this->render('notifications/index.php', [
             'title' => 'Command Uplink',
-            'notifications' => $notifications
+            'notifications' => $data['notifications'],
+            'pagination' => $data['pagination']
         ]);
     }
 
@@ -124,5 +129,29 @@ class NotificationController extends BaseController
         } else {
             $this->jsonResponse(['success' => false, 'error' => $response->message]);
         }
+    }
+
+    /**
+     * API Endpoint to get user notification preferences.
+     * Route: GET /notifications/preferences
+     */
+    public function getPreferences(): void
+    {
+        $userId = $this->session->get('user_id');
+        
+        if (!$userId) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $preferences = $this->notificationService->getPreferences($userId);
+
+        $this->jsonResponse([
+            'attack_enabled' => $preferences->attack_enabled,
+            'spy_enabled' => $preferences->spy_enabled,
+            'alliance_enabled' => $preferences->alliance_enabled,
+            'system_enabled' => $preferences->system_enabled,
+            'push_notifications_enabled' => $preferences->push_notifications_enabled
+        ]);
     }
 }
