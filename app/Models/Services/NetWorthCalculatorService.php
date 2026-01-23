@@ -30,8 +30,6 @@ class NetWorthCalculatorService
     private UserRepository $userRepo;
 
     // Valuation Weights for Resources
-    private const WEIGHT_CRYSTAL = 1000;
-    private const WEIGHT_DARK_MATTER = 10000;
     private const WEIGHT_PROTOFORM = 500;
     private const WEIGHT_CITIZEN = 10;
     private const HOURS_PROJECTION = 24;
@@ -120,27 +118,6 @@ class NetWorthCalculatorService
                 $value = $baseCost * ( (pow($multiplier, $level) - 1) / ($multiplier - 1) );
             }
             
-            // Add crystal/dark matter costs if any
-            if (isset($def['base_crystal_cost'])) {
-                $baseCrys = $def['base_crystal_cost'];
-                if ($multiplier == 1) {
-                    $crysValue = $baseCrys * $level;
-                } else {
-                    $crysValue = $baseCrys * ( (pow($multiplier, $level) - 1) / ($multiplier - 1) );
-                }
-                $value += $crysValue * self::WEIGHT_CRYSTAL;
-            }
-
-            if (isset($def['base_dark_matter_cost'])) {
-                $baseDM = $def['base_dark_matter_cost'];
-                 if ($multiplier == 1) {
-                    $dmValue = $baseDM * $level;
-                } else {
-                    $dmValue = $baseDM * ( (pow($multiplier, $level) - 1) / ($multiplier - 1) );
-                }
-                $value += $dmValue * self::WEIGHT_DARK_MATTER;
-            }
-            
             $totalValue += (int)$value;
         }
 
@@ -200,18 +177,8 @@ class NetWorthCalculatorService
             foreach ($unitData['categories'] ?? [] as $catData) {
                 foreach ($catData['items'] ?? [] as $itemKey => $itemData) {
                     // Only count Credit cost for now as per "Item Cost" spec?
-                    // Or should we weigh crystals?
                     // Proposal said "Total Credit Cost".
                     $cost = $itemData['cost'] ?? 0;
-                    
-                    // Add Crystal value? 
-                    if (isset($itemData['cost_crystals'])) {
-                        $cost += $itemData['cost_crystals'] * self::WEIGHT_CRYSTAL;
-                    }
-                    // Add Dark Matter value?
-                    if (isset($itemData['cost_dark_matter'])) {
-                        $cost += $itemData['cost_dark_matter'] * self::WEIGHT_DARK_MATTER;
-                    }
                     
                     $itemCosts[$itemKey] = $cost;
                 }
@@ -237,9 +204,7 @@ class NetWorthCalculatorService
         
         $score = 0;
         $score += $income['total_credit_income'];
-        $score += $income['dark_matter_income'] * self::WEIGHT_DARK_MATTER;
         $score += $income['protoform_income'] * self::WEIGHT_PROTOFORM;
-        $score += $income['naquadah_income'] * self::WEIGHT_CRYSTAL; // Using Crystal Weight
         $score += $income['total_citizens'] * self::WEIGHT_CITIZEN;
         
         // Project to 24 hours (96 turns)
