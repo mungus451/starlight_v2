@@ -111,7 +111,6 @@ class SpyReportPresenter
             'soldiers_seen' => $report->soldiers_seen,
             'guards_seen' => $report->guards_seen,
             'sentries_seen' => $report->sentries_seen,
-            'fortification_level_seen' => $report->fortification_level_seen,
             'armory_level_seen' => $report->armory_level_seen,
         ];
     }

@@ -24,34 +24,6 @@ return [
     // --- Phase 5 ---
     'structures' => [
         // Structure costs are calculated as: base_cost * (multiplier ^ (level - 1))
-        'fortification' => [
-            'name' => 'Fortification',
-            'base_cost' => 3400,
-            'multiplier' => 1.54,
-            'category' => 'Defense',
-            'description' => 'Increases the base power of your Guards and overall structural integrity.'
-        ],
-        'offense_upgrade' => [
-            'name' => 'Offense Upgrade',
-            'base_cost' => 5600,
-            'multiplier' => 1.51,
-            'category' => 'Offense',
-            'description' => 'Increases the base power of your Soldiers in offensive operations.'
-        ],
-        'defense_upgrade' => [
-            'name' => 'Defense Upgrade',
-            'base_cost' => 5500,
-            'multiplier' => 1.53,
-            'category' => 'Defense',
-            'description' => 'Increases the effectiveness of your Guards and Fortifications on defense.'
-        ],
-        'spy_upgrade' => [
-            'name' => 'Spy Upgrade',
-            'base_cost' => 3500,
-            'multiplier' => 1.49,
-            'category' => 'Intel',
-            'description' => 'Improves spy success rates and counter-espionage capabilities.'
-        ],
         'economy_upgrade' => [
             'name' => 'Economy Upgrade',
             'base_cost' => 2000,
@@ -73,40 +45,6 @@ return [
             'category' => 'Offense',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
-        'accounting_firm' => [
-            'name' => 'Accounting Firm',
-            'base_cost' => 1000, 
-            'base_crystal_cost' => 250, 
-            'multiplier' => 1.47, 
-            'category' => 'Economy',
-            'description' => 'Increases passive credit income by 1% per level.'
-        ],
-        
-        // --- Age of Ascension Structures ---
-        'quantum_research_lab' => [
-            'name' => 'Quantum Research Lab',
-            'base_cost' => 5000,
-            'base_crystal_cost' => 50,
-            'multiplier' => 1.7,
-            'category' => 'Intel',
-            'description' => 'Generates Research Data each turn, unlocking powerful Doctrines.'
-        ],
-        'nanite_forge' => [
-            'name' => 'Nanite Forge',
-            'base_cost' => 7500000,
-            'base_crystal_cost' => 20000,
-            'multiplier' => 1.48,
-            'category' => 'Military',
-            'description' => 'Reduces casualties in winning battles, making your armies more efficient.'
-        ],
-        'dark_matter_siphon' => [
-            'name' => 'Dark Matter Siphon',
-            'base_cost' => 25000,
-            'base_crystal_cost' => 100,
-            'multiplier' => 1.47,
-            'category' => 'Advanced Industry',
-            'description' => 'Generates rare Dark Matter used for constructing superstructures and advanced weaponry.'
-        ],
         'planetary_shield' => [
             'name' => 'Planetary Shield',
             'base_cost' => 50000,
@@ -114,84 +52,6 @@ return [
             'multiplier' => 1.15,
             'category' => 'Super Defense',
             'description' => 'Creates a powerful shield that must be depleted before your assets can be plundered.'
-        ],
-        'naquadah_mining_complex' => [
-            'name' => 'Naquadah Mining Complex',
-            'base_cost' => 10000,
-            'base_dark_matter_cost' => 1,
-            'multiplier' => 1.47,
-            'category' => 'Advanced Industry',
-            'description' => 'Generates Naquadah Crystals each turn.'
-        ],
-        'protoform_vat' => [
-            'name' => 'Protoform Vat',
-            'base_cost' => 10000,
-            'base_crystal_cost' => 200,
-            'multiplier' => 1.9,
-            'category' => 'Advanced Industry',
-            'description' => 'Cultivates Protoform, a biological resource required for elite units.'
-        ],
-        'weapon_vault' => [
-            'name' => 'Weapon Vault',
-            'base_cost' => 25000,
-            'base_crystal_cost' => 500,
-            'multiplier' => 2.1,
-            'category' => 'Military',
-            'description' => 'Allows the construction of advanced weapons and armor for your Generals.'
-        ],
-        'embassy' => [
-            'name' => 'Embassy',
-            'base_cost' => 100000,
-            'base_crystal_cost' => 2000,
-            'multiplier' => 2.5,
-            'category' => 'Intel',
-            'description' => 'Unlocks strategic Doctrines that provide powerful, empire-wide bonuses.'
-        ],
-
-        // --- NEW EXPANSION STRUCTURES ---
-        
-        // ECONOMY
-        'fusion_plant' => [
-            'name' => 'Fusion Plant',
-            'base_cost' => 50000,
-            'base_crystal_cost' => 500,
-            'multiplier' => 1.55,
-            'category' => 'Economy',
-            'description' => 'Multiplies the output of all resource collectors by 0.5% per level.'
-        ],
-        'orbital_trade_port' => [
-            'name' => 'Orbital Trade Port',
-            'base_cost' => 75000,
-            'base_crystal_cost' => 1000,
-            'multiplier' => 1.6,
-            'category' => 'Economy',
-            'description' => 'Reduces the Crystal cost of Black Market items.'
-        ],
-        'banking_datacenter' => [
-            'name' => 'Banking Datacenter',
-            'base_cost' => 25000,
-            'base_crystal_cost' => 250,
-            'multiplier' => 1.5,
-            'category' => 'Economy',
-            'description' => 'Accelerates the regeneration of Bank Deposit Charges.'
-        ],
-
-        // MILITARY
-        'cloning_vats' => [
-            'name' => 'Cloning Vats',
-            'base_cost' => 40000,
-            'base_crystal_cost' => 400,
-            'multiplier' => 1.52,
-            'category' => 'Military',
-            'description' => 'Reduces the Credit cost of training Soldiers and Guards.'
-        ],
-        'war_college' => [
-            'name' => 'War College',
-            'base_cost' => 60000,
-            'base_crystal_cost' => 600,
-            'multiplier' => 1.58,
-            'category' => 'Military',
-            'description' => 'Increases the XP gained by your Commander from battles.'
         ],
         'mercenary_outpost' => [
             'name' => 'Mercenary Outpost',
@@ -201,26 +61,6 @@ return [
             'category' => 'Military',
             'description' => 'Allows for the instant emergency drafting of units using Dark Matter.'
         ],
-
-        // DEFENSE
-        'phase_bunker' => [
-            'name' => 'Phase Bunker',
-            'base_cost' => 30000,
-            'base_crystal_cost' => 300,
-            'multiplier' => 1.53,
-            'category' => 'Defense',
-            'description' => 'Protects a percentage of unbanked resources from plunder.'
-        ],
-        'ion_cannon_network' => [
-            'name' => 'Ion Cannon Network',
-            'base_cost' => 80000,
-            'base_crystal_cost' => 800,
-            'multiplier' => 1.62,
-            'category' => 'Defense',
-            'description' => 'Deals pre-battle damage to attacking fleets.'
-        ],
-
-        // INTEL
         'neural_uplink' => [
             'name' => 'Neural Uplink',
             'base_cost' => 35000,

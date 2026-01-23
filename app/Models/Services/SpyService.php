@@ -241,10 +241,6 @@ class SpyService
         $intel_guards = $isSuccess ? $defenderResources->guards : null;
         $intel_spies = $isSuccess ? $defenderResources->spies : null;
         $intel_sentries = $isSuccess ? $defenderResources->sentries : null;
-        $intel_fortLevel = $isSuccess ? $defenderStructures->fortification_level : null;
-        $intel_offenseLevel = $isSuccess ? $defenderStructures->offense_upgrade_level : null;
-        $intel_defenseLevel = $isSuccess ? $defenderStructures->defense_upgrade_level : null;
-        $intel_spyLevel = $isSuccess ? $defenderStructures->spy_upgrade_level : null;
         $intel_econLevel = $isSuccess ? $defenderStructures->economy_upgrade_level : null;
         $intel_popLevel = $isSuccess ? $defenderStructures->population_level : null;
         $intel_armoryLevel = $isSuccess ? $defenderStructures->armory_level : null;
@@ -260,7 +256,7 @@ class SpyService
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
             $stolen_naquadah, $stolen_dark_matter, $stolen_protoform, $workerCasualties,
             $intel_credits, $intel_naquadah, $intel_dark_matter, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-            $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
+            $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
         ) {
             // Deduct turns, NOT credits
@@ -291,7 +287,7 @@ class SpyService
                 $defenderTotalSentriesSnapshot,
                 $intel_credits, 
                 $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-                $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
+                $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
                 $stolen_naquadah, $stolen_dark_matter, $intel_naquadah, $intel_dark_matter,
                 $stolen_protoform, $intel_protoform,
                 $workerCasualties // New Param

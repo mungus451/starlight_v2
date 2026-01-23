@@ -195,7 +195,6 @@
                         <ul>
                             <li><span>Base Soldier Power</span> <span><?= number_format($offenseBreakdown['base_unit_power']) ?></span></li>
                             <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($offenseBreakdown['armory_bonus']) ?></span></li>
-                            <li><span>Offense Lvl <?= $offenseBreakdown['structure_level'] ?> Bonus</span> <span>+ <?= $offenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
                             <li><span>Strength (<?= $offenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $offenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
                             
                             <!-- Alliance Offense Bonus -->
@@ -211,7 +210,6 @@
                         <ul>
                             <li><span>Base Guard Power</span> <span><?= number_format($defenseBreakdown['base_unit_power']) ?></span></li>
                             <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format($defenseBreakdown['armory_bonus']) ?></span></li>
-                            <li><span>Structure (Fort <?= $defenseBreakdown['fort_level'] ?> + Def <?= $defenseBreakdown['def_level'] ?>)</span> <span>+ <?= $defenseBreakdown['structure_bonus_pct'] * 100 ?>%</span></li>
                             <li><span>Constitution (<?= $defenseBreakdown['stat_points'] ?> pts) Bonus</span> <span>+ <?= $defenseBreakdown['stat_bonus_pct'] * 100 ?>%</span></li>
                             
                             <!-- Alliance Defense Bonus -->
@@ -288,18 +286,9 @@
                         <a href="/structures" class="card-toggle">Upgrade</a>
                     </div>
                     <ul class="card-stats-list">
-                        <li><span>Fortification</span> <span>Lvl <?= $structures->fortification_level ?></span></li>
-                        <li><span>Offense Upgrade</span> <span>Lvl <?= $structures->offense_upgrade_level ?></span></li>
-                        <li><span>Defense Upgrade</span> <span>Lvl <?= $structures->defense_upgrade_level ?></span></li>
-                        <li><span>Spy Upgrade</span> <span>Lvl <?= $structures->spy_upgrade_level ?></span></li>
                         <li><span>Economy</span> <span>Lvl <?= $structures->economy_upgrade_level ?></span></li>
                         <li><span>Population</span> <span>Lvl <?= $structures->population_level ?></span></li>
                         <li><span>Armory</span> <span>Lvl <?= $structures->armory_level ?></span></li>
-                        <!-- NEW: Phase 1 Structures -->
-                        <li><span>Quantum Research Lab</span> <span>Lvl <?= $structures->quantum_research_lab_level ?></span></li>
-                        <li><span>Nanite Forge</span> <span>Lvl <?= $structures->nanite_forge_level ?></span></li>
-                        <!-- NEW: Phase 2 Structures -->
-                        <li><span>Dark Matter Siphon</span> <span>Lvl <?= $structures->dark_matter_siphon_level ?></span></li>
                         <li><span>Planetary Shield</span> <span>Lvl <?= $structures->planetary_shield_level ?></span></li>
                     </ul>
                 </div>

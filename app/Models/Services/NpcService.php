@@ -138,25 +138,25 @@ class NpcService
         return match ($mode) {
             0 => [ // The Warlord
                 'type' => 'Warlord',
-                'priorities' => ['offense_upgrade' => 50, 'fortification' => 20, 'armory' => 30, 'spy_upgrade' => 10, 'economy_upgrade' => 5],
+                'priorities' => ['armory' => 50, 'economy_upgrade' => 5],
                 'training_ratios' => ['workers' => 0.20, 'soldiers' => 0.60, 'guards' => 0.10, 'spies' => 0.10],
                 'aggression_chance' => 70,
             ],
             1 => [ // The Banker (Industrialist)
                 'type' => 'Banker',
-                'priorities' => ['economy_upgrade' => 60, 'population' => 20, 'defense_upgrade' => 20, 'accounting_firm' => 30],
+                'priorities' => ['economy_upgrade' => 60, 'population' => 20],
                 'training_ratios' => ['workers' => 0.70, 'soldiers' => 0.10, 'guards' => 0.20, 'spies' => 0.0],
                 'aggression_chance' => 5,
             ],
             2 => [ // The Turtle (Sentinel)
                 'type' => 'Turtle',
-                'priorities' => ['defense_upgrade' => 40, 'fortification' => 40, 'spy_upgrade' => 20],
+                'priorities' => ['planetary_shield' => 80],
                 'training_ratios' => ['workers' => 0.30, 'soldiers' => 0.0, 'guards' => 0.50, 'spies' => 0.10, 'sentries' => 0.10],
                 'aggression_chance' => 0,
             ],
             default => [ // Balanced Fallback
                 'type' => 'Balanced',
-                'priorities' => ['economy_upgrade' => 30, 'offense_upgrade' => 30, 'defense_upgrade' => 30],
+                'priorities' => ['economy_upgrade' => 50, 'population' => 50],
                 'training_ratios' => ['workers' => 0.33, 'soldiers' => 0.33, 'guards' => 0.33],
                 'aggression_chance' => 30,
             ]
@@ -399,18 +399,10 @@ class NpcService
         );
 
         $enemyStruct = new UserStructure(
-            id: 0, user_id: 0,
+            user_id: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            water_recycling_plant_level: 0,
-            co2_scrubber_level: 0,
-            offense_upgrade_level: $report->offense_upgrade_level_seen ?? 0,
-            defense_upgrade_level: $report->defense_upgrade_level_seen ?? 0,
-            fortification_level: $report->fortification_level_seen ?? 0,
-            spy_upgrade_level: $report->spy_upgrade_level_seen ?? 0,
-            armory_level: $report->armory_level_seen ?? 0,
-            accounting_firm_level: 0,
-            created_at: 'now', updated_at: 'now'
+            armory_level: $report->armory_level_seen ?? 0
         );
         
         $enemyStats = new UserStats(

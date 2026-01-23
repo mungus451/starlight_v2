@@ -56,7 +56,6 @@
             <div class="mobile-card-header"><h3><i class="fas fa-city"></i> Infrastructure</h3></div>
             <div class="mobile-card-content" style="display: block;">
                 <ul class="mobile-stats-list">
-                    <li><span>Fortification</span> <strong>Lvl <?= $report['fortification_level_seen'] ?? '?' ?></strong></li>
                     <li><span>Armory</span> <strong>Lvl <?= $report['armory_level_seen'] ?? '?' ?></strong></li>
                 </ul>
             </div>

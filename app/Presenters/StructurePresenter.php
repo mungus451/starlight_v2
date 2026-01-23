@@ -138,106 +138,16 @@ class StructurePresenter
                 $val = $turnConfig['citizen_growth_per_pop_level'] ?? 0;
                 return "+ " . number_format($val) . " Citizens / Turn";
             
-            case 'offense_upgrade':
-                $val = ($attackConfig['power_per_offense_level'] ?? 0) * 100;
-                return "+ " . $val . "% Soldier Power";
-            
-            case 'fortification':
-                $val = ($attackConfig['power_per_fortification_level'] ?? 0) * 100;
-                return "+ " . $val . "% Guard Power";
-            
-            case 'defense_upgrade':
-                $val = ($attackConfig['power_per_defense_level'] ?? 0) * 100;
-                return "+ " . $val . "% Defense Power";
-            
-            case 'spy_upgrade':
-                $val = ($spyConfig['offense_power_per_level'] ?? 0) * 100;
-                return "+ " . $val . "% Spy/Sentry Power";
-            
             case 'armory':
                 return "Unlocks & Upgrades Item Tiers";
-
-            case 'accounting_firm':
-                if ($currentLevel === 0) {
-                    return "Base 1% + 5% compounding Income Bonus / level";
-                }
-                $base = $turnConfig['accounting_firm_base_bonus'] ?? 0.01;
-                $mult = $turnConfig['accounting_firm_multiplier'] ?? 1.0;
-                
-                $currentBonus = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
-                $nextBonus = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
-                
-                return "Bonus: " . number_format($currentBonus * 100, 2) . "% (Next: " . number_format($nextBonus * 100, 2) . "%)";
-            
-            case 'quantum_research_lab':
-                $val = $turnConfig['research_data_per_lab_level'] ?? 0;
-                return "+ " . number_format($val) . " Research Data / Turn";
-
-            case 'nanite_forge':
-                $val = ($attackConfig['nanite_casualty_reduction_per_level'] ?? 0) * 100;
-                return "- " . $val . "% Casualties in Winning Battles";
-
-            case 'dark_matter_siphon':
-                if ($currentLevel === 0) {
-                    return "Base 0.5 + 2% compounding Dark Matter / level";
-                }
-                $base = $turnConfig['dark_matter_per_siphon_level'] ?? 0;
-                $mult = $turnConfig['dark_matter_production_multiplier'] ?? 1.0;
-                
-                $currentOutput = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
-                $nextOutput = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
-                
-                return "Output: " . number_format($currentOutput, 2) . " / Turn (Next: " . number_format($nextOutput, 2) . ")";
 
             case 'planetary_shield':
                 $val = $attackConfig['shield_hp_per_level'] ?? 0;
                 return "+ " . number_format($val) . " Shield HP";
 
-            case 'naquadah_mining_complex':
-                if ($currentLevel === 0) {
-                    return "Base 10 + 1% compounding Naquadah / level";
-                }
-                $base = $turnConfig['naquadah_per_mining_complex_level'] ?? 0;
-                $mult = $turnConfig['naquadah_production_multiplier'] ?? 1.0;
-                $currentOutput = $base * $currentLevel * pow($mult, max(0, $currentLevel - 1));
-                $nextOutput = $base * ($currentLevel + 1) * pow($mult, $currentLevel);
-                return "Output: " . number_format($currentOutput, 2) . " / Turn (Next: " . number_format($nextOutput, 2) . ")";
-
             // --- NEW EXPANSION STRUCTURES ---
-            case 'fusion_plant':
-                // 0.5% per level
-                $val = ($turnConfig['fusion_plant_bonus_per_level'] ?? 0.005) * 100;
-                return "+ " . number_format($val, 1) . "% Global Production";
-
-            case 'orbital_trade_port':
-                // 0.5% per level
-                return "- 0.5% Black Market Crystal Costs";
-
-            case 'banking_datacenter':
-                // 10 mins per level
-                return "- 10 Minutes Deposit Regen Time";
-
-            case 'cloning_vats':
-                // 1% per level
-                return "- 1% Unit Training Cost (Credits)";
-
-            case 'war_college':
-                // 2% per level
-                $val = ($attackConfig['war_college_xp_bonus_per_level'] ?? 0.02) * 100;
-                return "+ " . number_format($val, 0) . "% Commander XP Gain";
-
             case 'mercenary_outpost':
                 return "Unlocks Emergency Draft (Use Dark Matter)";
-
-            case 'phase_bunker':
-                // 0.5% per level
-                $val = ($attackConfig['phase_bunker_protection_per_level'] ?? 0.005) * 100;
-                return "+ " . number_format($val, 1) . "% Resource Protection";
-
-            case 'ion_cannon_network':
-                // 0.1% per level
-                $val = ($attackConfig['ion_cannon_damage_per_level'] ?? 0.001) * 100;
-                return "Eliminates " . number_format($val, 1) . "% of Attackers Pre-Battle";
 
             case 'neural_uplink':
                 // 2% per level

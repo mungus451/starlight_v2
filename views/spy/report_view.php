@@ -97,8 +97,7 @@
                         <?php endif; ?>
                         <li><span>Soldiers</span> <span><?= number_format($report['soldiers_seen']) ?></span></li>
                         <li><span>Guards</span> <span><?= number_format($report['guards_seen']) ?></span></li>
-                        <li><span>Sentries</span> <span><?= number_format($report['sentries_seen']) ?></span></li>
-                        <li><span>Fortification</span> <span>Lvl <?= number_format($report['fortification_level_seen']) ?></span></li>
+                        <li><span>Sentries</span> <span>Lvl <?= number_format($report['sentries_seen']) ?></span></li>
                         <li><span>Armory</span> <span>Lvl <?= number_format($report['armory_level_seen']) ?></span></li>
                     </ul>
                 <?php else: ?>
