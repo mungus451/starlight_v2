@@ -24,8 +24,6 @@ class DashboardPresenter
         }
 
         // 2. Format Resources (Optional but cleaner)
-        $data['formatted_naquadah_crystals'] = $this->abbreviateNumber($data['naquadah_crystals'] ?? 0);
-        $data['formatted_naquadah_per_turn'] = $this->abbreviateNumber($data['naquadah_per_turn'] ?? 0);        
         $data['formatted_net_worth'] = $this->abbreviateNumber($data['net_worth'] ?? 0);
         return $data;
         }
