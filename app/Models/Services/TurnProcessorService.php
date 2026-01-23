@@ -157,7 +157,7 @@ class TurnProcessorService
             );
 
             $creditsGained = $incomeBreakdown['total_credit_income'];
-            $interestGained = $incomeBreakdown['interest'];
+            $interestGained = 0; // Interest has been removed
             $citizensGained = $incomeBreakdown['total_citizens'];
             $researchDataIncome = $incomeBreakdown['research_data_income'];
             $darkMatterIncome = $incomeBreakdown['dark_matter_income'];
@@ -218,7 +218,7 @@ class TurnProcessorService
                     // Let's do a quick fetch of the column we need.
                     
                     // Optimization: We know starting balance + gain.
-                    $currentCredits = $resources->credits + $creditsGained + $interestGained; 
+                    $currentCredits = $resources->credits + $creditsGained; 
                     // Note: This ignores unit upkeep we just paid? 
                     // No, unit upkeep is protoform.
                     // If unit upkeep was credits, we'd need to subtract.
@@ -303,21 +303,7 @@ return false;
                 $this->allianceRepo->updateNetWorth($alliance->id, $totalNetWorth);
 
                 // --- 2. Bank Interest Logic ---
-                if ($interestRate > 0 && $alliance->bank_credits > 0) {
-                    $interestGained = (int)floor($alliance->bank_credits * $interestRate);
-
-                    if ($interestGained > 0) {
-                        // Add interest to bank
-                        $this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
-
-                        // Log the transaction
-                        $message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
-                        $this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
-
-                        // Update compound timestamp
-                        $this->allianceRepo->updateLastCompoundAt($alliance->id);
-                    }
-                }
+                // Interest has been removed from the game.
 
                 if ($transactionStartedByMe) {
                     $this->db->commit();

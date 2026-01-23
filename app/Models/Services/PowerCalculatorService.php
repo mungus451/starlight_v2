@@ -357,9 +357,8 @@ class PowerCalculatorService
         $detailedBreakdown[] = [ 'label' => "Total Scalar", 'value' => (($finalIncomeScalar - 1) * 100) . "%", 'type' => 'scalar' ];
 
 
-        // 6. Interest Income
-        $rawInterest = (int)floor($resources->banked_credits * $config['bank_interest_rate']);
-        $interestIncome = (int)floor($rawInterest * $edictInterestMultiplier);
+        // 6. Interest Income (REMOVED)
+        $interestIncome = 0;
         
         // 7. Citizen Income
         $baseCitizenIncome = $structures->population_level * $config['citizen_growth_per_pop_level'];
@@ -433,7 +432,7 @@ class PowerCalculatorService
 
         return [
             'total_credit_income' => $totalCreditIncome,
-            'interest' => $interestIncome,
+            'interest' => 0,
             'total_citizens' => $totalCitizenIncome,
             'research_data_income' => $researchDataIncome,
             'dark_matter_income' => $darkMatterIncome,

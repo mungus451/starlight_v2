@@ -65,10 +65,6 @@
             <span class="value-green value-total">+ <?= number_format($incomeBreakdown['total_credit_income']) ?></span>
         </li>
         <li>
-            <span>Bank Interest / Turn</span>
-            <span class="value-green value-total">+ <?= number_format($incomeBreakdown['interest']) ?></span>
-        </li>
-        <li>
             <span>Credits on Hand</span>
             <span><?= number_format($resources->credits) ?></span>
         </li>
@@ -117,14 +113,6 @@
                                                                 <?php endif; ?>
                                                             </li>
                                                         <?php endforeach; ?>
-                                                    </ul>
-                                                    <br>
-                                                    <strong>Total Interest Income: + <?= number_format($incomeBreakdown['interest']) ?></strong>
-                                                    <ul>
-                                                        <li>
-                                                            <span>Interest (<?= $incomeBreakdown['interest_rate_pct'] * 100 ?>% of <?= number_format($incomeBreakdown['banked_credits']) ?>)</span>
-                                                            <span>+ <?= number_format($incomeBreakdown['interest']) ?></span>
-                                                        </li>
                                                     </ul>
                                                     <br>
                                                     <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens']) ?></strong>
