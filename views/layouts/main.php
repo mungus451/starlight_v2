@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
     <link rel="stylesheet" href="/css/alliance_uplink.css?v=<?= time() ?>">
 </head>
-<body class="<?= isset($allianceContext) ? 'has-uplink' : '' ?>">
+<body class="">
 
 <?php if ($this->session->get('is_mobile')): ?>
 
@@ -42,7 +42,6 @@
                 <a href="#"><i class="fas fa-city"></i> Empire <i class="fas fa-chevron-down submenu-indicator"></i></a>
                 <ul class="submenu">
                     <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
-                    <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li>
                     <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
                     <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
                     <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
@@ -124,7 +123,6 @@
                 <li class="nav-item">
                     <span class="nav-link"><i class="fas fa-city"></i> Empire <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
-                        <li><a href="/embassy"><i class="fas fa-landmark"></i> Embassy</a></li>
                         <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
                         <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
                         <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
@@ -232,194 +230,6 @@
 <?php endif; ?>
 
 <div class="advisor-layout-grid">
-
-    <?php if (isset($allianceContext) && !$this->session->get('is_mobile')): ?>
-        <!--
-         ** Alliance Sidebar (`<aside class="alliance-uplink" id="alliance-uplink-panel">`) **
-         * Notes: This sidebar is displayed **only on desktop** (`!$this->session->get('is_mobile')`) and when `isset($allianceContext)` is true. It includes various alliance-related information such as treasury, DEFCON status, war status, objectives, active operations, merit badges, intelligence feed, and quick actions. It also contains an inline JavaScript snippet (lines 273-297) for a war timer.
-        -->
-        <aside class="alliance-uplink" id="alliance-uplink-panel">
-            <button class="uplink-toggle-btn" id="uplink-toggle" title="Toggle Sidebar">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-
-            <!-- Header -->
-            <div class="uplink-header">
-                <div class="uplink-content-wrapper">
-                    <span class="uplink-status">SECURE CHANNEL // ESTABLISHED</span>
-                    <?php if ($allianceContext['avatar']): ?>
-                        <img src="/serve/alliance_avatar/<?= htmlspecialchars($allianceContext['avatar']) ?>" class="uplink-avatar">
-                    <?php else: ?>
-                        <div class="uplink-avatar" style="background: #000; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto;">
-                            <i class="fas fa-users fa-2x" style="color: var(--uplink-dim);"></i>
-                        </div>
-                    <?php endif; ?>
-                    <h3 class="uplink-name"><?= htmlspecialchars($allianceContext['name']) ?></h3>
-                    <div class="uplink-treasury">
-                        <i class="fas fa-university"></i> <?= number_format($allianceContext['treasury']) ?> Cr
-                    </div>
-                    <div style="margin-top: 10px; margin-bottom: 10px; font-size: 0.8rem; color: <?= $allianceContext['defcon'] <= 2 ? 'var(--uplink-alert)' : 'var(--uplink-accent)' ?>;">
-                        DEFCON <?= $allianceContext['defcon'] ?>
-                    </div>
-                    <!-- Quick Actions Buttons -->
-                    <div class="uplink-actions">
-                        <a href="/alliance/profile/<?= $allianceContext['id'] ?>" class="uplink-btn">
-                            <i class="fas fa-home"></i> HQ
-                        </a>
-                        <a href="/alliance/sos/manage" class="uplink-btn alert">
-                            <i class="fas fa-triangle-exclamation"></i> SOS
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <br>
-
-            <!-- War Status (Conditional) -->
-            <?php if ($allianceContext['war']): ?>
-                <a href="<?= htmlspecialchars($allianceContext['war']['dashboard_url']) ?>" class="uplink-module-link">
-                    <div class="uplink-module">
-                        <div class="module-title">WAR STATUS: ACTIVE</div>
-                        <div class="war-status-box">
-                            <span class="text-muted" style="font-size:0.7rem;">ENGAGEMENT VS</span>
-                            <span class="war-opponent"><?= htmlspecialchars($allianceContext['war']['opponent']) ?></span>
-                            <div class="war-score-bar">
-                                <div class="war-score-fill" style="width: <?= $allianceContext['war']['progress'] ?>%;"></div>
-                            </div>
-                            <div class="war-score-text" data-war-end-time="<?= htmlspecialchars($allianceContext['war']['end_time']) ?>">
-                                Time Left: --h --m
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            <?php endif; ?>
-
-            <!-- Faction Objective -->
-        <!--    <div class="uplink-module">
-                <div class="module-title">
-                    PRIORITY OBJECTIVE 
-                    <?php if ($allianceContext['is_leader']): ?>
-                        <a href="/alliance/directive/manage" class="uplink-btn btn-sm" style="margin-left: auto; padding: 2px 6px; font-size: 0.65rem; text-decoration: none; display: inline-block;">SET</a>
-                    <?php endif; ?>
-                </div>
-                <div class="objective-box">
-                    <span class="objective-name"><?= htmlspecialchars($allianceContext['objective']['name']) ?></span>
-                    <div class="objective-progress">
-                        <div class="objective-fill" style="width: <?= $allianceContext['objective']['progress'] ?>%;"></div>
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--uplink-muted); display: flex; justify-content: space-between;">
-                        <span><?= htmlspecialchars($allianceContext['objective']['type']) ?></span>
-                        <span><?= htmlspecialchars($allianceContext['objective']['label']) ?></span>
-                    </div>
-                </div>
-            </div> -->
-
-            <!-- Active Ops -->
-            <div class="uplink-module">
-                <div class="module-title">THEATER OPERATIONS</div>
-                
-                <!-- Alliance Energy (AE) -->
-                <div style="margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #ffd700; margin-bottom: 2px;">
-                        <span>ALLIANCE ENERGY</span>
-                        <span><?= number_format($allianceContext['energy']) ?> / <?= number_format($allianceContext['energy_cap']) ?></span>
-                    </div>
-                    <div class="energy-bar-container">
-                        <div class="energy-bar-fill" style="width: <?= min(100, ($allianceContext['energy'] / $allianceContext['energy_cap']) * 100) ?>%;"></div>
-                    </div>
-                    <div class="energy-actions">
-                        <button class="btn-donate" onclick="donateTurns()">Donate Turns</button>
-                        <button class="btn-donate" onclick="alert('Resource donation coming soon!')">Donate Res</button>
-                    </div>
-                </div>
-
-                <div class="ops-container">
-                    <?php if (isset($allianceContext['ops']) && is_array($allianceContext['ops'])): ?>
-                        <?php foreach ($allianceContext['ops'] as $op): ?>
-                            <div class="op-card <?= htmlspecialchars($op['class'] ?? '') ?>">
-                                <div class="op-header">
-                                    <i class="fas <?= htmlspecialchars($op['icon']) ?>"></i> 
-                                    <span><?= htmlspecialchars($op['title']) ?></span>
-                                </div>
-                                
-                                <!-- Render Active Op with Progress Bar -->
-                                <?php if (($op['type'] ?? '') === 'active_op'): ?>
-                                    <div class="op-desc" style="margin-bottom: 5px;"><?= htmlspecialchars($op['desc']) ?></div>
-                                    
-                                    <div class="op-progress-container">
-                                        <div class="op-progress-fill" style="width: <?= $op['progress'] ?>%;"></div>
-                                    </div>
-                                    
-                                    <div class="op-contrib-text">
-                                        <span><?= $op['progress'] ?>% Complete</span>
-                                        <span>You: <?= number_format($op['user_contrib']) ?></span>
-                                    </div>
-                                    
-                                    <?php if ($op['meta'] === 'ACTIVE'): 
-                                        $resName = (strpos($op['title'], 'DRILL') !== false) ? 'Soldiers' : 'Resources';
-                                    ?>
-                                        <button class="btn-contribute" onclick="contributeToOp(<?= $op['id'] ?>, '<?= $resName ?>')">
-                                            <i class="fas <?= $op['req_icon'] ?? 'fa-bolt' ?>"></i> Contribute <?= $resName ?>
-                                        </button>
-                                    <?php endif; ?>
-
-                                <?php else: ?>
-                                    <!-- Standard/Legacy Op Display -->
-                                    <div class="op-body">
-                                        <div class="op-desc"><?= htmlspecialchars($op['desc']) ?></div>
-                                        <div class="op-meta <?= htmlspecialchars($op['meta_class'] ?? '') ?>">
-                                            <?= htmlspecialchars($op['meta']) ?>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="text-muted small">No data available.</div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Merit Badges -->
-            <?php if (!empty($allianceContext['badges'])): ?>
-                <div class="uplink-module">
-                    <div class="module-title">ALLIANCE HONORS</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; text-align: center;">
-                        <?php foreach ($allianceContext['badges'] as $badge): ?>
-                            <div class="badge-item" title="<?= $badge['name'] ?> (<?= $badge['tier'] ?>) - Completed <?= $badge['count'] ?> times">
-                                <i class="fas <?= $badge['icon'] ?>" style="color: <?= $badge['color'] ?>; font-size: 1.5rem; display: block; margin-bottom: 5px;"></i>
-                                <span style="font-size: 0.65rem; color: var(--uplink-muted); display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"><?= $badge['name'] ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- Encrypted Feed -->
-        <!--    <div class="uplink-module">
-                <div class="module-title">INTELLIGENCE FEED</div>
-                <div class="uplink-feed">
-                    <?php if (empty($allianceContext['feed'])): ?>
-                        <div class="feed-item text-muted">No recent activity.</div>
-                    <?php else: ?>
-                        <?php foreach ($allianceContext['feed'] as $log): ?>
-                            <div class="feed-item">
-                                <span class="feed-timestamp">[<?= date('H:i', $log['time']) ?>]</span>
-                                <strong style="color: var(--uplink-accent);"><?= htmlspecialchars($log['type']) ?>:</strong>
-                                <?= htmlspecialchars($log['text']) ?>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div> -->
-
-            <!-- Quick Actions -->
-           <!-- <div class="uplink-module" style="border-bottom: none;">
-                <div class="module-title">QUICK LOGISTICS</div>
-                
-            </div> -->
-        </aside>
-    <?php endif; ?>
 
     <div class="advisor-main-content">
         <?php 

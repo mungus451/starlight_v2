@@ -96,30 +96,6 @@ if ($threat_and_opportunity['active_war']) {
                 <?= ($incomeBreakdown['total_credit_income'] >= 0 ? '+' : '') ?><?= StarlightUtils::format_short($incomeBreakdown['total_credit_income']) ?>
             </div>
         </div>
-        <!-- Crystals -->
-        <div class="flux-row crystals">
-            <div class="flux-icon text-neon-blue"><i class="fas fa-gem"></i></div>
-            <div class="flux-bar-container">
-                <div class="flux-fill"></div>
-                <div class="flux-stream"></div>
-            </div>
-            <div class="flux-value text-neon-blue"><?= StarlightUtils::format_short($resources->naquadah_crystals) ?></div>
-            <div class="flux-rate">
-                +<?= StarlightUtils::format_short($incomeBreakdown['research_data_income'] ?? 0) ?>
-            </div>
-        </div>
-        <!-- Dark Matter -->
-        <div class="flux-row dm">
-            <div class="flux-icon" style="color: #bc13fe;"><i class="fas fa-atom"></i></div>
-            <div class="flux-bar-container">
-                <div class="flux-fill"></div>
-                <div class="flux-stream"></div>
-            </div>
-            <div class="flux-value" style="color: #bc13fe;"><?= StarlightUtils::format_short($resources->dark_matter) ?></div>
-            <div class="flux-rate">
-                +<?= StarlightUtils::format_short($incomeBreakdown['dark_matter_income'] ?? 0) ?>
-            </div>
-        </div>
     </div>
 
     <!-- 3. MODULAR BRIDGE WIDGETS -->
