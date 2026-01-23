@@ -357,12 +357,6 @@ class PowerCalculatorService
         // 8. Research Data
         $researchDataIncome = 0;
 
-        // 9. Dark Matter (Affected by Edict Resource Multiplier)
-        $darkMatterIncome = 0;
-
-        // 10. Naquadah (Affected by Edict Resource Multiplier)
-        $naquadahIncome = 0;
-
         // 11. Protoform (Affected by Edict Resource Multiplier)
         $protoformIncome = 0;
 
@@ -379,8 +373,6 @@ class PowerCalculatorService
             $interestIncome = (int)floor($interestIncome * $boost); 
             $totalCitizenIncome = (int)floor($totalCitizenIncome * $boost);
             $researchDataIncome = (int)floor($researchDataIncome * $boost);
-            $darkMatterIncome *= $boost;
-            $naquadahIncome *= $boost;
             $protoformIncome *= $boost;
             
             $detailedBreakdown[] = [ 'label' => "Void Resource Buff", 'value' => "+25%", 'type' => 'scalar' ];
@@ -391,8 +383,6 @@ class PowerCalculatorService
             'interest' => 0,
             'total_citizens' => $totalCitizenIncome,
             'research_data_income' => $researchDataIncome,
-            'dark_matter_income' => $darkMatterIncome,
-            'naquadah_income' => $naquadahIncome,
             'protoform_income' => $protoformIncome,
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,

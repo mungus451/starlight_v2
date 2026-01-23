@@ -46,7 +46,6 @@ class NpcService
     private ArmoryService $armoryService;
     private AttackService $attackService;
     private AllianceStructureService $allianceStructureService;
-    private CurrencyConverterService $currencyService;
     private SpyService $spyService;
     private PowerCalculatorService $powerCalcService;
 
@@ -68,7 +67,6 @@ class NpcService
         ArmoryService $armoryService,
         AttackService $attackService,
         AllianceStructureService $allianceStructureService,
-        CurrencyConverterService $currencyService,
         SpyService $spyService,
         PowerCalculatorService $powerCalcService,
         #[Inject('NpcLogger')] Logger $logger
@@ -85,7 +83,6 @@ class NpcService
         $this->armoryService = $armoryService;
         $this->attackService = $attackService;
         $this->allianceStructureService = $allianceStructureService;
-        $this->currencyService = $currencyService;
         $this->spyService = $spyService;
         $this->powerCalcService = $powerCalcService;
         
@@ -186,52 +183,18 @@ class NpcService
 
         $costData = $costs[$target];
         $creditCost = $costData['credits'];
-        $crystalCost = $costData['crystals'];
 
         // 4. Affordability & Liquidity Check
         $hasCredits = $resources->credits >= $creditCost;
-        $hasCrystals = $resources->naquadah_crystals >= $crystalCost;
 
-        if ($hasCredits && $hasCrystals) {
+        if ($hasCredits) {
             $res = $this->structureService->upgradeStructure($npc->id, $target);
             if ($res->isSuccess()) {
                 $this->logger->info("  -> UPGRADE SUCCESS: {$target}.");
             }
-        } elseif ($hasCredits && !$hasCrystals) {
-            // "The Crystal Wall" Logic: Try to buy missing crystals
-            $missingCrystals = $crystalCost - $resources->naquadah_crystals;
-            // Get conversion rate (Approx 100 + 10% fee = ~110 credits per crystal)
-            // Use converter service data to be precise
-            $converterData = $this->currencyService->getConverterPageData($npc->id);
-            $rate = $converterData['conversionRate']; // 100
-            $feePct = $converterData['feePercentage']; // 0.10
-            
-            // Formula: Crystals = Credits / Rate. But we want Credits needed.
-            // CreditsNeeded = Crystals * Rate. 
-            // Fee is on Input Credits. Input = TargetCredits. 
-            // ReceivedCrystals = (Input - Fee) / Rate
-            // Received = (Input - Input*FeePct) / Rate = Input(1-Fee) / Rate
-            // Input = (Received * Rate) / (1 - Fee)
-            $creditsNeededForConversion = ($missingCrystals * $rate) / (1 - $feePct);
-            
-            // Check if we can afford the Upgrade AND the Conversion
-            if ($resources->credits >= ($creditCost + $creditsNeededForConversion)) {
-                $this->logger->info("  -> ECONOMY: Buying {$missingCrystals} crystals to afford {$target}.");
-                $convRes = $this->currencyService->convertCreditsToCrystals($npc->id, $creditsNeededForConversion);
-                
-                if ($convRes->isSuccess()) {
-                    // Retry Upgrade
-                    $res = $this->structureService->upgradeStructure($npc->id, $target);
-                    if ($res->isSuccess()) {
-                        $this->logger->info("  -> UPGRADE SUCCESS (After Conversion): {$target}.");
-                    }
-                }
-            } else {
-                $this->logger->info("  -> SAVING: Need crystals for {$target}.");
-            }
         } else {
             // "Poverty Trap" Fix: Do NOTHING. Save money.
-            $this->logger->info("  -> SAVING: Not enough resources for {$target} (Cost: {$creditCost} Cr, {$crystalCost} Naq).");
+            $this->logger->info("  -> SAVING: Not enough resources for {$target} (Cost: {$creditCost} Cr).");
         }
     }
 
@@ -387,15 +350,16 @@ class NpcService
         // We use 0 for unknown values to be conservative (or risk-takers?)
         // Using 0 might underestimate them. Let's use seen values.
         $enemyRes = new UserResource(
-            id: 0, user_id: 0, 
-            credits: 0, bank_credits: 0, naquadah_crystals: 0, 
+            user_id: 0, 
+            credits: 0, bank_credits: 0, 
             gemstones: 0, untrained_citizens: 0, 
             workers: 0, 
             soldiers: $report->soldiers_seen ?? 0, 
             guards: $report->guards_seen ?? 0, 
             spies: $report->spies_seen ?? 0, 
             sentries: $report->sentries_seen ?? 0,
-            created_at: 'now', updated_at: 'now'
+            research_data: 0,
+            protoform: 0
         );
 
         $enemyStruct = new UserStructure(

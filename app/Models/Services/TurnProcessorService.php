@@ -160,8 +160,6 @@ class TurnProcessorService
             $interestGained = 0; // Interest has been removed
             $citizensGained = $incomeBreakdown['total_citizens'];
             $researchDataIncome = $incomeBreakdown['research_data_income'];
-            $darkMatterIncome = $incomeBreakdown['dark_matter_income'];
-            $naquadahIncome = $incomeBreakdown['naquadah_income'];
             $protoformIncome = $incomeBreakdown['protoform_income'];
             $attackTurnsGained = 1;
 
@@ -172,8 +170,6 @@ class TurnProcessorService
                 $interestGained, 
                 $citizensGained, 
                 $researchDataIncome, 
-                $darkMatterIncome, 
-                $naquadahIncome, 
                 $protoformIncome
             );
             

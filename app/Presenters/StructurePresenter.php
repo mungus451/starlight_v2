@@ -54,25 +54,14 @@ class StructurePresenter
             
             // 2. Determine Costs & Status
             $creditCost = $costs[$key]['credits'] ?? 0;
-            $crystalCost = $costs[$key]['crystals'] ?? 0;
-            $darkMatterCost = $costs[$key]['dark_matter'] ?? 0;
 
-            $isMaxLevel = ($creditCost === 0 && $crystalCost === 0 && $darkMatterCost === 0); 
+            $isMaxLevel = ($creditCost === 0); 
             $canAfford = (
-                $resources->credits >= $creditCost && 
-                $resources->naquadah_crystals >= $crystalCost &&
-                $resources->dark_matter >= $darkMatterCost
+                $resources->credits >= $creditCost
             );
 
-            // Format costs: "100,000 C" or "100,000 C + 5 💎" or "100,000 C + 5 🌌"
-            $costParts = [number_format($creditCost) . ' C'];
-            if ($crystalCost > 0) {
-                $costParts[] = number_format($crystalCost) . ' 💎';
-            }
-            if ($darkMatterCost > 0) {
-                $costParts[] = number_format($darkMatterCost) . ' 🌌';
-            }
-            $costFormatted = implode(' + ', $costParts);
+            // Format costs: "100,000 C"
+            $costFormatted = number_format($creditCost) . ' C';
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
             $benefitText = $this->calculateBenefitText($key, $data, $currentLevel);
@@ -88,8 +77,6 @@ class StructurePresenter
                 'current_level' => $currentLevel,
                 'next_level' => $nextLevel,
                 'upgrade_cost_credits' => $creditCost, // Keep for raw access if needed
-                'upgrade_cost_crystals' => $crystalCost, // Keep for raw access if needed
-                'upgrade_cost_dark_matter' => $darkMatterCost, // Keep for raw access if needed
                 'cost_formatted' => $costFormatted,
                 'is_max_level' => $isMaxLevel,
                 'can_afford' => $canAfford,
@@ -147,7 +134,7 @@ class StructurePresenter
 
             // --- NEW EXPANSION STRUCTURES ---
             case 'mercenary_outpost':
-                return "Unlocks Emergency Draft (Use Dark Matter)";
+                return "Unlocks Emergency Draft";
 
             case 'neural_uplink':
                 // 2% per level

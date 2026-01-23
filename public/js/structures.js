@@ -15,20 +15,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // 2. Shopping Cart / Batch Logic
     // ==========================================
     const cart = new Set();
-    const costs = {}; // key -> {credits, crystal, dm}
+    const costs = {}; // key -> {credits}
     const names = {};
 
     // Elements
     const checkoutBox = document.getElementById('structure-checkout-box');
     const checkoutList = document.getElementById('checkout-list');
     const totalCreditsEl = document.getElementById('checkout-total-credits');
-    const totalCrystalEl = document.getElementById('checkout-total-crystal');
-    const totalDmEl = document.getElementById('checkout-total-dm');
     
     const checkoutForm = document.getElementById('checkout-form');
     const checkoutInput = document.getElementById('checkout-input-keys');
     const cancelBatchBtn = document.getElementById('btn-cancel-batch');
-    const rareResourcesContainer = document.getElementById('checkout-rare-resources');
 
     // Attach Event Listeners to "Add to Cart" Buttons
     document.querySelectorAll('.btn-add-cart').forEach(btn => {
@@ -76,12 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function addToCart(key, btn) {
         // Parse costs
         const cred = parseInt(btn.dataset.costCredits || 0);
-        const cry = parseInt(btn.dataset.costCrystal || 0);
-        const dm = parseInt(btn.dataset.costDm || 0);
         const name = btn.dataset.name;
 
         cart.add(key);
-        costs[key] = { cred, cry, dm };
+        costs[key] = { cred };
         names[key] = name;
 
         // UI Update
@@ -136,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (checkoutBox) checkoutBox.style.display = 'flex'; // Changed to flex for new HUD layout
         
         // Calculate Totals
-        let tCred = 0, tCry = 0, tDm = 0;
+        let tCred = 0;
         
         // Clear list
         if (checkoutList) checkoutList.innerHTML = '';
@@ -144,8 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cart.forEach(key => {
             const c = costs[key];
             tCred += c.cred;
-            tCry += c.cry;
-            tDm += c.dm;
 
             if (checkoutList) {
                 const li = document.createElement('div');
@@ -156,16 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (totalCreditsEl) totalCreditsEl.textContent = tCred.toLocaleString();
-        
-        if (rareResourcesContainer) {
-            if (tCry > 0 || tDm > 0) {
-                rareResourcesContainer.style.display = 'block';
-                if (totalCrystalEl) totalCrystalEl.textContent = tCry.toLocaleString();
-                if (totalDmEl) totalDmEl.textContent = tDm.toLocaleString();
-            } else {
-                rareResourcesContainer.style.display = 'none';
-            }
-        }
     }
 
     // ==========================================

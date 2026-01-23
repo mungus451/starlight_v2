@@ -263,7 +263,6 @@ class AttackService
                 credits: $attackerResources->credits,
                 banked_credits: $attackerResources->banked_credits,
                 gemstones: $attackerResources->gemstones,
-                naquadah_crystals: $attackerResources->naquadah_crystals,
                 untrained_citizens: $attackerResources->untrained_citizens,
                 workers: $attackerResources->workers,
                 soldiers: $soldiersSent, // This is the updated value

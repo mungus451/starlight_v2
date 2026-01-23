@@ -53,7 +53,6 @@
                 <a href="#"><i class="fas fa-coins"></i> Economy <i class="fas fa-chevron-down submenu-indicator"></i></a>
                 <ul class="submenu">
                     <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
-                    <li><a href="/black-market/converter"><i class="fas fa-exchange-alt"></i> Black Market</a></li>
                 </ul>
             </li>
 
@@ -142,7 +141,6 @@
                     <span class="nav-link"><i class="fas fa-coins"></i> Economy <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
                         <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
-                        <li><a href="/black-market/converter"><i class="fas fa-exchange-alt"></i> Black Market</a></li>
                     </ul>
                 </li>
 
@@ -500,14 +498,6 @@
                         <span class="advisor-stat-value"><?= number_format($advisorData['resources']->credits) ?></span>
                     </div>
                     <div class="advisor-stat">
-                        <span class="advisor-stat-label">Crystals</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->naquadah_crystals) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Dark Matter</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->dark_matter) ?></span>
-                    </div>
-                    <div class="advisor-stat">
                         <span class="advisor-stat-label">Citizens</span>
                         <span class="advisor-stat-value"><?= number_format($advisorData['resources']->untrained_citizens) ?></span>
                     </div>
@@ -542,18 +532,6 @@
                     <div class="advisor-stat">
                         <span class="advisor-stat-label">Research / Turn</span>
                         <span class="advisor-stat-value text-info">+<?= number_format($inc['research_data_income'], 0) ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (($inc['naquadah_income'] ?? 0) > 0): ?>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Naquadah / Turn</span>
-                        <span class="advisor-stat-value text-neon-blue">+<?= number_format($inc['naquadah_income'], 2) ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (($inc['dark_matter_income'] ?? 0) > 0): ?>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Dark Matter / Turn</span>
-                        <span class="advisor-stat-value" style="color: #bc13fe;">+<?= number_format($inc['dark_matter_income'], 0) ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if (($inc['protoform_income'] ?? 0) > 0): ?>

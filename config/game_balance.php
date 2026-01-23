@@ -48,7 +48,6 @@ return [
         'planetary_shield' => [
             'name' => 'Planetary Shield',
             'base_cost' => 50000,
-            'base_dark_matter_cost' => 50,
             'multiplier' => 1.15,
             'category' => 'Super Defense',
             'description' => 'Creates a powerful shield that must be depleted before your assets can be plundered.'
@@ -56,7 +55,6 @@ return [
         'mercenary_outpost' => [
             'name' => 'Mercenary Outpost',
             'base_cost' => 100000,
-            'base_dark_matter_cost' => 100,
             'multiplier' => 1.65,
             'category' => 'Military',
             'description' => 'Allows for the instant emergency drafting of units using Dark Matter.'
@@ -64,7 +62,6 @@ return [
         'neural_uplink' => [
             'name' => 'Neural Uplink',
             'base_cost' => 35000,
-            'base_crystal_cost' => 350,
             'multiplier' => 1.5,
             'category' => 'Intel',
             'description' => 'Increases the counter-espionage efficiency of your Sentries.'
@@ -72,7 +69,6 @@ return [
         'subspace_scanner' => [
             'name' => 'Subspace Scanner',
             'base_cost' => 45000,
-            'base_crystal_cost' => 450,
             'multiplier' => 1.54,
             'category' => 'Intel',
             'description' => 'Improves the accuracy of incoming attack notifications.'
@@ -103,8 +99,6 @@ return [
         'spies_lost_percent_max' => 0.3,
         'sentries_lost_percent_min' => 0.15,
         'sentries_lost_percent_max' => 0.35,
-        'crystal_steal_rate' => 0.05,
-        'dark_matter_steal_rate' => 0.02,
         'protoform_steal_rate' => 0.01,
         
         // New: Neural Uplink
@@ -165,10 +159,6 @@ return [
         'credit_bonus_per_wealth_point' => 0.01,
         'citizen_growth_per_pop_level' => 10,
         'research_data_per_lab_level' => 100,
-        'dark_matter_per_siphon_level' => 5.0,
-        'dark_matter_production_multiplier' => 1.05,
-        'naquadah_per_mining_complex_level' => 10,
-        'naquadah_production_multiplier' => 1.01,
         'protoform_per_vat_level' => 5,
         'accounting_firm_base_bonus' => 0.01,
         'accounting_firm_multiplier' => 1.05,
@@ -203,12 +193,6 @@ return [
     'generals' => [
         'base_capacity' => 50000000,
         'capacity_per_general' => 250000
-    ],
-
-    // New: Black Market (Generic or specific)
-    'black_market' => [
-        'orbital_trade_port_discount_per_level' => 0.005, // 0.5%
-        'max_orbital_trade_port_discount' => 0.25 // 25%
     ],
 
     // New: Banking

@@ -109,8 +109,6 @@
                                                 data-name="<?= htmlspecialchars($struct['name']) ?>"
                                                 data-next-level="<?= $struct['next_level'] ?>"
                                                 data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
-                                                data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
-                                                data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
                                                 <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
                                             <i class="fas fa-plus"></i> Batch
                                         </button>
@@ -142,16 +140,6 @@
             <div class="hud-total-row">
                 <span>Total Credits:</span>
                 <span class="icon-gold" id="checkout-total-credits">0</span>
-            </div>
-            <div id="checkout-rare-resources" style="display: none;">
-                <div class="hud-total-row">
-                    <span>Naquadah:</span>
-                    <span class="icon-crystal" id="checkout-total-crystal">0</span>
-                </div>
-                <div class="hud-total-row">
-                    <span>Dark Matter:</span>
-                    <span class="icon-matter" id="checkout-total-dm">0</span>
-                </div>
             </div>
             
             <form id="checkout-form" action="/structures/batch-upgrade" method="POST" class="mt-3">

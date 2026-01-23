@@ -18,7 +18,7 @@ private PDO $db
 public function findByUserId(int $userId): ?UserResource
 {
 $stmt = $this->db->prepare("
-SELECT user_id, credits, banked_credits, gemstones, naquadah_crystals, untrained_citizens, workers, soldiers, guards, spies, sentries, untraceable_chips, research_data, dark_matter, protoform
+SELECT user_id, credits, banked_credits, gemstones, untrained_citizens, workers, soldiers, guards, spies, sentries, research_data, protoform
 FROM user_resources WHERE user_id = ?
 ");
 $stmt->execute([$userId]);
@@ -30,12 +30,6 @@ public function createDefaults(int $userId): void
 {
 $stmt = $this->db->prepare("INSERT INTO user_resources (user_id) VALUES (?)");
 $stmt->execute([$userId]);
-}
-
-public function updateChips(int $userId, int $newAmount): bool
-{
-$stmt = $this->db->prepare("UPDATE user_resources SET untraceable_chips = ? WHERE user_id = ?");
-return $stmt->execute([$newAmount, $userId]);
 }
 
 public function updateBankingCredits(int $userId, int $newCredits, int $newBankedCredits): bool
@@ -98,10 +92,10 @@ return $stmt->execute([$newCredits, $newGuards, $newWorkers, $userId]);
         return $stmt->execute([$newSoldiers, $userId]);
     }
 
-    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $darkMatterGained, float $naquadahGained, float $protoformGained): bool{
-$sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ?, dark_matter = dark_matter + ?, naquadah_crystals = naquadah_crystals + ?, protoform = protoform + ? WHERE user_id = ?";
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $protoformGained): bool{
+$sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ?, protoform = protoform + ? WHERE user_id = ?";
 $stmt = $this->db->prepare($sql);
-return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $darkMatterGained, $naquadahGained, $protoformGained, $userId]);
+return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $protoformGained, $userId]);
 }
 
     /**
@@ -133,13 +127,11 @@ return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $resear
         return (int)$stmt->fetchColumn();
     }
 
-    public function updateResources(int $userId, ?float $creditsChange = null, ?float $naquadahCrystalsChange = null, ?float $darkMatterChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
+    public function updateResources(int $userId, ?float $creditsChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
     {
         $updates = [];
         $params = [];
         if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
-        if ($naquadahCrystalsChange !== null) { $updates[] = "naquadah_crystals = naquadah_crystals + :naquadah_crystals_change"; $params[':naquadah_crystals_change'] = $naquadahCrystalsChange; }
-        if ($darkMatterChange !== null) { $updates[] = "dark_matter = dark_matter + :dark_matter_change"; $params[':dark_matter_change'] = $darkMatterChange; }
         if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
         if ($researchDataChange !== null) { $updates[] = "research_data = research_data + :research_data_change"; $params[':research_data_change'] = $researchDataChange; }
         
@@ -157,16 +149,13 @@ user_id: (int)$data['user_id'],
 credits: (int)$data['credits'],
 banked_credits: (int)$data['banked_credits'],
 gemstones: (int)$data['gemstones'],
-naquadah_crystals: (float)$data['naquadah_crystals'],
 untrained_citizens: (int)$data['untrained_citizens'],
 workers: (int)$data['workers'],
 soldiers: (int)$data['soldiers'],
 guards: (int)$data['guards'],
 spies: (int)$data['spies'],
 sentries: (int)$data['sentries'],
-            untraceable_chips: (int)($data['untraceable_chips'] ?? 0),
             research_data: (int)($data['research_data'] ?? 0),
-            dark_matter: (float)($data['dark_matter'] ?? 0.0),
             protoform: (float)($data['protoform'] ?? 0.0)
         );
     }

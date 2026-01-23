@@ -72,33 +72,7 @@
                     <span>Banked Credits</span>
                     <span><?= number_format($resources->banked_credits) ?></span>
                 </li>
-                <!-- NEW: Research Data -->
-                <li>
-                    <span>Research Data</span>
-                    <span><?= number_format($resources->research_data) ?></span>
-                </li>
-                        <li>
-                            <span>Research Data / Turn</span>
-                            <span class="value-green value-total">+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
-                        </li>
-                        <!-- NEW: Dark Matter -->
-                        <li>
-                            <span>Dark Matter</span>
-                            <span><?= number_format($resources->dark_matter) ?></span>
-                        </li>
-                        <li>
-                            <span>Dark Matter / Turn</span>
-                                <span class="value-green value-total">+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
-                            </li>
-                            <!-- NEW: Naquadah Crystals -->
-                            <li>
-                                <span>Naquadah Crystals</span>
-                                <span><?= $formatted_naquadah_crystals ?></span>
-                            </li>
-                            <li>
-                                <span>Naquadah / Turn</span>
-                                <span class="value-green value-total">+ <?= $formatted_naquadah_per_turn ?></span>
-                            </li>                    </ul>
+            </ul>
                                                 
                                                 <div class="card-breakdown" id="breakdown-income">
                                                     <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income']) ?></strong>
@@ -128,22 +102,6 @@
                                                             <span style="color: var(--accent-2);">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
                                                         </li>
                                                         <?php endif; ?>
-                                                    </ul>
-                                                    <br>
-                                                    <strong>Research Data Generation: + <?= number_format($incomeBreakdown['research_data_income']) ?></strong>
-                                                    <ul>
-                                                        <li>
-                                                            <span>Quantum Research Lab (Lvl <?= $incomeBreakdown['quantum_research_lab_level'] ?>)</span>
-                                                            <span>+ <?= number_format($incomeBreakdown['research_data_income']) ?></span>
-                                                        </li>
-                                                    </ul>
-                                                    <br>
-                                                    <strong>Dark Matter Generation: + <?= number_format($incomeBreakdown['dark_matter_income']) ?></strong>
-                                                    <ul>
-                                                        <li>
-                                                            <span>Dark Matter Siphon (Lvl <?= $incomeBreakdown['dark_matter_siphon_level'] ?>)</span>
-                                                            <span>+ <?= number_format($incomeBreakdown['dark_matter_income']) ?></span>
-                                                        </li>
                                                     </ul>
                                                 </div>                </div>
                 
@@ -237,31 +195,12 @@
                 </div>
                 
                 <!-- NEW: Active Effects Box -->
-                <?php if (!empty($activeEffects) || $resources->untraceable_chips > 0): ?>
+                <?php if (!empty($activeEffects)): ?>
                 <div class="data-card grid-col-span-2">
                     <div class="card-header">
                         <h3 style="color: var(--accent);">Active Effects & Assets</h3>
                     </div>
-                    
-                    <?php if ($resources->untraceable_chips > 0): ?>
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);">
-                        <div class="flex-between mb-1">
-                            <h4 style="margin: 0; color: #fff;"><i class="fas fa-dice text-accent"></i> Untraceable Chips</h4>
-                            <strong class="text-accent-2" style="font-size: 1.2rem;"><?= number_format($resources->untraceable_chips) ?></strong>
-                        </div>
-                        <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">These chips can be converted back to Credits. They are immune to plunder.</p>
-                        <form action="/black-market/withdraw-chips" method="POST">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                            <div class="form-group amount-input-group">
-                                <input type="hidden" name="amount" id="withdraw-chips-hidden" value="0">
-                                <input type="text" id="withdraw-chips-display" placeholder="Chips to Withdraw" required min="1">
-                                <button type="submit" class="btn-submit btn-accent" style="width: auto;">Withdraw</button>
-                            </div>
-                        </form>
-                    </div>
-                    <?php endif; ?>
                 
-                    <?php if (!empty($activeEffects)): ?>
                     <h4 style="margin: 0 0 1rem 0; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Active Buffs/Debuffs</h4>
                     <ul class="data-list" style="margin-top: 0.5rem;">
                         <?php foreach ($activeEffects as $effect): ?>
@@ -276,7 +215,6 @@
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
                 
@@ -294,13 +232,4 @@
                 </div>
                 </div>
                 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const withdrawChipsDisplay = document.getElementById('withdraw-chips-display');
-                        const withdrawChipsHidden = document.getElementById('withdraw-chips-hidden');
-                        if (withdrawChipsDisplay && withdrawChipsHidden) {
-                            StarlightUtils.setupInputMask(withdrawChipsDisplay, withdrawChipsHidden);
-                        }
-                    });
-                </script>
                 <script src="/js/dashboard.js"></script>

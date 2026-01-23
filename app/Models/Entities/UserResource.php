@@ -25,16 +25,13 @@ readonly class UserResource
         public readonly int $credits,
         public readonly int $banked_credits,
         public readonly int $gemstones,
-        public readonly float $naquadah_crystals,
         public readonly int $untrained_citizens,
         public readonly int $workers,
         public readonly int $soldiers,
         public readonly int $guards,
         public readonly int $spies,
         public readonly int $sentries,
-        public readonly int $untraceable_chips = 0,
         public readonly int $research_data = 0,
-        public readonly float $dark_matter = 0.0,
         public readonly float $protoform = 0.0
     ) {
     }
