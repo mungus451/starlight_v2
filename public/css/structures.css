@@ -1,0 +1,139 @@
+/* public/css/structures.css */
+
+/* Main Layout */
+.structures-two-column-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+/* Left Column: List of Structures */
+.requisition-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.category-header {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--accent-2);
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin: 0.5rem 0 0.25rem 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.unit-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.unit-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.unit-row.active {
+    background: rgba(0, 123, 255, 0.1);
+    border-color: var(--accent);
+}
+
+.unit-row.max-level {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.unit-icon-box {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 1.5rem;
+}
+
+.unit-info h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.unit-info .meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.unit-controls {
+    margin-left: auto;
+    text-align: right;
+}
+
+.cost-preview {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Right Column: Inspector */
+.tactical-inspector {
+    background: rgba(13, 17, 23, 0.9);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    position: sticky;
+    top: 80px;
+    height: fit-content;
+}
+
+.inspector-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.inspector-title {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+}
+
+.wireframe-container {
+    padding: 1.5rem;
+    background: #000;
+    position: relative;
+}
+
+.wireframe-placeholder {
+    height: 120px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inspector-body {
+    padding: 1.5rem;
+}
+
+.lore-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    min-height: 60px;
+}
+
+@media (max-width: 992px) {
+    .structures-two-column-layout {
+        grid-template-columns: 1fr;
+    }
+}

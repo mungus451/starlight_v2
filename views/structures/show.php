@@ -1,26 +1,4 @@
-<style>
-    .structures-two-column-layout {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 2rem;
-        align-items: flex-start;
-    }
-
-    .structures-grid-pane {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .structure-details-pane {
-        position: sticky;
-        top: 2rem;
-        background: rgba(13, 17, 23, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 1.5rem;
-    }
-</style>
+<link rel="stylesheet" href="/css/structures.css">
 
 <?php
 /**
@@ -39,42 +17,103 @@
     </div>
 
     <div class="structures-two-column-layout">
-        <!-- Left Column: Grid of all structures -->
-        <div class="structures-grid-pane">
+        <!-- Left Column: Selectable List of Structures -->
+        <div class="requisition-grid">
             <?php foreach ($groupedStructures as $categoryName => $structures): ?>
+                <h4 class="category-header"><?= htmlspecialchars($categoryName) ?></h4>
                 <?php foreach ($structures as $struct): ?>
-                    <div class="structure-card interactive <?= $struct['is_max_level'] ? 'max-level' : '' ?>" 
+                    <div class="unit-row interactive <?= $struct['is_max_level'] ? 'max-level' : '' ?>"
                          data-key="<?= htmlspecialchars($struct['key']) ?>"
                          data-name="<?= htmlspecialchars($struct['name']) ?>"
                          data-level="<?= $struct['current_level'] ?>"
+                         data-max-level="<?= $struct['max_level'] ?>"
                          data-description="<?= htmlspecialchars($struct['description']) ?>"
                          data-benefit-text="<?= htmlspecialchars($struct['benefit_text']) ?>"
-                         data-cost-formatted="<?= htmlspecialchars($struct['cost_formatted']) ?>"
-                         data-is-max-level="<?= $struct['is_max_level'] ?>"
-                         data-can-afford="<?= $struct['can_afford'] ?>">
+                         data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
+                         data-is-max-level="<?= $struct['is_max_level'] ? 'true' : 'false' ?>"
+                         data-can-afford="<?= $struct['can_afford'] ? 'true' : 'false' ?>"
+                         data-icon='<?= $struct['icon'] ?>'
+                         onclick="selectStructure(this)">
                         
-                        <div class="card-header-main">
-                            <span class="card-icon"><?= $struct['icon'] ?></span>
-                            <div class="card-title-group">
-                                <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
-                                <p class="card-level">Level: <span class="text-white"><?= $struct['current_level'] ?></span></p>
+                        <div class="unit-icon-box">
+                            <?= $struct['icon'] ?>
+                        </div>
+                        
+                        <div class="unit-info">
+                            <h4><?= htmlspecialchars($struct['name']) ?></h4>
+                            <div class="meta">
+                                Level: <?= $struct['current_level'] ?> / <?= $struct['max_level'] ?>
                             </div>
                         </div>
-                        <div class="card-body-main">
-                             <p class="card-description" style="min-height: 40px;"><?= htmlspecialchars($struct['description']) ?></p>
+
+                        <div class="unit-controls">
+                            <?php if ($struct['is_max_level']): ?>
+                                <span class="badge bg-success">MAX</span>
+                            <?php elseif (!$struct['can_afford']): ?>
+                                <span class="badge bg-danger">INSUFFICIENT</span>
+                            <?php else: ?>
+                                <span class="cost-preview text-warning">
+                                    <?= number_format($struct['upgrade_cost_credits'] ?? 0) ?> Cr
+                                </span>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
 
-        <!-- Right Column: Details Pane -->
-        <div class="structure-details-pane" id="structure-details-pane" style="display: none;">
-            <h2 id="details-name" class="text-neon-blue">Select a Structure</h2>
-            <p id="details-description" class="text-muted"></p>
-            <hr class="border-secondary">
-            <div id="details-body">
-                <!-- Content will be injected by JS -->
+        <!-- Right Column: Inspector Pane -->
+        <div class="tactical-inspector" id="inspector-panel">
+            <div class="inspector-header">
+                <h3 class="inspector-title" id="insp-title">SELECT STRUCTURE</h3>
+            </div>
+
+            <div class="wireframe-container">
+                <div class="wireframe-placeholder" id="insp-wireframe">
+                    <span id="insp-icon" style="font-size: 3rem; position: absolute; top: 50%; left: 50%; transform: translate(--50%, -50%);"></span>
+                </div>
+            </div>
+
+            <div class="inspector-body">
+                <p class="lore-text" id="insp-desc">
+                    Select a structure from the requisition grid to view details and manage construction.
+                </p>
+
+                <div id="insp-details" style="display:none;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Current Level:</span>
+                        <strong id="insp-level"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Next Level Benefit:</span>
+                        <strong id="insp-benefit" class="text-success"></strong>
+                    </div>
+
+                    <hr class="border-secondary">
+                    
+                    <h4 class="text-neon-blue">UPGRADE COST</h4>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Credits:</span>
+                        <strong id="insp-cost-credits" class="text-warning"></strong>
+                    </div>
+
+                    <form action="/structures/upgrade" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <input type="hidden" name="structure_key" id="insp-structure-key" value="">
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="btn-confirm">
+                            <i class="fas fa-hammer"></i> Begin Construction
+                        </button>
+                    </form>
+                </div>
+
+                <div id="insp-max-level-notice" style="display:none;">
+                    <div class="alert alert-success text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h4 class="alert-heading">MAXIMUM LEVEL REACHED</h4>
+                        <p>This structure has been fully upgraded.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

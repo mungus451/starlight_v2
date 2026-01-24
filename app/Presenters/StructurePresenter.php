@@ -61,7 +61,15 @@ class StructurePresenter
             );
 
             // Format costs: "100,000 C"
-            $costFormatted = number_format($creditCost) . ' C';
+            $costFormatted = $isMaxLevel ? '' : number_format($creditCost) . ' C';
+
+            // Set max_level for display
+            $maxLevel = $isMaxLevel ? $currentLevel : ($currentLevel + 1); 
+            
+            // Nullify cost if max level to differentiate from actual zero cost
+            if ($isMaxLevel) {
+                $creditCost = null;
+            }
 
             // 3. Determine Benefit Text (The heavy logic moved from View)
             $benefitText = $this->calculateBenefitText($key, $data, $currentLevel);
@@ -75,8 +83,9 @@ class StructurePresenter
                 'name' => $details['name'] ?? 'Unknown',
                 'description' => $details['description'] ?? '',
                 'current_level' => $currentLevel,
+                'max_level' => $maxLevel, // Ensure max_level is always present
                 'next_level' => $nextLevel,
-                'upgrade_cost_credits' => $creditCost, // Keep for raw access if needed
+                'upgrade_cost_credits' => $creditCost, 
                 'cost_formatted' => $costFormatted,
                 'is_max_level' => $isMaxLevel,
                 'can_afford' => $canAfford,
