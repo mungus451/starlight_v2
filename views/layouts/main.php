@@ -39,18 +39,9 @@
             <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
 
             <li class="has-submenu">
-                <a href="#"><i class="fas fa-city"></i> Empire <i class="fas fa-chevron-down submenu-indicator"></i></a>
-                <ul class="submenu">
-                    <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
-                    <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
-                    <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
-                    <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
                 <a href="#"><i class="fas fa-coins"></i> Economy <i class="fas fa-chevron-down submenu-indicator"></i></a>
                 <ul class="submenu">
+                    <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
                     <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
                 </ul>
             </li>
@@ -61,7 +52,6 @@
                     <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
                     <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
                     <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
-                    <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy Network</a></li>
                     <li><a href="/battle"><i class="fas fa-fighter-jet"></i> Battle Control</a></li>
                 </ul>
             </li>
@@ -114,30 +104,10 @@
                     <a href="/dashboard" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
                 </li>
 
-                <!-- Structures -->
-                <li class="nav-item">
-                    <a href="/structures" class="nav-link"><i class="fas fa-industry"></i> Structures <span class="nav-queue-badge" id="nav-queue-structures"></span></a>
-                </li>
-
-                <!-- Empire Dropdown -->
-                <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-city"></i> Empire <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
-                    <ul class="nav-submenu">
-                        <li><a href="/level-up"><i class="fas fa-bolt"></i> Level Up</a></li>
-                        <li><a href="/leaderboard"><i class="fas fa-trophy"></i> Leaderboard</a></li>
-                        <li><a href="/almanac"><i class="fas fa-book"></i> Almanac</a></li>
-                    </ul>
-                </li>
-                
-                <!-- Research 
-                <li class="nav-item">
-                    <a href="/research" class="nav-link"><i class="fas fa-flask"></i> Research <span class="nav-queue-badge" id="nav-queue-research"></span></a>
-                </li> -->
-
-                <!-- Economy Dropdown -->
                 <li class="nav-item">
                     <span class="nav-link"><i class="fas fa-coins"></i> Economy <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
                     <ul class="nav-submenu">
+                        <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
                         <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
                     </ul>
                 </li>
@@ -149,7 +119,6 @@
                         <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
                         <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
                         <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
-                        <li><a href="/spy"><i class="fas fa-user-secret"></i> Spy Network</a></li>
                         <li><a href="/battle"><i class="fas fa-fighter-jet"></i> Battle Control</a></li>
                     </ul>
                 </li>
@@ -231,32 +200,6 @@
 
 <div class="advisor-layout-grid">
 
-    <div class="advisor-main-content">
-        <?php 
-        if (isset($layoutMode) && $layoutMode === 'full'): 
-        ?>
-            <div class="container-full">
-        <?php else: ?>
-            <div class="container">
-        <?php endif; ?>
-        
-            <?php if ($flashError): ?>
-                <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
-            <?php endif; ?>
-            
-            <?php if ($flashSuccess): ?>
-                <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
-            <?php endif; ?>
-
-            <!--
-             ** Main Content Area **
-             * Location: This is the core area where the specific view file (e.g., `dashboard/show.php`, `structures/show.php`) is injected by the `BaseController`'s `render` method.
-             * Notes: It's wrapped in `div` elements that adjust for `full` or standard layout modes and display flash messages.
-            -->
-            <?= $content ?>
-        </div>
-    </div>
-
     <?php if (!$this->session->get('is_mobile') && $isLoggedIn && isset($advisorData)): ?>
         <!--
          ** Advisor Sidebar (`<aside class="advisor-panel" id="advisor-panel">`) **
@@ -265,7 +208,7 @@
         -->
         <aside class="advisor-panel" id="advisor-panel">
             <button class="advisor-toggle-btn" id="advisor-toggle" title="Toggle Advisor">
-                <i class="fas fa-chevron-right"></i>
+                <i class="fas fa-chevron-left"></i>
             </button>
             <!-- Advisor Header -->
             <div class="advisor-header">
@@ -430,6 +373,32 @@
             </div>
         </aside>
     <?php endif; ?>
+
+    <div class="advisor-main-content">
+        <?php 
+        if (isset($layoutMode) && $layoutMode === 'full'): 
+        ?>
+            <div class="container-full">
+        <?php else: ?>
+            <div class="container">
+        <?php endif; ?>
+        
+            <?php if ($flashError): ?>
+                <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+            
+            <?php if ($flashSuccess): ?>
+                <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
+            <?php endif; ?>
+
+            <!--
+             ** Main Content Area **
+             * Location: This is the core area where the specific view file (e.g., `dashboard/show.php`, `structures/show.php`) is injected by the `BaseController`'s `render` method.
+             * Notes: It's wrapped in `div` elements that adjust for `full` or standard layout modes and display flash messages.
+            -->
+            <?= $content ?>
+        </div>
+    </div>
 </div>
 
 <script src="/js/utils.js?v=<?= time() ?>"></script>
