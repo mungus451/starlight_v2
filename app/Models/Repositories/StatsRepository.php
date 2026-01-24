@@ -226,6 +226,7 @@ class StatsRepository
             'battles_lost'  => 's.battles_lost DESC',
             'spy_success'   => 's.spy_successes DESC',
             'spy_fail'      => 's.spy_failures DESC',
+            'level'         => 's.level DESC',
             default         => 's.net_worth DESC' // 'net_worth' or fallback
         };
 

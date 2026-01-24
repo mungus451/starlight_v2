@@ -8,6 +8,9 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Services\NetWorthCalculatorService;
+use App\Models\Services\PowerCalculatorService;
+use App\Models\Repositories\ResourceRepository;
+use App\Models\Repositories\StructureRepository;
 
 /**
  * Handles logic for retrieving and paginating leaderboard data.
@@ -20,19 +23,28 @@ class LeaderboardService
     private AllianceRepository $allianceRepo;
     private NetWorthCalculatorService $nwCalculator;
     private UserRepository $userRepo;
+    private PowerCalculatorService $powerCalculator;
+    private ResourceRepository $resourceRepo;
+    private StructureRepository $structureRepo;
 
     public function __construct(
         Config $config,
         StatsRepository $statsRepo,
         AllianceRepository $allianceRepo,
         NetWorthCalculatorService $nwCalculator,
-        UserRepository $userRepo
+        UserRepository $userRepo,
+        PowerCalculatorService $powerCalculator,
+        ResourceRepository $resourceRepo,
+        StructureRepository $structureRepo
     ) {
         $this->config = $config;
         $this->statsRepo = $statsRepo;
         $this->allianceRepo = $allianceRepo;
         $this->nwCalculator = $nwCalculator;
         $this->userRepo = $userRepo;
+        $this->powerCalculator = $powerCalculator;
+        $this->resourceRepo = $resourceRepo;
+        $this->structureRepo = $structureRepo;
     }
 
     /**
@@ -79,23 +91,69 @@ class LeaderboardService
             // Whitelist sort keys to prevent SQL errors/injection issues
             $allowedSorts = [
                 'net_worth', 'prestige', 'army', 'population', 
-                'battles_won', 'battles_lost', 'spy_success', 'spy_fail'
+                'battles_won', 'battles_lost', 'spy_success', 'spy_fail',
+                'level', 'overall_power'
             ];
             
             if (!in_array($sortKey, $allowedSorts)) {
                 $sortKey = 'net_worth';
             }
 
-            $totalItems = $this->statsRepo->getTotalPlayerCount();
-            $data = $this->statsRepo->getLeaderboardPlayers($sortKey, $perPage, $offset);
+            if ($sortKey === 'overall_power') {
+                $allPlayers = $this->userRepo->getAllActivePlayerIdsAndData();
+                $totalItems = count($allPlayers);
 
-            // Recalculate Net Worth for current page
-            foreach ($data as &$player) {
-                if (isset($player['user_id'])) {
-                    $player['net_worth'] = $this->nwCalculator->calculateTotalNetWorth($player['user_id']);
+                foreach ($allPlayers as &$player) {
+                    $userId = $player['id'];
+                    $stats = $this->statsRepo->findByUserId($userId);
+                    $resources = $this->resourceRepo->findByUserId($userId);
+                    $structures = $this->structureRepo->findByUserId($userId);
+
+                    if ($stats && $resources && $structures) {
+                        $offense_power = $this->powerCalculator->calculateOffensePower($userId, $resources, $stats, $structures, $player['alliance_id'])['total'];
+                        $defense_power = $this->powerCalculator->calculateDefensePower($userId, $resources, $stats, $structures, $player['alliance_id'])['total'];
+                        $player['overall_power'] = $offense_power + $defense_power;
+                    } else {
+                        $player['overall_power'] = 0;
+                    }
+                    $player['net_worth'] = $this->nwCalculator->calculateTotalNetWorth($userId);
+                    // Add all other required stats for the view
+                    $player['level'] = $stats->level ?? 0;
+                    $player['battles_won'] = $stats->battles_won ?? 0;
+                    $player['battles_lost'] = $stats->battles_lost ?? 0;
+                    $player['war_prestige'] = $stats->war_prestige ?? 0;
                 }
+                unset($player);
+
+                usort($allPlayers, function ($a, $b) {
+                    return $b['overall_power'] <=> $a['overall_power'];
+                });
+
+                $data = array_slice($allPlayers, $offset, $perPage);
+            } else {
+                $totalItems = $this->statsRepo->getTotalPlayerCount();
+                $data = $this->statsRepo->getLeaderboardPlayers($sortKey, $perPage, $offset);
+
+                foreach ($data as &$player) {
+                    if (isset($player['id'])) {
+                        $userId = $player['id'];
+                        $player['net_worth'] = $this->nwCalculator->calculateTotalNetWorth($userId);
+                        
+                        $stats = $this->statsRepo->findByUserId($userId);
+                        $resources = $this->resourceRepo->findByUserId($userId);
+                        $structures = $this->structureRepo->findByUserId($userId);
+
+                        if ($stats && $resources && $structures) {
+                            $offense_power = $this->powerCalculator->calculateOffensePower($userId, $resources, $stats, $structures, $player['alliance_id'])['total'];
+                            $defense_power = $this->powerCalculator->calculateDefensePower($userId, $resources, $stats, $structures, $player['alliance_id'])['total'];
+                            $player['overall_power'] = $offense_power + $defense_power;
+                        } else {
+                            $player['overall_power'] = 0;
+                        }
+                    }
+                }
+                unset($player);
             }
-            unset($player);
         }
 
         // 3. Calculate Pagination Metadata

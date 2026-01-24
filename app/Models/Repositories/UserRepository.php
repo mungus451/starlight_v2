@@ -306,6 +306,30 @@ return $npcs;
         return (int)$stmt->fetchColumn();
     }
 
+    public function getAllActivePlayerIdsAndData(): array
+    {
+        $sql = "
+            SELECT 
+                u.id,
+                u.character_name,
+                u.profile_picture_url,
+                u.alliance_id,
+                s.level,
+                s.war_prestige,
+                s.battles_won,
+                s.battles_lost,
+                a.name as alliance_name,
+                a.tag as alliance_tag
+            FROM users u
+            JOIN user_stats s ON u.id = s.user_id
+            LEFT JOIN alliances a ON u.alliance_id = a.id
+            WHERE u.is_npc = 0
+            ORDER BY u.id ASC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     private function hydrate(array $data): User{
 return new User(
 id: (int)$data['id'],
