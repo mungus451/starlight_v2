@@ -1,113 +1,79 @@
-/**
- * Level Up UI Logic
- * Handles the "Bio-Augmentation" stat allocation interface.
- */
+document.addEventListener('DOMContentLoaded', function () {
+    // --- Globals ---
+    let selectedStat = null;
+    const MAX_POINTS = parseInt(document.getElementById('header-points-display').textContent.replace(/,/g, ''), 10) || 0;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize State
-    const form = document.getElementById('level-up-form');
-    if (!form) return;
+    // --- DOM Elements ---
+    const inspector = {
+        panel: document.getElementById('inspector-panel'),
+        title: document.getElementById('insp-title'),
+        icon: document.getElementById('insp-icon'),
+        desc: document.getElementById('insp-desc'),
+        controls: document.getElementById('insp-controls'),
+        input: document.getElementById('stat-input'),
+        hiddenStat: document.getElementById('selected-stat'),
+        confirmBtn: document.getElementById('btn-confirm'),
+        decBtn: document.querySelector('.btn-dec'),
+        incBtn: document.querySelector('.btn-inc')
+    };
 
-    // Get max points from the data attribute I will add to the view
-    // or parse from the header display if that's the only source.
-    // Ideally, the view should pass this via a data attribute.
-    const headerDisplay = document.getElementById('header-points-display');
-    const rawPoints = headerDisplay ? headerDisplay.innerText.replace(/,/g, '') : '0';
-    const maxPoints = parseInt(rawPoints) || 0;
-
-    const inputs = document.querySelectorAll('.stat-input');
-    const totalAllocatedDisplay = document.getElementById('total-allocated');
-    const allocationBar = document.getElementById('allocation-bar');
-    const confirmBtn = document.getElementById('btn-confirm');
-
-    // 2. Logic Function
-    function updateTotals() {
-        let totalUsed = 0;
-        inputs.forEach(input => {
-            let val = parseInt(input.value) || 0;
-            if (val < 0) { 
-                val = 0; 
-                input.value = 0; 
-            }
-            totalUsed += val;
-        });
-
-        // Update UI Text
-        if (totalAllocatedDisplay) totalAllocatedDisplay.innerText = totalUsed.toLocaleString();
-        
-        const remaining = maxPoints - totalUsed;
-        if (headerDisplay) headerDisplay.innerText = remaining.toLocaleString();
-        
-        // Update Progress Bar
-        if (allocationBar) {
-            const pct = maxPoints > 0 ? Math.min(100, (totalUsed / maxPoints) * 100) : 0;
-            allocationBar.style.width = pct + '%';
+    // --- Main Selection Function ---
+    window.selectStat = function(element) {
+        if (selectedStat) {
+            selectedStat.classList.remove('active');
         }
+        selectedStat = element;
+        selectedStat.classList.add('active');
 
-        // Validation & Button State
-        if (confirmBtn) {
-            if (totalUsed > maxPoints) {
-                totalAllocatedDisplay.classList.add('text-danger');
-                totalAllocatedDisplay.classList.remove('text-warning');
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<i class="fas fa-times-circle"></i> Insufficient Points';
-                confirmBtn.classList.add('btn-secondary');
-                confirmBtn.classList.remove('btn-primary');
-            } else if (totalUsed === 0) {
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Upgrades';
-                confirmBtn.classList.add('btn-primary'); // Keep primary style but disabled
-            } else {
-                totalAllocatedDisplay.classList.remove('text-danger');
-                totalAllocatedDisplay.classList.add('text-warning');
-                confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Upgrades';
-                confirmBtn.classList.add('btn-primary');
-                confirmBtn.classList.remove('btn-secondary');
-            }
+        // --- Extract data from the clicked element ---
+        const statData = {
+            key: element.dataset.stat,
+            name: element.dataset.name,
+            desc: element.dataset.desc,
+            icon: element.dataset.icon,
+            color: element.dataset.color,
+            current: element.dataset.current
+        };
+
+        // --- Update Inspector Panel ---
+        inspector.title.textContent = `UPGRADE: ${statData.name.toUpperCase()}`;
+        inspector.icon.className = statData.icon;
+        inspector.icon.style.color = statData.color;
+        inspector.desc.textContent = statData.desc;
+        
+        inspector.hiddenStat.value = statData.key;
+        inspector.input.value = 0;
+        inspector.input.max = MAX_POINTS;
+        
+        inspector.decBtn.dataset.target = statData.key;
+        inspector.incBtn.dataset.target = statData.key;
+
+        inspector.controls.style.display = 'block';
+        updateUI();
+    };
+
+    // --- Event Listeners for +/- buttons ---
+    inspector.decBtn.addEventListener('click', () => adjustAmount(-1));
+    inspector.incBtn.addEventListener('click', () => adjustAmount(1));
+    inspector.input.addEventListener('input', updateUI);
+
+    // --- Helper Functions ---
+    function adjustAmount(value) {
+        let currentVal = parseInt(inspector.input.value, 10);
+        let newVal = currentVal + value;
+        
+        if (newVal >= 0 && newVal <= MAX_POINTS) {
+            inspector.input.value = newVal;
+            updateUI();
         }
     }
 
-    // 3. Event Listeners
-    
-    // Direct Input
-    inputs.forEach(input => {
-        input.addEventListener('input', updateTotals);
-    });
-
-    // Increment Buttons
-    document.querySelectorAll('.btn-inc').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.dataset.target;
-            const input = document.getElementById(targetId);
-            if (!input) return;
-
-            // Calculate current total dynamically
-            let currentTotal = 0;
-            inputs.forEach(i => currentTotal += (parseInt(i.value) || 0));
-            
-            if (currentTotal < maxPoints) {
-                input.value = (parseInt(input.value) || 0) + 1;
-                updateTotals();
-            }
-        });
-    });
-
-    // Decrement Buttons
-    document.querySelectorAll('.btn-dec').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.dataset.target;
-            const input = document.getElementById(targetId);
-            if (!input) return;
-
-            const val = parseInt(input.value) || 0;
-            if (val > 0) {
-                input.value = val - 1;
-                updateTotals();
-            }
-        });
-    });
-
-    // 4. Initial Run
-    updateTotals();
+    function updateUI() {
+        let currentVal = parseInt(inspector.input.value, 10);
+        
+        // Disable/Enable buttons
+        inspector.decBtn.disabled = currentVal <= 0;
+        inspector.incBtn.disabled = currentVal >= MAX_POINTS;
+        inspector.confirmBtn.disabled = currentVal <= 0;
+    }
 });
