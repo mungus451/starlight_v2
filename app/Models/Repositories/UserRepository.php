@@ -330,6 +330,17 @@ return $npcs;
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Updates a user's race and class.
+     */
+    public function setIdentity(int $userId, string $race, string $class): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET race = ?, class = ? WHERE id = ?"
+        );
+        return $stmt->execute([$race, $class, $userId]);
+    }
+
     private function hydrate(array $data): User{
 return new User(
 id: (int)$data['id'],
@@ -342,7 +353,9 @@ alliance_id: isset($data['alliance_id']) ? (int)$data['alliance_id'] : null,
 alliance_role_id: isset($data['alliance_role_id']) ? (int)$data['alliance_role_id'] : null,
 passwordHash: $data['password_hash'],
 createdAt: $data['created_at'],
-is_npc: (bool)($data['is_npc'] ?? false)
+is_npc: (bool)($data['is_npc'] ?? false),
+race: $data['race'] ?? null,
+class: $data['class'] ?? null
 );
 }
 }

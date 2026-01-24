@@ -168,7 +168,7 @@ class ArmoryService
             }
 
             // Cost (Credits)
-            $baseCost = $item['cost'];
+            $baseCost = $item['cost_credits'];
             $effectiveUnitCost = (int)floor($baseCost * (1 - $discountPercent));
             $totalCost += ($effectiveUnitCost * $quantity);
 
@@ -277,7 +277,7 @@ class ArmoryService
         }
 
         // Calculate Cost
-        $baseCost = $item['cost'];
+        $baseCost = $item['cost_credits'];
         $discountSettings = $this->config->get('game_balance.armory', []);
         $rate = $discountSettings['discount_per_charisma'] ?? 0.01;
         $cap = $discountSettings['max_discount'] ?? 0.75;
@@ -450,7 +450,7 @@ class ArmoryService
         $prereqName = $prereqKey ? ($lookup[$prereqKey] ?? 'Unknown Item') : null;
         $prereqOwned = $prereqKey ? (int)($inventory[$prereqKey] ?? 0) : 0;
         
-        $baseCost = $item['cost'];
+        $baseCost = $item['cost_credits'];
         $effectiveCost = (int)floor($baseCost * (1 - $discountPercent));
 
         // --- NEW: Add special resource costs (no discounts apply) ---

@@ -50,14 +50,13 @@
                 <?php else: ?>
                     <?php foreach ($targets as $target): ?>
                         <tr class="player-row" 
-                            data-target-id="<?= $target['id'] ?>"
-                            data-target-name="<?= htmlspecialchars($target['character_name']) ?>">
+                            data-target-id="<?= $target['id'] ?>">
                             
                             <td data-label="Player" style="display: flex; align-items: center; gap: 1rem;">
                                 <?php if ($target['profile_picture_url']): ?>
-                                    <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal" data-target-name="<?= htmlspecialchars($target['character_name']) ?>" style="width: 40px; height: 40px;">
+                                    <img src="/serve/avatar/<?= htmlspecialchars($target['profile_picture_url']) ?>" alt="Avatar" class="player-avatar btn-attack-modal" data-target-id="<?= $target['id'] ?>" style="width: 40px; height: 40px;">
                                 <?php else: ?>
-                                    <svg class="player-avatar player-avatar-svg btn-attack-modal" data-target-name="<?= htmlspecialchars($target['character_name']) ?>" style="width: 40px; height: 40px; padding: 0.5rem;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <svg class="player-avatar player-avatar-svg btn-attack-modal" data-target-id="<?= $target['id'] ?>" style="width: 40px; height: 40px; padding: 0.5rem;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                                     </svg>
                                 <?php endif; ?>
@@ -73,7 +72,7 @@
                             
                             <td data-label="Actions">
                                 <button class="btn-submit btn-reject btn-attack-modal" 
-                                        data-target-name="<?= htmlspecialchars($target['character_name']) ?>"
+                                        data-target-id="<?= $target['id'] ?>" data-target-name="<?= htmlspecialchars($target['character_name']) ?>"
                                         style="margin: 0; padding: 0.5rem 1rem;">
                                     Attack
                                 </button>
@@ -118,15 +117,23 @@
         <form action="/battle/attack" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <input type="hidden" name="attack_type" value="plunder">
-            <input type="hidden" name="target_name" id="modal-target-name" value="">
+            <input type="hidden" name="target_id" id="modal-target-id" value="">
             
             <div class="modal-summary">
-                You are about to launch an all-in "Plunder" operation against:
+                You are about to launch a "Plunder" operation against:
                 <br>
                 <strong id="modal-target-name-display" style="font-size: 1.2rem; color: var(--accent-2); display: block; margin: 0.5rem 0;"></strong>
                 
                 This will send all <strong><?= number_format($attackerResources->soldiers) ?> soldiers</strong>
-                and cost <strong><?= $costs['attack_turn_cost'] ?> attack turn(s)</strong>.
+            </div>
+
+            <div class="mb-3">
+                <label for="attack_turns" class="form-label text-muted">Select Attack Turns (1-10):</label>
+                <select name="attack_turns" id="attack_turns" class="form-select bg-dark border-secondary text-light">
+                    <?php for ($i = 1; $i <= 10; $i++): ?>
+                        <option value="<?= $i ?>"><?= $i ?> Turn(s)</option>
+                    <?php endfor; ?>
+                </select>
             </div>
 
             <div style="display: flex; gap: 1rem;">

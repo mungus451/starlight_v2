@@ -10,6 +10,7 @@ use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\GeneralRepository;
+use App\Models\Repositories\UserRepository;
 use App\Models\Services\EffectService;
 
 /**
@@ -27,6 +28,7 @@ class PowerCalculatorService
     private EdictRepository $edictRepo;
     private GeneralRepository $generalRepo;
     private EffectService $effectService;
+    private UserRepository $userRepo;
     private array $generalConfig;
 
     /** @var array|null Cached structure definitions keyed by structure_key */
@@ -51,7 +53,8 @@ class PowerCalculatorService
         AllianceStructureDefinitionRepository $structDefRepo,
         EdictRepository $edictRepo,
         GeneralRepository $generalRepo,
-        EffectService $effectService
+        EffectService $effectService,
+        UserRepository $userRepo
     ) {
         $this->config = $config;
         $this->armoryService = $armoryService;
@@ -60,7 +63,62 @@ class PowerCalculatorService
         $this->edictRepo = $edictRepo;
         $this->generalRepo = $generalRepo;
         $this->effectService = $effectService;
+        $this->userRepo = $userRepo;
         $this->generalConfig = $this->config->get('game_balance.generals', []);
+    }
+
+    public function getIdentityBonuses(int $userId): array
+    {
+        $user = $this->userRepo->findById($userId);
+        if (!$user) {
+            return [
+                'offense_mult' => 1.0,
+                'defense_mult' => 1.0,
+                'economic_mult' => 1.0,
+                'spy_mult' => 1.0
+            ];
+        }
+
+        $bonuses = [
+            'offense_mult' => 1.0,
+            'defense_mult' => 1.0,
+            'economic_mult' => 1.0,
+            'spy_mult' => 1.0
+        ];
+
+        // Race Bonuses
+        switch ($user->race) {
+            case 'Humans':
+                $bonuses['offense_mult'] += 0.05;
+                break;
+            case 'Cyborgs':
+                $bonuses['defense_mult'] += 0.05;
+                break;
+            case 'Sythera':
+                $bonuses['economic_mult'] += 0.05;
+                break;
+            case 'Juggalo':
+                $bonuses['spy_mult'] += 0.05;
+                break;
+        }
+
+        // Class Bonuses
+        switch ($user->class) {
+            case 'Soldier':
+                $bonuses['offense_mult'] += 0.05;
+                break;
+            case 'Guard':
+                $bonuses['defense_mult'] += 0.05;
+                break;
+            case 'Thief':
+                $bonuses['economic_mult'] += 0.05;
+                break;
+            case 'Cleric':
+                $bonuses['spy_mult'] += 0.05;
+                break;
+        }
+
+        return $bonuses;
     }
 
     /**
@@ -163,9 +221,14 @@ class PowerCalculatorService
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonusPercent = $edictBonuses['offense_power_percent'] ?? 0.0;
 
-        // 5. Final Total Power
+        // 5. Identity Bonuses (Race/Class)
+        $identityBonuses = $this->getIdentityBonuses($userId);
+        $identityOffenseMult = $identityBonuses['offense_mult'];
+
+        // 6. Final Total Power
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['offense_mult'];
+        $totalMultiplier *= $identityOffenseMult;
         
         // Void Buff Check
         $voidBuffMultiplier = 1.0;
@@ -185,6 +248,7 @@ class PowerCalculatorService
             'stat_bonus_pct' => $statBonusPercent,
             'alliance_bonus_pct' => $allianceBonusPercent,
             'edict_bonus_pct' => $edictBonusPercent,
+            'identity_offense_mult' => $identityOffenseMult,
             'general_flat' => $genBonuses['flat_offense'],
             'general_mult' => $genBonuses['offense_mult'],
             'void_buff_mult' => $voidBuffMultiplier,
@@ -235,9 +299,14 @@ class PowerCalculatorService
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonusPercent = $edictBonuses['defense_power_percent'] ?? 0.0;
 
-        // 5. Final Total Power
+        // 5. Identity Bonuses (Race/Class)
+        $identityBonuses = $this->getIdentityBonuses($userId);
+        $identityDefenseMult = $identityBonuses['defense_mult'];
+
+        // 6. Final Total Power
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
         $totalMultiplier *= $genBonuses['defense_mult'];
+        $totalMultiplier *= $identityDefenseMult;
         
         // Void Debuff Check
         $voidDebuffMultiplier = 1.0;
@@ -257,6 +326,7 @@ class PowerCalculatorService
             'stat_bonus_pct' => $statBonusPercent,
             'alliance_bonus_pct' => $allianceBonusPercent,
             'edict_bonus_pct' => $edictBonusPercent,
+            'identity_defense_mult' => $identityDefenseMult,
             'general_flat' => $genBonuses['flat_defense'],
             'general_mult' => $genBonuses['defense_mult'],
             'void_debuff_mult' => $voidDebuffMultiplier,
@@ -277,6 +347,7 @@ class PowerCalculatorService
         ?int $allianceId = null
     ): array {
         $config = $this->config->get('game_balance.turn_processor');
+        $detailedBreakdown = [];
         
         // 1. Base Production
         $econIncome = $structures->economy_upgrade_level * $config['credit_income_per_econ_level'];
@@ -310,7 +381,11 @@ class PowerCalculatorService
         $edictResourceMultiplier = 1.0 + ($edictBonuses['resource_production_percent'] ?? 0.0);
         $edictInterestMultiplier = $edictBonuses['bank_interest_mult'] ?? 1.0;
         
-        // 5. Total Credit Income
+        // 5. Identity Bonuses (Race/Class)
+        $identityBonuses = $this->getIdentityBonuses($userId);
+        $identityEconomicMult = $identityBonuses['economic_mult'];
+
+        // 6. Total Credit Income
         // Multipliers are additive: 1 + Stat% + Alliance% + Accounting% + Edict%
         // But Edict Total Income% might be multiplicative at the end? Let's keep it additive for now to avoid confusion, or apply it to the final sum.
         // "Scorched Earth: -10% Total Income" suggests a final multiplier.
@@ -328,6 +403,7 @@ class PowerCalculatorService
         
         // Apply "Total Income" scalar (e.g. Scorched Earth)
         $finalIncomeScalar = 1.0 + $edictTotalIncomeMultiplier;
+        $finalIncomeScalar *= $identityEconomicMult; // Apply Identity Bonus here as a multiplier
 
         // High Risk Protocol Bonus (+50%)
         if ($this->effectService->hasActiveEffect($userId, 'high_risk_protocol')) {
@@ -343,6 +419,7 @@ class PowerCalculatorService
 
         $totalCreditIncome = (int)floor($totalCreditIncome * $finalIncomeScalar);
         
+        $detailedBreakdown[] = [ 'label' => "Identity Bonus", 'value' => (($identityEconomicMult - 1) * 100) . "%", 'type' => 'scalar' ];
         $detailedBreakdown[] = [ 'label' => "Total Scalar", 'value' => (($finalIncomeScalar - 1) * 100) . "%", 'type' => 'scalar' ];
 
 
@@ -416,7 +493,11 @@ class PowerCalculatorService
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonus = $edictBonuses['spy_success_percent'] ?? 0.0; // Assuming this maps to power for now
 
-        $total = $totalBase * (1 + $structBonus + $edictBonus);
+        // Identity Bonuses (Race/Class)
+        $identityBonuses = $this->getIdentityBonuses($userId);
+        $identitySpyMult = $identityBonuses['spy_mult'];
+
+        $total = $totalBase * (1 + $structBonus + $edictBonus) * $identitySpyMult;
         
         return [
             'total' => (int)$total,
@@ -425,6 +506,7 @@ class PowerCalculatorService
             'total_base_power' => (int)$totalBase,
             'structure_bonus_pct' => $structBonus,
             'edict_bonus_pct' => $edictBonus,
+            'identity_spy_mult' => $identitySpyMult,
             'unit_count' => $spies
         ];
     }
@@ -448,7 +530,11 @@ class PowerCalculatorService
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonus = $edictBonuses['spy_defense_percent'] ?? 0.0;
 
-        $total = $totalBase * (1 + $structBonus + $edictBonus);
+        // Identity Bonuses (Race/Class)
+        $identityBonuses = $this->getIdentityBonuses($userId);
+        $identitySpyMult = $identityBonuses['spy_mult'];
+
+        $total = $totalBase * (1 + $structBonus + $edictBonus) * $identitySpyMult;
         
         // Quantum Scrambler (+50%)
         if ($this->effectService->hasActiveEffect($userId, 'quantum_scrambler')) {
@@ -462,6 +548,7 @@ class PowerCalculatorService
             'total_base_power' => (int)$totalBase,
             'structure_bonus_pct' => $structBonus,
             'edict_bonus_pct' => $edictBonus,
+            'identity_spy_mult' => $identitySpyMult,
             'unit_count' => $sentries
         ];
     }

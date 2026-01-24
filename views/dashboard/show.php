@@ -23,6 +23,10 @@
         
         <div>
             <h2><?= htmlspecialchars($user->characterName) ?></h2>
+            <div class="mb-1">
+                <span class="badge bg-glass border-glass text-neon-blue"><?= htmlspecialchars($user->race ?? 'Unknown Race') ?></span>
+                <span class="badge bg-glass border-glass text-accent-2"><?= htmlspecialchars($user->class ?? 'Unknown Class') ?></span>
+            </div>
             <span class="sub-text">
                 <?php if ($user->alliance_id): ?>
                     <a href="/alliance/profile/<?= $user->alliance_id ?>">View Alliance</a>

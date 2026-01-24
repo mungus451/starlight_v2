@@ -1,0 +1,614 @@
+/*
+ * Starlight Dominion – Command Bridge Dashboard (v1)
+ * Purpose: Styling for the new "command-bridge" dashboard markup (show.php).
+ * Notes:
+ *  - No inline styles required.
+ *  - Designed to sit alongside existing starlight.css variables.
+ */
+
+/* -----------------------------
+   Page Mount / Width Behavior
+------------------------------ */
+
+/* Ensure readable alignment even if a parent container is text-align:center */
+.command-bridge-container {
+    text-align: left;
+}
+
+/* If the layout accidentally renders inside `.container` (max-width: 800px),
+   break out to the viewport width while still respecting a max width. */
+.container .command-bridge-container {
+    width: min(1600px, calc(100vw - 4rem));
+    max-width: 1600px;
+    margin-left: calc(50% - 50vw + 2rem);
+    margin-right: calc(50% - 50vw + 2rem);
+}
+
+/* In full-width layout mode, just use the available width */
+.container-full .command-bridge-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* -----------------------------
+   Header / Command Bar
+------------------------------ */
+
+.command-bridge-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.bridge-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px 18px;
+    border-radius: var(--radius);
+    background: var(--header-gradient);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.bridge-identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 260px;
+}
+
+.bridge-avatar-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(13, 15, 27, 0.75);
+    border: 2px solid rgba(45, 209, 209, 0.55);
+    box-shadow: 0 0 0 6px rgba(45, 209, 209, 0.08);
+    overflow: hidden;
+}
+
+.bridge-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.bridge-avatar-svg {
+    width: 34px;
+    height: 34px;
+    color: rgba(239, 241, 255, 0.85);
+}
+
+.bridge-name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.bridge-name {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.bridge-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.bridge-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.bridge-subtitle {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.bridge-kpis {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.kpi {
+    display: grid;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(12, 14, 25, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    min-width: 108px;
+}
+
+.kpi-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: rgba(168, 175, 212, 0.9);
+}
+
+.kpi-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.bridge-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(12, 14, 25, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: rgba(239, 241, 255, 0.85);
+    text-decoration: none;
+}
+
+.bridge-icon-btn:hover {
+    border-color: rgba(45, 209, 209, 0.25);
+    color: #fff;
+}
+
+/* -----------------------------
+   Grid + Cards
+------------------------------ */
+
+.bridge-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.bridge-card {
+    border-radius: var(--radius);
+    background: var(--card-gradient);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 16px 16px;
+}
+
+.bridge-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.bridge-card-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+}
+
+.bridge-action {
+    color: rgba(239, 241, 255, 0.85);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(12, 14, 25, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.bridge-action:hover {
+    border-color: rgba(45, 209, 209, 0.25);
+}
+
+.bridge-card-wide {
+    grid-column: 1 / 2;
+}
+
+.bridge-card-tall {
+    grid-column: 2 / 3;
+    grid-row: 1 / span 3;
+}
+
+.bridge-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    grid-column: 1 / 2;
+}
+
+.bridge-card-right {
+    grid-column: 2 / 3;
+}
+
+/* -----------------------------
+   Economic Overview
+------------------------------ */
+
+.eco-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 14px;
+    align-items: center;
+}
+
+.eco-income {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.eco-income-val {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: rgba(76, 175, 80, 0.95);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.eco-income-label {
+    color: rgba(168, 175, 212, 0.9);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    font-size: 0.9rem;
+}
+
+.eco-sub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(12, 14, 25, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.035);
+    margin-top: 8px;
+}
+
+.eco-sub-label {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.eco-sub-val {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.eco-mini-graph {
+    border-radius: 14px;
+    background: rgba(12, 14, 25, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 12px 12px;
+}
+
+.mini-graph-label {
+    color: rgba(168, 175, 212, 0.9);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.mini-graph-canvas {
+    width: 100%;
+    height: 56px;
+    display: block;
+    border-radius: 10px;
+    background: rgba(2, 3, 10, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* -----------------------------
+   Breakdown Blocks
+------------------------------ */
+
+.bridge-breakdown {
+    display: none;
+    margin-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding-top: 14px;
+    gap: 14px;
+}
+
+.bridge-breakdown.is-open {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.breakdown-block {
+    border-radius: 14px;
+    background: rgba(12, 14, 25, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 12px 12px;
+}
+
+.breakdown-block strong {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.breakdown-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.breakdown-block li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: rgba(239, 241, 255, 0.92);
+}
+
+.breakdown-accent span {
+    color: var(--accent-2);
+    font-weight: 700;
+}
+
+/* -----------------------------
+   Empire Stats
+------------------------------ */
+
+.empire-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.22);
+    color: rgba(239, 241, 255, 0.95);
+    font-variant-numeric: tabular-nums;
+}
+
+.bridge-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(76, 175, 80, 0.25);
+    background: rgba(76, 175, 80, 0.10);
+    color: rgba(239, 241, 255, 0.95);
+    font-weight: 900;
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+}
+
+.bridge-btn:hover {
+    border-color: rgba(76, 175, 80, 0.45);
+}
+
+.stats-section-title {
+    margin: 12px 0 8px 0;
+    color: rgba(168, 175, 212, 0.9);
+    font-weight: 900;
+    letter-spacing: 0.10em;
+    font-size: 0.72rem;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 56px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: rgba(239, 241, 255, 0.88);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.stat-value {
+    text-align: right;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.bar {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+.bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: rgba(45, 209, 209, 0.55);
+}
+
+.bar.red > i { background: rgba(229, 62, 62, 0.55); }
+.bar.blue > i { background: rgba(118, 131, 245, 0.55); }
+.bar.green > i { background: rgba(76, 175, 80, 0.55); }
+
+.action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.action-row:last-child {
+    border-bottom: none;
+}
+
+.action-label { color: rgba(239, 241, 255, 0.85); font-weight: 800; }
+.action-value { font-weight: 900; font-variant-numeric: tabular-nums; }
+
+.hint-row {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(249, 199, 79, 0.08);
+    border: 1px solid rgba(249, 199, 79, 0.18);
+    color: rgba(239, 241, 255, 0.90);
+    font-weight: 700;
+}
+
+/* -----------------------------
+   Military Panels
+------------------------------ */
+
+.mil-kpi-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.mil-kpi {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.mil-kpi .label {
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: rgba(239, 241, 255, 0.86);
+}
+
+.mil-kpi .value {
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.15rem;
+}
+
+.mil-kpi .value.red { color: rgba(229, 62, 62, 0.95); }
+.mil-kpi .value.blue { color: rgba(118, 131, 245, 0.95); }
+.mil-kpi .value.green { color: rgba(76, 175, 80, 0.95); }
+
+.unit-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 120px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.unit-row:last-child { border-bottom: none; }
+
+.unit-label { color: rgba(239, 241, 255, 0.85); font-weight: 800; }
+.unit-value { text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+.unit-bar {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+.unit-bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: rgba(45, 209, 209, 0.45);
+}
+
+/* -----------------------------
+   Structures
+------------------------------ */
+
+.structures-list {
+    display: grid;
+    gap: 10px;
+}
+
+.structure-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(12, 14, 25, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.structure-title {
+    font-weight: 900;
+}
+
+.structure-sub {
+    margin-top: 2px;
+    color: rgba(168, 175, 212, 0.9);
+    font-size: 0.85rem;
+}
+
+.structure-meta {
+    text-align: right;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+/* -----------------------------
+   Responsiveness
+------------------------------ */
+
+@media (max-width: 1100px) {
+    .bridge-grid {
+        grid-template-columns: 1fr;
+    }
+    .bridge-card-wide,
+    .bridge-card-tall,
+    .bridge-card-right {
+        grid-column: 1 / -1;
+    }
+    .bridge-card-tall {
+        grid-row: auto;
+    }
+    .bridge-row {
+        grid-template-columns: 1fr;
+    }
+    .eco-row {
+        grid-template-columns: 1fr;
+    }
+    .bridge-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .bridge-kpis {
+        justify-content: flex-start;
+    }
+}

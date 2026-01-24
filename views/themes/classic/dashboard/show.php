@@ -66,6 +66,10 @@ $isIntelLeaning = $spies > $sentries;
             <?php endif; ?>
             <div>
                 <h2 class="player-name"><?= htmlspecialchars($user->characterName) ?></h2>
+                <div class="font-07 text-uppercase letter-spacing-1">
+                    <span class="text-neon-blue"><?= htmlspecialchars($user->race ?? 'Unknown Race') ?></span> • 
+                    <span class="text-warning"><?= htmlspecialchars($user->class ?? 'Unknown Class') ?></span>
+                </div>
                 <span class="sub-text">
                     <?php if (!empty($user->alliance_id)): ?>
                         <a href="/alliance/profile/<?= (int)$user->alliance_id ?>">View Alliance</a>
@@ -107,14 +111,55 @@ $isIntelLeaning = $spies > $sentries;
         <div class="data-card grid-col-span-2 economy-panel">
             <div class="card-header">
                 <h3>Economic Overview</h3>
-                <a class="card-toggle" data-target="breakdown-income">Show Breakdown</a>
             </div>
-            <div class="hero-metric">
-                +<?= sd_format_compact($incomePerTurn, 1) ?> / TURN
-                <span class="micro-trend text-success">▲</span>
+            <div class="economy-content-grid">
+                <div class="economy-main-metrics">
+                    <div class="hero-metric">
+                        +<?= sd_format_compact($incomePerTurn, 1) ?> / TURN
+                        <span class="micro-trend text-success">▲</span>
+                    </div>
+                    <div class="secondary-metric"><span class="label">Credits:</span> <?= sd_format_compact($creditsOnHand, 2) ?></div>
+                    <div class="tertiary-metric"><span class="label">Banked:</span> <?= sd_format_compact($bankedCredits, 2) ?></div>
+                    <div class="eco-mini-graph">
+                        <div class="mini-graph-label">24H SIGNAL</div>
+                        <canvas id="oscilloscope-canvas" class="mini-graph-canvas" aria-label="Recent battle signal"></canvas>
+                    </div>
+                </div>
+                <div class="economy-breakdown">
+                    <div class="breakdown-block">
+                        <strong>Total Credit Income: + <?= number_format($incomeBreakdown['total_credit_income'] ?? 0) ?></strong>
+                        <ul>
+                            <?php foreach (($incomeBreakdown['detailed_breakdown'] ?? []) as $item): ?>
+                                <li>
+                                    <span><?= htmlspecialchars($item['label'] ?? '—') ?></span>
+                                    <?php if (isset($item['value']) && is_numeric($item['value'])): ?>
+                                        <span>+ <?= number_format((float)$item['value']) ?></span>
+                                    <?php else: ?>
+                                        <span><?= htmlspecialchars((string)($item['value'] ?? '—')) ?></span>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+
+                    <div class="breakdown-block">
+                        <strong>Citizen Growth: + <?= number_format($incomeBreakdown['total_citizens'] ?? 0) ?></strong>
+                        <ul>
+                            <li>
+                                <span>Citizen Growth (Lvl <?= (int)($incomeBreakdown['pop_level'] ?? 0) ?>)</span>
+                                <span>+ <?= number_format($incomeBreakdown['base_citizen_income'] ?? 0) ?></span>
+                            </li>
+
+                            <?php if (!empty($incomeBreakdown['alliance_citizen_bonus'])): ?>
+                                <li class="breakdown-accent">
+                                    <span>Alliance Structures</span>
+                                    <span>+ <?= number_format((float)$incomeBreakdown['alliance_citizen_bonus']) ?></span>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div class="secondary-metric"><span class="label">Credits:</span> <?= sd_format_compact($creditsOnHand, 2) ?></div>
-            <div class="tertiary-metric"><span class="label">Banked:</span> <?= sd_format_compact($bankedCredits, 2) ?></div>
         </div>
 
         <div class="data-card grid-col-span-1 stats-panel">
@@ -143,30 +188,64 @@ $isIntelLeaning = $spies > $sentries;
             </ul>
         </div>
 
-        <!-- Row 3: Military + Structures -->
-        <div class="data-card grid-col-span-1 military-command-panel">
+        <div class="data-card grid-col-span-2 military-command-panel">
              <div class="card-header">
                 <h3>Military Command</h3>
-                <a class="card-toggle" data-target="breakdown-military">Show Breakdown</a>
             </div>
-            <div class="power-comparison">
-                <span class="power-label">OFFENSE</span>
-                <span class="power-value offense"><?= sd_format_compact($milOffense, 2) ?> <span class="power-trend text-success">▲</span></span>
+            <div class="military-content-grid">
+                <div class="military-main-metrics">
+                    <div class="power-comparison">
+                        <span class="power-label">OFFENSE</span>
+                        <span class="power-value offense"><?= sd_format_compact($milOffense, 2) ?> <span class="power-trend text-success">▲</span></span>
+                    </div>
+                     <div class="power-comparison">
+                        <span class="power-label">DEFENSE</span>
+                        <span class="power-value defense"><?= sd_format_compact($milDefense, 2) ?> <span class="power-trend text-danger">▼</span></span>
+                    </div>
+                    <hr class="intel-divider">
+                    <div class="power-comparison">
+                        <span class="power-label">Spy Power</span>
+                        <span class="power-value"><?= sd_format_compact($milSpy, 2) ?></span>
+                    </div>
+                    <div class="power-comparison">
+                        <span class="power-label">Sentry Power</span>
+                        <span class="power-value"><?= sd_format_compact($milSentry, 2) ?></span>
+                    </div>
+                    <div class="readiness-label">Military Readiness: High</div>
+                </div>
+                <div class="military-breakdown">
+                     <div class="breakdown-block">
+                        <strong>Offense Power (<?= number_format((int)($offenseBreakdown['unit_count'] ?? 0)) ?> Soldiers)</strong>
+                        <ul>
+                            <li><span>Base Soldier Power</span> <span><?= number_format((float)($offenseBreakdown['base_unit_power'] ?? 0)) ?></span></li>
+                            <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format((float)($offenseBreakdown['armory_bonus'] ?? 0)) ?></span></li>
+                            <li><span>Strength (<?= (int)($offenseBreakdown['stat_points'] ?? 0) ?> pts) Bonus</span> <span>+ <?= (float)($offenseBreakdown['stat_bonus_pct'] ?? 0) * 100 ?>%</span></li>
+
+                            <?php if (!empty($offenseBreakdown['alliance_bonus_pct'])): ?>
+                                <li class="breakdown-accent">
+                                    <span>Alliance Structures</span>
+                                    <span>+ <?= (float)$offenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                    <div class="breakdown-block">
+                        <strong>Defense Rating (<?= number_format((int)($defenseBreakdown['unit_count'] ?? 0)) ?> Guards)</strong>
+                        <ul>
+                            <li><span>Base Guard Power</span> <span><?= number_format((float)($defenseBreakdown['base_unit_power'] ?? 0)) ?></span></li>
+                            <li><span>Armory Bonus (from Loadout)</span> <span>+ <?= number_format((float)($defenseBreakdown['armory_bonus'] ?? 0)) ?></span></li>
+                            <li><span>Constitution (<?= (int)($defenseBreakdown['stat_points'] ?? 0) ?> pts) Bonus</span> <span>+ <?= (float)($defenseBreakdown['stat_bonus_pct'] ?? 0) * 100 ?>%</span></li>
+
+                            <?php if (!empty($defenseBreakdown['alliance_bonus_pct'])): ?>
+                                <li class="breakdown-accent">
+                                    <span>Alliance Structures</span>
+                                    <span>+ <?= (float)$defenseBreakdown['alliance_bonus_pct'] * 100 ?>%</span>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
             </div>
-             <div class="power-comparison">
-                <span class="power-label">DEFENSE</span>
-                <span class="power-value defense"><?= sd_format_compact($milDefense, 2) ?> <span class="power-trend text-danger">▼</span></span>
-            </div>
-            <hr class="intel-divider">
-            <div class="power-comparison">
-                <span class="power-label">Spy Power</span>
-                <span class="power-value"><?= sd_format_compact($milSpy, 2) ?></span>
-            </div>
-            <div class="power-comparison">
-                <span class="power-label">Sentry Power</span>
-                <span class="power-value"><?= sd_format_compact($milSentry, 2) ?></span>
-            </div>
-            <div class="readiness-label">Military Readiness: High</div>
         </div>
 
         <div class="data-card grid-col-span-1">

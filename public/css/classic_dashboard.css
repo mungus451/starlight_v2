@@ -63,12 +63,71 @@
     color: var(--muted);
 }
 
+.economy-panel .economy-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Main metrics (left) | Breakdown (right) */
+    gap: 1.5rem;
+    flex-grow: 1;
+}
+
+.economy-panel .economy-main-metrics {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.economy-panel .economy-breakdown {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.economy-panel .economy-breakdown .breakdown-block {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.economy-panel .economy-breakdown .breakdown-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.economy-panel .economy-breakdown ul {
+    list-style: none;
+    padding: 0.5rem 0 0 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.economy-panel .economy-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+}
+
+.economy-panel .economy-breakdown li span:first-child {
+    color: var(--muted);
+}
+.economy-panel .economy-breakdown li span:last-child {
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.economy-panel .eco-mini-graph {
+    margin-top: 1rem;
+}
+
 /* --- 4. ECONOMIC OVERVIEW PANEL --- */
 .economy-panel .hero-metric {
     font-size: 2.5rem;
     font-weight: 700;
     color: var(--accent-green);
     line-height: 1.1;
+    margin-bottom: 0.5rem; /* Add some space below */
 }
 .economy-panel .hero-metric .micro-trend {
     font-size: 1rem;
@@ -117,6 +176,52 @@
     0% { filter: brightness(1); text-shadow: 0 0 2px var(--accent-2); }
     50% { filter: brightness(1.5); text-shadow: 0 0 8px var(--accent-2); }
     100% { filter: brightness(1); text-shadow: 0 0 2px var(--accent-2); }
+}
+
+.military-command-panel .military-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.5rem;
+    flex-grow: 1;
+}
+.military-command-panel .military-main-metrics {
+    display: flex;
+    flex-direction: column;
+}
+.military-command-panel .military-breakdown {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+.military-command-panel .military-breakdown .breakdown-block {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+.military-command-panel .military-breakdown .breakdown-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.military-command-panel .military-breakdown ul {
+    list-style: none;
+    padding: 0.5rem 0 0 0;
+    margin: 0;
+}
+.military-command-panel .military-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+}
+.military-command-panel .military-breakdown li span:first-child {
+    color: var(--muted);
+}
+.military-command-panel .military-breakdown li span:last-child {
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
 }
 
 /* --- 6. MILITARY COMMAND PANEL --- */

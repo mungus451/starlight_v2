@@ -182,6 +182,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
     $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
 
+    // --- Identity Selection ---
+    $r->addRoute('GET', '/choose-identity', [\App\Controllers\IdentityController::class, 'showSelection']);
+    $r->addRoute('POST', '/choose-identity', [\App\Controllers\IdentityController::class, 'handleSelection']);
+
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
 
@@ -382,11 +386,67 @@ try {
 
 
 
-                if ($isProtected) {
+                                if ($isProtected) {
 
-                    $container->get(AuthMiddleware::class)->handle();
 
-                }
+
+                                    $container->get(AuthMiddleware::class)->handle();
+
+
+
+                                    
+
+
+
+                                    // --- Identity Selection Check ---
+
+
+
+                                    $userId = $container->get(App\Core\Session::class)->get('user_id');
+
+
+
+                                    $userRepo = $container->get(App\Models\Repositories\UserRepository::class);
+
+
+
+                                    $user = $userRepo->findById($userId);
+
+
+
+                                    
+
+
+
+                                    if ($user && (!$user->race || !$user->class)) {
+
+
+
+                                        $currentUri = $_SERVER['REQUEST_URI'];
+
+
+
+                                        if (!str_contains($currentUri, '/choose-identity') && !str_contains($currentUri, '/logout')) {
+
+
+
+                                            header('Location: /choose-identity');
+
+
+
+                                            exit;
+
+
+
+                                        }
+
+
+
+                                    }
+
+
+
+                                }
 
 
 

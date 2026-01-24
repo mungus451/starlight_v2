@@ -18,6 +18,11 @@
     <link rel="stylesheet" href="/css/starlight.css?v=<?= time() ?>">
     <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
     <link rel="stylesheet" href="/css/alliance_uplink.css?v=<?= time() ?>">
+
+    <!-- Experimental Features --> 
+    <link rel="stylesheet" href="/css/starlight-command-bridge.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/armory-command-bridge.css?v=<?= time() ?>">
+
 </head>
 <body class="">
 
@@ -164,6 +169,7 @@
                                 <select name="theme" class="form-select bg-dark text-light border-secondary" onchange="this.form.submit()">
                                     <option value="default" <?= ($this->session->get('theme', 'default') === 'default') ? 'selected' : '' ?>>Default Theme</option>
                                     <option value="classic" <?= ($this->session->get('theme', 'default') === 'classic') ? 'selected' : '' ?>>Classic Theme</option>
+                                    <option value="simple" <?= ($this->session->get('theme', 'default') === 'simple') ? 'selected' : '' ?>>Simple Theme</option>
                                 </select>
                             </form>
                         </li>

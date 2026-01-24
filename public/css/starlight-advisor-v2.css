@@ -9,13 +9,12 @@
     display: grid;
     /* 
        Grid Columns:
-       1fr (Main Content) | 280px (Space reserved for Fixed Advisor Panel)
-       Note: The fixed panel sits visually on top of the 280px column space.
+       280px (Space for Advisor) | 1fr (Main Content)
     */
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: 280px 1fr;
     grid-template-rows: auto;
-    gap: 0; /* Remove gap as sidebar is flush */
-    padding-top: 0; /* Align with top */
+    gap: 0;
+    padding-top: 0;
 }
 
 @media (max-width: 1200px) {
@@ -28,36 +27,32 @@
 
 /* Main content area within the grid */
 .advisor-main-content {
-    grid-column: 1 / 2;
-    padding: 1.5rem; /* Add padding here since grid gap is gone */
-    min-width: 0; /* CRITICAL: Allows grid item to shrink below content size */
-    overflow-x: hidden; /* Prevents internal spillover */
+    grid-column: 2 / 3;
+    padding: 1.5rem;
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 /* Advisor panel container */
 .advisor-panel {
-    /* Fixed Positioning for Desktop */
     position: fixed;
-    top: 60px; /* Below Navbar */
-    right: 0;
+    top: 60px;
+    left: 0; /* MOVED TO LEFT */
     width: 280px;
     height: calc(100vh - 60px);
     
-    /* Styling */
-    background-color: rgba(13, 17, 23, 0.95); /* Darker opacity for legibility */
-    border-left: 1px solid var(--border);
-    border-radius: 0; /* Flush edges */
+    background-color: rgba(13, 17, 23, 0.95);
+    border-right: 1px solid var(--border); /* CHANGED to right */
+    border-radius: 0;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     
-    /* Scrolling & Spacing */
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal scroll when collapsing */
+    overflow-x: hidden;
     padding: 1.5rem;
-    z-index: 800; /* Below modals (1000+) but above page content */
+    z-index: 800;
     
-    /* Box Shadow for depth */
-    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); /* CHANGED to right */
     
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -80,8 +75,8 @@
 .advisor-toggle-btn {
     position: absolute;
     top: 50%;
-    left: 0;
-    transform: translateY(-50%);
+    right: 0; /* MOVED to right */
+    transform: translateY(-50%) translateX(100%); /* Position outside the panel */
     background: rgba(13, 17, 23, 0.95);
     border: 1px solid var(--border);
     border-left: none;
@@ -89,19 +84,13 @@
     cursor: pointer;
     font-size: 0.7rem;
     padding: 15px 4px;
-    border-radius: 0 8px 8px 0; /* Rounded on right side initially? No, needs to be on left */
-    /* Wait, this button sits on the border line. 
-       If panel is right-fixed, the button should protrude to the LEFT of the panel. 
-       However, inside the panel (overflow hidden?), absolute positioning relative to panel might clip it.
-       Actually, standard pattern: put it inside, aligned to left edge.
-    */
-    border-radius: 8px 0 0 8px; 
+    border-radius: 0 8px 8px 0; /* Rounded on the right */
     transition: all 0.3s;
     z-index: 801;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2); /* Flipped shadow */
 }
 
 .advisor-toggle-btn:hover {
@@ -111,8 +100,9 @@
 
 /* When Collapsed: Button flips and stays visible */
 .advisor-panel.collapsed .advisor-toggle-btn {
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(180deg);
+    left: auto; /* Unset left */
+    right: 50%; /* Center relative to collapsed panel */
+    transform: translate(50%, -50%) rotate(180deg); /* Adjust transform */
     border-radius: 4px;
     border: 1px solid var(--border);
     width: 30px;
@@ -147,7 +137,7 @@
 
 /* Layout Grid Adjustment for Collapsed State */
 body.advisor-collapsed .advisor-layout-grid {
-    grid-template-columns: 1fr 50px;
+    grid-template-columns: 50px 1fr;
 }
 
 @media (max-width: 1200px) {

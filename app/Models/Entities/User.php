@@ -32,7 +32,9 @@ readonly class User
         public readonly ?int $alliance_role_id,
         public readonly string $passwordHash,
         public readonly string $createdAt,
-        public readonly bool $is_npc = false // Default false for backward compatibility
+        public readonly bool $is_npc = false,
+        public readonly ?string $race = null,
+        public readonly ?string $class = null
     ) {
     }
 }

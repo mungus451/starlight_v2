@@ -47,14 +47,7 @@ class ArmoryPresenter
         // 2. Button Labels
         $item['manufacture_btn_text'] = $item['is_tier_1'] ? 'Manufacture' : 'Upgrade';
 
-        // 3. Formatted Cost
-        $item['base_cost_formatted'] = number_format($item['base_cost']);
-        $item['effective_cost_formatted'] = number_format($item['effective_cost']);
-        $item['current_owned_formatted'] = number_format($item['current_owned']);
-        $item['prereq_owned_formatted'] = number_format($item['prereq_owned']);
-
-        // 4. Stat Badges
-        // Service now passes raw stats; we format them into badges here.
+        // 3. Stat Badges
         $badges = [];
         if (isset($item['attack']) && $item['attack'] > 0) {
             $badges[] = ['type' => 'attack', 'label' => "+{$item['attack']} Atk"];

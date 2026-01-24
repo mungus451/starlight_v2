@@ -1,0 +1,196 @@
+/* public/css/armory_v2.css */
+
+/* --- Base Container --- */
+.armory-container {
+    padding: 1.5rem;
+}
+
+/* --- 2. COMMAND STATUS BAR --- */
+.armory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-left .page-title-neon { font-size: 1.8rem; margin-bottom: 0.25rem; }
+.header-left .page-subtitle-tech { font-size: 0.9rem; margin: 0; }
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+.header-stat {
+    text-align: right;
+}
+.header-stat .label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+.header-stat .value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* --- 3. LOADOUT PANEL --- */
+.armory-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+.loadout-panel {
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    position: sticky;
+    top: 75px; /* Adjust based on main nav height */
+}
+.loadout-panel h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.loadout-slot-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+.slot-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+}
+.slot-item-name {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    min-height: 20px;
+}
+.slot-item-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 24px;
+}
+
+/* --- 4/5/6. EQUIPMENT & MANUFACTURING --- */
+.equipment-grid-container {
+    min-width: 0;
+}
+.category-title {
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 1rem 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.equipment-card {
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.equipment-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+.equipment-card .card-header-main { padding: 0.75rem 1rem; background: rgba(0,0,0,0.2); }
+.equipment-card .card-body-main { padding: 1rem; flex-grow: 1; }
+.equipment-card .card-footer-actions { padding: 1rem; background: rgba(0,0,0,0.2); margin-top: auto; }
+.role-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--accent-2);
+}
+.army-impact-section {
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin: 1rem 0;
+    font-size: 0.8rem;
+}
+.impact-label {
+    display: block;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-size: 0.7rem;
+    margin-bottom: 0.25rem;
+}
+.impact-values {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+.cost-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.manufacture-form, .equip-form {
+    display: flex;
+    gap: 0.5rem;
+}
+.manufacture-form .form-control { width: 70px; text-align: center; }
+
+/* Tier Teaser */
+.tier-teaser-card {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+}
+.tier-teaser-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+/* Stat Pills */
+.stat-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.stat-pill.attack { background: rgba(229, 62, 62, 0.2); color: #feb2b2; border: 1px solid rgba(229, 62, 62, 0.3); }
+.stat-pill.defense { background: rgba(49, 130, 206, 0.2); color: #bee3f8; border: 1px solid rgba(49, 130, 206, 0.3); }

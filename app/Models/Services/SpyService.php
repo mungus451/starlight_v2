@@ -102,11 +102,10 @@ class SpyService
         return $this->spyRepo->findReportById($reportId, $viewerId);
     }
 
-    public function conductOperation(int $attackerId, string $targetName): ServiceResponse
+    public function conductOperation(int $attackerId, int $targetId): ServiceResponse
     {
-        if (empty(trim($targetName))) return ServiceResponse::error('You must enter a target.');
-        $defender = $this->userRepo->findByCharacterName($targetName);
-        if (!$defender) return ServiceResponse::error("Character '{$targetName}' not found.");
+        $defender = $this->userRepo->findById($targetId);
+        if (!$defender) return ServiceResponse::error("Target with ID '{$targetId}' not found.");
         if ($defender->id === $attackerId) return ServiceResponse::error('You cannot spy on yourself.');
 
         // --- Active Effects Check ---

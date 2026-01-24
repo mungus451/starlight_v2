@@ -4,16 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Tabs
-    if (typeof StarlightUtils !== 'undefined') {
-        StarlightUtils.initTabs({
-            navSelector: '.structure-nav-btn',
-            contentSelector: '.structure-category-container',
-            dataAttr: 'tab-target'
-        });
-    }
-
-    // 2. Initialize Input Masks (Format as you type)
+    // 1. Initialize Input Masks (Format as you type)
     const masks = [
         { display: 'dep-amount-display', hidden: 'dep-amount-hidden' },
         { display: 'wit-amount-display', hidden: 'wit-amount-hidden' },
