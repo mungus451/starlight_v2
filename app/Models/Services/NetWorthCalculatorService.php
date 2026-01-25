@@ -7,8 +7,6 @@ use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Repositories\StructureDefinitionRepository;
 use App\Models\Repositories\StatsRepository;
-use App\Models\Repositories\GeneralRepository;
-use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\ArmoryRepository;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Repositories\UserRepository;
@@ -23,8 +21,6 @@ class NetWorthCalculatorService
     private ResourceRepository $resourceRepo;
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
-    private GeneralRepository $generalRepo;
-    private ScientistRepository $scientistRepo;
     private ArmoryRepository $armoryRepo;
     private PowerCalculatorService $powerService;
     private UserRepository $userRepo;
@@ -38,8 +34,6 @@ class NetWorthCalculatorService
         ResourceRepository $resourceRepo,
         StructureRepository $structureRepo,
         StatsRepository $statsRepo,
-        GeneralRepository $generalRepo,
-        ScientistRepository $scientistRepo,
         ArmoryRepository $armoryRepo,
         PowerCalculatorService $powerService,
         UserRepository $userRepo
@@ -48,8 +42,6 @@ class NetWorthCalculatorService
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
-        $this->generalRepo = $generalRepo;
-        $this->scientistRepo = $scientistRepo;
         $this->armoryRepo = $armoryRepo;
         $this->powerService = $powerService;
         $this->userRepo = $userRepo;
@@ -138,15 +130,7 @@ class NetWorthCalculatorService
         $totalValue += $resources->spies * ($trainingConfig['spies']['credits'] ?? 0);
         $totalValue += $resources->sentries * ($trainingConfig['sentries']['credits'] ?? 0);
 
-        // Specialized Units (Generals/Scientists)
-        $generalCount = $this->generalRepo->countByUserId($userId);
-        $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
-        
-        $genCost = $this->config->get('game_balance.generals.recruitment_cost', 1000000);
-        $sciCost = $this->config->get('game_balance.scientists.recruitment_cost', 1000000);
-        
-        $totalValue += $generalCount * $genCost;
-        $totalValue += $scientistCount * $sciCost;
+
 
         return $totalValue;
     }

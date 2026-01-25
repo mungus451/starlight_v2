@@ -3,8 +3,6 @@
 namespace Tests\Unit\Services;
 
 use Tests\Unit\TestCase;
-use App\Models\Services\TrainingService;
-use App\Models\Services\GeneralService;
 use App\Models\Repositories\ResourceRepository;
 use App\Models\Repositories\StructureRepository;
 use App\Models\Entities\UserResource;
@@ -18,7 +16,6 @@ class TrainingServiceTest extends TestCase
     private TrainingService $service;
     private Config|Mockery\MockInterface $mockConfig;
     private ResourceRepository|Mockery\MockInterface $mockResourceRepo;
-    private GeneralService|Mockery\MockInterface $mockGeneralService;
     private StructureRepository|Mockery\MockInterface $mockStructureRepo;
 
     protected function setUp(): void
@@ -32,13 +29,11 @@ class TrainingServiceTest extends TestCase
         $this->mockConfig->shouldReceive('get')->with('game_balance.spy.base_power_per_sentry', 1)->andReturn(1)->byDefault();
         
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
-        $this->mockGeneralService = Mockery::mock(GeneralService::class);
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
 
         $this->service = new TrainingService(
             $this->mockConfig,
             $this->mockResourceRepo,
-            $this->mockGeneralService,
             $this->mockStructureRepo
         );
     }
@@ -151,28 +146,7 @@ class TrainingServiceTest extends TestCase
         $this->assertServiceMessageContains($response, 'untrained citizens');
     }
 
-    public function testTrainUnitsFailsWhenArmyCapacityExceeded(): void
-    {
-        $userId = 1;
-        $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 10, soldiers: 10);
-        $mockStructures = new UserStructure(
-            user_id: $userId,
-            economy_upgrade_level: 0,
-            population_level: 0,
-            armory_level: 0
-        );
-        $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
-        
-        $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 100, 'citizens' => 1]]);
-        $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
-        
-        // Cap is 10. Trying to add 1. Total 11 > 10.
-        $this->mockGeneralService->shouldReceive('getArmyCapacity')->with($userId)->andReturn(10);
 
-        $response = $this->service->trainUnits($userId, 'soldiers', 1);
-        $this->assertServiceFailure($response);
-        $this->assertServiceMessageContains($response, 'Army Limit Reached');
-    }
 
     public function testTrainUnitsSuccessfullyTrainsSoldiers(): void
     {
@@ -189,8 +163,7 @@ class TrainingServiceTest extends TestCase
         $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 1000, 'citizens' => 1]]);
         $this->mockResourceRepo->shouldReceive('findByUserId')->andReturn($mockResource);
         
-        // Cap is 100.
-        $this->mockGeneralService->shouldReceive('getArmyCapacity')->with($userId)->andReturn(100);
+
 
         $this->mockResourceRepo->shouldReceive('updateTrainedUnits')->once()->andReturn(true);
 

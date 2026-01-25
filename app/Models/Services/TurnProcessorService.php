@@ -10,8 +10,6 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
-use App\Models\Repositories\GeneralRepository;
-use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Services\NetWorthCalculatorService;
 use PDO;
@@ -33,8 +31,6 @@ class TurnProcessorService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private PowerCalculatorService $powerCalculatorService;
-    private GeneralRepository $generalRepo;
-    private ScientistRepository $scientistRepo;
     private EdictRepository $edictRepo;
     private NetWorthCalculatorService $nwCalculator;
 
@@ -58,8 +54,6 @@ class TurnProcessorService
         PowerCalculatorService $powerCalculatorService,
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
-        GeneralRepository $generalRepo,
-        ScientistRepository $scientistRepo,
         EdictRepository $edictRepo,
         NetWorthCalculatorService $nwCalculator
     ) {
@@ -70,8 +64,6 @@ class TurnProcessorService
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
-        $this->generalRepo = $generalRepo;
-        $this->scientistRepo = $scientistRepo;
         $this->edictRepo = $edictRepo;
 
         $this->powerCalculatorService = $powerCalculatorService;

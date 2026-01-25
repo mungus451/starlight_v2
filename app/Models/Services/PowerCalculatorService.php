@@ -9,7 +9,6 @@ use App\Models\Entities\UserStructure;
 use App\Models\Repositories\AllianceStructureRepository;
 use App\Models\Repositories\AllianceStructureDefinitionRepository;
 use App\Models\Repositories\EdictRepository;
-use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\UserRepository;
 use App\Models\Services\EffectService;
 
@@ -26,10 +25,8 @@ class PowerCalculatorService
     private AllianceStructureRepository $allianceStructRepo;
     private AllianceStructureDefinitionRepository $structDefRepo;
     private EdictRepository $edictRepo;
-    private GeneralRepository $generalRepo;
     private EffectService $effectService;
     private UserRepository $userRepo;
-    private array $generalConfig;
 
     /** @var array|null Cached structure definitions keyed by structure_key */
     private ?array $structureDefinitionsCache = null;
@@ -40,9 +37,6 @@ class PowerCalculatorService
     /** @var array Runtime cache for edict bonuses */
     private array $edictBonusCache = [];
 
-    /** @var array Runtime cache for general bonuses */
-    private array $generalBonusCache = [];
-
     /**
      * DI Constructor.
      */
@@ -52,7 +46,6 @@ class PowerCalculatorService
         AllianceStructureRepository $allianceStructRepo,
         AllianceStructureDefinitionRepository $structDefRepo,
         EdictRepository $edictRepo,
-        GeneralRepository $generalRepo,
         EffectService $effectService,
         UserRepository $userRepo
     ) {
@@ -61,10 +54,8 @@ class PowerCalculatorService
         $this->allianceStructRepo = $allianceStructRepo;
         $this->structDefRepo = $structDefRepo;
         $this->edictRepo = $edictRepo;
-        $this->generalRepo = $generalRepo;
         $this->effectService = $effectService;
         $this->userRepo = $userRepo;
-        $this->generalConfig = $this->config->get('game_balance.generals', []);
     }
 
     public function getIdentityBonuses(int $userId): array
@@ -132,44 +123,7 @@ class PowerCalculatorService
         $this->structureDefinitionsCache = null;
     }
     
-    public function calculateGeneralBonuses(int $userId): array
-    {
-        if (isset($this->generalBonusCache[$userId])) {
-            return $this->generalBonusCache[$userId];
-        }
 
-        $generals = $this->generalRepo->findByUserId($userId);
-        $weaponsConfig = $this->config->get('elite_weapons', []);
-        
-        $bonuses = [
-            'flat_offense' => 0,
-            'flat_defense' => 0,
-            'flat_shield' => 0,
-            'offense_mult' => 1.0,
-            'defense_mult' => 1.0,
-        ];
-        
-        foreach ($generals as $gen) {
-            $key = $gen['weapon_slot_1'] ?? null;
-            if (!$key || !isset($weaponsConfig[$key])) continue;
-            
-            $mods = $weaponsConfig[$key]['modifiers'] ?? [];
-            
-            $bonuses['flat_offense'] += ($mods['flat_offense'] ?? 0);
-            $bonuses['flat_defense'] += ($mods['flat_defense'] ?? 0);
-            $bonuses['flat_shield'] += ($mods['flat_shield'] ?? 0);
-            
-            if (isset($mods['global_offense_mult'])) {
-                $bonuses['offense_mult'] *= $mods['global_offense_mult'];
-            }
-            if (isset($mods['global_defense_mult'])) {
-                $bonuses['defense_mult'] *= $mods['global_defense_mult'];
-            }
-        }
-        
-        $this->generalBonusCache[$userId] = $bonuses;
-        return $bonuses;
-    }
 
     /**
      * Calculates a user's total "all-in" Offense Power and its components.
@@ -185,24 +139,8 @@ class PowerCalculatorService
         $soldiers = $resources->soldiers;
         
         // 1. Base Power
-        // Generals
-        $genBonuses = $this->calculateGeneralBonuses($userId);
-
-        // Apply Army Capacity (Soldiers only)
-        $baseCapacity = $this->generalConfig['base_capacity'] ?? 500;
-        $capacityPerGeneral = $this->generalConfig['capacity_per_general'] ?? 10000;
-        $generalCount = $this->generalRepo->countByUserId($userId);
-        $armyCapacity = $baseCapacity + ($generalCount * $capacityPerGeneral);
-
-        $effectiveSoldiers = min($soldiers, $armyCapacity);
-        $ineffectiveSoldiers = $soldiers - $effectiveSoldiers;
-
-        // Calculate base power using ONLY effective soldiers
-        $baseUnitPower = $effectiveSoldiers * $config['power_per_soldier'];
-        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'soldier', 'attack', $effectiveSoldiers); // Armory bonus also only for effective soldiers
-
-        // Add General's flat offense
-        $baseUnitPower += $genBonuses['flat_offense'];
+        $baseUnitPower = $soldiers * $config['power_per_soldier'];
+        $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'soldier', 'attack', $soldiers); // Armory bonus also only for effective soldiers
         
         $totalBasePower = $baseUnitPower + $armoryBonus;
 
@@ -227,7 +165,6 @@ class PowerCalculatorService
 
         // 6. Final Total Power
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
-        $totalMultiplier *= $genBonuses['offense_mult'];
         $totalMultiplier *= $identityOffenseMult;
         
         // Void Buff Check
@@ -249,14 +186,9 @@ class PowerCalculatorService
             'alliance_bonus_pct' => $allianceBonusPercent,
             'edict_bonus_pct' => $edictBonusPercent,
             'identity_offense_mult' => $identityOffenseMult,
-            'general_flat' => $genBonuses['flat_offense'],
-            'general_mult' => $genBonuses['offense_mult'],
             'void_buff_mult' => $voidBuffMultiplier,
             'stat_points' => $stats->strength_points,
             'unit_count' => $soldiers,
-            'army_capacity' => $armyCapacity,
-            'effective_soldiers' => $effectiveSoldiers,
-            'ineffective_soldiers' => $ineffectiveSoldiers
         ];
     }
 
@@ -276,10 +208,6 @@ class PowerCalculatorService
         // 1. Base Power
         $baseUnitPower = $guards * $config['power_per_guard'];
         $armoryBonus = $this->armoryService->getAggregateBonus($userId, 'guard', 'defense', $guards);
-        
-        // Generals
-        $genBonuses = $this->calculateGeneralBonuses($userId);
-        $baseUnitPower += $genBonuses['flat_defense'];
         
         $totalBasePower = $baseUnitPower + $armoryBonus;
 
@@ -305,7 +233,6 @@ class PowerCalculatorService
 
         // 6. Final Total Power
         $totalMultiplier = 1 + $structureBonusPercent + $statBonusPercent + $allianceBonusPercent + $edictBonusPercent;
-        $totalMultiplier *= $genBonuses['defense_mult'];
         $totalMultiplier *= $identityDefenseMult;
         
         // Void Debuff Check
@@ -327,8 +254,6 @@ class PowerCalculatorService
             'alliance_bonus_pct' => $allianceBonusPercent,
             'edict_bonus_pct' => $edictBonusPercent,
             'identity_defense_mult' => $identityDefenseMult,
-            'general_flat' => $genBonuses['flat_defense'],
-            'general_mult' => $genBonuses['defense_mult'],
             'void_debuff_mult' => $voidDebuffMultiplier,
             'stat_points' => $stats->constitution_points,
             'unit_count' => $guards
@@ -663,9 +588,7 @@ class PowerCalculatorService
         $edictBonuses = $this->getEdictBonuses($userId);
         $edictBonusPct = $edictBonuses['shield_hp_percent'] ?? 0.0;
         
-        // General Bonus
-        $genBonuses = $this->calculateGeneralBonuses($userId);
-        $flatShield = $genBonuses['flat_shield'];
+        $flatShield = 0;
 
         $totalHp = ($structures->planetary_shield_level * $hpPerLevel);
         $totalHp += $flatShield; 

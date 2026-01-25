@@ -161,11 +161,6 @@ return [
                     'commanders_helm' => ['name' => 'Commander\'s Helm', 'defense' => 30, 'cost_credits' => 60000, 'description' => 'Increases the effectiveness of nearby units.', 'requires' => 'reinforced_visor', 'armory_level_req' => 9],
                     'juggernaut_helm' => ['name' => 'Juggernaut Helm', 'defense' => 40, 'cost_credits' => 80000, 'description' => 'Heavy, but provides unmatched protection.', 'requires' => 'commanders_helm', 'armory_level_req' => 39],
                     'praetorian_helm' => ['name' => 'Praetorian Helm', 'defense' => 50, 'cost_credits' => 100000, 'description' => 'The ultimate in defensive headgear.', 'requires' => 'juggernaut_helm', 'armory_level_req' => 49],
-                    'void_helm' => ['name' => 'Void Helm', 'defense' => 60, 'cost_credits' => 120000, 'cost_crystals' => 10, 'description' => 'Phases head through attacks.', 'requires' => 'praetorian_helm', 'armory_level_req' => 59],
-                    'quantum_helm' => ['name' => 'Quantum Helm', 'defense' => 70, 'cost_credits' => 140000, 'cost_crystals' => 50, 'description' => 'Absorbs energy to repair.', 'requires' => 'void_helm', 'armory_level_req' => 69],
-                    'temporal_helm' => ['name' => 'Temporal Helm', 'defense' => 80, 'cost_credits' => 160000, 'cost_crystals' => 250, 'cost_dark_matter' => 1, 'description' => 'Predicts incoming blows.', 'requires' => 'quantum_helm', 'armory_level_req' => 79],
-                    'reality_helm' => ['name' => 'Reality Helm', 'defense' => 90, 'cost_credits' => 180000, 'cost_crystals' => 1000, 'cost_dark_matter' => 10, 'description' => 'Distorts reality to deflect.', 'requires' => 'temporal_helm', 'armory_level_req' => 89],
-                    'omni_helm' => ['name' => 'Omni-Helm', 'defense' => 100, 'cost_credits' => 200000, 'cost_crystals' => 5000, 'cost_dark_matter' => 100, 'description' => 'All-protecting, ultimate defense.', 'requires' => 'reality_helm', 'armory_level_req' => 99],
                 ]
             ]
         ]

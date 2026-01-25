@@ -57,7 +57,7 @@ return [
             'base_cost' => 100000,
             'multiplier' => 1.65,
             'category' => 'Military',
-            'description' => 'Allows for the instant emergency drafting of units using Dark Matter.'
+            'description' => 'Allows for the instant emergency drafting of units.'
         ],
         'neural_uplink' => [
             'name' => 'Neural Uplink',
@@ -77,8 +77,7 @@ return [
     'upkeep' => [
         'general' => [
         ],
-        'scientist' => [
-        ],
+
     ],
     // --- Phase 7 ---
     'spy' => [
@@ -125,20 +124,8 @@ return [
         'worker_casualty_rate_base' => 0.02, // 2% of workers lost on defeat
         'worker_casualty_damage_scalar' => 0.05, // Additional loss scalar based on guard losses
 
-        'nanite_casualty_reduction_per_level' => 0.01,
-        'max_nanite_casualty_reduction' => 0.50,
         'shield_hp_per_level' => 25,
 
-        // New: War College
-        'war_college_xp_bonus_per_level' => 0.02, // 2% XP bonus per level
-
-        // New: Phase Bunker
-        'phase_bunker_protection_per_level' => 0.005, // 0.5% protection per level
-        'max_phase_bunker_protection' => 0.20, // Max 20%
-
-        // New: Ion Cannon Network
-        'ion_cannon_damage_per_level' => 0.001, // 0.1% of enemy force
-        'max_ion_cannon_damage' => 0.05, // Max 5%
     ],
     // --- Phase 9 ---
     'level_up' => [
@@ -155,12 +142,6 @@ return [
         'credit_income_per_worker' => 100,
         'credit_bonus_per_wealth_point' => 0.01,
         'citizen_growth_per_pop_level' => 10,
-        'research_data_per_lab_level' => 100,
-        'accounting_firm_base_bonus' => 0.01,
-        'accounting_firm_multiplier' => 1.05,
-
-        // New: Fusion Plant
-        'fusion_plant_bonus_per_level' => 0.005, // 0.5% bonus per level
     ],
     // --- Phase 11 ---
     'alliance' => [
@@ -186,25 +167,15 @@ return [
             'defense_caught_spy' => 75
         ]
     ],
-    'generals' => [
-        'base_capacity' => 50000000,
-        'capacity_per_general' => 250000
-    ],
-
     // New: Banking
     'bank' => [
-        'banking_datacenter_regen_reduction_minutes' => 10, // 10 minutes per level
-        'max_banking_datacenter_reduction_minutes' => 180 // 3 hours
     ],
 
     'war' => [
         'strategic_objective_points' => 2500,
         'eligible_strategic_targets' => [
-            'fortification',
-            'offense_upgrade',
             'armory',
             'planetary_shield',
-            'ion_cannon_network'
         ],
         'min_level_for_strategic_targets' => 5
     ],
