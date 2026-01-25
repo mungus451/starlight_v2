@@ -26,7 +26,6 @@ class SpyRepository
         ?int $credits, 
         ?int $gemstones, ?int $workers, ?int $soldiers, ?int $guards, ?int $spies, ?int $sentries,
         ?int $econLevel, ?int $popLevel, ?int $armoryLevel,
-        float $protoformStolen = 0, ?float $protoformSeen = null,
         int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
@@ -34,11 +33,10 @@ class SpyRepository
                 (attacker_id, defender_id, operation_result, spies_sent, spies_lost_attacker, sentries_lost_defender,
                  defender_total_sentries, defender_workers_lost,
                  credits_seen, 
-                 protoform_stolen, protoform_seen,
                  gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
                  economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
         
         $stmt = $this->db->prepare($sql);
@@ -46,7 +44,6 @@ class SpyRepository
             $attackerId, $defenderId, $result, $spiesSent, $spiesLost, $sentriesLost,
             $defenderTotalSentries, $defenderWorkersLost,
             $credits,
-            $protoformStolen, $protoformSeen,
             $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
             $econLevel, $popLevel, $armoryLevel
         ]);
@@ -161,8 +158,6 @@ class SpyRepository
             economy_upgrade_level_seen: isset($data['economy_upgrade_level_seen']) ? (int)$data['economy_upgrade_level_seen'] : null,
             population_level_seen: isset($data['population_level_seen']) ? (int)$data['population_level_seen'] : null,
             armory_level_seen: isset($data['armory_level_seen']) ? (int)$data['armory_level_seen'] : null,
-            protoform_stolen: isset($data['protoform_stolen']) ? (float)$data['protoform_stolen'] : 0,
-            protoform_seen: isset($data['protoform_seen']) ? (float)$data['protoform_seen'] : null,
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null
         );

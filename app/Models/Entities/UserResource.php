@@ -12,7 +12,6 @@ readonly class UserResource
      * @param int $credits
      * @param int $banked_credits (BIGINT UNSIGNED in DB, int in PHP is fine on 64-bit)
      * @param int $gemstones (BIGINT UNSIGNED in DB, int in PHP is fine on 64-bit)
-     * @param float $naquadah_crystals (DECIMAL(19,4) in DB)
      * @param int $untrained_citizens
      * @param int $workers
      * @param int $soldiers
@@ -31,8 +30,7 @@ readonly class UserResource
         public readonly int $guards,
         public readonly int $spies,
         public readonly int $sentries,
-        public readonly int $research_data = 0,
-        public readonly float $protoform = 0.0
+        public readonly int $research_data = 0
     ) {
     }
 }

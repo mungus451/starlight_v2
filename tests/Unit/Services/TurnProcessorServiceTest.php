@@ -15,7 +15,6 @@ use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
-use App\Models\Services\EmbassyService;
 use App\Models\Services\NetWorthCalculatorService; // NEW
 use App\Models\Entities\User;
 use App\Models\Entities\UserResource;
@@ -40,7 +39,6 @@ class TurnProcessorServiceTest extends TestCase
     private GeneralRepository|Mockery\MockInterface $mockGeneralRepo;
     private ScientistRepository|Mockery\MockInterface $mockScientistRepo;
     private EdictRepository|Mockery\MockInterface $mockEdictRepo;
-    private EmbassyService|Mockery\MockInterface $mockEmbassyService;
     private NetWorthCalculatorService|Mockery\MockInterface $mockNwCalculator; // NEW
 
     protected function setUp(): void
@@ -59,7 +57,6 @@ class TurnProcessorServiceTest extends TestCase
         $this->mockGeneralRepo = Mockery::mock(GeneralRepository::class);
         $this->mockScientistRepo = Mockery::mock(ScientistRepository::class);
         $this->mockEdictRepo = Mockery::mock(EdictRepository::class);
-        $this->mockEmbassyService = Mockery::mock(EmbassyService::class);
         $this->mockNwCalculator = Mockery::mock(NetWorthCalculatorService::class); // NEW
 
         // Pre-load config in constructor
@@ -84,7 +81,6 @@ class TurnProcessorServiceTest extends TestCase
             $this->mockGeneralRepo,
             $this->mockScientistRepo,
             $this->mockEdictRepo,
-            $this->mockEmbassyService,
             $this->mockNwCalculator // New dependency, cast to type
         );
     }
@@ -121,7 +117,6 @@ class TurnProcessorServiceTest extends TestCase
                         ->with($userId, $mockRes, $mockStats, $mockStruct, $allianceId)
                         ->andReturn([
                             'total_credit_income' => 1000,
-                            'interest' => 50,
                             'total_citizens' => 10,
                             'research_data_income' => 20,
                             'dark_matter_income' => 5.5,
@@ -132,7 +127,7 @@ class TurnProcessorServiceTest extends TestCase
                     // 5. Mock Updates
                     $this->mockResourceRepo->shouldReceive('applyTurnIncome')
                         ->once()
-                        ->with($userId, 1000, 50, 10, 20, 5.5, 0.0, 0.0); // Added for new parameter
+                        ->with($userId, 1000, 0, 10, 20); // Added for new parameter
         
                     $this->mockStatsRepo->shouldReceive('applyTurnAttackTurn')
                         ->once()
@@ -147,21 +142,6 @@ class TurnProcessorServiceTest extends TestCase
                     $this->mockStatsRepo->shouldReceive('updateNetWorth')
                         ->once()
                         ->with($userId, 5000000);
-        
-                    $this->mockGeneralRepo->shouldReceive('countByUserId')
-                        ->once()
-                        ->with($userId)
-                        ->andReturn(0);
-        
-                                $this->mockScientistRepo->shouldReceive('getActiveScientistCount')
-        
-                                    ->once()
-        
-                                    ->with($userId)
-        
-                                    ->andReturn(0);
-        
-                    
         
                                 $this->mockEdictRepo->shouldReceive('findActiveByUserId')
         
@@ -226,20 +206,7 @@ class TurnProcessorServiceTest extends TestCase
         $this->mockDb->shouldReceive('beginTransaction')->once();
         $this->mockDb->shouldReceive('commit')->once();
 
-        $this->mockAllianceRepo->shouldReceive('updateBankCreditsRelative')
-            ->with(5, 5000) // 5% of 100,000
-            ->once()
-            ->andReturn(true);
-        
-                $this->mockBankLogRepo->shouldReceive('createLog')
-                    ->once()
-                    ->with($allianceId, null, 'interest', 5000, Mockery::type('string'));
-        
-                $this->mockAllianceRepo->shouldReceive('updateLastCompoundAt')
-                    ->once()
-                    ->with($allianceId);
-        
-                // Execute
+        // Execute
                 $result = $this->service->processAllUsers();
         
                 $this->assertEquals(1, $result['alliances']);
@@ -266,12 +233,12 @@ class TurnProcessorServiceTest extends TestCase
         
             private function createMockResource(int $userId): UserResource
             {
-                return new UserResource($userId, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0);
+                return new UserResource(user_id: $userId, credits: 0, banked_credits: 0, gemstones: 0, untrained_citizens: 0, workers: 0, soldiers: 0, guards: 0, spies: 0, sentries: 0);
             }
         
             private function createMockStructure(int $userId): UserStructure
             {
-                return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                return new UserStructure(user_id: $userId, economy_upgrade_level: 0, population_level: 0, armory_level: 0);
             }
         
                 private function createMockStats(int $userId): UserStats

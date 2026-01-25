@@ -293,12 +293,6 @@
                         <span class="advisor-stat-value text-info">+<?= number_format($inc['research_data_income'], 0) ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if (($inc['protoform_income'] ?? 0) > 0): ?>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Protoform / Turn</span>
-                        <span class="advisor-stat-value text-success">+<?= number_format($inc['protoform_income'], 2) ?></span>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
 

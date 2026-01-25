@@ -30,7 +30,6 @@ class NetWorthCalculatorService
     private UserRepository $userRepo;
 
     // Valuation Weights for Resources
-    private const WEIGHT_PROTOFORM = 500;
     private const WEIGHT_CITIZEN = 10;
     private const HOURS_PROJECTION = 24;
 
@@ -140,21 +139,14 @@ class NetWorthCalculatorService
         $totalValue += $resources->sentries * ($trainingConfig['sentries']['credits'] ?? 0);
 
         // Specialized Units (Generals/Scientists)
-        // We value them based on their recruitment cost (e.g. Protoform -> Credits?)
-        // Or just an arbitrary high value?
-        // Let's use weighted value: 1 Protoform = 500 Credits.
-        
         $generalCount = $this->generalRepo->countByUserId($userId);
         $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
         
-        // Cost is in game_balance.generals / scientists
-        // If strictly credits, it might be 0.
-        // We'll estimate value: 500 Credits per Protoform cost.
-        $genCostProto = $this->config->get('game_balance.generals.recruitment_cost', 100);
-        $sciCostProto = $this->config->get('game_balance.scientists.recruitment_cost', 100);
+        $genCost = $this->config->get('game_balance.generals.recruitment_cost', 1000000);
+        $sciCost = $this->config->get('game_balance.scientists.recruitment_cost', 1000000);
         
-        $totalValue += $generalCount * $genCostProto * self::WEIGHT_PROTOFORM;
-        $totalValue += $scientistCount * $sciCostProto * self::WEIGHT_PROTOFORM;
+        $totalValue += $generalCount * $genCost;
+        $totalValue += $scientistCount * $sciCost;
 
         return $totalValue;
     }
@@ -204,7 +196,6 @@ class NetWorthCalculatorService
         
         $score = 0;
         $score += $income['total_credit_income'];
-        $score += $income['protoform_income'] * self::WEIGHT_PROTOFORM;
         $score += $income['total_citizens'] * self::WEIGHT_CITIZEN;
         
         // Project to 24 hours (96 turns)

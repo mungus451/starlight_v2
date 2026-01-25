@@ -111,20 +111,16 @@ class LevelUpServiceTest extends TestCase
             ->with($userId)
             ->andReturn($currentStats);
 
-        // Transaction
-        $this->mockDb->shouldReceive('beginTransaction')->once();
-        $this->mockDb->shouldReceive('commit')->once();
-
         // Update Expectation
         // Spending 5 Strength points.
         // New SP = 10 - 5 = 5.
         // New Strength = 5 + 5 = 10.
-        $this->mockStatsRepo->shouldReceive('updateBaseStats')
+        $this->mockStatsRepo->shouldReceive('updateSingleBaseStat')
             ->once()
-            ->with($userId, 5, 10, 0, 0, 0, 0)
+            ->with($userId, 5, 'strength_points', 10)
             ->andReturn(true);
 
-        $response = $this->service->spendPoints($userId, 5, 0, 0, 0, 0);
+        $response = $this->service->spendPoints($userId, 'strength', 5);
 
         $this->assertTrue($response->isSuccess());
     }
@@ -145,18 +141,18 @@ class LevelUpServiceTest extends TestCase
             ->andReturn($currentStats);
 
         // Try to spend 5 points
-        $response = $this->service->spendPoints($userId, 5, 0, 0, 0, 0);
+        $response = $this->service->spendPoints($userId, 'strength', 5);
 
         $this->assertFalse($response->isSuccess());
-        $this->assertEquals('You do not have enough level up points to make this change.', $response->message);
+        $this->assertEquals('You do not have enough level up points.', $response->message);
     }
 
     public function testSpendPointsRejectsNegativeValues(): void
     {
-        $response = $this->service->spendPoints(1, -5, 0, 0, 0, 0);
+        $response = $this->service->spendPoints(1, 'strength', -5);
         
         $this->assertFalse($response->isSuccess());
-        $this->assertEquals('You cannot spend a negative number of points.', $response->message);
+        $this->assertEquals('You must spend at least one point.', $response->message);
     }
 
     // --- Helpers ---

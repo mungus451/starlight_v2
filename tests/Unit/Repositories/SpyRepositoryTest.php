@@ -46,9 +46,24 @@ class SpyRepositoryTest extends TestCase
 
         // Call with minimal intel (nulls)
         $id = $this->repository->createReport(
-            $attackerId, $defenderId, $result, $sent, $lostA, $lostD, $defSentries,
-            null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null
+            attackerId: $attackerId,
+            defenderId: $defenderId,
+            result: $result,
+            spiesSent: $sent,
+            spiesLost: $lostA,
+            sentriesLost: $lostD,
+            defenderTotalSentries: $defSentries,
+            credits: null,
+            gemstones: null,
+            workers: null,
+            soldiers: null,
+            guards: null,
+            spies: null,
+            sentries: null,
+            econLevel: null,
+            popLevel: null,
+            armoryLevel: null,
+            defenderWorkersLost: 0
         );
 
         $this->assertEquals($newId, $id);

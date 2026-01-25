@@ -57,10 +57,6 @@ $currentWeapon = ($currentWeaponKey !== null) ? ($elite_weapons[$currentWeaponKe
             <strong class="accent-blue"><?= number_format($resources->dark_matter) ?></strong>
         </div>
         <div class="header-stat">
-            <span>Protoform</span>
-            <strong class="accent-red"><?= number_format($resources->protoform) ?></strong>
-        </div>
-        <div class="header-stat">
             <span>Research</span>
             <strong class="accent"><?= number_format($resources->research_data) ?></strong>
         </div>

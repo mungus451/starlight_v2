@@ -61,8 +61,6 @@ readonly class SpyReport
         public readonly ?int $economy_upgrade_level_seen,
         public readonly ?int $population_level_seen,
         public readonly ?int $armory_level_seen,
-        public readonly ?float $protoform_stolen = 0,
-        public readonly ?float $protoform_seen = null,
         public readonly ?string $defender_name = null,
         public readonly ?string $attacker_name = null
     ) {

@@ -38,6 +38,10 @@ class ArmoryServiceTest extends TestCase
 
         // Create mocks
         $this->mockDb = Mockery::mock(PDO::class);
+        $this->mockDb->shouldReceive('beginTransaction')->byDefault();
+        $this->mockDb->shouldReceive('commit')->byDefault();
+        $this->mockDb->shouldReceive('rollBack')->byDefault();
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(true)->byDefault();
         $this->mockConfig = Mockery::mock(Config::class);
         $this->mockArmoryRepo = Mockery::mock(ArmoryRepository::class);
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
@@ -73,7 +77,6 @@ class ArmoryServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 50,
             workers: 10,
             soldiers: 100,
@@ -84,14 +87,9 @@ class ArmoryServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 10,
-            offense_upgrade_level: 5,
-            defense_upgrade_level: 3,
-            spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1,
-            accounting_firm_level: 0
+            armory_level: 1
         );
 
         $mockStats = new UserStats(
@@ -196,7 +194,6 @@ class ArmoryServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -207,14 +204,9 @@ class ArmoryServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 0,
-            offense_upgrade_level: 0,
-            defense_upgrade_level: 0,
-            spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0, // Armory level 0
-            accounting_firm_level: 0
+            armory_level: 0 // Armory level 0
         );
 
         $mockStats = new UserStats(
@@ -282,7 +274,6 @@ class ArmoryServiceTest extends TestCase
             credits: 100, // Not enough
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -293,14 +284,9 @@ class ArmoryServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 0,
-            offense_upgrade_level: 0,
-            defense_upgrade_level: 0,
-            spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 1, // Armory level 1
-            accounting_firm_level: 0
+            armory_level: 1 // Armory level 1
         );
 
         $mockStats = new UserStats(
@@ -399,7 +385,7 @@ class ArmoryServiceTest extends TestCase
                         'items' => [
                             'soldier_weapon_tier1' => [
                                 'name' => 'Basic Rifle',
-                                'cost' => 1000,
+                                'cost_credits' => 1000,
                                 'armory_level_req' => 1,
                                 'tier' => 1,
                                 'offense_bonus' => 10

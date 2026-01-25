@@ -18,7 +18,7 @@ private PDO $db
 public function findByUserId(int $userId): ?UserResource
 {
 $stmt = $this->db->prepare("
-SELECT user_id, credits, banked_credits, gemstones, untrained_citizens, workers, soldiers, guards, spies, sentries, research_data, protoform
+SELECT user_id, credits, banked_credits, gemstones, untrained_citizens, workers, soldiers, guards, spies, sentries, research_data
 FROM user_resources WHERE user_id = ?
 ");
 $stmt->execute([$userId]);
@@ -92,10 +92,10 @@ return $stmt->execute([$newCredits, $newGuards, $newWorkers, $userId]);
         return $stmt->execute([$newSoldiers, $userId]);
     }
 
-    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained, float $protoformGained): bool{
-$sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ?, protoform = protoform + ? WHERE user_id = ?";
+    public function applyTurnIncome(int $userId, int $creditsGained, int $interestGained, int $citizensGained, int $researchDataGained): bool{
+$sql = "UPDATE user_resources SET credits = credits + ?, banked_credits = banked_credits + ?, untrained_citizens = untrained_citizens + ?, research_data = research_data + ? WHERE user_id = ?";
 $stmt = $this->db->prepare($sql);
-return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $protoformGained, $userId]);
+return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $researchDataGained, $userId]);
 }
 
     /**
@@ -127,12 +127,11 @@ return $stmt->execute([$creditsGained, $interestGained, $citizensGained, $resear
         return (int)$stmt->fetchColumn();
     }
 
-    public function updateResources(int $userId, ?float $creditsChange = null, ?float $protoformChange = null, ?int $researchDataChange = null): bool
+    public function updateResources(int $userId, ?float $creditsChange = null, ?int $researchDataChange = null): bool
     {
         $updates = [];
         $params = [];
         if ($creditsChange !== null) { $updates[] = "credits = credits + :credits_change"; $params[':credits_change'] = $creditsChange; }
-        if ($protoformChange !== null) { $updates[] = "protoform = protoform + :protoform_change"; $params[':protoform_change'] = $protoformChange; }
         if ($researchDataChange !== null) { $updates[] = "research_data = research_data + :research_data_change"; $params[':research_data_change'] = $researchDataChange; }
         
         if (empty($updates)) return true;
@@ -155,8 +154,7 @@ soldiers: (int)$data['soldiers'],
 guards: (int)$data['guards'],
 spies: (int)$data['spies'],
 sentries: (int)$data['sentries'],
-            research_data: (int)($data['research_data'] ?? 0),
-            protoform: (float)($data['protoform'] ?? 0.0)
+            research_data: (int)($data['research_data'] ?? 0)
         );
     }
 }

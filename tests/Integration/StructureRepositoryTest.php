@@ -39,19 +39,19 @@ class StructureRepositoryTest extends TestCase
         
         $this->assertNotNull($structure);
         $this->assertEquals($this->userId, $structure->user_id);
-        $this->assertEquals(0, $structure->fortification_level);
-        $this->assertEquals(0, $structure->weapon_vault_level);
+        $this->assertEquals(0, $structure->economy_upgrade_level);
+        $this->assertEquals(0, $structure->population_level);
     }
 
     public function testUpdateStructureLevel()
     {
         $this->repo->createDefaults($this->userId);
 
-        $success = $this->repo->updateStructureLevel($this->userId, 'fortification_level', 5);
+        $success = $this->repo->updateStructureLevel($this->userId, 'economy_upgrade_level', 5);
         $this->assertTrue($success);
 
         $structure = $this->repo->findByUserId($this->userId);
-        $this->assertEquals(5, $structure->fortification_level);
+        $this->assertEquals(5, $structure->economy_upgrade_level);
     }
 
     public function testUpdateStructureLevelSecurity()
@@ -72,10 +72,10 @@ class StructureRepositoryTest extends TestCase
     {
         $this->repo->createDefaults($this->userId);
 
-        $success = $this->repo->updateStructureLevel($this->userId, 'weapon_vault_level', 2);
-        $this->assertTrue($success, "Failed to update weapon_vault_level");
+        $success = $this->repo->updateStructureLevel($this->userId, 'population_level', 2);
+        $this->assertTrue($success, "Failed to update population_level");
         
         $structure = $this->repo->findByUserId($this->userId);
-        $this->assertEquals(2, $structure->weapon_vault_level);
+        $this->assertEquals(2, $structure->population_level);
     }
 }

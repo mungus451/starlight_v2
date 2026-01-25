@@ -77,7 +77,6 @@ class NpcServiceTest extends TestCase
             $this->mockArmoryService,
             $this->mockAttackService,
             $this->mockAllianceStructService,
-            $this->mockCurrencyService,
             $this->mockSpyService,
             $this->mockPowerCalcService,
             $this->mockLogger
@@ -216,12 +215,28 @@ class NpcServiceTest extends TestCase
 
     private function createMockStructure(int $userId, int $econLevel = 10): UserStructure
     {
-        return new UserStructure($userId, 10, 10, 10, 10, $econLevel, 10, 10, 0);
+        return new UserStructure(
+            user_id: $userId,
+            economy_upgrade_level: $econLevel,
+            population_level: 10,
+            armory_level: 10
+        );
     }
 
     private function createMockResource(int $userId, int $citizens): UserResource
     {
-        return new UserResource($userId, 1000000, 0, 0, 0.0, $citizens, 0, 0, 0, 0, 0);
+        return new UserResource(
+            user_id: $userId,
+            credits: 1000000,
+            banked_credits: 0,
+            gemstones: 0,
+            untrained_citizens: $citizens,
+            workers: 0,
+            soldiers: 0,
+            guards: 0,
+            spies: 0,
+            sentries: 0
+        );
     }
 
     private function createMockStats(int $userId, int $attackTurns): UserStats

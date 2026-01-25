@@ -76,10 +76,8 @@ return [
     ],
     'upkeep' => [
         'general' => [
-            'protoform' => 10, 
         ],
         'scientist' => [
-            'protoform' => 5, 
         ],
     ],
     // --- Phase 7 ---
@@ -99,7 +97,6 @@ return [
         'spies_lost_percent_max' => 0.3,
         'sentries_lost_percent_min' => 0.15,
         'sentries_lost_percent_max' => 0.35,
-        'protoform_steal_rate' => 0.01,
         
         // New: Neural Uplink
         'neural_uplink_bonus_per_level' => 0.02, // 2% per level
@@ -159,7 +156,6 @@ return [
         'credit_bonus_per_wealth_point' => 0.01,
         'citizen_growth_per_pop_level' => 10,
         'research_data_per_lab_level' => 100,
-        'protoform_per_vat_level' => 5,
         'accounting_firm_base_bonus' => 0.01,
         'accounting_firm_multiplier' => 1.05,
 

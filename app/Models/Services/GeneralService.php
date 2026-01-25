@@ -42,11 +42,10 @@ class GeneralService
     
     public function getRecruitmentCost(int $currentCount): array
     {
-        // Scaling Cost: +1M Credits and +100 Protoform per General
+        // Scaling Cost: +1M Credits per General
         $mult = $currentCount + 1;
         return [
-            'credits' => 1000000 * $mult,
-            'protoform' => 100.0 * $mult
+            'credits' => 1000000 * $mult
         ];
     }
     
@@ -60,9 +59,6 @@ class GeneralService
         if ($resources->credits < $cost['credits']) {
             return ServiceResponse::error("Insufficient Credits. Need " . number_format($cost['credits']));
         }
-        if (($resources->protoform ?? 0) < $cost['protoform']) {
-            return ServiceResponse::error("Insufficient Protoform. Need " . number_format($cost['protoform']));
-        }
         
         if (empty($name)) {
             $name = 'General ' . ($count + 1);
@@ -74,10 +70,7 @@ class GeneralService
             // Deduct Resources
             $this->resourceRepo->updateResources(
                 $userId, 
-                -$cost['credits'], 
-                null, 
-                null, 
-                -$cost['protoform']
+                -$cost['credits']
             );
             
             $this->generalRepo->create($userId, $name);
@@ -119,10 +112,7 @@ class GeneralService
             // Deduct Resources
             $this->resourceRepo->updateResources(
                 $userId,
-                -($cost['credits'] ?? 0),
-                -($cost['naquadah_crystals'] ?? 0),
-                -($cost['dark_matter'] ?? 0),
-                0 // Protoform
+                -($cost['credits'] ?? 0)
             );
             
             $this->generalRepo->updateWeaponSlot($generalId, $weaponKey);

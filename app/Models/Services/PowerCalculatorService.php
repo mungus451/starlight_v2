@@ -434,12 +434,9 @@ class PowerCalculatorService
         // 8. Research Data
         $researchDataIncome = 0;
 
-        // 11. Protoform (Affected by Edict Resource Multiplier)
-        $protoformIncome = 0;
-
         // --- NEW: FUSION PLANT BONUS ---
         // Multiplies all "collector" outputs.
-        // Applies to: Credits (Base), Research, DM, Naquadah, Protoform.
+        // Applies to: Credits (Base), Research, DM, Naquadah.
 
 
         // --- VOID BUFF: Resource Boost (+25%) ---
@@ -450,7 +447,6 @@ class PowerCalculatorService
             $interestIncome = (int)floor($interestIncome * $boost); 
             $totalCitizenIncome = (int)floor($totalCitizenIncome * $boost);
             $researchDataIncome = (int)floor($researchDataIncome * $boost);
-            $protoformIncome *= $boost;
             
             $detailedBreakdown[] = [ 'label' => "Void Resource Buff", 'value' => "+25%", 'type' => 'scalar' ];
         }
@@ -460,7 +456,6 @@ class PowerCalculatorService
             'interest' => 0,
             'total_citizens' => $totalCitizenIncome,
             'research_data_income' => $researchDataIncome,
-            'protoform_income' => $protoformIncome,
             'econ_income' => $econIncome,
             'worker_income' => $workerIncome,
             'base_production' => $baseProduction,

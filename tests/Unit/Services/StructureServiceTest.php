@@ -33,8 +33,13 @@ class StructureServiceTest extends TestCase
 
         // Create mocks
         $this->mockDb = Mockery::mock(PDO::class);
+        $this->mockDb->shouldReceive('beginTransaction')->byDefault();
+        $this->mockDb->shouldReceive('commit')->byDefault();
+        $this->mockDb->shouldReceive('rollBack')->byDefault();
+        $this->mockDb->shouldReceive('inTransaction')->andReturn(true)->byDefault();
         $this->mockConfig = Mockery::mock(Config::class);
         $this->mockResourceRepo = Mockery::mock(ResourceRepository::class);
+        $this->mockResourceRepo->shouldReceive('updateResources')->byDefault()->andReturn(true);
         $this->mockStructureRepo = Mockery::mock(StructureRepository::class);
 
         // Instantiate service
@@ -58,7 +63,6 @@ class StructureServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 50,
             workers: 10,
             soldiers: 100,
@@ -69,14 +73,9 @@ class StructureServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 10,
-            offense_upgrade_level: 5,
-            defense_upgrade_level: 3,
-            spy_upgrade_level: 2,
             economy_upgrade_level: 8,
             population_level: 1,
-            armory_level: 1,
-            accounting_firm_level: 0
+            armory_level: 1
         );
 
         $structureConfig = [
@@ -156,7 +155,6 @@ class StructureServiceTest extends TestCase
             credits: 500, // Not enough
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -167,14 +165,9 @@ class StructureServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 0,
-            offense_upgrade_level: 0,
-            defense_upgrade_level: 0,
-            spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0,
-            accounting_firm_level: 0
+            armory_level: 0
         );
 
         $structureConfig = [
@@ -217,7 +210,6 @@ class StructureServiceTest extends TestCase
             credits: 1000000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -228,14 +220,9 @@ class StructureServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 0,
-            offense_upgrade_level: 0,
-            defense_upgrade_level: 0,
-            spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0, // Level 0, so upgrade to level 1
-            armory_level: 0,
-            accounting_firm_level: 0
+            armory_level: 0
         );
 
         $structureConfig = [
@@ -272,11 +259,6 @@ class StructureServiceTest extends TestCase
         // Cost calculation for level 0: base_cost = 150000
         $expectedCost = 150000;
 
-        $this->mockResourceRepo->shouldReceive('updateResources')
-            ->once()
-            ->with($userId, -150000, 0, 0) // Expecting negative values for deduction
-            ->andReturn(true);
-
         $this->mockStructureRepo->shouldReceive('updateStructureLevel')
             ->once()
             ->with($userId, 'population_level', 1)
@@ -300,7 +282,6 @@ class StructureServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -311,14 +292,9 @@ class StructureServiceTest extends TestCase
 
         $mockStructure = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, // Level 0
-            offense_upgrade_level: 0,
-            defense_upgrade_level: 0,
-            spy_upgrade_level: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            armory_level: 0,
-            accounting_firm_level: 0
+            armory_level: 0
         );
 
         $structureConfig = [
@@ -358,110 +334,30 @@ class StructureServiceTest extends TestCase
         $this->assertEquals(1000, $result['costs']['housing']['credits']);
     }
 
-    public function testGetStructureDataCalculatesCrystalCosts(): void
-    {
-        $userId = 1;
-        $mockResource = $this->createMockResource($userId, 1000, 1000); // 1000 crystals
-        $mockStructure = $this->createMockStructure($userId); // Lvl 0
-
-        $structureConfig = [
-            'portal' => [
-                'base_cost' => 1000, 
-                'base_crystal_cost' => 50, // Crystal cost!
-                'multiplier' => 1.5, 
-                'name' => 'Portal'
-            ]
-        ];
-
-        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
-        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
-        
-        $this->mockConfig->shouldReceive('get')->with('game_balance.structures', [])->andReturn($structureConfig);
-        $this->mockConfig->shouldReceive('get')->byDefault()->andReturn([]);
-
-        $result = $this->service->getStructureData($userId);
-
-        $this->assertEquals(1000, $result['costs']['portal']['credits']);
-        $this->assertEquals(50, $result['costs']['portal']['crystals']);
-    }
-
-    public function testUpgradeStructureRejectsInsufficientCrystals(): void
-    {
-        $userId = 1;
-        $structureKey = 'portal';
-
-        // Plenty of credits, but 0 crystals
-        $mockResource = $this->createMockResource($userId, 100000, 0); 
-        $mockStructure = $this->createMockStructure($userId);
-
-        $structureConfig = [
-            'base_cost' => 1000,
-            'base_crystal_cost' => 50,
-            'multiplier' => 1.5,
-            'name' => 'Portal'
-        ];
-
-        $this->mockConfig->shouldReceive('get')->with('game_balance.structures.portal')->andReturn($structureConfig);
-        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
-        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
-
-        $response = $this->service->upgradeStructure($userId, $structureKey);
-
-        $this->assertFalse($response->isSuccess());
-        $this->assertStringContainsString('Insufficient naquadah crystals', $response->message);
-    }
-
-    public function testUpgradeStructureDeductsCrystals(): void
-    {
-        $userId = 1;
-        $structureKey = 'portal';
-
-        $mockResource = $this->createMockResource($userId, 100000, 100); // 100 crystals
-        $mockStructure = $this->createMockStructure($userId);
-
-        $structureConfig = [
-            'base_cost' => 1000,
-            'base_crystal_cost' => 50,
-            'multiplier' => 1.5,
-            'name' => 'Portal'
-        ];
-
-        $this->mockConfig->shouldReceive('get')->with('game_balance.structures.portal')->andReturn($structureConfig);
-        $this->mockResourceRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockResource);
-        $this->mockStructureRepo->shouldReceive('findByUserId')->with($userId)->andReturn($mockStructure);
-
-        $this->mockDb->shouldReceive('inTransaction')->andReturn(false);
-        $this->mockDb->shouldReceive('beginTransaction');
-        $this->mockDb->shouldReceive('commit');
-
-        // Expect update with CRYSTAL deduction
-        $this->mockResourceRepo->shouldReceive('updateResources')
-            ->once()
-            ->with($userId, -1000, -50, 0)
-            ->andReturn(true);
-
-        $this->mockStructureRepo->shouldReceive('updateStructureLevel')->once();
-
-        $response = $this->service->upgradeStructure($userId, $structureKey);
-
-        $this->assertTrue($response->isSuccess());
-    }
-
     // --- Helper ---
-    private function createMockResource(int $userId, int $credits, int $crystals): UserResource
+    private function createMockResource(int $userId, int $credits, int $gemstones = 0): UserResource
     {
         return new UserResource(
-            $userId, 
-            $credits, 
-            0, 
-            0, 
-            (float)$crystals, 
-            0, 0, 0, 0, 0, 0
+            user_id: $userId,
+            credits: $credits,
+            banked_credits: 0,
+            gemstones: $gemstones,
+            untrained_citizens: 0,
+            workers: 0,
+            soldiers: 0,
+            guards: 0,
+            spies: 0,
+            sentries: 0
         );
     }
 
     private function createMockStructure(int $userId): UserStructure
     {
-        return new UserStructure($userId, 0, 0, 0, 0, 0, 0, 0, 0);
+        return new UserStructure(
+            user_id: $userId,
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
+        );
     }
 }

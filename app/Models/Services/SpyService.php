@@ -217,7 +217,6 @@ class SpyService
         $defenderXp = $isCaught ? ($xpConfig['defense_caught_spy'] ?? 75) : 0;
         $operation_result = $isSuccess ? 'success' : 'failure';
         
-        $stolen_protoform = $isSuccess ? ($defenderResources->protoform * ($config['protoform_steal_rate'] ?? 0.01)) : 0;
 
         // --- Worker Casualties (Collateral) ---
         $workerCasualties = 0;
@@ -229,7 +228,6 @@ class SpyService
         }
 
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
-        $intel_protoform = $isSuccess ? $defenderResources->protoform : null;
         $intel_gemstones = $isSuccess ? $defenderResources->gemstones : null;
         $intel_workers = $isSuccess ? $defenderResources->workers : null;
         $intel_soldiers = $isSuccess ? $defenderResources->soldiers : null;
@@ -249,8 +247,8 @@ class SpyService
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
             $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
-            $stolen_protoform, $workerCasualties,
-            $intel_credits, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
+            $workerCasualties,
+            $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
             $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
         ) {
@@ -259,11 +257,6 @@ class SpyService
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
             $this->statsRepo->incrementSpyStats($attackerId, $isSuccess);
-
-            if ($isSuccess && ($stolen_protoform > 0)) {
-                $this->resourceRepo->updateResources($attackerId, 0, $stolen_protoform);
-                $this->resourceRepo->updateResources($defender->id, 0, -$stolen_protoform);
-            }
 
             // Apply Defender Losses (Sentries + Workers)
             if ($isCaught || $workerCasualties > 0) {
@@ -283,7 +276,6 @@ class SpyService
                 $intel_credits, 
                 $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
                 $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
-                $stolen_protoform, $intel_protoform,
                 $workerCasualties // New Param
             );
 
@@ -318,14 +310,6 @@ class SpyService
         });
 
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
-        if ($isSuccess) {
-            if ($stolen_protoform > 0) {
-                $message .= " Your spies managed to steal ";
-                $stolenParts = [];
-                if ($stolen_protoform > 0) $stolenParts[] = number_format($stolen_protoform, 2) . " protoform";
-                $message .= implode(", ", $stolenParts) . ".";
-            }
-        }
         if ($workerCasualties > 0) $message .= " Targets eliminated: {$workerCasualties} workers.";
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         

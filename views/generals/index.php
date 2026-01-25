@@ -55,10 +55,6 @@ $getWeapon = function($key) use ($elite_weapons) {
             <strong class="accent-blue"><?= number_format($resources->dark_matter) ?></strong>
         </div>
         <div class="header-stat">
-            <span>Protoform</span>
-            <strong class="accent-red"><?= number_format($resources->protoform) ?></strong>
-        </div>
-        <div class="header-stat">
             <span>Research</span>
             <strong class="accent"><?= number_format($resources->research_data) ?></strong>
         </div>
@@ -143,9 +139,6 @@ $getWeapon = function($key) use ($elite_weapons) {
                 <div class="card-costs-next">
                     <div class="cost-item">
                         <span class="value"><?= number_format($next_cost['credits']) ?> Credits</span>
-                    </div>
-                    <div class="cost-item">
-                        <span class="value"><?= number_format($next_cost['protoform']) ?> Protoform</span>
                     </div>
                 </div>
             </div>

@@ -13,7 +13,6 @@ use App\Models\Repositories\AllianceBankLogRepository;
 use App\Models\Repositories\GeneralRepository;
 use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
-use App\Models\Services\EmbassyService;
 use App\Models\Services\NetWorthCalculatorService;
 use PDO;
 use Throwable;
@@ -37,7 +36,6 @@ class TurnProcessorService
     private GeneralRepository $generalRepo;
     private ScientistRepository $scientistRepo;
     private EdictRepository $edictRepo;
-    private EmbassyService $embassyService;
     private NetWorthCalculatorService $nwCalculator;
 
     private AllianceRepository $allianceRepo;
@@ -63,7 +61,6 @@ class TurnProcessorService
         GeneralRepository $generalRepo,
         ScientistRepository $scientistRepo,
         EdictRepository $edictRepo,
-        EmbassyService $embassyService,
         NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
@@ -78,7 +75,6 @@ class TurnProcessorService
         $this->edictRepo = $edictRepo;
 
         $this->powerCalculatorService = $powerCalculatorService;
-        $this->embassyService = $embassyService;
         $this->nwCalculator = $nwCalculator;
 
         $this->allianceRepo = $allianceRepo;
@@ -160,7 +156,6 @@ class TurnProcessorService
             $interestGained = 0; // Interest has been removed
             $citizensGained = $incomeBreakdown['total_citizens'];
             $researchDataIncome = $incomeBreakdown['research_data_income'];
-            $protoformIncome = $incomeBreakdown['protoform_income'];
             $attackTurnsGained = 1;
 
             // 3. Apply income using the atomic repository method
@@ -169,26 +164,13 @@ class TurnProcessorService
                 $creditsGained, 
                 $interestGained, 
                 $citizensGained, 
-                $researchDataIncome, 
-                $protoformIncome
+                $researchDataIncome
             );
             
             // 4. Apply attack turns
             $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
-            // 5. Calculate and apply UNIT upkeep (Generals/Scientists)
-            $generalCount = $this->generalRepo->countByUserId($userId);
-            $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
-
-            $generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);
-            $scientistUpkeep = $scientistCount * ($this->upkeepConfig['scientist']['protoform'] ?? 0);
-            $totalUnitUpkeep = $generalUpkeep + $scientistUpkeep;
-
-            if ($totalUnitUpkeep > 0) {
-                $this->resourceRepo->updateResources($userId, null, null, null, -1 * $totalUnitUpkeep);
-            }
-
-            // 6. Edict Upkeep Logic
+            // 5. Edict Upkeep Logic
             $activeEdicts = $this->edictRepo->findActiveByUserId($userId);
             foreach ($activeEdicts as $activeEdict) {
                 $def = $this->edictRepo->getDefinition($activeEdict->edict_key);
@@ -237,7 +219,7 @@ class TurnProcessorService
                 }
 
                 if (!$canAfford) {
-                    $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
+                    // $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
                     // Optional: Send notification "Edict revoked due to lack of funds"
                 }
             }

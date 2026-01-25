@@ -50,9 +50,9 @@ class TrainingServiceTest extends TestCase
         $mockCosts = ['soldiers' => ['credits' => 15000, 'citizens' => 1]];
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
 
         $this->mockResourceRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockResource);
@@ -84,9 +84,9 @@ class TrainingServiceTest extends TestCase
         $userId = 1;
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn([]);
@@ -99,9 +99,9 @@ class TrainingServiceTest extends TestCase
         $userId = 1;
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         $this->mockConfig->shouldReceive('get')->with('game_balance.training', [])->andReturn(['soldiers' => ['credits' => 100, 'citizens' => 1]]);
@@ -117,9 +117,9 @@ class TrainingServiceTest extends TestCase
         $mockResource = $this->createMockResource($userId, credits: 100);
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
@@ -137,9 +137,9 @@ class TrainingServiceTest extends TestCase
         $mockResource = $this->createMockResource($userId, credits: 10000, citizens: 0);
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
@@ -157,9 +157,9 @@ class TrainingServiceTest extends TestCase
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 10, soldiers: 10);
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
@@ -180,9 +180,9 @@ class TrainingServiceTest extends TestCase
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 20, soldiers: 3);
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
@@ -205,9 +205,9 @@ class TrainingServiceTest extends TestCase
         $mockResource = $this->createMockResource($userId, credits: 100000, citizens: 20);
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 0, offense_upgrade_level: 0, defense_upgrade_level: 0,
-            spy_upgrade_level: 0, economy_upgrade_level: 0, population_level: 0,
-            armory_level: 0, accounting_firm_level: 0
+            economy_upgrade_level: 0,
+            population_level: 0,
+            armory_level: 0
         );
         $this->mockStructureRepo->shouldReceive('findByUserId')->once()->with($userId)->andReturn($mockStructures);
         
@@ -226,17 +226,12 @@ class TrainingServiceTest extends TestCase
             credits: $credits,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: $citizens,
             workers: 0,
             soldiers: $soldiers,
             guards: 0,
             spies: 0,
-            sentries: 0,
-            untraceable_chips: 0,
-            research_data: 0,
-            dark_matter: 0,
-            protoform: 0.0
+            sentries: 0
         );
     }
 }
