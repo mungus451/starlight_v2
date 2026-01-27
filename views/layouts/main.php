@@ -15,86 +15,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Operation Starlight CSS -->
-    <link rel="stylesheet" href="/css/starlight.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/main.css?v=<?= time() ?>">
+    <!-- Additional specific CSS files that were added later -->
     <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="/css/alliance_uplink.css?v=<?= time() ?>">
 
-    <!-- Experimental Features --> 
     <link rel="stylesheet" href="/css/starlight-command-bridge.css?v=<?= time() ?>">
     <link rel="stylesheet" href="/css/armory-command-bridge.css?v=<?= time() ?>">
 
 </head>
 <body class="">
 
-<?php if ($this->session->get('is_mobile')): ?>
-
-    <!-- ======================= MOBILE NAVIGATION ======================= -->
-    <header class="mobile-header">
-        <a href="/dashboard" class="logo" style="text-decoration: none;">Starlight</a>
-        <div class="hamburger-menu">
+    <!-- ======================= MOBILE TOP BAR (Hidden on Desktop) ======================= -->
+    <header class="mobile-top-bar">
+        <button class="menu-toggle-btn" id="mobile-menu-toggle">
             <i class="fas fa-bars"></i>
-        </div>
+        </button>
+        <a href="/dashboard" class="logo">Starlight</a>
+        <button class="advisor-toggle-btn" id="mobile-advisor-toggle">
+            <i class="fas fa-user-astronaut"></i>
+        </button>
     </header>
-    <nav class="mobile-nav">
-        <div class="mobile-nav-header">
-            <div class="logo">Navigation</div>
-            <div class="close-btn">&times;</div>
-        </div>
-        <ul>
-            <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
 
-            <li class="has-submenu">
-                <a href="#"><i class="fas fa-coins"></i> Economy <i class="fas fa-chevron-down submenu-indicator"></i></a>
-                <ul class="submenu">
-                    <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
-                    <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
-                <a href="#"><i class="fas fa-crosshairs"></i> Military <i class="fas fa-chevron-down submenu-indicator"></i></a>
-                <ul class="submenu">
-                    <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
-                    <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
-                    <li><a href="/armory"><i class="fas fa-shield-alt"></i> Armory</a></li>
-                    <li><a href="/battle"><i class="fas fa-fighter-jet"></i> Battle Control</a></li>
-                </ul>
-            </li>
-
-            <li class="has-submenu">
-                <a href="#"><i class="fas fa-flag"></i> Alliance <i class="fas fa-chevron-down submenu-indicator"></i></a>
-                <ul class="submenu">
-                    <li><a href="/alliance/list"><i class="fas fa-list"></i> Alliance List</a></li>
-                    <?php if ($currentUserAllianceId !== null): ?>
-                        <li><a href="/alliance/profile/<?= $currentUserAllianceId ?>"><i class="fas fa-home"></i> My Alliance</a></li>
-                        <li><a href="/alliance/forum"><i class="fas fa-comments"></i> Forum</a></li>
-                        <li><a href="/alliance/structures"><i class="fas fa-building"></i> Structures</a></li>
-                        <li><a href="/alliance/diplomacy"><i class="fas fa-handshake"></i> Diplomacy</a></li>
-                        <li><a href="/alliance/war"><i class="fas fa-skull"></i> War Room</a></li>
-                    <?php endif; ?>
-                </ul>
-            </li>
-            
-            <li><a href="/notifications"><i class="fas fa-bell"></i> Notifications <span id="nav-notification-badge-mobile" class="nav-badge" style="position: relative; top: 0; right: 0; margin-left: 5px;"></span></a></li>
-            <li><a href="/glossary"><i class="fas fa-book-open"></i> Game Glossary</a></li>
-            <li><a href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
-            <!-- Theme Switcher -->
-            <li>
-                <form action="/theme/switch" method="post" class="p-2">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                    <select name="theme" class="form-select bg-dark text-light border-secondary" onchange="this.form.submit()">
-                        <option value="default" <?= ($this->session->get('theme', 'default') === 'default') ? 'selected' : '' ?>>Default Theme</option>
-                        <option value="classic" <?= ($this->session->get('theme', 'default') === 'classic') ? 'selected' : '' ?>>Classic Theme</option>
-                    </select>
-                </form>
-            </li>
-            <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </nav>
-
-<?php else: ?>
-
-    <!-- ======================= DESKTOP NAVIGATION ======================= -->
+    <!-- ======================= MAIN NAVIGATION (Responsive) ======================= -->
     <nav class="main-nav">
         <!-- Logo -->
         <a href="/" class="nav-brand">
@@ -110,7 +52,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-coins"></i> Economy <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
+                    <span class="nav-link"><i class="fas fa-coins"></i> Economy <i class="fas fa-caret-down submenu-indicator"></i></span>
                     <ul class="nav-submenu">
                         <li><a href="/structures"><i class="fas fa-industry"></i> Structures</a></li>
                         <li><a href="/bank"><i class="fas fa-university"></i> Bank</a></li>
@@ -119,7 +61,7 @@
 
                 <!-- Military Dropdown -->
                 <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-crosshairs"></i> Military <span class="nav-queue-badge" id="nav-queue-military"></span> <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
+                    <span class="nav-link"><i class="fas fa-crosshairs"></i> Military <span class="nav-queue-badge" id="nav-queue-military"></span> <i class="fas fa-caret-down submenu-indicator"></i></span>
                     <ul class="nav-submenu">
                         <!-- <li><a href="/generals"><i class="fas fa-user-tie"></i> Elite Units</a></li> -->
                         <li><a href="/training"><i class="fas fa-users"></i> Training</a></li>
@@ -130,7 +72,7 @@
 
                 <!-- Alliance Dropdown -->
                 <li class="nav-item">
-                    <span class="nav-link"><i class="fas fa-flag"></i> Alliance <i class="fas fa-caret-down" style="margin-left: 5px; font-size: 0.8em; opacity: 0.7;"></i></span>
+                    <span class="nav-link"><i class="fas fa-flag"></i> Alliance <i class="fas fa-caret-down submenu-indicator"></i></span>
                     <ul class="nav-submenu">
                         <li><a href="/alliance/list"><i class="fas fa-list"></i> Alliance List</a></li>
                         <?php if ($currentUserAllianceId !== null): ?>
@@ -202,176 +144,15 @@
             </ul>
         <?php endif; ?>
     </nav>
-<?php endif; ?>
 
 <div class="advisor-layout-grid">
 
-    <?php if (!$this->session->get('is_mobile') && $isLoggedIn && isset($advisorData)): ?>
-        <!--
-         ** Advisor Sidebar (`<aside class="advisor-panel" id="advisor-panel">`) **
-         * Location: Lines 338 - 508 (approximately, after content is injected)
-         * Notes: This sidebar is also displayed **only on desktop** (`!$this->session->get('is_mobile')`) and when a user is logged in (`$isLoggedIn`) and `isset($advisorData)` is true. It presents player-specific information like character name, level, core stats (credits, turns, server time), and collapsible pods for resources, production, military, and realm news.
-        -->
-        <aside class="advisor-panel" id="advisor-panel">
-            <button class="advisor-toggle-btn" id="advisor-toggle" title="Toggle Advisor">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <!-- Advisor Header -->
-            <div class="advisor-header">
-                <?php if ($advisorData['user']->profile_picture_url): ?>
-                    <img src="/serve/avatar/<?= htmlspecialchars($advisorData['user']->profile_picture_url) ?>" alt="Avatar" class="advisor-avatar">
-                <?php else: ?>
-                    <svg class="advisor-avatar" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-                <?php endif; ?>
-                <div class="advisor-player-info">
-                    <h3><?= htmlspecialchars($advisorData['user']->characterName) ?></h3>
-                    <span class="advisor-player-level">Level <?= $advisorData['stats']->level ?></span>
-                </div>
-            </div>
 
-            <!-- Core Stats -->
-            <div class="advisor-core-stats">
-                <div class="advisor-stat">
-                    <span class="advisor-stat-label">Credits</span>
-                    <span class="advisor-stat-value"><?= number_format($advisorData['resources']->credits) ?></span>
-                </div>
-                <div class="advisor-stat">
-                    <span class="advisor-stat-label">Attack Turns</span>
-                    <span class="advisor-stat-value accent"><?= number_format($advisorData['stats']->attack_turns) ?></span>
-                </div>
-                <div class="advisor-stat">
-                    <span class="advisor-stat-label">Server Time</span>
-                    <span class="advisor-stat-value" id="advisor-clock">--:--:--</span>
-                </div>
-            </div>
 
-            <!-- Pod: Resources -->
-            <div class="advisor-pod">
-                <div class="advisor-pod-header" data-pod-id="resources">
-                    <h4><i class="fas fa-coins" style="margin-right: 8px;"></i> Resources</h4>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="advisor-pod-content">
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Credits</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->credits) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Citizens</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->untrained_citizens) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Workers</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->workers) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Research Data</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->research_data) ?></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pod: Production Report -->
-            <?php $inc = $advisorData['incomeBreakdown'] ?? []; ?>
-            <div class="advisor-pod">
-                <div class="advisor-pod-header" data-pod-id="production">
-                    <h4><i class="fas fa-industry" style="margin-right: 8px;"></i> Production</h4>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="advisor-pod-content">
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Credits / Turn</span>
-                        <span class="advisor-stat-value text-warning">+<?= number_format($inc['total_credit_income'] ?? 0, 0) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Citizens / Turn</span>
-                        <span class="advisor-stat-value">+<?= number_format($inc['total_citizens'] ?? 0, 0) ?></span>
-                    </div>
-                    <?php if (($inc['research_data_income'] ?? 0) > 0): ?>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Research / Turn</span>
-                        <span class="advisor-stat-value text-info">+<?= number_format($inc['research_data_income'], 0) ?></span>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Pod: Military -->
-            <div class="advisor-pod">
-                <div class="advisor-pod-header" data-pod-id="military">
-                    <h4><i class="fas fa-crosshairs" style="margin-right: 8px;"></i> Military</h4>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="advisor-pod-content">
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Offense</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['offenseBreakdown']['total']) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Defense</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['defenseBreakdown']['total']) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Spy Offense</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['spyBreakdown']['total']) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Spy Defense</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['sentryBreakdown']['total']) ?></span>
-                    </div>
-                    
-                    <div class="advisor-stat" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                        <span class="advisor-stat-label">Soldiers</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->soldiers) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Guards</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->guards) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Spies</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->spies) ?></span>
-                    </div>
-                    <div class="advisor-stat">
-                        <span class="advisor-stat-label">Sentries</span>
-                        <span class="advisor-stat-value"><?= number_format($advisorData['resources']->sentries) ?></span>
-                    </div>
-                </div>
-            </div>
-            
-
-            <!-- Pod: Realm News -->
-            <div class="advisor-pod">
-                <div class="advisor-pod-header" data-pod-id="realm-news">
-                    <h4><i class="fas fa-newspaper" style="margin-right: 8px;"></i> Realm News</h4>
-                    <i class="fas fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="advisor-pod-content">
-                    <?php if (isset($realmNews) && $realmNews): ?>
-                        <h5 class="realm-news-title"><?= htmlspecialchars($realmNews->title) ?></h5>
-                        <p class="realm-news-content"><?= nl2br(htmlspecialchars($realmNews->content)) ?></p>
-                        <small class="realm-news-date">Posted: <?= date('M j, Y', strtotime($realmNews->created_at)) ?></small>
-                    <?php endif; ?>
-
-                    <?php if (isset($latestBattles) && !empty($latestBattles)): ?>
-                        <h5 class="realm-news-title" style="margin-top: 1.5rem;"><i class="fas fa-skull-crossbones" style="margin-right: 8px;"></i> Recent Battles</h5>
-                        <ul class="advisor-battle-list">
-                            <?php foreach ($latestBattles as $battle): ?>
-                                <li>
-                                    <a href="/battle/report/<?= $battle->id ?>" class="advisor-battle-link">
-                                        <span class="battle-attacker"><?= htmlspecialchars($battle->attacker_name) ?></span>
-                                        <span class="battle-result <?= $battle->attack_result === 'win' ? 'text-success' : 'text-danger' ?>"><?= ucfirst($battle->attack_result) ?></span>
-                                        <span class="battle-defender"><?= htmlspecialchars($battle->defender_name) ?></span>
-                                    </a>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php else: ?>
-                        <p style="margin-top: 1.5rem;">No recent battles to display.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </aside>
+    <?php if ($isLoggedIn && isset($advisorData)): ?>
+        <aside class="lg:col-span-1 space-y-4">
+        <?php include 'advisor.php'; ?>
+    </aside>
     <?php endif; ?>
 
     <div class="advisor-main-content">
@@ -391,57 +172,21 @@
                 <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
             <?php endif; ?>
 
-            <!--
-             ** Main Content Area **
-             * Location: This is the core area where the specific view file (e.g., `dashboard/show.php`, `structures/show.php`) is injected by the `BaseController`'s `render` method.
-             * Notes: It's wrapped in `div` elements that adjust for `full` or standard layout modes and display flash messages.
-            -->
             <?= $content ?>
         </div>
     </div>
 </div>
 
 <script src="/js/utils.js?v=<?= time() ?>"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/advisor.js?v=<?= time(); ?>"></script>
+<script src="/js/alliance_uplink.js?v=<?= time(); ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/tabs.js?v=<?= time() ?>"></script>
 
-<?php if ($this->session->get('is_mobile') && $isLoggedIn): ?>
-    
-    <!-- Mobile-Specific Dashboard & Nav JS -->
-    <script src="/js/notifications.js"></script>
-    <script src="/js/mobile_dashboard.js?v=<?= time(); ?>"></script>
 
-<?php elseif ($isLoggedIn): ?>
 
-    <!-- Desktop-Specific JS -->
-    <script src="/js/notifications.js"></script>
-    <script src="/js/advisor.js?v=<?= time(); ?>"></script>
-    <script src="/js/alliance_uplink.js?v=<?= time(); ?>"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Alliance Directive Modal -->
-    <div id="directive-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content-glass">
-            <div class="modal-header">
-                <h3>ALLIANCE COMMAND CENTER</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted mb-3">Select a strategic priority to coordinate your alliance efforts.</p>
-                <div id="directive-options-grid" class="directive-grid">
-                    <!-- Loaded via JS -->
-                    <div class="loading-spinner">Loading options...</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary close-modal">Cancel</button>
-                <button class="btn btn-primary" id="btn-confirm-directive" disabled>Confirm Orders</button>
-            </div>
-        </div>
-    </div>
-    
-    <script src="/js/alliance_directive.js?v=<?= time(); ?>"></script>
-    
-<?php endif; ?>
 
-    <script src="/js/tabs.js?v=<?= time() ?>"></script>
+    
 </body>
 </html>

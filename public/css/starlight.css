@@ -717,8 +717,74 @@ form {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .card-breakdown ul { list-style: none; padding: 0; margin: 0.5rem 0 1rem 0; }
 .card-breakdown li { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); padding: 0.35rem 0; }
-.card-breakdown li span:last-child { color: var(--text); font-weight: 600; }
+    .card-breakdown li span:last-child { color: var(--text); font-weight: 600; }
 
+    /* Tactical Readout Specific Styles */
+    .breakdown-title {
+        font-size: 1.15rem;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+        text-shadow: 0 0 8px rgba(45, 209, 209, 0.4);
+        font-family: "Orbitron", sans-serif;
+    }
+
+    .breakdown-formula {
+        font-size: 0.85rem;
+        color: var(--muted);
+        font-style: italic;
+        margin-bottom: 1rem;
+        border-bottom: 1px dotted rgba(255,255,255,0.05);
+        padding-bottom: 0.75rem;
+    }
+
+    .calculation-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .calculation-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+
+    .calculation-list li .value {
+        font-weight: 600;
+        color: var(--text);
+    }
+    
+    .calculation-list li .value-green {
+        color: var(--accent-green) !important;
+    }
+
+    .breakdown-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .breakdown-total .value-total {
+        font-size: 1.5rem !important;
+        color: var(--accent);
+        text-shadow: 0 0 10px rgba(45, 209, 209, 0.5);
+    }
+
+    .glow-divider {
+        border: none;
+        border-top: 1px dashed rgba(45, 209, 209, 0.3);
+        margin: 1.5rem 0;
+        box-shadow: 0 0 8px rgba(45, 209, 209, 0.2);
+    }
 .amount-input-group { display: flex; gap: 0.5rem; }
 .amount-input-group input { flex-grow: 1; min-width: 50px; }
 .amount-input-group button { margin-top: 0; flex-shrink: 0; }

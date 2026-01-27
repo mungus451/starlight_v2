@@ -21,7 +21,8 @@ use App\Controllers\BankController;
 use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\ArmoryController;
-use App\Controllers\GlossaryController;\nuse App\Controllers\IdentityController;
+use App\Controllers\GlossaryController;
+use App\Controllers\IdentityController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
@@ -44,10 +45,9 @@ use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
 use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
-use App\Controllers\GlossaryController;
 use App\Controllers\ThemeController;
 use App\Middleware\AuthMiddleware;
-use App\Middleware\MobileViewMiddleware;
+
 
 use App\Core\Exceptions\RedirectException;
 use App\Core\Exceptions\TerminateException;
@@ -298,8 +298,6 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
 try {
 
-    $container->get(MobileViewMiddleware::class)->handle(function() use ($container, $dispatcher) {
-
         $httpMethod = $_SERVER['REQUEST_METHOD'];
 
         $uri = $_SERVER['REQUEST_URI'];
@@ -464,15 +462,15 @@ try {
 
                 }
 
-                break;
+                                break;
 
-        }
+                
 
-    }); // End MobileViewMiddleware handle closure
+                        }
 
+                
 
-
-} catch (RedirectException $e) {
+                } catch (RedirectException $e) {
     // Handle graceful redirect
     header("Location: " . $e->getMessage());
     exit; // Legitimate entry point exit

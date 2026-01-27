@@ -17,10 +17,10 @@ return [
                 'title' => 'Heavy Main Weapons',
                 'slots' => 1,
                 'items' => [
-                    'pulse_rifle' => ['name' => 'Pulse Rifle', 'offense' => 40, 'cost_credits' => 80000, 'description' => 'Basic, reliable.'],
-                    'railgun' => ['name' => 'Railgun', 'offense' => 80, 'cost_credits' => 160000, 'description' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 10],
-                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'offense' => 160, 'cost_credits' => 240000, 'description' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
-                    'arc_cannon' => ['name' => 'Arc Cannon', 'offense' => 320, 'cost_credits' => 320000, 'description' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 30],
+                    'pulse_rifle' => ['name' => 'Pulse Rifle', 'offense' => 40, 'cost_credits' => 70000, 'description' => 'Basic, reliable.'],
+                    'railgun' => ['name' => 'Railgun', 'offense' => 80, 'cost_credits' => 140000, 'description' => 'High penetration, slower fire.', 'requires' => 'pulse_rifle', 'armory_level_req' => 10],
+                    'plasma_minigun' => ['name' => 'Plasma Minigun', 'offense' => 160, 'cost_credits' => 200000, 'description' => 'Rapid fire, slightly inaccurate.', 'requires' => 'railgun', 'armory_level_req' => 20],
+                    'arc_cannon' => ['name' => 'Arc Cannon', 'offense' => 320, 'cost_credits' => 280000, 'description' => 'Chains to nearby enemies.', 'requires' => 'plasma_minigun', 'armory_level_req' => 30],
                     'antimatter_launcher' => ['name' => 'Antimatter Launcher', 'offense' => 640, 'cost_credits' => 400000, 'description' => 'Extremely strong, high cost.', 'requires' => 'arc_cannon', 'armory_level_req' => 40],
                 ]
             ],

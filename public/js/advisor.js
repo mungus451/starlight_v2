@@ -1,22 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
     const ADVISOR_STATE_KEY = 'advisorPodState';
-    const ADVISOR_COLLAPSED_KEY = 'starlight_advisor_collapsed';
+    const ADVISOR_COLLAPSED_KEY = 'starlight_advisor_collapsed'; // For desktop sidebar collapse state
 
     const advisorPanel = document.getElementById('advisor-panel');
-    const advisorToggleBtn = document.getElementById('advisor-toggle');
+    const desktopAdvisorToggleBtn = document.getElementById('advisor-toggle'); // Desktop toggle button
     const body = document.body;
 
-    // --- Sidebar Collapse Logic ---
-    if (advisorPanel && advisorToggleBtn) {
-        // 1. Restore State
-        const isCollapsed = localStorage.getItem(ADVISOR_COLLAPSED_KEY) === 'true';
-        if (isCollapsed) {
-            advisorPanel.classList.add('collapsed');
-            body.classList.add('advisor-collapsed');
+    // --- Desktop Sidebar Collapse Logic ---
+    // This logic now applies only on wider screens, as its CSS is media-queried
+    if (advisorPanel && desktopAdvisorToggleBtn) {
+        // 1. Restore State for desktop (only if not on mobile viewport)
+        // We'll let CSS handle initial mobile state
+        if (window.innerWidth > 980) { // Apply desktop collapse only on larger screens
+            const isCollapsed = localStorage.getItem(ADVISOR_COLLAPSED_KEY) === 'true';
+            if (isCollapsed) {
+                advisorPanel.classList.add('collapsed');
+                body.classList.add('advisor-collapsed');
+            }
         }
 
-        // 2. Toggle Handler
-        advisorToggleBtn.addEventListener('click', () => {
+        // 2. Toggle Handler for desktop button
+        desktopAdvisorToggleBtn.addEventListener('click', () => {
             advisorPanel.classList.toggle('collapsed');
             body.classList.toggle('advisor-collapsed');
             
@@ -25,6 +29,70 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(ADVISOR_COLLAPSED_KEY, collapsedState);
         });
     }
+
+    // --- Mobile Navigation Toggle ---
+    const mobileMenuToggleBtn = document.getElementById('mobile-menu-toggle');
+    const mainNav = document.querySelector('.main-nav');
+    if (mobileMenuToggleBtn && mainNav) {
+        mobileMenuToggleBtn.addEventListener('click', () => {
+            mainNav.classList.toggle('active');
+            // Close advisor if open
+            if (advisorPanel && advisorPanel.classList.contains('active')) {
+                advisorPanel.classList.remove('active');
+            }
+            // Toggle body overflow to prevent scrolling when nav is open
+            body.classList.toggle('no-scroll');
+        });
+    }
+
+    // --- Mobile Advisor Toggle ---
+    const mobileAdvisorToggleBtn = document.getElementById('mobile-advisor-toggle');
+    if (mobileAdvisorToggleBtn && advisorPanel) {
+        mobileAdvisorToggleBtn.addEventListener('click', () => {
+            advisorPanel.classList.toggle('active');
+            // Close main nav if open
+            if (mainNav && mainNav.classList.contains('active')) {
+                mainNav.classList.remove('active');
+            }
+            // Toggle body overflow to prevent scrolling when advisor is open
+            body.classList.toggle('no-scroll');
+        });
+    }
+
+    // --- Close mobile menus when clicking outside ---
+    document.addEventListener('click', (event) => {
+        // Check if click is outside main nav or its toggle
+        if (mainNav && mainNav.classList.contains('active') && !mainNav.contains(event.target) && (!mobileMenuToggleBtn || !mobileMenuToggleBtn.contains(event.target))) {
+            mainNav.classList.remove('active');
+            body.classList.remove('no-scroll');
+        }
+        // Check if click is outside advisor panel or its toggle
+        if (advisorPanel && advisorPanel.classList.contains('active') && !advisorPanel.contains(event.target) && (!mobileAdvisorToggleBtn || !mobileAdvisorToggleBtn.contains(event.target))) {
+            advisorPanel.classList.remove('active');
+            body.classList.remove('no-scroll');
+        }
+    });
+
+    // --- Close mobile menus on resize (if transitioning to desktop view) ---
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 980) {
+            if (mainNav) mainNav.classList.remove('active');
+            if (advisorPanel) advisorPanel.classList.remove('active');
+            body.classList.remove('no-scroll');
+        }
+        // Re-apply desktop collapse state if it was stored
+        if (window.innerWidth > 980 && advisorPanel && desktopAdvisorToggleBtn) {
+            const isCollapsed = localStorage.getItem(ADVISOR_COLLAPSED_KEY) === 'true';
+            if (isCollapsed) {
+                advisorPanel.classList.add('collapsed');
+                body.classList.add('advisor-collapsed');
+            } else {
+                advisorPanel.classList.remove('collapsed');
+                body.classList.remove('advisor-collapsed');
+            }
+        }
+    });
+
 
     // Function to get the current state from localStorage
     const getAdvisorState = () => {
@@ -83,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Minimalist countdown for sidebar
+// Minimalist countdown for sidebar - This will run in any context due to DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     const warStatus = document.querySelector('[data-war-end-time]');
     if (warStatus) {

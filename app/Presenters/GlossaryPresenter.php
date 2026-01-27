@@ -22,12 +22,58 @@ class GlossaryPresenter
     {
         return [
             'structures'  => $this->config->get('game_balance.structures'),
-            'units'       => $this->config->get('game_balance.training'),
+            'units'       => $this->getUnits(),
             'armory'      => $this->config->get('armory_items'),
             'directives'  => $this->getDirectives(),
             'allianceOps' => $this->getAllianceOps(),
             'resources'   => $this->getResources()
         ];
+    }
+
+    private function getUnits(): array
+    {
+        $units = $this->config->get('game_balance.training');
+        $unitDetails = [
+            'workers' => [
+                'name' => 'Workers',
+                'role' => 'Resource Generation',
+                'description' => 'The backbone of your economy. Each worker generates 100 Credits per turn.',
+                'icon' => 'fa-hammer text-warning',
+            ],
+            'soldiers' => [
+                'name' => 'Soldiers',
+                'role' => 'Offensive Combat',
+                'description' => 'Frontline troops trained to attack enemy empires and plunder resources.',
+                'icon' => 'fa-crosshairs text-danger',
+            ],
+            'guards' => [
+                'name' => 'Guards',
+                'role' => 'Defensive Combat',
+                'description' => 'Defenders of your realm. They protect your citizens and resources from invasion.',
+                'icon' => 'fa-shield-alt text-success',
+            ],
+            'spies' => [
+                'name' => 'Spies',
+                'role' => 'Espionage & Theft',
+                'description' => 'Covert operatives used to gather intelligence and steal from rivals.',
+                'icon' => 'fa-user-secret text-info',
+            ],
+            'sentries' => [
+                'name' => 'Sentries',
+                'role' => 'Counter-Espionage',
+                'description' => 'Specialized security units that detect and neutralize enemy spies.',
+                'icon' => 'fa-eye text-primary',
+            ],
+        ];
+
+        $enrichedUnits = [];
+        foreach ($units as $key => $unit) {
+            if (isset($unitDetails[$key])) {
+                $enrichedUnits[$key] = array_merge($unit, $unitDetails[$key]);
+            }
+        }
+
+        return $enrichedUnits;
     }
 
     private function getDirectives(): array

@@ -10,7 +10,6 @@
     <a class="tab-link active" data-tab="structures">Structures</a>
     <a class="tab-link" data-tab="units">Units</a>
     <a class="tab-link" data-tab="armory">Armory</a>
-    <a class="tab-link" data-tab="edicts">Edicts</a>
     <a class="tab-link" data-tab="directives">Directives</a>
     <a class="tab-link" data-tab="theater-ops">Theater Ops</a>
     <a class="tab-link" data-tab="resources">Resources</a>
@@ -73,45 +72,17 @@
             <div class="structure-card">
                 <div class="card-header-main">
                     <div class="card-icon">
-                        <?php 
-                        $icon = match($key) {
-                            'workers' => 'fa-hammer text-warning',
-                            'soldiers' => 'fa-crosshairs text-danger',
-                            'guards' => 'fa-shield-alt text-success',
-                            'spies' => 'fa-user-secret text-info',
-                            'sentries' => 'fa-eye text-primary',
-                            default => 'fa-user'
-                        };
-                        
-                        $role = match($key) {
-                            'workers' => 'Resource Generation',
-                            'soldiers' => 'Offensive Combat',
-                            'guards' => 'Defensive Combat',
-                            'spies' => 'Espionage & Theft',
-                            'sentries' => 'Counter-Espionage',
-                            default => 'Unit'
-                        };
-
-                        $desc = match($key) {
-                            'workers' => 'The backbone of your economy. Each worker generates 100 Credits per turn.',
-                            'soldiers' => 'Frontline troops trained to attack enemy empires and plunder resources.',
-                            'guards' => 'Defenders of your realm. They protect your citizens and resources from invasion.',
-                            'spies' => 'Covert operatives used to gather intelligence and steal from rivals.',
-                            'sentries' => 'Specialized security units that detect and neutralize enemy spies.',
-                            default => 'Standard unit.'
-                        };
-                        ?>
-                        <i class="fas <?= $icon ?>"></i>
+                        <i class="fas <?= htmlspecialchars($unit['icon']) ?>"></i>
                     </div>
                     <div class="card-title-group">
-                        <h3 class="card-title"><?= ucfirst($key) ?></h3>
-                        <span class="card-category text-muted"><?= $role ?></span>
+                        <h3 class="card-title"><?= htmlspecialchars($unit['name']) ?></h3>
+                        <span class="card-category text-muted"><?= htmlspecialchars($unit['role']) ?></span>
                     </div>
                 </div>
 
                 <div class="card-body-main">
                     <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= $desc ?>
+                        <?= htmlspecialchars($unit['description']) ?>
                     </p>
 
                     <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
@@ -141,55 +112,6 @@
             <!-- Dynamic Armory Container -->
             <div id="armory-dynamic-container"></div>
         </div>
-    </div>
-</div>
-
-<!-- ======================= EDICTS TAB ======================= -->
-<div id="edicts" class="tab-content">
-    <div class="structures-grid">
-        <?php foreach ($edicts as $key => $edict): ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <?php 
-                        $icon = match($edict['type']) {
-                            'economic' => 'fa-chart-line text-warning',
-                            'military' => 'fa-crosshairs text-danger',
-                            'espionage' => 'fa-user-secret text-info',
-                            'special' => 'fa-star text-neon-blue',
-                            default => 'fa-scroll'
-                        };
-                        ?>
-                        <i class="fas <?= $icon ?>"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($edict['name']) ?></h3>
-                        <span class="card-category text-muted"><?= ucfirst($edict['type']) ?> Policy</span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($edict['description']) ?>
-                    </p>
-                    
-                    <div class="mb-3 text-muted small fst-italic">
-                        "<?= htmlspecialchars($edict['lore']) ?>"
-                    </div>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Upkeep:</span><br>
-                            <?php if ($edict['upkeep_cost'] > 0): ?>
-                                <span class="text-warning"><?= $edict['upkeep_cost'] ?> <?= ucfirst($edict['upkeep_resource']) ?></span>
-                            <?php else: ?>
-                                <span class="text-success">None</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
     </div>
 </div>
 

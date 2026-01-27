@@ -491,7 +491,7 @@ class ContainerFactory
 
             BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
 
-                        EdictRepository::class => function (ContainerInterface $c) { return new EdictRepository($c->get(PDO::class)); },
+                        EdictRepository::class => function (ContainerInterface $c) { return new EdictRepository($c->get(PDO::class), $c->get(Config::class)); },
 
             IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },
 
@@ -927,19 +927,31 @@ class ContainerFactory
 
 
 
-            TrainingService::class => function (ContainerInterface $c) {
+                                    TrainingService::class => function (ContainerInterface $c) {
 
-                return new TrainingService(
 
-                    $c->get(Config::class),
 
-                    $c->get(ResourceRepository::class),
+                                        return new TrainingService(
 
-                    $c->get(StructureRepository::class)
 
-                );
 
-            },
+                                            $c->get(Config::class),
+
+
+
+                                            $c->get(ResourceRepository::class),
+
+
+
+                                            $c->get(StructureRepository::class)
+
+
+
+                                        );
+
+
+
+                                    },
 
 
 
