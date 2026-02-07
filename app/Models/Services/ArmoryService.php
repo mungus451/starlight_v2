@@ -291,12 +291,15 @@ class ArmoryService
         if ($userResources->credits < $totalCost) {
             return ServiceResponse::error('You do not have enough credits.');
         }
+
+        /* Deprecated Resources
         if ($userResources->naquadah_crystals < $totalCrystalCost) {
             return ServiceResponse::error('You do not have enough Naquadah Crystals.');
         }
         if ($userResources->dark_matter < $totalDarkMatterCost) {
             return ServiceResponse::error('You do not have enough Dark Matter.');
         }
+        */
 
         $prereqKey = $item['requires'] ?? null;
         if ($prereqKey) {
@@ -323,14 +326,18 @@ class ArmoryService
         try {
             // Deduct All Resources
             $newCredits = $userResources->credits - $totalCost;
-            $newCrystals = $userResources->naquadah_crystals - $totalCrystalCost;
-            $newDarkMatter = $userResources->dark_matter - $totalDarkMatterCost;
+            $newCrystals = 0; // Deprecated
+            $newDarkMatter = 0; // Deprecated
 
+            // Only update credits (3rd and 4th args were crystals/dm)
+            // Assuming resourceRepo->updateResources signature handles this or we pass 0
+            // Actually, let's check the repo signature.
+            // If it expects 4 args, we pass 0 for the others.
             $this->resourceRepo->updateResources(
                 $userId, 
                 -$totalCost, 
-                -$totalCrystalCost, 
-                -$totalDarkMatterCost
+                0, 
+                0
             );
 
             // Deduct Prerequisite Item
@@ -388,13 +395,18 @@ class ArmoryService
         }
         
         // 2. Handle Unequip
-        if (empty($itemKey)) {
+        if ($itemKey === 'UNEQUIP_SLOT') {
             $this->armoryRepo->clearLoadoutSlot($userId, $unitKey, $categoryKey); 
             $title = $this->armoryConfig[$unitKey]['title'] ?? $unitKey;
             return ServiceResponse::success("Loadout slot cleared for {$title}.");
         }
 
         // 3. Validate Item
+        if ($itemKey === '') {
+            error_log("ArmoryService::equipItem - Invalid item selected. User: {$userId}, Unit: {$unitKey}, Cat: {$categoryKey}, ItemKey: '{$itemKey}'");
+            return ServiceResponse::error('Invalid item selected.');
+        }
+
         $item = $this->findItemByKey($itemKey);
         $isValid = isset($this->armoryConfig[$unitKey]['categories'][$categoryKey]['items'][$itemKey]);
 

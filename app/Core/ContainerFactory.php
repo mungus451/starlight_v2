@@ -1049,7 +1049,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 
@@ -1079,7 +1079,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 
@@ -1109,7 +1109,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 

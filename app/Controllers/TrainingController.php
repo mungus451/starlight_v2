@@ -6,7 +6,8 @@ use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\TrainingService;
-use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
+use App\Models\Services\ViewContextService;
+use App\Presenters\TrainingPresenter; // --- NEW DEPENDENCY ---
 
 /**
  * Handles all HTTP requests for the Training page.
@@ -16,26 +17,22 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
 class TrainingController extends BaseController
 {
     private TrainingService $trainingService;
+    private TrainingPresenter $presenter; // --- NEW DEPENDENCY ---
 
     /**
      * DI Constructor.
-     *
-     * @param TrainingService $trainingService
-     * @param Session $session
-     * @param CSRFService $csrfService
-     * @param Validator $validator
-     * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
         TrainingService $trainingService,
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        ViewContextService $viewContextService
+        ViewContextService $viewContextService,
+        TrainingPresenter $presenter // --- NEW DEPENDENCY ---
     ) {
-        // Pass mandatory base dependencies to the parent
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->trainingService = $trainingService;
+        $this->presenter = $presenter; // --- NEW DEPENDENCY ---
     }
 
     /**
@@ -45,11 +42,16 @@ class TrainingController extends BaseController
     {
         $userId = $this->session->get('user_id');
         
-        $data = $this->trainingService->getTrainingData($userId);
+        $serviceData = $this->trainingService->getTrainingData($userId);
 
-        $this->render('training/show.php', $data + [
-            'title' => 'Training',
-            'layoutMode' => 'full'
+        // Add the CSRF token to the data for the presenter
+        $serviceData['csrf_token'] = $this->csrfService->generateToken();
+        
+        // Use the presenter to prepare data for the view
+        $viewData = $this->presenter->present($serviceData);
+
+        $this->render('training/show.php', $viewData + [
+            'title' => 'Training'
         ]);
     }
 
@@ -61,8 +63,7 @@ class TrainingController extends BaseController
         // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
-            'unit_type' => 'required|string',
-            'amount' => 'required|int|min:1'
+            'units' => 'required|array'
         ]);
 
         // 2. Validate CSRF
@@ -74,15 +75,26 @@ class TrainingController extends BaseController
 
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $response = $this->trainingService->trainUnits($userId, $data['unit_type'], $data['amount']);
-        
-        // 4. Handle Response
-        if ($response->isSuccess()) {
-            $this->session->setFlash('success', $response->message);
-        } else {
-            $this->session->setFlash('error', $response->message);
+        $unitsToTrain = array_filter($data['units'], fn($amount) => (int)$amount > 0);
+
+        if (empty($unitsToTrain)) {
+            $this->session->setFlash('error', 'You did not select any units to train.');
+            $this->redirect('/training');
+            return;
+        }
+
+        // Note: TrainingService would need to be updated to handle an array of units
+        foreach ($unitsToTrain as $unitType => $amount) {
+            $response = $this->trainingService->trainUnits($userId, $unitType, (int)$amount);
+            if (!$response->isSuccess()) {
+                $this->session->setFlash('error', $response->message);
+                $this->redirect('/training');
+                return;
+            }
         }
         
+        // 4. Handle Response
+        $this->session->setFlash('success', 'Units have been queued for training.');
         $this->redirect('/training');
     }
-} /* test commit */
+}

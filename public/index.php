@@ -40,10 +40,10 @@ use App\Controllers\AllianceForumController;
 use App\Controllers\AlmanacController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
-use App\Controllers\CurrencyConverterController;
+// use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
-use App\Controllers\BlackMarketController;
+// use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
 use App\Controllers\ThemeController;
 use App\Middleware\AuthMiddleware;
@@ -130,16 +130,16 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Black Market (Refactored) ---
     // The Exchange (Crystal Converter)
-    $r->addRoute('GET', '/black-market/converter', [BlackMarketController::class, 'showExchange']);
-    $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
+    // $r->addRoute('GET', '/black-market/converter', [BlackMarketController::class, 'showExchange']);
+    // $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
     // The Undermarket (Actions)
-    $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
-    $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
-    $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
-    $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
+    // $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
+    // $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    // $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
+    // $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
 
     // --- Military ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);

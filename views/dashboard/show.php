@@ -84,7 +84,7 @@
                                                     <ul class="calculation-list">
                                                         <?php foreach ($incomeBreakdown['detailed_breakdown'] as $item): ?>
                                                             <li>
-                                                                <span><i class="fas <?= htmlspecialchars($item['icon']) ?> fa-fw me-2"></i><?= htmlspecialchars($item['label']) ?></span>
+                                                                <span><i class="fas <?= htmlspecialchars($item['icon'] ?? 'fa-info-circle') ?> fa-fw me-2"></i><?= htmlspecialchars($item['label']) ?></span>
                                                                 <?php if (is_numeric($item['value'])): ?>
                                                                     <span class="value-green">+ <?= number_format($item['value']) ?></span>
                                                                 <?php else: ?>
@@ -92,10 +92,10 @@
                                                                 <?php endif; ?>
                                                             </li>
                                                         <?php endforeach; ?>
-                                                        <?php if ($incomeBreakdown['wealth_bonus_pct'] > 0): ?>
+                                                        <?php if ($incomeBreakdown['stat_bonus_pct'] > 0): ?>
                                                             <li>
                                                                 <span><i class="fas fa-gem fa-fw me-2"></i>Wealth Bonus (<?= $incomeBreakdown['wealth_points'] ?> pts)</span>
-                                                                <span class="value-green">+ <?= $incomeBreakdown['wealth_bonus_pct'] * 100 ?>%</span>
+                                                                <span class="value-green">+ <?= $incomeBreakdown['stat_bonus_pct'] * 100 ?>%</span>
                                                             </li>
                                                         <?php endif; ?>
                                                         <?php if ($incomeBreakdown['alliance_credit_bonus_pct'] > 0): ?>
@@ -114,7 +114,7 @@
 
                                                     <!-- Citizen Growth Readout -->
                                                     <h4 class="breakdown-title text-neon-blue">Citizen Growth Readout</h4>
-                                                    <p class="breakdown-formula text-muted">(Base Growth) &times; (1 + Alliance Bonus%)</p>
+                                                    <p class="breakdown-formula text-muted">(Base Growth + Alliance Bonus)</p>
                                                     <ul class="calculation-list">
                                                          <li>
                                                             <span><i class="fas fa-user-plus fa-fw me-2"></i>Base Citizen Growth (Population Lvl <?= $incomeBreakdown['pop_level'] ?>)</span>
@@ -124,7 +124,7 @@
                                                         <?php if ($incomeBreakdown['alliance_citizen_bonus'] > 0): ?>
                                                         <li>
                                                             <span><i class="fas fa-handshake fa-fw me-2"></i>Alliance Bonus</span>
-                                                            <span class="value-green">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus_pct']) ?>%</span>
+                                                            <span class="value-green">+ <?= number_format($incomeBreakdown['alliance_citizen_bonus']) ?></span>
                                                         </li>
                                                         <?php endif; ?>
                                                     </ul>
@@ -252,10 +252,6 @@
                                 <span><i class="fas fa-cogs fa-fw me-2"></i>Armory Bonus (from Loadout)</span>
                                 <span class="value-green">+ <?= number_format($spyBreakdown['armory_bonus']) ?></span>
                             </li>
-                            <li>
-                                <span><i class="fas fa-brain fa-fw me-2"></i>Intelligence Bonus (<?= $spyBreakdown['stat_points'] ?> pts)</span>
-                                <span class="value-green">+ <?= $spyBreakdown['stat_bonus_pct'] * 100 ?>%</span>
-                            </li>
                         </ul>
                         <div class="breakdown-total">
                             <span>Total:</span>
@@ -276,10 +272,6 @@
                             <li>
                                 <span><i class="fas fa-cogs fa-fw me-2"></i>Armory Bonus (from Loadout)</span>
                                 <span class="value-green">+ <?= number_format($sentryBreakdown['armory_bonus']) ?></span>
-                            </li>
-                            <li>
-                                <span><i class="fas fa-flask fa-fw me-2"></i>Wisdom Bonus (<?= $sentryBreakdown['stat_points'] ?> pts)</span>
-                                <span class="value-green">+ <?= $sentryBreakdown['stat_bonus_pct'] * 100 ?>%</span>
                             </li>
                         </ul>
                         <div class="breakdown-total">

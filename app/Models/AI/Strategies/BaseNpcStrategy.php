@@ -9,7 +9,7 @@ use App\Models\Entities\UserStructure;
 use App\Models\Services\StructureService;
 use App\Models\Services\TrainingService;
 use App\Models\Services\ArmoryService;
-use App\Models\Services\BlackMarketService;
+// use App\Models\Services\BlackMarketService;
 use App\Models\Services\CurrencyConverterService;
 use App\Models\Services\AttackService; 
 use App\Models\Services\PowerCalculatorService; 
@@ -26,7 +26,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
     protected StructureService $structureService;
     protected TrainingService $trainingService;
     protected ArmoryService $armoryService;
-    protected BlackMarketService $blackMarketService;
+    // protected BlackMarketService $blackMarketService;
     protected CurrencyConverterService $converterService;
     protected AttackService $attackService; 
     protected StatsRepository $statsRepo; 
@@ -44,7 +44,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         StructureService $structureService,
         TrainingService $trainingService,
         ArmoryService $armoryService,
-        BlackMarketService $blackMarketService,
+        // BlackMarketService $blackMarketService,
         CurrencyConverterService $converterService,
         AttackService $attackService, 
         StatsRepository $statsRepo,
@@ -55,7 +55,7 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
         $this->structureService = $structureService;
         $this->trainingService = $trainingService;
         $this->armoryService = $armoryService;
-        $this->blackMarketService = $blackMarketService;
+        // $this->blackMarketService = $blackMarketService;
         $this->converterService = $converterService;
         $this->attackService = $attackService; 
         $this->statsRepo = $statsRepo;
@@ -241,12 +241,13 @@ abstract class BaseNpcStrategy implements NpcStrategyInterface
             }
 
             if ($res->naquadah_crystals >= $cost) {
-                $response = $this->blackMarketService->purchaseCitizens($userId);
-                if ($response->isSuccess()) {
-                    $actions[] = "SUCCESS: Bought Smuggled Citizens from Black Market";
-                } else {
-                    $actions[] = "FAILURE: Black Market rejected purchase: " . $response->message;
-                }
+                // $response = $this->blackMarketService->purchaseCitizens($userId);
+                // if ($response->isSuccess()) {
+                //     $actions[] = "SUCCESS: Bought Smuggled Citizens from Black Market";
+                // } else {
+                //     $actions[] = "FAILURE: Black Market rejected purchase: " . $response->message;
+                // }
+                $actions[] = "SKIP: Black Market is closed.";
             } else {
                 $actions[] = "SKIP: Cannot afford citizens (Need {$cost} Crystals, have " . floor($res->naquadah_crystals) . ")";
             }

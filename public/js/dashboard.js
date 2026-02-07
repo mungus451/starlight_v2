@@ -4,12 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
         toggle.addEventListener('click', function(e) {
             const targetId = this.getAttribute('data-target');
             
-            // Exclude economic overview breakdown from toggle logic
-            if (targetId === 'breakdown-income') {
-                e.preventDefault(); // Prevent default if it's the excluded target
-                return;
-            }
-            
             if (!targetId) {
                 return; // Let links like "Train" or "Spend Points" follow their href
             }

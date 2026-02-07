@@ -1,6 +1,6 @@
 <?php
 /**
- * Starlight Dominion - A.I. Advisor & Stats Module (DROP-IN)
+ * Starlight Dominion - A.I. Advisor & Stats Module (Tactical Glass Monolith V2)
  *
  * EXPECTS from the main layout:
  * - $advisorData (array)
@@ -21,17 +21,25 @@ $__stats_last_updated = $advisorData['stats']->last_updated ?? null;
 // --- Advice Text ---
 $advice_repository = [
     'dashboard' => [
-        "Your central command hub. Monitor your resources and fleet status from here.",
-        "A strong economy is the backbone of any successful empire.",
+        "Central command online. Fleet status nominal.",
+        "Economic output is within expected parameters.",
     ],
     'training' => [
-        "Train your untrained citizens into specialized units to expand your dominion.",
-        "Workers increase your income, while Soldiers and Guards form your military might.",
+        "Recruitment centers active. Designate unit specialization.",
+        "Balance your forces: Offense wins battles, Defense holds territory.",
     ],
-    // Add other pages as needed
+    'structures' => [
+        "Construction protocols engaged. Upgrade essential systems.",
+        "Energy output must scale with military expansion.",
+    ],
+    'battle' => [
+        "Tactical analysis required before engagement.",
+        "Victory favors the prepared commander.",
+    ]
 ];
 $active_page_key = $active_page ?? 'dashboard';
-$current_advice_list = $advice_repository[$active_page_key] ?? ["Welcome to Starlight Dominion."];
+// Fallback to generic if page specific advice isn't found
+$current_advice_list = $advice_repository[$active_page_key] ?? ["Systems nominal. Awaiting orders."]; 
 $advice_json = htmlspecialchars(json_encode(array_values($current_advice_list)), ENT_QUOTES, 'UTF-8');
 
 // --- XP Bar Calculation ---
@@ -41,7 +49,7 @@ if ($__stats_next_lvl_xp > 0) {
 }
 
 // --- Turn Timer Calculation ---
-$TURN_INTERVAL = 600; // 10 minutes from example
+$TURN_INTERVAL = 600; // 10 minutes
 $seconds_until_next_turn = null;
 if ($__stats_last_updated) {
     try {
@@ -62,83 +70,99 @@ try {
 }
 $__now_et_epoch = $__now_et->getTimestamp();
 ?>
-<!-- Advisor -->
-<div class="content-box rounded-lg p-4 advisor-container">
-    <h3 class="font-title text-cyan-400 border-b border-gray-600 pb-2 mb-2">A.I. Advisor</h3>
-    <button id="toggle-advisor-btn" class="mobile-only-button">-</button>
 
-    <div id="advisor-content">
-        <p id="advisor-text" class="text-sm transition-opacity duration-500" data-advice='<?php echo $advice_json; ?>'>
-            <?php echo $current_advice_list[0]; ?>
-        </p>
+<!-- Advisor Panel (Tactical Glass Monolith) -->
+<aside class="advisor-panel" id="advisor-panel">
+    
+    <!-- Header: Avatar & Identity -->
+    <div class="advisor-header">
+        <img src="/serve/avatar/<?php echo htmlspecialchars($advisorData['user']->profile_picture_url ?? 'default.png'); ?>" alt="Advisor Avatar" class="advisor-avatar">
+        <div class="advisor-player-info">
+            <h3>COMMANDER</h3>
+            <span class="advisor-player-level">Level <?php echo (int)$__stats_level; ?></span>
+        </div>
+    </div>
 
-        <div class="mt-3 pt-3 border-t border-gray-600">
-            <div class="flex justify-between text-xs mb-1">
-                <span id="advisor-level-display" class="text-white font-semibold">Level <?php echo (int)$__stats_level; ?> Progress</span>
-                <span id="advisor-xp-display" class="text-gray-400"><?php echo number_format((int)$__stats_xp) . ' / ' . number_format((int)$__stats_next_lvl_xp); ?> XP</span>
+    <!-- Core Stats (Always Visible) -->
+    <div class="advisor-core-stats">
+        <div class="advisor-stat">
+            <span class="advisor-stat-label">Credits</span>
+            <span class="advisor-stat-value text-neon-blue" id="advisor-credits-display" data-amount="<?php echo (int)$__stats_credits; ?>">
+                <?php echo number_format((int)$__stats_credits); ?>
+            </span>
+        </div>
+        <div class="advisor-stat">
+            <span class="advisor-stat-label">Turns</span>
+            <span class="advisor-stat-value" id="advisor-attack-turns">
+                <?php echo (int)$__stats_attack_turns; ?>
+            </span>
+        </div>
+        <div class="advisor-stat">
+            <span class="advisor-stat-label">Next Turn</span>
+            <span id="next-turn-timer" class="advisor-stat-value text-accent" 
+                  <?php if ($seconds_until_next_turn !== null): ?> data-seconds-until-next-turn="<?php echo (int)$seconds_until_next_turn; ?>" <?php endif; ?> 
+                  data-turn-interval="600">
+                <?php
+                if ($seconds_until_next_turn !== null) {
+                    echo sprintf('%02d:%02d', (int)$minutes_until_next_turn, (int)$seconds_remainder);
+                } else {
+                    echo '—';
+                }
+                ?>
+            </span>
+        </div>
+        <div class="advisor-stat">
+             <span class="advisor-stat-label">Time (ET)</span>
+             <span id="dominion-time" class="advisor-stat-value" data-epoch="<?php echo (int)$__now_et_epoch; ?>">
+                <?php echo htmlspecialchars($__now_et->format('H:i:s')); ?>
+            </span>
+        </div>
+    </div>
+
+    <!-- Collapsible Pod 1: Intelligence -->
+    <div class="advisor-pod open"> <!-- Open by default -->
+        <div class="advisor-pod-header" onclick="this.parentElement.classList.toggle('open')">
+            <h4>Intelligence</h4>
+            <i class="fas fa-chevron-down toggle-icon text-muted" style="font-size: 0.8rem;"></i>
+        </div>
+        <div class="advisor-pod-content">
+            <p id="advisor-text" class="text-sm text-gray-300 italic mb-3" data-advice='<?php echo $advice_json; ?>'>
+                "<?php echo $current_advice_list[0]; ?>"
+            </p>
+            
+            <!-- XP Progress -->
+            <div class="text-xs flex justify-between text-muted mb-1 uppercase tracking-wide">
+                <span>XP Progress</span>
+                <span><?php echo (int)$xp_progress_pct; ?>%</span>
             </div>
-            <div class="w-full bg-gray-700 rounded-full h-2.5" title="<?php echo (int)$xp_progress_pct; ?>%">
-                <div id="advisor-xp-bar" class="bg-cyan-500 h-2.5 rounded-full" style="width: <?php echo (int)$xp_progress_pct; ?>%"></div>
+            <div class="w-full bg-gray-800 h-1 rounded-full overflow-hidden">
+                <div class="bg-cyan-500 h-full shadow-[0_0_10px_rgba(0,243,255,0.5)]" style="width: <?php echo (int)$xp_progress_pct; ?>%"></div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Stats -->
-<div class="content-box rounded-lg p-4 stats-container">
-    <h3 class="font-title text-cyan-400 border-b border-gray-600 pb-2 mb-3">Stats</h3>
-    <button id="toggle-stats-btn" class="mobile-only-button">-</button>
-
-    <div id="stats-content">
-        <ul class="space-y-2 text-sm">
-            <li class="flex justify-between">
-                <span>Credits:</span>
-                <span id="advisor-credits-display" class="text-white font-semibold" data-amount="<?php echo (int)$__stats_credits; ?>">
-                    <?php echo number_format((int)$__stats_credits); ?>
+    <!-- Collapsible Pod 2: Population -->
+    <div class="advisor-pod">
+        <div class="advisor-pod-header" onclick="this.parentElement.classList.toggle('open')">
+            <h4>Population</h4>
+            <i class="fas fa-chevron-down toggle-icon text-muted" style="font-size: 0.8rem;"></i>
+        </div>
+        <div class="advisor-pod-content">
+            <div class="advisor-stat border-0 p-0">
+                <span class="advisor-stat-label">Untrained</span>
+                <span class="advisor-stat-value text-white" id="advisor-untrained-display">
+                    <?php echo number_format((int)$__stats_untrained); ?>
                 </span>
-            </li>
-
-            <li class="flex justify-between">
-                <span>Untrained Citizens:</span>
-                <span id="advisor-untrained-display" class="text-white font-semibold"><?php echo number_format((int)$__stats_untrained); ?></span>
-            </li>
-            
-            <li class="flex justify-between">
-                <span>Level:</span>
-                <span id="advisor-level-value" class="text-white font-semibold"><?php echo (int)$__stats_level; ?></span>
-            </li>
-
-            <li class="flex justify-between">
-                <span>Attack Turns:</span>
-                <span id="advisor-attack-turns" class="text-white font-semibold"><?php echo (int)$__stats_attack_turns; ?></span>
-            </li>
-
-            <li class="flex justify-between border-t border-gray-600 pt-2 mt-2">
-                <span>Next Turn In:</span>
-                <span id="next-turn-timer" class="text-cyan-300 font-bold" <?php if ($seconds_until_next_turn !== null): ?> data-seconds-until-next-turn="<?php echo (int)$seconds_until_next_turn; ?>" <?php endif; ?> data-turn-interval="600">
-                    <?php
-                    if ($seconds_until_next_turn !== null) {
-                        echo sprintf('%02d:%02d', (int)$minutes_until_next_turn, (int)$seconds_remainder);
-                    } else {
-                        echo '—';
-                    }
-                    ?>
-                </span>
-            </li>
-
-            <li class="flex justify-between">
-                <span>Dominion Time (ET):</span>
-                <span id="dominion-time" class="text-white font-semibold" data-epoch="<?php echo (int)$__now_et_epoch; ?>" data-tz="America/New_York">
-                    <?php echo htmlspecialchars($__now_et->format('H:i:s')); ?>
-                </span>
-            </li>
-        </ul>
+            </div>
+        </div>
     </div>
-</div>
 
+</aside>
+
+<!-- Timer Logic -->
 <script>
-// Stripped-down JS for timers from the example file
 (function(){
+    // Next Turn Timer
     const elNextTurn  = document.getElementById('next-turn-timer');
     if (elNextTurn) {
         const attrSecs = elNextTurn.getAttribute('data-seconds-until-next-turn');
@@ -147,7 +171,8 @@ $__now_et_epoch = $__now_et->getTimestamp();
             const interval = setInterval(() => {
                 if (seconds <= 0) {
                     clearInterval(interval);
-                    elNextTurn.textContent = "Ready";
+                    elNextTurn.textContent = "READY";
+                    elNextTurn.classList.add('text-neon-blue');
                     return;
                 }
                 seconds--;
@@ -158,6 +183,7 @@ $__now_et_epoch = $__now_et->getTimestamp();
         }
     }
 
+    // Dominion Time Clock
     const elDomTime = document.getElementById('dominion-time');
     let domEpoch = elDomTime ? parseInt(elDomTime.getAttribute('data-epoch') || '0', 10) : 0;
     if (domEpoch > 0) {
@@ -170,6 +196,25 @@ $__now_et_epoch = $__now_et->getTimestamp();
             }).format(d);
             elDomTime.textContent = formatted;
         }, 1000);
+    }
+    
+    // Advice Rotation
+    const adviceText = document.getElementById('advisor-text');
+    if (adviceText) {
+        try {
+            const messages = JSON.parse(adviceText.getAttribute('data-advice'));
+            if (messages.length > 1) {
+                let i = 0;
+                setInterval(() => {
+                    i = (i + 1) % messages.length;
+                    adviceText.style.opacity = 0;
+                    setTimeout(() => {
+                        adviceText.textContent = '"' + messages[i] + '"';
+                        adviceText.style.opacity = 1;
+                    }, 500);
+                }, 8000);
+            }
+        } catch(e){}
     }
 })();
 </script>

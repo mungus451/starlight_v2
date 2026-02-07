@@ -16,6 +16,7 @@
 
     <!-- Operation Starlight CSS -->
     <link rel="stylesheet" href="/css/main.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/starlight.css?v=<?= time() ?>">
     <!-- Additional specific CSS files that were added later -->
     <link rel="stylesheet" href="/css/starlight-advisor-v2.css?v=<?= time() ?>">
 
@@ -180,7 +181,6 @@
 <script src="/js/utils.js?v=<?= time() ?>"></script>
 <script src="/js/notifications.js"></script>
 <script src="/js/advisor.js?v=<?= time(); ?>"></script>
-<script src="/js/alliance_uplink.js?v=<?= time(); ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/tabs.js?v=<?= time() ?>"></script>
 

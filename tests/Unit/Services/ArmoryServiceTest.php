@@ -356,9 +356,9 @@ class ArmoryServiceTest extends TestCase
     }
 
     /**
-     * Test: equipItem allows unequipping (empty item key)
+     * Test: equipItem allows unequipping (explicit command)
      */
-    public function testEquipItemAllowsUnequipping(): void
+    public function testEquipItemAllowsUnequippingWithExplicitCommand(): void
     {
         $userId = 1;
 
@@ -366,10 +366,21 @@ class ArmoryServiceTest extends TestCase
             ->once()
             ->with($userId, 'soldiers', 'weapon');
 
-        $response = $this->service->equipItem($userId, 'soldiers', 'weapon', '');
+        $response = $this->service->equipItem($userId, 'soldiers', 'weapon', 'UNEQUIP_SLOT');
 
         $this->assertTrue($response->isSuccess());
         $this->assertStringContainsString('cleared', $response->message);
+    }
+
+    /**
+     * Test: equipItem rejects empty item key (prevents accidental unequip)
+     */
+    public function testEquipItemRejectsEmptyItemKey(): void
+    {
+        $response = $this->service->equipItem(1, 'soldiers', 'weapon', '');
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertEquals('Invalid item selected.', $response->message);
     }
 
     // Helper methods

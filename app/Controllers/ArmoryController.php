@@ -177,9 +177,9 @@ $this->redirect('/armory');
     /**
     * Handles the "Equip" form submission.
     */
-            public function handleEquip(): void
-            {
-                $isJson = $this->wantsJson();$rules = [
+                    public function handleEquip(): void
+                    {
+                        $isJson = $this->wantsJson();$rules = [
 'csrf_token' => 'required',
 'unit_key' => 'required|string',
 'category_key' => 'required|string',

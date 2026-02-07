@@ -205,14 +205,12 @@ $categoryIcons = [
 <!-- Raw Data for JavaScript -->
 <script>
     window.ArmoryData = {
-        config: <?= json_encode($armoryConfig) ?>,
-        manufacturing: <?= json_encode($manufacturingData) ?>,
-        inventory: <?= json_encode($inventory) ?>,
-        loadouts: <?= json_encode($loadouts) ?>,
+        config: <?= json_encode($armoryConfig ?? []) ?>,
+        manufacturing: <?= json_encode($manufacturingData ?? []) ?>,
+        inventory: <?= json_encode($inventory ?? []) ?>,
+        loadouts: <?= json_encode($loadouts ?? []) ?>,
         userResources: {
-            credits: <?= (int)$userResources->credits ?>,
-            crystals: <?= (int)$userResources->naquadah_crystals ?>,
-            darkMatter: <?= (int)$userResources->dark_matter ?>
+            credits: <?= (int)($userResources->credits ?? 0) ?>
         }
     };
 </script>
