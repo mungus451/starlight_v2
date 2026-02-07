@@ -108,6 +108,7 @@
 .uplink-content-wrapper {
     opacity: 1;
     transition: opacity 0.2s;
+    margin-bottom: 1rem;
 }
 
 .alliance-uplink.collapsed .uplink-content-wrapper,

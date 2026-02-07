@@ -82,3 +82,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// Minimalist countdown for sidebar
+document.addEventListener('DOMContentLoaded', function() {
+    const warStatus = document.querySelector('[data-war-end-time]');
+    if (warStatus) {
+        const updateWarTimer = () => {
+            const endTime = new Date(warStatus.dataset.warEndTime + ' UTC').getTime();
+            const now = new Date().getTime();
+            const distance = endTime - now;
+
+            if (distance < 0) {
+                warStatus.innerHTML = "WAR CONCLUDED";
+                return;
+            }
+            
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+            warStatus.innerHTML = `Time Left: ${hours}h ${minutes}m`;
+        };
+        updateWarTimer();
+        setInterval(updateWarTimer, 60000); // Update every minute
+    }
+});
