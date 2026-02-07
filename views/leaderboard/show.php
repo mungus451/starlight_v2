@@ -18,11 +18,10 @@ $isSort = function($key) use ($currentSort) {
 // Icon Mappings for Stats
 $statIcons = [
     'net_worth' => 'fas fa-coins',
-    'army' => 'fas fa-crosshairs',
     'population' => 'fas fa-users',
     'battles_won' => 'fas fa-skull-crossbones',
-    'spy_success' => 'fas fa-user-secret',
-    'prestige' => 'fas fa-trophy'
+    'prestige' => 'fas fa-trophy',
+    'overall_power' => 'fas fa-shield-halved'
 ];
 
 // Extract Podium (Top 3) if on Page 1
@@ -91,9 +90,53 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
                         <?php endif; ?>
                     </div>
                     <h4 class="podium-name"><a href="<?= $profileUrl ?>"><?= htmlspecialchars($name) ?></a></h4>
-                    <div class="podium-stat">
-                        <i class="<?= $statIcons['net_worth'] ?>"></i> <?= number_format($row['net_worth']) ?>
-                    </div>
+                    <?php if ($type === 'players'): ?>
+                        <?php if (isset($row['alliance_id']) && $row['alliance_id']): ?>
+                            <div class="podium-alliance-link mb-3">
+                                <a href="/alliance/profile/<?= $row['alliance_id'] ?>" class="alliance-tag">
+                                    [<?= htmlspecialchars($row['alliance_tag']) ?>]
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-muted mb-3">No Alliance</div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    
+                    <?php if ($type === 'players'): ?>
+                        <div class="podium-stats-grid">
+                            <div class="podium-stat">
+                                <i class="fas fa-star"></i> 
+                                <span>Lvl <?= $row['level'] ?? 0 ?></span>
+                            </div>
+                            <div class="podium-stat">
+                                <i class="<?= $statIcons['net_worth'] ?> text-success"></i> 
+                                <span><?= number_format($row['net_worth']) ?></span>
+                            </div>
+                            <div class="podium-stat">
+                                <i class="<?= $statIcons['overall_power'] ?> text-warning"></i> 
+                                <span><?= number_format($row['overall_power']) ?></span>
+                            </div>
+                            <div class="podium-stat">
+                                <i class="<?= $statIcons['battles_won'] ?> text-danger"></i> 
+                                <span><?= ($row['battles_won'] ?? 0) ?>W / <?= ($row['battles_lost'] ?? 0) ?>L</span>
+                            </div>
+                            <div class="podium-stat">
+                                <i class="<?= $statIcons['prestige'] ?> text-info"></i> 
+                                <span><?= number_format($row['war_prestige']) ?></span>
+                            </div>
+                        </div>
+                    <?php else: // Alliances ?>
+                        <div class="podium-stats-grid" style="grid-template-columns: 1fr;">
+                             <div class="podium-stat">
+                                <i class="<?= $statIcons['net_worth'] ?> text-success"></i> 
+                                <span><?= number_format($row['net_worth']) ?></span>
+                            </div>
+                            <div class="podium-stat">
+                                <i class="<?= $statIcons['population'] ?> text-info"></i> 
+                                <span><?= number_format($row['member_count']) ?> Members</span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -118,10 +161,10 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
                             <th>Commander</th>
                             <?php if ($type === 'players'): ?>
                                 <th>Alliance</th>
+                                <th class="<?= $isSort('level') ?>"><a href="<?= $sortUrl('level') ?>">Level</a></th>
                                 <th class="<?= $isSort('net_worth') ?>"><a href="<?= $sortUrl('net_worth') ?>">Net Worth</a></th>
-                                <th class="<?= $isSort('army') ?>"><a href="<?= $sortUrl('army') ?>">Army</a></th>
-                                <th class="<?= $isSort('population') ?>"><a href="<?= $sortUrl('population') ?>">Pop</a></th>
-                                <th class="<?= $isSort('battles_won') ?>"><a href="<?= $sortUrl('battles_won') ?>">Combat</a></th>
+                                <th class="<?= $isSort('overall_power') ?>"><a href="<?= $sortUrl('overall_power') ?>">Overall</a></th>
+                                <th class="<?= $isSort('battles_won') ?>"><a href="<?= $sortUrl('battles_won') ?>">Battles</a></th>
                                 <th class="<?= $isSort('prestige') ?>"><a href="<?= $sortUrl('prestige') ?>">Prestige</a></th>
                             <?php else: ?>
                                 <th>Tag</th>
@@ -136,8 +179,8 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
                         <?php else: ?>
                             <?php foreach ($remainingData as $row): 
                                 $avatarUrl = ($type === 'players') 
-                                    ? ($row['profile_picture_url'] ? "/serve/avatar/{$row['profile_picture_url']}" : null)
-                                    : ($row['profile_picture_url'] ? "/serve/alliance_avatar/{$row['profile_picture_url']}" : null);
+                                    ? (isset($row['profile_picture_url']) && $row['profile_picture_url'] ? "/serve/avatar/{$row['profile_picture_url']}" : null)
+                                    : (isset($row['profile_picture_url']) && $row['profile_picture_url'] ? "/serve/alliance_avatar/{$row['profile_picture_url']}" : null);
                                 $profileUrl = ($type === 'players') ? "/profile/{$row['id']}" : "/alliance/profile/{$row['id']}";
                                 $name = ($type === 'players') ? $row['character_name'] : $row['name'];
                             ?>
@@ -161,7 +204,7 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
                                     
                                     <?php if ($type === 'players'): ?>
                                         <td>
-                                            <?php if ($row['alliance_id']): ?>
+                                            <?php if (isset($row['alliance_id']) && $row['alliance_id']): ?>
                                                 <a href="/alliance/profile/<?= $row['alliance_id'] ?>" class="alliance-tag">
                                                     [<?= htmlspecialchars($row['alliance_tag']) ?>]
                                                 </a>
@@ -169,9 +212,9 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
+                                        <td class="metric-cell"><?= $row['level'] ?></td>
                                         <td class="metric-cell text-success"><?= number_format($row['net_worth']) ?></td>
-                                        <td class="metric-cell"><?= number_format($row['army_size']) ?></td>
-                                        <td class="metric-cell"><?= number_format($row['population']) ?></td>
+                                        <td class="metric-cell text-warning"><?= number_format($row['overall_power']) ?></td>
                                         <td>
                                             <span class="text-success"><?= $row['battles_won'] ?>W</span>
                                             <span class="text-muted">/</span>
@@ -244,14 +287,26 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
     position: relative;
     transition: transform 0.3s ease;
     flex: 1;
-    max-width: 220px;
+    max-width: 280px;
+    min-height: 300px; 
 }
 
 .podium-card:hover { transform: translateY(-5px); }
 
-.podium-card.gold { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.15); height: 280px; z-index: 2; }
-.podium-card.silver { border-color: #c0c0c0; height: 240px; }
-.podium-card.bronze { border-color: #cd7f32; height: 220px; }
+.podium-card.gold { 
+    border-color: #ffd700; 
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.15); 
+    min-height: 330px; 
+    z-index: 2; 
+}
+.podium-card.silver { 
+    border-color: #c0c0c0; 
+    min-height: 310px; 
+}
+.podium-card.bronze { 
+    border-color: #cd7f32; 
+    min-height: 300px; 
+}
 
 .rank-badge {
     position: absolute;
@@ -281,9 +336,37 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
 .gold .podium-avatar-wrapper { width: 100px; height: 100px; border-color: #ffd700; }
 
 .podium-avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-.podium-name { font-family: 'Orbitron', sans-serif; margin-bottom: 0.5rem; font-size: 1.1rem; }
+.podium-name { font-family: 'Orbitron', sans-serif; margin-bottom: 0.5rem; /* Adjusted for alliance link */ font-size: 1.1rem; }
 .podium-name a { color: #fff; text-decoration: none; }
-.podium-stat { font-weight: bold; color: var(--accent-green); font-size: 0.9rem; }
+
+.podium-alliance-link {
+    font-size: 0.85rem;
+    margin-top: -0.5rem; /* Pull up closer to name */
+    margin-bottom: 1rem; /* Space before stats grid */
+}
+.podium-alliance-link .alliance-tag { color: var(--accent-2); font-weight: bold; text-decoration: none; }
+
+.podium-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    text-align: left;
+}
+
+.podium-stat { 
+    font-weight: bold; 
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: normal;
+    word-break: break-word;
+}
+.podium-stat i {
+    width: 20px;
+    text-align: center;
+}
 
 /* Registry Table */
 .registry-table { width: 100%; border-collapse: collapse; }

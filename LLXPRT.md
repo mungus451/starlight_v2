@@ -47,14 +47,13 @@ gap: 1.5rem;
 </select>
 ```
 
-## ⚡ Visual Styles (Neon Glitch Theme)
+## ⚡ Visual Style
 
-| Class | Effect | Requirements |
-| :--- | :--- | :--- |
-| `.text-neon-blue` | Color: `#00f3ff`, Text shadow: `0 0 10px rgba(0, 243, 255, 0.7)` | |
-| `.border-neon` | Border: `#00f3ff`, Box shadow: `0 0 15px rgba(0, 243, 255, 0.2)` | |
-| `.glitch-text` | High-tech distortion | Requires `data-text="Same Text"` for pseudo-elements |
-| `.scanner-line` | Animated overlay | Typically used on avatars or status images |
+This project uses a hybrid styling approach combining a foundational CSS file with utility-first classes from Tailwind CSS.
+
+*   **Base Stylesheet:** `example.css` provides the core visual elements, such as colors, component base styles (`.content-box`), and typography.
+*   **Utility Classes:** Tailwind CSS is used for layout, spacing, and responsive design adjustments directly within the HTML.
+*   **Reference Implementation:** The `training-example.php` file serves as the canonical example of how these two systems should be integrated to create the desired user interface.
 
 ## 🛠 Infrastructure & Routing
 
@@ -85,3 +84,99 @@ To avoid 404 errors, follow the strict URL structure where the page is a path an
 ### 1. Workflow Standards
  2 *   **Plan Verification:** Before implementing any new feature, bug fix, or significant logic change, always provide a concise summary of the implementation plan and explain the underlying logic to the
      user for approval.
+  - **User Preference:** When proposing UI/UX changes or new application features, prioritize visual wireframes over code snippets for better clarity and visualization.
+  - When key technologies aren't specified, prefer the following:
+
+### 2. Database Modifications
+*   **Phinx Migrations:** For any database schema changes, always create a new Phinx migration. Do NOT delete existing migration files.
+
+## ⚙️ Operational Guidelines
+
+### 1. Git Workflow
+*   **Commit Messages:** When committing changes via the CLI, prefer single-line commit messages with `git commit -m "Your message"`. Multiline messages using heredoc or similar syntax can sometimes be misinterpreted by the underlying shell, leading to commit failures.
+
+### 2. PHP Development
+*   **Object Property Access:** Always use the `->` operator to access properties and methods of objects in PHP (e.g., `$object->property`, `$object->method()`). Do NOT use the `.` operator, as it is reserved for string concatenation and will result in syntax errors when used for object access.
+
+---
+# Starlight Dominion - Deprecated Features
+
+This document tracks features that have been removed or deprecated from the game's configuration.
+
+## Resources
+
+### Protoform
+- **Description:** A biological resource required for elite units and general upkeep.
+- **Removed In:** `8a9f219`
+- **Details:**
+    - Removed from `upkeep` costs in `config/game_balance.php`.
+    - Removed `protoform_steal_rate` from spy missions.
+    - Removed the `protoform_vat` structure and its benefits.
+
+### Crystals (Naquadah) & Dark Matter
+- **Description:** Premium resources used for advanced structures, high-tier armory items, and Black Market services.
+- **Removed In:** `369a0dc`, `b465a33`
+- **Details:**
+    - All `cost_crystals` and `cost_dark_matter` fields were removed from `config/armory_items.php`.
+    - `base_crystal_cost` and `base_dark_matter_cost` were removed from structures in `config/game_balance.php`.
+    - Steal rates (`crystal_steal_rate`, `dark_matter_steal_rate`) were removed.
+    - Production benefits (`dark_matter_per_siphon_level`, `naquadah_per_mining_complex_level`) were removed.
+
+## Game Systems
+
+### Alliance Sidebar (Uplink)
+- **Description:** A dedicated sidebar providing alliance-specific information and quick actions.
+- **Removed In:** `4272e40425e39437e22114cb19a14b0d95ff2db1`
+- **Details:**
+    - The entire `<aside class="alliance-uplink">` block was removed from `views/layouts/main.php`.
+    - Functionality related to alliance treasury, DEFCON status, war status, objectives, active operations, and intelligence feed is no longer displayed.
+
+### Black Market
+- **Description:** A premium feature hub offering various services and items.
+- **Removed In:** `369a0dc`
+- **Details:**
+    - The entire `config/black_market.php` file was deleted.
+    - This removed features like stat respecs, turn refills, void containers (loot boxes), and mercenary drafting.
+
+### High-Tier Armory (Tiers 6-10)
+- **Description:** Advanced weapon and defense tiers.
+- **Removed In:** `b465a33`
+- **Details:**
+    - All armory items in the "Tier 6-10 Expansion" sections were removed from `config/armory_items.php`.
+
+### Galactic Market
+- **Description:** A system for player-to-player resource trading.
+- **Removed In:** `40290ad`
+- **Details:**
+    - The `galactic_market` structure definition was removed from `config/game_balance.php`.
+
+### Embassy & Edicts
+- **Description:** A system for implementing empire-wide bonuses through edicts unlocked by the Embassy structure.
+- **Removed In:** `9ee28ac`
+- **Details:**
+    - The `embassy` structure was removed from `config/game_balance.php`. The `config/edicts.php` file remains, but the core structure enabling the feature is gone.
+
+## Structures
+
+The following structures were removed to simplify gameplay and streamline the economy.
+
+- **Removed In:** `9ee28ac`
+- **Structure List:**
+    - `fortification`
+    - `offense_upgrade`
+    - `defense_upgrade`
+    - `spy_upgrade`
+    - `accounting_firm`
+    - `quantum_research_lab`
+    - `nanite_forge`
+    - `dark_matter_siphon`
+    - `naquadah_mining_complex`
+    - `protoform_vat`
+    - `weapon_vault`
+    - `fusion_plant`
+    - `orbital_trade_port`
+    - `banking_datacenter`
+    - `cloning_vats`
+    - `war_college`
+    - `phase_bunker`
+    - `ion_cannon_network`

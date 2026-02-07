@@ -157,8 +157,6 @@ class DashboardService
             'defenseBreakdown' => $defenseBreakdown,
             'spyBreakdown' => $spyBreakdown,
             'sentryBreakdown' => $sentryBreakdown,
-            'naquadah_crystals' => $resources->naquadah_crystals,
-            'naquadah_per_turn' => $incomeBreakdown['naquadah_income'],
             'net_worth' => $netWorth
         ];
     }

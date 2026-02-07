@@ -98,11 +98,21 @@
         <form action="/battle/attack" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
             <input type="hidden" name="attack_type" value="plunder">
-            <input type="hidden" name="target_name" value="<?= htmlspecialchars($profile['character_name']) ?>">
+            <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
             
             <div class="modal-summary">
                 Launch a full scale attack on <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?
             </div>
+
+            <div class="mb-3">
+                <label for="attack_turns" class="form-label text-muted">Select Attack Turns (1-10):</label>
+                <select name="attack_turns" id="attack_turns" class="form-select bg-dark text-light border-secondary">
+                    <?php for ($i = 1; $i <= 10; $i++): ?>
+                        <option value="<?= $i ?>"><?= $i ?> Turn(s)</option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+
             <button type="submit" class="btn-submit btn-reject" style="width: 100%;">Launch Attack</button>
         </form>
     </div>
@@ -115,9 +125,9 @@
             <h3>Confirm Espionage</h3>
             <button class="modal-close-btn" id="spy-modal-close">&times;</button>
         </div>
-        <form action="/spy/conduct" method="POST">
+        <form action="/spy/handle" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="hidden" name="target_name" value="<?= htmlspecialchars($profile['character_name']) ?>">
+            <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
             
             <div class="modal-summary">
                 Deploy spies against <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?

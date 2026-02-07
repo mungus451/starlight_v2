@@ -85,24 +85,18 @@ class SpyServiceTest extends TestCase
 
     // --- Basic Validation Tests ---
 
-    public function testConductOperationRejectsEmptyTarget(): void
-    {
-        $response = $this->service->conductOperation(1, '');
-        $this->assertEquals('You must enter a target.', $response->message);
-    }
-
     public function testConductOperationRejectsNonExistentTarget(): void
     {
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with('NonExistent')->andReturn(null);
-        $response = $this->service->conductOperation(1, 'NonExistent');
-        $this->assertEquals("Character 'NonExistent' not found.", $response->message);
+        $this->mockUserRepo->shouldReceive('findById')->with(999)->andReturn(null);
+        $response = $this->service->conductOperation(1, 999);
+        $this->assertEquals("Target with ID '999' not found.", $response->message);
     }
 
     public function testConductOperationRejectsSelfSpying(): void
     {
         $attacker = $this->createMockUser(1, 'Attacker');
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with('Attacker')->andReturn($attacker);
-        $response = $this->service->conductOperation(1, 'Attacker');
+        $this->mockUserRepo->shouldReceive('findById')->with(1)->andReturn($attacker);
+        $response = $this->service->conductOperation(1, 1);
         $this->assertEquals('You cannot spy on yourself.', $response->message);
     }
 
@@ -110,8 +104,8 @@ class SpyServiceTest extends TestCase
     {
         $attacker = $this->createMockUser(1, 'Attacker');
         $defender = $this->createMockUser(2, 'Defender');
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->andReturn($defender);
-        $this->mockUserRepo->shouldReceive('findById')->andReturn($attacker);
+        $this->mockUserRepo->shouldReceive('findById')->with(2)->andReturn($defender);
+        $this->mockUserRepo->shouldReceive('findById')->with(1)->andReturn($attacker);
         
         $this->mockResourceRepo->shouldReceive('findByUserId')->with(1)->andReturn($this->createMockResources(1, 1000, 0));
         $this->mockStatsRepo->shouldReceive('findByUserId')->andReturn($this->createMockStats(1));
@@ -121,7 +115,7 @@ class SpyServiceTest extends TestCase
 
         $this->mockConfig->shouldReceive('get')->andReturn(['cost_per_spy' => 100, 'attack_turn_cost' => 1]);
 
-        $response = $this->service->conductOperation(1, 'Defender');
+        $response = $this->service->conductOperation(1, 2);
         $this->assertEquals('You have no spies to send.', $response->message);
     }
 
@@ -131,10 +125,9 @@ class SpyServiceTest extends TestCase
     {
         $attackerId = 1;
         $defenderId = 2;
-        $defenderName = 'Defender';
 
-        $defender = $this->createMockUser($defenderId, $defenderName);
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with($defenderName)->andReturn($defender);
+        $defender = $this->createMockUser($defenderId, 'Defender');
+        $this->mockUserRepo->shouldReceive('findById')->with($defenderId)->andReturn($defender);
         $this->mockUserRepo->shouldReceive('findById')->with($attackerId)->andReturn($this->createMockUser($attackerId, 'Attacker'));
 
         $this->mockResourceRepo->shouldReceive('findByUserId')->with($attackerId)->andReturn($this->createMockResources($attackerId, 10000, 10));
@@ -160,7 +153,7 @@ class SpyServiceTest extends TestCase
             ->with($attackerId, 10000, 10);
         $this->mockStatsRepo->shouldReceive('updateAttackTurns')->once();
 
-        $response = $this->service->conductOperation($attackerId, $defenderName);
+        $response = $this->service->conductOperation($attackerId, $defenderId);
 
         $this->assertTrue($response->isSuccess());
         $this->assertStringContainsString('CRITICAL FAILURE: Target signal is jammed', $response->message);
@@ -170,10 +163,9 @@ class SpyServiceTest extends TestCase
     {
         $attackerId = 1;
         $defenderId = 2;
-        $defenderName = 'Defender';
 
-        $defender = $this->createMockUser($defenderId, $defenderName);
-        $this->mockUserRepo->shouldReceive('findByCharacterName')->with($defenderName)->andReturn($defender);
+        $defender = $this->createMockUser($defenderId, 'Defender');
+        $this->mockUserRepo->shouldReceive('findById')->with($defenderId)->andReturn($defender);
         $this->mockUserRepo->shouldReceive('findById')->with($attackerId)->andReturn($this->createMockUser($attackerId, 'Attacker'));
 
         $this->mockResourceRepo->shouldReceive('findByUserId')->with($attackerId)->andReturn($this->createMockResources($attackerId, 10000, 10));
@@ -213,7 +205,7 @@ class SpyServiceTest extends TestCase
 
         $this->mockNotificationService->shouldReceive('sendNotification')->once();
 
-        $response = $this->service->conductOperation($attackerId, $defenderName);
+        $response = $this->service->conductOperation($attackerId, $defenderId);
 
         $this->assertTrue($response->isSuccess());
     }
@@ -239,7 +231,18 @@ class SpyServiceTest extends TestCase
 
     private function createMockResources(int $userId, int $credits, int $spies, int $sentries = 0): UserResource
     {
-        return new UserResource($userId, $credits, 0, 0, 0.0, 50, 10, 10, 50, $spies, $sentries);
+        return new UserResource(
+            user_id: $userId,
+            credits: $credits,
+            banked_credits: 0,
+            gemstones: 0,
+            untrained_citizens: 50,
+            workers: 10,
+            soldiers: 10,
+            guards: 50,
+            spies: $spies,
+            sentries: $sentries
+        );
     }
 
     private function createMockStats(int $userId): UserStats

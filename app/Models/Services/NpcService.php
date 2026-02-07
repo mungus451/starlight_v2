@@ -46,7 +46,6 @@ class NpcService
     private ArmoryService $armoryService;
     private AttackService $attackService;
     private AllianceStructureService $allianceStructureService;
-    private CurrencyConverterService $currencyService;
     private SpyService $spyService;
     private PowerCalculatorService $powerCalcService;
 
@@ -68,7 +67,6 @@ class NpcService
         ArmoryService $armoryService,
         AttackService $attackService,
         AllianceStructureService $allianceStructureService,
-        CurrencyConverterService $currencyService,
         SpyService $spyService,
         PowerCalculatorService $powerCalcService,
         #[Inject('NpcLogger')] Logger $logger
@@ -85,7 +83,6 @@ class NpcService
         $this->armoryService = $armoryService;
         $this->attackService = $attackService;
         $this->allianceStructureService = $allianceStructureService;
-        $this->currencyService = $currencyService;
         $this->spyService = $spyService;
         $this->powerCalcService = $powerCalcService;
         
@@ -138,25 +135,25 @@ class NpcService
         return match ($mode) {
             0 => [ // The Warlord
                 'type' => 'Warlord',
-                'priorities' => ['offense_upgrade' => 50, 'fortification' => 20, 'armory' => 30, 'spy_upgrade' => 10, 'economy_upgrade' => 5],
+                'priorities' => ['armory' => 50, 'economy_upgrade' => 5],
                 'training_ratios' => ['workers' => 0.20, 'soldiers' => 0.60, 'guards' => 0.10, 'spies' => 0.10],
                 'aggression_chance' => 70,
             ],
             1 => [ // The Banker (Industrialist)
                 'type' => 'Banker',
-                'priorities' => ['economy_upgrade' => 60, 'population' => 20, 'defense_upgrade' => 20, 'accounting_firm' => 30],
+                'priorities' => ['economy_upgrade' => 60, 'population' => 20],
                 'training_ratios' => ['workers' => 0.70, 'soldiers' => 0.10, 'guards' => 0.20, 'spies' => 0.0],
                 'aggression_chance' => 5,
             ],
             2 => [ // The Turtle (Sentinel)
                 'type' => 'Turtle',
-                'priorities' => ['defense_upgrade' => 40, 'fortification' => 40, 'spy_upgrade' => 20],
+                'priorities' => ['planetary_shield' => 80],
                 'training_ratios' => ['workers' => 0.30, 'soldiers' => 0.0, 'guards' => 0.50, 'spies' => 0.10, 'sentries' => 0.10],
                 'aggression_chance' => 0,
             ],
             default => [ // Balanced Fallback
                 'type' => 'Balanced',
-                'priorities' => ['economy_upgrade' => 30, 'offense_upgrade' => 30, 'defense_upgrade' => 30],
+                'priorities' => ['economy_upgrade' => 50, 'population' => 50],
                 'training_ratios' => ['workers' => 0.33, 'soldiers' => 0.33, 'guards' => 0.33],
                 'aggression_chance' => 30,
             ]
@@ -186,52 +183,18 @@ class NpcService
 
         $costData = $costs[$target];
         $creditCost = $costData['credits'];
-        $crystalCost = $costData['crystals'];
 
         // 4. Affordability & Liquidity Check
         $hasCredits = $resources->credits >= $creditCost;
-        $hasCrystals = $resources->naquadah_crystals >= $crystalCost;
 
-        if ($hasCredits && $hasCrystals) {
+        if ($hasCredits) {
             $res = $this->structureService->upgradeStructure($npc->id, $target);
             if ($res->isSuccess()) {
                 $this->logger->info("  -> UPGRADE SUCCESS: {$target}.");
             }
-        } elseif ($hasCredits && !$hasCrystals) {
-            // "The Crystal Wall" Logic: Try to buy missing crystals
-            $missingCrystals = $crystalCost - $resources->naquadah_crystals;
-            // Get conversion rate (Approx 100 + 10% fee = ~110 credits per crystal)
-            // Use converter service data to be precise
-            $converterData = $this->currencyService->getConverterPageData($npc->id);
-            $rate = $converterData['conversionRate']; // 100
-            $feePct = $converterData['feePercentage']; // 0.10
-            
-            // Formula: Crystals = Credits / Rate. But we want Credits needed.
-            // CreditsNeeded = Crystals * Rate. 
-            // Fee is on Input Credits. Input = TargetCredits. 
-            // ReceivedCrystals = (Input - Fee) / Rate
-            // Received = (Input - Input*FeePct) / Rate = Input(1-Fee) / Rate
-            // Input = (Received * Rate) / (1 - Fee)
-            $creditsNeededForConversion = ($missingCrystals * $rate) / (1 - $feePct);
-            
-            // Check if we can afford the Upgrade AND the Conversion
-            if ($resources->credits >= ($creditCost + $creditsNeededForConversion)) {
-                $this->logger->info("  -> ECONOMY: Buying {$missingCrystals} crystals to afford {$target}.");
-                $convRes = $this->currencyService->convertCreditsToCrystals($npc->id, $creditsNeededForConversion);
-                
-                if ($convRes->isSuccess()) {
-                    // Retry Upgrade
-                    $res = $this->structureService->upgradeStructure($npc->id, $target);
-                    if ($res->isSuccess()) {
-                        $this->logger->info("  -> UPGRADE SUCCESS (After Conversion): {$target}.");
-                    }
-                }
-            } else {
-                $this->logger->info("  -> SAVING: Need crystals for {$target}.");
-            }
         } else {
             // "Poverty Trap" Fix: Do NOTHING. Save money.
-            $this->logger->info("  -> SAVING: Not enough resources for {$target} (Cost: {$creditCost} Cr, {$crystalCost} Naq).");
+            $this->logger->info("  -> SAVING: Not enough resources for {$target} (Cost: {$creditCost} Cr).");
         }
     }
 
@@ -387,30 +350,23 @@ class NpcService
         // We use 0 for unknown values to be conservative (or risk-takers?)
         // Using 0 might underestimate them. Let's use seen values.
         $enemyRes = new UserResource(
-            id: 0, user_id: 0, 
-            credits: 0, bank_credits: 0, naquadah_crystals: 0, 
+            user_id: 0, 
+            credits: 0, bank_credits: 0, 
             gemstones: 0, untrained_citizens: 0, 
             workers: 0, 
             soldiers: $report->soldiers_seen ?? 0, 
             guards: $report->guards_seen ?? 0, 
             spies: $report->spies_seen ?? 0, 
             sentries: $report->sentries_seen ?? 0,
-            created_at: 'now', updated_at: 'now'
+            research_data: 0,
+            protoform: 0
         );
 
         $enemyStruct = new UserStructure(
-            id: 0, user_id: 0,
+            user_id: 0,
             economy_upgrade_level: 0,
             population_level: 0,
-            water_recycling_plant_level: 0,
-            co2_scrubber_level: 0,
-            offense_upgrade_level: $report->offense_upgrade_level_seen ?? 0,
-            defense_upgrade_level: $report->defense_upgrade_level_seen ?? 0,
-            fortification_level: $report->fortification_level_seen ?? 0,
-            spy_upgrade_level: $report->spy_upgrade_level_seen ?? 0,
-            armory_level: $report->armory_level_seen ?? 0,
-            accounting_firm_level: 0,
-            created_at: 'now', updated_at: 'now'
+            armory_level: $report->armory_level_seen ?? 0
         );
         
         $enemyStats = new UserStats(

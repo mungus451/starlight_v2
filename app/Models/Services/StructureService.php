@@ -52,19 +52,8 @@ class StructureService
         foreach ($structureConfig as $key => $data) {
             $currentLevel = $structures->{$key . '_level'} ?? 0;
             $creditCost = $this->calculateCost($data['base_cost'], $data['multiplier'], $currentLevel);
-            $crystalCost = 0;
-            $darkMatterCost = 0;
-
-            if (isset($data['base_crystal_cost'])) {
-                $crystalCost = $this->calculateCost($data['base_crystal_cost'], $data['multiplier'], $currentLevel);
-            }
-            if (isset($data['base_dark_matter_cost'])) {
-                $darkMatterCost = $this->calculateCost($data['base_dark_matter_cost'], $data['multiplier'], $currentLevel);
-            }
             $costs[$key] = [
-                'credits' => $creditCost, 
-                'crystals' => $crystalCost,
-                'dark_matter' => $darkMatterCost
+                'credits' => $creditCost
             ];
         }
 
@@ -107,8 +96,6 @@ class StructureService
         }
 
         $totalCreditCost = 0;
-        $totalCrystalCost = 0;
-        $totalDarkMatterCost = 0;
         
         $upgradesToPerform = []; // [key => newLevel]
 
@@ -122,20 +109,8 @@ class StructureService
             
             // Calculate Cost for THIS level
             $cCost = $this->calculateCost($config['base_cost'], $config['multiplier'], $currentLevel);
-            
-            $cryCost = 0;
-            if (isset($config['base_crystal_cost'])) {
-                $cryCost = $this->calculateCost($config['base_crystal_cost'], $config['multiplier'], $currentLevel);
-            }
-            
-            $dmCost = 0;
-            if (isset($config['base_dark_matter_cost'])) {
-                $dmCost = $this->calculateCost($config['base_dark_matter_cost'], $config['multiplier'], $currentLevel);
-            }
 
             $totalCreditCost += $cCost;
-            $totalCrystalCost += $cryCost;
-            $totalDarkMatterCost += $dmCost;
 
             // Increment simulated level for next iteration (if same key is present)
             $simulatedLevels[$key]++;
@@ -152,12 +127,6 @@ class StructureService
         if ($resources->credits < $totalCreditCost) {
             return ServiceResponse::error('Insufficient credits for batch upgrade. Total: ' . number_format($totalCreditCost));
         }
-        if ($resources->naquadah_crystals < $totalCrystalCost) {
-            return ServiceResponse::error('Insufficient naquadah crystals. Total: ' . number_format($totalCrystalCost));
-        }
-        if ($resources->dark_matter < $totalDarkMatterCost) {
-            return ServiceResponse::error('Insufficient dark matter. Total: ' . number_format($totalDarkMatterCost));
-        }
 
         // 5. Transaction
         $transactionStarted = false;
@@ -170,9 +139,7 @@ class StructureService
             // Deduct Resources
             $this->resourceRepo->updateResources(
                 $userId,
-                -1 * $totalCreditCost,
-                -1 * $totalCrystalCost,
-                -1 * $totalDarkMatterCost
+                -1 * $totalCreditCost
             );
             
             // Update Levels
@@ -227,25 +194,10 @@ class StructureService
         $nextLevel = $currentLevel + 1;
         
         $creditCost = $this->calculateCost($structureConfig['base_cost'], $structureConfig['multiplier'], $currentLevel);
-        $crystalCost = 0;
-        $darkMatterCost = 0;
-
-        if (isset($structureConfig['base_crystal_cost'])) {
-            $crystalCost = $this->calculateCost($structureConfig['base_crystal_cost'], $structureConfig['multiplier'], $currentLevel);
-        }
-        if (isset($structureConfig['base_dark_matter_cost'])) {
-            $darkMatterCost = $this->calculateCost($structureConfig['base_dark_matter_cost'], $structureConfig['multiplier'], $currentLevel);
-        }
 
         // 4. Check Affordability
         if ($resources->credits < $creditCost) {
             return ServiceResponse::error('Insufficient credits for upgrade.');
-        }
-        if ($resources->naquadah_crystals < $crystalCost) {
-            return ServiceResponse::error('Insufficient naquadah crystals for upgrade.');
-        }
-        if ($resources->dark_matter < $darkMatterCost) {
-            return ServiceResponse::error('Insufficient dark matter for upgrade.');
         }
 
         // 5. Transaction
@@ -256,12 +208,10 @@ class StructureService
         }
 
         try {
-            // Deduct Credits, Crystals, and Dark Matter atomically
+            // Deduct Credits atomically
             $this->resourceRepo->updateResources(
                 $userId,
-                -1 * $creditCost,
-                -1 * $crystalCost,
-                -1 * $darkMatterCost
+                -1 * $creditCost
             );
             
             // Update Structure Level
@@ -275,9 +225,7 @@ class StructureService
                 "{$structureConfig['name']} upgraded to Level {$nextLevel}!",
                 [
                     'new_level' => $nextLevel, 
-                    'cost' => $creditCost, 
-                    'crystal_cost' => $crystalCost,
-                    'dark_matter_cost' => $darkMatterCost
+                    'cost' => $creditCost
                 ]
             );
 

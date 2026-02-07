@@ -66,8 +66,9 @@ class BattleController extends BaseController
         // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
-            'target_name' => 'required|string',
-            'attack_type' => 'required|string|in:plunder'
+            'target_id' => 'required|int',
+            'attack_type' => 'required|string|in:plunder',
+            'attack_turns' => 'required|int|min:1|max:10'
         ]);
 
         // 2. Validate CSRF
@@ -79,7 +80,12 @@ class BattleController extends BaseController
         
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
-        $response = $this->attackService->conductAttack($userId, $data['target_name'], $data['attack_type']);
+        $response = $this->attackService->conductAttack(
+            $userId, 
+            $data['target_id'], 
+            $data['attack_type'],
+            $data['attack_turns']
+        );
         
         // 4. Handle Response
         if ($response->isSuccess()) {
@@ -87,7 +93,7 @@ class BattleController extends BaseController
             $this->redirect('/battle/reports');
         } else {
             $this->session->setFlash('error', $response->message);
-            $this->redirect('/battle');
+            $this->redirect('/profile/' . $data['target_id']);
         }
     }
 

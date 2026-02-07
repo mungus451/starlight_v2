@@ -1,0 +1,371 @@
+/* public/css/classic_dashboard.css */
+
+/* --- 3. TOP BAR IMPROVEMENTS --- */
+.status-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.status-strip .player-id {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+.status-strip .player-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+.status-strip .player-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+.status-strip .sub-text {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+.status-strip .status-metrics {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.status-strip .metric {
+    text-align: right;
+}
+.status-strip .metric-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+.status-strip .metric-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-family: 'Courier New', Courier, monospace;
+    color: #fff;
+}
+.status-strip .metric-value.highlight {
+    color: var(--accent);
+}
+.status-strip .metric-value.secondary {
+    font-size: 1rem;
+    color: var(--muted);
+}
+
+.economy-panel .economy-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Main metrics (left) | Breakdown (right) */
+    gap: 1.5rem;
+    flex-grow: 1;
+}
+
+.economy-panel .economy-main-metrics {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.economy-panel .economy-breakdown {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.economy-panel .economy-breakdown .breakdown-block {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.economy-panel .economy-breakdown .breakdown-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.economy-panel .economy-breakdown ul {
+    list-style: none;
+    padding: 0.5rem 0 0 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.economy-panel .economy-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+}
+
+.economy-panel .economy-breakdown li span:first-child {
+    color: var(--muted);
+}
+.economy-panel .economy-breakdown li span:last-child {
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.economy-panel .eco-mini-graph {
+    margin-top: 1rem;
+}
+
+/* --- 4. ECONOMIC OVERVIEW PANEL --- */
+.economy-panel .hero-metric {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-green);
+    line-height: 1.1;
+    margin-bottom: 0.5rem; /* Add some space below */
+}
+.economy-panel .hero-metric .micro-trend {
+    font-size: 1rem;
+    margin-left: 0.5rem;
+    font-weight: 400;
+}
+.economy-panel .secondary-metric {
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+.economy-panel .secondary-metric .label {
+    color: var(--muted);
+}
+.economy-panel .tertiary-metric {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* --- 5. STATS PANEL --- */
+.stats-panel .stat-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin: 1.5rem 0 0.5rem 0;
+}
+.stats-panel .stat-group-title:first-child {
+    margin-top: 0;
+}
+.stats-panel .action-item {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid var(--accent-2);
+    padding-left: 0.75rem;
+    margin-left: -0.75rem;
+    border-radius: 0 4px 4px 0;
+}
+.stats-panel .action-item .value-green {
+    color: var(--accent-2) !important;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { filter: brightness(1); text-shadow: 0 0 2px var(--accent-2); }
+    50% { filter: brightness(1.5); text-shadow: 0 0 8px var(--accent-2); }
+    100% { filter: brightness(1); text-shadow: 0 0 2px var(--accent-2); }
+}
+
+.military-command-panel .military-content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.5rem;
+    flex-grow: 1;
+}
+.military-command-panel .military-main-metrics {
+    display: flex;
+    flex-direction: column;
+}
+.military-command-panel .military-breakdown {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+    font-size: 0.85rem;
+}
+.military-command-panel .military-breakdown .breakdown-block {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+.military-command-panel .military-breakdown .breakdown-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.military-command-panel .military-breakdown ul {
+    list-style: none;
+    padding: 0.5rem 0 0 0;
+    margin: 0;
+}
+.military-command-panel .military-breakdown li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+}
+.military-command-panel .military-breakdown li span:first-child {
+    color: var(--muted);
+}
+.military-command-panel .military-breakdown li span:last-child {
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* --- 6. MILITARY COMMAND PANEL --- */
+.military-command-panel .power-comparison {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.25rem 0;
+}
+.military-command-panel .power-label {
+    font-weight: 600;
+    color: #fff;
+    font-size: 1rem;
+}
+.military-command-panel .power-value {
+    font-size: 1.2rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+}
+.military-command-panel .power-value.offense { color: var(--accent-red); }
+.military-command-panel .power-value.defense { color: var(--accent-blue); }
+.military-command-panel .power-trend { font-size: 1rem; margin-left: 0.25rem; }
+.military-command-panel .intel-divider {
+    border: none;
+    border-top: 1px dashed var(--border);
+    margin: 0.5rem 0;
+}
+.military-command-panel .readiness-label {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: right;
+}
+
+/* --- 7. MILITARY UNITS PANEL --- */
+.unit-list-item {
+    position: relative;
+    padding: 0.25rem 0;
+}
+.unit-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--border);
+    opacity: 0.5;
+    z-index: 1;
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+}
+.unit-list-item > span {
+    position: relative;
+    z-index: 2;
+}
+.unit-imbalance-flag {
+    font-size: 0.8rem;
+    color: var(--accent-2);
+    margin-top: 1rem;
+    display: block;
+    text-align: right;
+}
+
+/* --- 8. STRUCTURES PANEL --- */
+.structures-panel .card-stats-list li {
+    display: block;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.structures-panel .card-stats-list li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.structures-panel .card-stats-list li > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.structures-panel .structure-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-left: 0.5rem;
+}
+.structures-panel .structure-next-impact {
+    font-size: 0.8rem;
+    color: var(--accent-green);
+    margin-left: 0.5rem;
+    text-align: right;
+    width: 100%;
+    display: block;
+}
+
+/* --- 9. GRID IMPROVEMENTS --- */
+.dashboard-grid-classic {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+.dashboard-grid-classic .grid-col-span-1 { grid-column: span 1; }
+.dashboard-grid-classic .grid-col-span-2 { grid-column: span 2; }
+.dashboard-grid-classic .grid-col-span-3 { grid-column: span 3; }
+
+/* General Card adjustments for this theme */
+.dashboard-grid-classic .data-card {
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+.dashboard-grid-classic .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+.dashboard-grid-classic .card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.dashboard-grid-classic .card-toggle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--accent);
+}
+.dashboard-grid-classic .card-stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+.dashboard-grid-classic .card-stats-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+.text-success { color: var(--accent-green); }
+.text-danger { color: var(--accent-red); }

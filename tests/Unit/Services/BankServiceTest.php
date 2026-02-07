@@ -90,7 +90,6 @@ class BankServiceTest extends TestCase
             credits: 100000,
             banked_credits: 50000,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 50,
             workers: 10,
             soldiers: 100,
@@ -101,14 +100,9 @@ class BankServiceTest extends TestCase
 
         $mockStructures = new UserStructure(
             user_id: $userId,
-            fortification_level: 1,
-            offense_upgrade_level: 1,
-            defense_upgrade_level: 1,
-            spy_upgrade_level: 1,
             economy_upgrade_level: 1,
             population_level: 1,
-            armory_level: 1,
-            accounting_firm_level: 1
+            armory_level: 1
         );
 
         $bankConfig = [
@@ -175,7 +169,6 @@ class BankServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -240,7 +233,6 @@ class BankServiceTest extends TestCase
             credits: 100000,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -319,7 +311,6 @@ class BankServiceTest extends TestCase
             credits: 10000,
             banked_credits: 50000, // Less than requested
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,
@@ -352,7 +343,6 @@ class BankServiceTest extends TestCase
             credits: 10000,
             banked_credits: 50000,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,

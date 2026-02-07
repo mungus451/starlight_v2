@@ -102,11 +102,10 @@ class SpyService
         return $this->spyRepo->findReportById($reportId, $viewerId);
     }
 
-    public function conductOperation(int $attackerId, string $targetName): ServiceResponse
+    public function conductOperation(int $attackerId, int $targetId): ServiceResponse
     {
-        if (empty(trim($targetName))) return ServiceResponse::error('You must enter a target.');
-        $defender = $this->userRepo->findByCharacterName($targetName);
-        if (!$defender) return ServiceResponse::error("Character '{$targetName}' not found.");
+        $defender = $this->userRepo->findById($targetId);
+        if (!$defender) return ServiceResponse::error("Target with ID '{$targetId}' not found.");
         if ($defender->id === $attackerId) return ServiceResponse::error('You cannot spy on yourself.');
 
         // --- Active Effects Check ---
@@ -218,9 +217,6 @@ class SpyService
         $defenderXp = $isCaught ? ($xpConfig['defense_caught_spy'] ?? 75) : 0;
         $operation_result = $isSuccess ? 'success' : 'failure';
         
-        $stolen_naquadah = $isSuccess ? ($defenderResources->naquadah_crystals * ($config['crystal_steal_rate'] ?? 0.05)) : 0;
-        $stolen_dark_matter = $isSuccess ? (int)floor($defenderResources->dark_matter * ($config['dark_matter_steal_rate'] ?? 0.02)) : 0;
-        $stolen_protoform = $isSuccess ? ($defenderResources->protoform * ($config['protoform_steal_rate'] ?? 0.01)) : 0;
 
         // --- Worker Casualties (Collateral) ---
         $workerCasualties = 0;
@@ -232,19 +228,12 @@ class SpyService
         }
 
         $intel_credits = $isSuccess ? $defenderResources->credits : null;
-        $intel_naquadah = $isSuccess ? $defenderResources->naquadah_crystals : null;
-        $intel_dark_matter = $isSuccess ? $defenderResources->dark_matter : null;
-        $intel_protoform = $isSuccess ? $defenderResources->protoform : null;
         $intel_gemstones = $isSuccess ? $defenderResources->gemstones : null;
         $intel_workers = $isSuccess ? $defenderResources->workers : null;
         $intel_soldiers = $isSuccess ? $defenderResources->soldiers : null;
         $intel_guards = $isSuccess ? $defenderResources->guards : null;
         $intel_spies = $isSuccess ? $defenderResources->spies : null;
         $intel_sentries = $isSuccess ? $defenderResources->sentries : null;
-        $intel_fortLevel = $isSuccess ? $defenderStructures->fortification_level : null;
-        $intel_offenseLevel = $isSuccess ? $defenderStructures->offense_upgrade_level : null;
-        $intel_defenseLevel = $isSuccess ? $defenderStructures->defense_upgrade_level : null;
-        $intel_spyLevel = $isSuccess ? $defenderStructures->spy_upgrade_level : null;
         $intel_econLevel = $isSuccess ? $defenderStructures->economy_upgrade_level : null;
         $intel_popLevel = $isSuccess ? $defenderStructures->population_level : null;
         $intel_armoryLevel = $isSuccess ? $defenderStructures->armory_level : null;
@@ -258,9 +247,9 @@ class SpyService
             $attackerId, $defender, $attackerResources, $attackerStats, $defenderResources,
             $turnCost, $spiesLost, $sentriesLost, $attackerXp, $defenderXp, $isSuccess, $isCaught,
             $spiesSent, $operation_result, $defenderTotalSentriesSnapshot, $attacker,
-            $stolen_naquadah, $stolen_dark_matter, $stolen_protoform, $workerCasualties,
-            $intel_credits, $intel_naquadah, $intel_dark_matter, $intel_protoform, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-            $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
+            $workerCasualties,
+            $intel_credits, $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
+            $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
             &$reportId // Pass by reference
         ) {
             // Deduct turns, NOT credits
@@ -268,11 +257,6 @@ class SpyService
             $this->statsRepo->updateAttackTurns($attackerId, $attackerStats->attack_turns - $turnCost);
             $this->levelUpService->grantExperience($attackerId, $attackerXp);
             $this->statsRepo->incrementSpyStats($attackerId, $isSuccess);
-
-            if ($isSuccess && ($stolen_naquadah > 0 || $stolen_dark_matter > 0 || $stolen_protoform > 0)) {
-                $this->resourceRepo->updateResources($attackerId, 0, $stolen_naquadah, $stolen_dark_matter, $stolen_protoform);
-                $this->resourceRepo->updateResources($defender->id, 0, -$stolen_naquadah, -$stolen_dark_matter, -$stolen_protoform);
-            }
 
             // Apply Defender Losses (Sentries + Workers)
             if ($isCaught || $workerCasualties > 0) {
@@ -291,9 +275,7 @@ class SpyService
                 $defenderTotalSentriesSnapshot,
                 $intel_credits, 
                 $intel_gemstones, $intel_workers, $intel_soldiers, $intel_guards, $intel_spies, $intel_sentries,
-                $intel_fortLevel, $intel_offenseLevel, $intel_defenseLevel, $intel_spyLevel, $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
-                $stolen_naquadah, $stolen_dark_matter, $intel_naquadah, $intel_dark_matter,
-                $stolen_protoform, $intel_protoform,
+                $intel_econLevel, $intel_popLevel, $intel_armoryLevel,
                 $workerCasualties // New Param
             );
 
@@ -328,16 +310,6 @@ class SpyService
         });
 
         $message = "Operation {$operation_result}. XP Gained: +{$attackerXp}.";
-        if ($isSuccess) {
-            if ($stolen_naquadah > 0 || $stolen_dark_matter > 0 || $stolen_protoform > 0) {
-                $message .= " Your spies managed to steal ";
-                $stolenParts = [];
-                if ($stolen_naquadah > 0) $stolenParts[] = number_format($stolen_naquadah, 2) . " crystals";
-                if ($stolen_dark_matter > 0) $stolenParts[] = $stolen_dark_matter . " dark matter";
-                if ($stolen_protoform > 0) $stolenParts[] = number_format($stolen_protoform, 2) . " protoform";
-                $message .= implode(", ", $stolenParts) . ".";
-            }
-        }
         if ($workerCasualties > 0) $message .= " Targets eliminated: {$workerCasualties} workers.";
         if ($isCaught && $sentriesLost > 0) $message .= " You destroyed {$sentriesLost} enemy sentries.";
         

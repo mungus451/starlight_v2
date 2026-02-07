@@ -306,6 +306,41 @@ return $npcs;
         return (int)$stmt->fetchColumn();
     }
 
+    public function getAllActivePlayerIdsAndData(): array
+    {
+        $sql = "
+            SELECT 
+                u.id,
+                u.character_name,
+                u.profile_picture_url,
+                u.alliance_id,
+                s.level,
+                s.war_prestige,
+                s.battles_won,
+                s.battles_lost,
+                a.name as alliance_name,
+                a.tag as alliance_tag
+            FROM users u
+            JOIN user_stats s ON u.id = s.user_id
+            LEFT JOIN alliances a ON u.alliance_id = a.id
+            WHERE u.is_npc = 0
+            ORDER BY u.id ASC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Updates a user's race and class.
+     */
+    public function setIdentity(int $userId, string $race, string $class): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE users SET race = ?, class = ? WHERE id = ?"
+        );
+        return $stmt->execute([$race, $class, $userId]);
+    }
+
     private function hydrate(array $data): User{
 return new User(
 id: (int)$data['id'],
@@ -318,7 +353,9 @@ alliance_id: isset($data['alliance_id']) ? (int)$data['alliance_id'] : null,
 alliance_role_id: isset($data['alliance_role_id']) ? (int)$data['alliance_role_id'] : null,
 passwordHash: $data['password_hash'],
 createdAt: $data['created_at'],
-is_npc: (bool)($data['is_npc'] ?? false)
+is_npc: (bool)($data['is_npc'] ?? false),
+race: $data['race'] ?? null,
+class: $data['class'] ?? null
 );
 }
 }

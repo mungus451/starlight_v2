@@ -10,10 +10,7 @@ use App\Models\Repositories\StatsRepository;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Repositories\AllianceRepository;
 use App\Models\Repositories\AllianceBankLogRepository;
-use App\Models\Repositories\GeneralRepository;
-use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
-use App\Models\Services\EmbassyService;
 use App\Models\Services\NetWorthCalculatorService;
 use PDO;
 use Throwable;
@@ -34,10 +31,7 @@ class TurnProcessorService
     private StructureRepository $structureRepo;
     private StatsRepository $statsRepo;
     private PowerCalculatorService $powerCalculatorService;
-    private GeneralRepository $generalRepo;
-    private ScientistRepository $scientistRepo;
     private EdictRepository $edictRepo;
-    private EmbassyService $embassyService;
     private NetWorthCalculatorService $nwCalculator;
 
     private AllianceRepository $allianceRepo;
@@ -60,10 +54,7 @@ class TurnProcessorService
         PowerCalculatorService $powerCalculatorService,
         AllianceRepository $allianceRepo,
         AllianceBankLogRepository $bankLogRepo,
-        GeneralRepository $generalRepo,
-        ScientistRepository $scientistRepo,
         EdictRepository $edictRepo,
-        EmbassyService $embassyService,
         NetWorthCalculatorService $nwCalculator
     ) {
         $this->db = $db;
@@ -73,12 +64,9 @@ class TurnProcessorService
         $this->resourceRepo = $resourceRepo;
         $this->structureRepo = $structureRepo;
         $this->statsRepo = $statsRepo;
-        $this->generalRepo = $generalRepo;
-        $this->scientistRepo = $scientistRepo;
         $this->edictRepo = $edictRepo;
 
         $this->powerCalculatorService = $powerCalculatorService;
-        $this->embassyService = $embassyService;
         $this->nwCalculator = $nwCalculator;
 
         $this->allianceRepo = $allianceRepo;
@@ -157,12 +145,9 @@ class TurnProcessorService
             );
 
             $creditsGained = $incomeBreakdown['total_credit_income'];
-            $interestGained = $incomeBreakdown['interest'];
+            $interestGained = 0; // Interest has been removed
             $citizensGained = $incomeBreakdown['total_citizens'];
             $researchDataIncome = $incomeBreakdown['research_data_income'];
-            $darkMatterIncome = $incomeBreakdown['dark_matter_income'];
-            $naquadahIncome = $incomeBreakdown['naquadah_income'];
-            $protoformIncome = $incomeBreakdown['protoform_income'];
             $attackTurnsGained = 1;
 
             // 3. Apply income using the atomic repository method
@@ -171,28 +156,13 @@ class TurnProcessorService
                 $creditsGained, 
                 $interestGained, 
                 $citizensGained, 
-                $researchDataIncome, 
-                $darkMatterIncome, 
-                $naquadahIncome, 
-                $protoformIncome
+                $researchDataIncome
             );
             
             // 4. Apply attack turns
             $this->statsRepo->applyTurnAttackTurn($userId, $attackTurnsGained);
 
-            // 5. Calculate and apply UNIT upkeep (Generals/Scientists)
-            $generalCount = $this->generalRepo->countByUserId($userId);
-            $scientistCount = $this->scientistRepo->getActiveScientistCount($userId);
-
-            $generalUpkeep = $generalCount * ($this->upkeepConfig['general']['protoform'] ?? 0);
-            $scientistUpkeep = $scientistCount * ($this->upkeepConfig['scientist']['protoform'] ?? 0);
-            $totalUnitUpkeep = $generalUpkeep + $scientistUpkeep;
-
-            if ($totalUnitUpkeep > 0) {
-                $this->resourceRepo->updateResources($userId, null, null, null, -1 * $totalUnitUpkeep);
-            }
-
-            // 6. Edict Upkeep Logic
+            // 5. Edict Upkeep Logic
             $activeEdicts = $this->edictRepo->findActiveByUserId($userId);
             foreach ($activeEdicts as $activeEdict) {
                 $def = $this->edictRepo->getDefinition($activeEdict->edict_key);
@@ -218,7 +188,7 @@ class TurnProcessorService
                     // Let's do a quick fetch of the column we need.
                     
                     // Optimization: We know starting balance + gain.
-                    $currentCredits = $resources->credits + $creditsGained + $interestGained; 
+                    $currentCredits = $resources->credits + $creditsGained; 
                     // Note: This ignores unit upkeep we just paid? 
                     // No, unit upkeep is protoform.
                     // If unit upkeep was credits, we'd need to subtract.
@@ -241,7 +211,7 @@ class TurnProcessorService
                 }
 
                 if (!$canAfford) {
-                    $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
+                    // $this->embassyService->revokeEdict($userId, $activeEdict->edict_key);
                     // Optional: Send notification "Edict revoked due to lack of funds"
                 }
             }
@@ -303,21 +273,7 @@ return false;
                 $this->allianceRepo->updateNetWorth($alliance->id, $totalNetWorth);
 
                 // --- 2. Bank Interest Logic ---
-                if ($interestRate > 0 && $alliance->bank_credits > 0) {
-                    $interestGained = (int)floor($alliance->bank_credits * $interestRate);
-
-                    if ($interestGained > 0) {
-                        // Add interest to bank
-                        $this->allianceRepo->updateBankCreditsRelative($alliance->id, $interestGained);
-
-                        // Log the transaction
-                        $message = "Bank interest (" . ($interestRate * 100) . "%) earned.";
-                        $this->bankLogRepo->createLog($alliance->id, null, 'interest', $interestGained, $message);
-
-                        // Update compound timestamp
-                        $this->allianceRepo->updateLastCompoundAt($alliance->id);
-                    }
-                }
+                // Interest has been removed from the game.
 
                 if ($transactionStartedByMe) {
                     $this->db->commit();

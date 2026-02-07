@@ -21,7 +21,8 @@ use App\Controllers\BankController;
 use App\Controllers\TrainingController;
 use App\Controllers\StructureController;
 use App\Controllers\ArmoryController;
-use App\Controllers\GeneralController;
+use App\Controllers\GlossaryController;
+use App\Controllers\IdentityController;
 use App\Controllers\SettingsController;
 use App\Controllers\SpyController;
 use App\Controllers\BattleController;
@@ -39,15 +40,14 @@ use App\Controllers\AllianceForumController;
 use App\Controllers\AlmanacController;
 use App\Controllers\DiplomacyController;
 use App\Controllers\WarController;
-use App\Controllers\CurrencyConverterController;
+// use App\Controllers\CurrencyConverterController;
 use App\Controllers\NotificationController;
 use App\Controllers\LeaderboardController;
-use App\Controllers\BlackMarketController;
+// use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
-use App\Controllers\GlossaryController;
 use App\Controllers\ThemeController;
 use App\Middleware\AuthMiddleware;
-use App\Middleware\MobileViewMiddleware;
+
 
 use App\Core\Exceptions\RedirectException;
 use App\Core\Exceptions\TerminateException;
@@ -130,16 +130,16 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
     // --- Black Market (Refactored) ---
     // The Exchange (Crystal Converter)
-    $r->addRoute('GET', '/black-market/converter', [BlackMarketController::class, 'showExchange']);
-    $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
+    // $r->addRoute('GET', '/black-market/converter', [BlackMarketController::class, 'showExchange']);
+    // $r->addRoute('POST', '/black-market/convert', [CurrencyConverterController::class, 'handleConversion']);
     // The Undermarket (Actions)
-    $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
-    $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
-    $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
-    $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
-    $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
+    // $r->addRoute('GET', '/black-market/actions', [BlackMarketController::class, 'showActions']);
+    // $r->addRoute('POST', '/black-market/buy/{action}', [BlackMarketController::class, 'handlePurchase']);
+    // $r->addRoute('POST', '/black-market/synthesize/{source:credits|crystals}', [BlackMarketController::class, 'handleSynthesis']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/launder', [BlackMarketController::class, 'handleLaunder']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/withdraw-chips', [BlackMarketController::class, 'handleWithdrawChips']); // --- NEW ---
+    // $r->addRoute('POST', '/black-market/bounty/place', [BlackMarketController::class, 'handlePlaceBounty']);
+    // $r->addRoute('POST', '/black-market/shadow', [BlackMarketController::class, 'handleShadowContract']);
 
     // --- Military ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
@@ -155,11 +155,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/armory/equip', [ArmoryController::class, 'handleEquip']);
 
     // Generals
-    $r->addRoute('GET', '/generals', [GeneralController::class, 'index']);
-    $r->addRoute('POST', '/generals/recruit', [GeneralController::class, 'recruit']);
-    $r->addRoute('POST', '/generals/equip', [GeneralController::class, 'equip']);
-    $r->addRoute('GET', '/generals/armory/{id:\d+}', [GeneralController::class, 'armory']);
-    $r->addRoute('POST', '/generals/decommission', [GeneralController::class, 'decommission']);
+
 
     // --- User Settings ---
     $r->addRoute('GET', '/settings', [SettingsController::class, 'show']);
@@ -181,6 +177,10 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/battle/attack', [BattleController::class, 'handleAttack']);
     $r->addRoute('GET', '/battle/reports', [BattleController::class, 'showReports']);
     $r->addRoute('GET', '/battle/report/{id:\d+}', [BattleController::class, 'showReport']);
+
+    // --- Identity Selection ---
+    $r->addRoute('GET', '/choose-identity', [\App\Controllers\IdentityController::class, 'showSelection']);
+    $r->addRoute('POST', '/choose-identity', [\App\Controllers\IdentityController::class, 'handleSelection']);
 
     $r->addRoute('GET', '/level-up', [LevelUpController::class, 'show']);
     $r->addRoute('POST', '/level-up/spend', [LevelUpController::class, 'handleSpend']);
@@ -298,8 +298,6 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
 try {
 
-    $container->get(MobileViewMiddleware::class)->handle(function() use ($container, $dispatcher) {
-
         $httpMethod = $_SERVER['REQUEST_METHOD'];
 
         $uri = $_SERVER['REQUEST_URI'];
@@ -382,11 +380,67 @@ try {
 
 
 
-                if ($isProtected) {
+                                if ($isProtected) {
 
-                    $container->get(AuthMiddleware::class)->handle();
 
-                }
+
+                                    $container->get(AuthMiddleware::class)->handle();
+
+
+
+                                    
+
+
+
+                                    // --- Identity Selection Check ---
+
+
+
+                                    $userId = $container->get(App\Core\Session::class)->get('user_id');
+
+
+
+                                    $userRepo = $container->get(App\Models\Repositories\UserRepository::class);
+
+
+
+                                    $user = $userRepo->findById($userId);
+
+
+
+                                    
+
+
+
+                                    if ($user && (!$user->race || !$user->class)) {
+
+
+
+                                        $currentUri = $_SERVER['REQUEST_URI'];
+
+
+
+                                        if (!str_contains($currentUri, '/choose-identity') && !str_contains($currentUri, '/logout')) {
+
+
+
+                                            header('Location: /choose-identity');
+
+
+
+                                            exit;
+
+
+
+                                        }
+
+
+
+                                    }
+
+
+
+                                }
 
 
 
@@ -408,15 +462,15 @@ try {
 
                 }
 
-                break;
+                                break;
 
-        }
+                
 
-    }); // End MobileViewMiddleware handle closure
+                        }
 
+                
 
-
-} catch (RedirectException $e) {
+                } catch (RedirectException $e) {
     // Handle graceful redirect
     header("Location: " . $e->getMessage());
     exit; // Legitimate entry point exit

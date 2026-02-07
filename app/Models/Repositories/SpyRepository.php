@@ -25,33 +25,27 @@ class SpyRepository
         int $defenderTotalSentries,
         ?int $credits, 
         ?int $gemstones, ?int $workers, ?int $soldiers, ?int $guards, ?int $spies, ?int $sentries,
-        ?int $fortLevel, ?int $offenseLevel, ?int $defenseLevel, ?int $spyLevel, ?int $econLevel, ?int $popLevel, ?int $armoryLevel,
-        float $naquadahStolen = 0, int $darkMatterStolen = 0,
-        ?float $naquadahSeen = null, ?int $darkMatterSeen = null,
-        float $protoformStolen = 0, ?float $protoformSeen = null,
+        ?int $econLevel, ?int $popLevel, ?int $armoryLevel,
         int $defenderWorkersLost = 0 // New Parameter
     ): int {
         $sql = "
             INSERT INTO spy_reports 
                 (attacker_id, defender_id, operation_result, spies_sent, spies_lost_attacker, sentries_lost_defender,
                  defender_total_sentries, defender_workers_lost,
-                 credits_seen, naquadah_crystals_stolen, dark_matter_stolen, naquadah_crystals_seen, dark_matter_seen,
-                 protoform_stolen, protoform_seen,
+                 credits_seen, 
                  gemstones_seen, workers_seen, soldiers_seen, guards_seen, spies_seen, sentries_seen,
-                 fortification_level_seen, offense_upgrade_level_seen, defense_upgrade_level_seen, 
-                 spy_upgrade_level_seen, economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
+                 economy_upgrade_level_seen, population_level_seen, armory_level_seen, created_at)
             VALUES 
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $attackerId, $defenderId, $result, $spiesSent, $spiesLost, $sentriesLost,
             $defenderTotalSentries, $defenderWorkersLost,
-            $credits, $naquadahStolen, $darkMatterStolen, $naquadahSeen, $darkMatterSeen,
-            $protoformStolen, $protoformSeen,
+            $credits,
             $gemstones, $workers, $soldiers, $guards, $spies, $sentries,
-            $fortLevel, $offenseLevel, $defenseLevel, $spyLevel, $econLevel, $popLevel, $armoryLevel
+            $econLevel, $popLevel, $armoryLevel
         ]);
 
         return (int)$this->db->lastInsertId();
@@ -161,19 +155,9 @@ class SpyRepository
             guards_seen: isset($data['guards_seen']) ? (int)$data['guards_seen'] : null,
             spies_seen: isset($data['spies_seen']) ? (int)$data['spies_seen'] : null,
             sentries_seen: isset($data['sentries_seen']) ? (int)$data['sentries_seen'] : null,
-            fortification_level_seen: isset($data['fortification_level_seen']) ? (int)$data['fortification_level_seen'] : null,
-            offense_upgrade_level_seen: isset($data['offense_upgrade_level_seen']) ? (int)$data['offense_upgrade_level_seen'] : null,
-            defense_upgrade_level_seen: isset($data['defense_upgrade_level_seen']) ? (int)$data['defense_upgrade_level_seen'] : null,
-            spy_upgrade_level_seen: isset($data['spy_upgrade_level_seen']) ? (int)$data['spy_upgrade_level_seen'] : null,
             economy_upgrade_level_seen: isset($data['economy_upgrade_level_seen']) ? (int)$data['economy_upgrade_level_seen'] : null,
             population_level_seen: isset($data['population_level_seen']) ? (int)$data['population_level_seen'] : null,
             armory_level_seen: isset($data['armory_level_seen']) ? (int)$data['armory_level_seen'] : null,
-            naquadah_crystals_stolen: isset($data['naquadah_crystals_stolen']) ? (float)$data['naquadah_crystals_stolen'] : 0,
-            dark_matter_stolen: isset($data['dark_matter_stolen']) ? (int)$data['dark_matter_stolen'] : 0,
-            naquadah_crystals_seen: isset($data['naquadah_crystals_seen']) ? (float)$data['naquadah_crystals_seen'] : null,
-            dark_matter_seen: isset($data['dark_matter_seen']) ? (int)$data['dark_matter_seen'] : null,
-            protoform_stolen: isset($data['protoform_stolen']) ? (float)$data['protoform_stolen'] : 0,
-            protoform_seen: isset($data['protoform_seen']) ? (float)$data['protoform_seen'] : null,
             defender_name: $data['defender_name'] ?? null,
             attacker_name: $data['attacker_name'] ?? null
         );

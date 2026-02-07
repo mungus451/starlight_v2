@@ -96,7 +96,7 @@ try {
     echo "2. Testing Manufacturing Logic (Consumption)...\n";
     
     // Manufacture 10 Pulse Rifles (Tier 1)
-    // Cost: 80,000 each * 10 = 800,000
+    // Cost: 70,000 each * 10 = 700,000
     $initialCredits = $resRepo->findByUserId($userId)->credits;
     $result = $armoryService->manufactureItem($userId, 'pulse_rifle', 10);
     
@@ -106,7 +106,7 @@ try {
     
     // Check Credits
     $afterCredits = $resRepo->findByUserId($userId)->credits;
-    $expectedCost = 80000 * 10;
+    $expectedCost = 70000 * 10;
     if ($initialCredits - $afterCredits !== $expectedCost) {
         throw new Exception("FAIL: Credit deduction incorrect. Expected -$expectedCost, got " . ($initialCredits - $afterCredits));
     }
@@ -120,6 +120,8 @@ try {
 
     // Upgrade 5 Pulse Rifles to Railguns (Tier 2)
     // Should consume 5 Pulse Rifles and cost Railgun Price (160,000 * 5)
+    // Railgun requires Armory Level 10
+    $structRepo->updateStructureLevel($userId, 'armory_level', 10);
     $initialCredits = $afterCredits;
     $result = $armoryService->manufactureItem($userId, 'railgun', 5);
     
@@ -159,7 +161,7 @@ try {
     echo "4. Testing Charisma Discounts...\n";
     
     // Set Charisma to 50 (should be 50 * 0.01 = 50% discount if config is default)
-    // Pulse Rifle base cost = 80,000. 50% off = 40,000.
+    // Pulse Rifle base cost = 70,000. 50% off = 35,000.
     $statsRepo->updateBaseStats($userId, 0, 0, 0, 0, 0, 50); // 50 Charisma
     
     $initialCredits = $resRepo->findByUserId($userId)->credits;
@@ -172,9 +174,9 @@ try {
     $afterCredits = $resRepo->findByUserId($userId)->credits;
     $deducted = $initialCredits - $afterCredits;
     
-    echo "   -> Cost: $deducted (Expected ~40,000)\n";
+    echo "   -> Cost: $deducted (Expected ~35,000)\n";
     
-    if ($deducted > 40000) {
+    if ($deducted > 35000) {
         throw new Exception("FAIL: Discount not applied correctly. Deducted $deducted.");
     }
     echo "   -> Passed: Charisma discount applied.\n\n";
@@ -215,7 +217,7 @@ try {
     echo "   -> Passed: Rejected invalid slot assignment.\n";
 
     // Unequip
-    $result = $armoryService->equipItem($userId, 'soldier', 'main_weapon', '');
+    $result = $armoryService->equipItem($userId, 'soldier', 'main_weapon', 'UNEQUIP_SLOT');
     if (!$result->isSuccess()) {
         throw new Exception("FAIL: Failed to unequip.");
     }
@@ -224,7 +226,30 @@ try {
     if (isset($loadouts['soldier']['main_weapon'])) {
         throw new Exception("FAIL: Loadout slot not cleared.");
     }
-    echo "   -> Passed: Slot cleared.\n\n";
+    echo "   -> Passed: Slot cleared.\n";
+
+    // --- TEST 6: SPECIFIC ITEM REGRESSION (Antimatter Launcher) ---
+    echo "6. Testing Antimatter Launcher Equip...\n";
+    // 1. Give resources and level
+    $resRepo->updateCredits($userId, 10000000); // Plenty of money
+    $structRepo->updateStructureLevel($userId, 'armory_level', 40); // Max level needed
+    // 2. Buy prerequisites (Arc Cannon <- Plasma Minigun <- Railgun <- Pulse Rifle)
+    // We already have Railgun (Tier 2). Need Plasma Minigun (Tier 3), Arc Cannon (Tier 4).
+    $armoryService->manufactureItem($userId, 'plasma_minigun', 1);
+    $armoryService->manufactureItem($userId, 'arc_cannon', 1);
+    
+    // 3. Buy Antimatter Launcher
+    $result = $armoryService->manufactureItem($userId, 'antimatter_launcher', 1);
+    if (!$result->isSuccess()) {
+        throw new Exception("FAIL: Could not buy Antimatter Launcher: " . $result->message);
+    }
+
+    // 4. Equip it
+    $result = $armoryService->equipItem($userId, 'soldier', 'main_weapon', 'antimatter_launcher');
+    if (!$result->isSuccess()) {
+        throw new Exception("FAIL: Could not equip Antimatter Launcher: " . $result->message);
+    }
+    echo "   -> Passed: Equipped Antimatter Launcher.\n\n";
 
     // --- CLEANUP ---
     $db->rollBack();

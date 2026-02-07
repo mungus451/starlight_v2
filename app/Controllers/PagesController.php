@@ -32,17 +32,18 @@ class PagesController extends BaseController
     }
 
     /**
-     * Displays the public homepage.
+     * Displays the public homepage (currently under construction).
      */
     public function showHome(): void
     {
-        // Check if user is logged in
+        // If user is logged in, redirect to dashboard
         if ($this->session->has('user_id')) {
             $this->redirect('/dashboard');
             return;
         }
 
-        $this->render('pages/home.php', ['title' => 'Starlight Dominion']);
+        // Otherwise, show the "Under Construction" page as the landing page
+        $this->render('pages/under_construction.php', ['title' => 'Under Construction', 'layoutMode' => 'full']);
     }
 
     /**

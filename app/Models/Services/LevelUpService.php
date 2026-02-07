@@ -113,61 +113,48 @@ class LevelUpService
      * 
      * @return ServiceResponse
      */
-    public function spendPoints(
-        int $userId,
-        int $spendStrength,
-        int $spendConstitution,
-        int $spendWealth,
-        int $spendDexterity,
-        int $spendCharisma
-    ): ServiceResponse {
+    public function spendPoints(int $userId, string $statKey, int $amount): ServiceResponse 
+    {
         // 1. Validation (Inputs)
-        if ($spendStrength < 0 || $spendConstitution < 0 || $spendWealth < 0 || $spendDexterity < 0 || $spendCharisma < 0) {
-            return ServiceResponse::error('You cannot spend a negative number of points.');
+        $allowedStats = ['strength', 'constitution', 'wealth', 'dexterity', 'charisma'];
+        if (!in_array($statKey, $allowedStats)) {
+            return ServiceResponse::error('Invalid stat selected.');
         }
-        
-        $totalPointsToSpend = $spendStrength + $spendConstitution + $spendWealth + $spendDexterity + $spendCharisma;
 
-        if ($totalPointsToSpend === 0) {
-            return ServiceResponse::error('You did not allocate any points to spend.');
+        if ($amount <= 0) {
+            return ServiceResponse::error('You must spend at least one point.');
         }
 
         // 2. Validation (Costs)
         $costPerPoint = $this->config->get('game_balance.level_up.cost_per_point', 1);
-        $totalCost = $totalPointsToSpend * $costPerPoint;
+        $totalCost = $amount * $costPerPoint;
         
         $stats = $this->statsRepo->findByUserId($userId);
 
         if ($stats->level_up_points < $totalCost) {
-            return ServiceResponse::error('You do not have enough level up points to make this change.');
+            return ServiceResponse::error('You do not have enough level up points.');
         }
 
         // 3. Calculate New Totals
         $newLevelUpPoints = $stats->level_up_points - $totalCost;
-        $newStrength = $stats->strength_points + $spendStrength;
-        $newConstitution = $stats->constitution_points + $spendConstitution;
-        $newWealth = $stats->wealth_points + $spendWealth;
-        $newDexterity = $stats->dexterity_points + $spendDexterity;
-        $newCharisma = $stats->charisma_points + $spendCharisma;
+        $statColumn = "{$statKey}_points"; // E.g., 'strength_points'
+        $currentStatValue = $stats->{$statColumn};
+        $newStatValue = $currentStatValue + $amount;
 
-        // 4. Execute Transaction
-        $this->db->beginTransaction();
+        // 4. Execute Update
         try {
-            $this->statsRepo->updateBaseStats(
+            // Assuming a method exists to update a single stat.
+            // If not, this would need to be created in StatsRepository.
+            $this->statsRepo->updateSingleBaseStat(
                 $userId,
                 $newLevelUpPoints,
-                $newStrength,
-                $newConstitution,
-                $newWealth,
-                $newDexterity,
-                $newCharisma
+                $statColumn,
+                $newStatValue
             );
-
-            $this->db->commit();
-            return ServiceResponse::success('You have successfully allocated ' . $totalPointsToSpend . ' points.');
+            
+            return ServiceResponse::success("Successfully allocated {$amount} points to " . ucfirst($statKey) . ".");
 
         } catch (Throwable $e) {
-            $this->db->rollBack();
             error_log('Level Up Error: ' . $e->getMessage());
             return ServiceResponse::error('A database error occurred. Please try again.');
         }

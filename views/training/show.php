@@ -1,154 +1,84 @@
-<?php
-// --- Helper variables from the controller ---
-/* @var \App\Models\Entities\UserResource $resources */
-/* @var array $units (The new enriched unit data) */
-?>
 
-<link rel="stylesheet" href="/css/training.css">
 
-<div class="container-fluid">
-    <!-- Header: Tactical Status -->
-    <div class="barracks-header">
-        <div>
-            <h1 class="barracks-title glitch-text" data-text="BARRACKS">BARRACKS</h1>
-            <div class="barracks-status">
-                SECTOR 7 // COMMAND NODE // <span class="text-neon-blue">ONLINE</span>
-            </div>
-        </div>
-        <div class="header-stats-row">
-            <div class="stat-group">
-                <span class="stat-label">CREDITS</span>
-                <div style="display:flex; align-items:baseline;">
-                    <span class="stat-val" id="global-credits" data-val="<?= $resources->credits ?>">
-                        <?= number_format($resources->credits) ?>
-                    </span>
-                    <span id="ghost-credits" class="ghost-val"></span>
-                </div>
-            </div>
-            <div class="stat-group">
-                <span class="stat-label">CITIZENS</span>
-                <div style="display:flex; align-items:baseline;">
-                    <span class="stat-val" id="global-citizens" data-val="<?= $resources->untrained_citizens ?>">
-                        <?= number_format($resources->untrained_citizens) ?>
-                    </span>
-                    <span id="ghost-citizens" class="ghost-val"></span>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <form action="/training/train" method="POST" id="main-train-form">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-        <input type="hidden" name="unit_type" id="selected-unit-type" value="">
-        <input type="hidden" name="amount" id="selected-amount" value="0">
+        <div class="training-page-wrapper">
 
-        <div class="barracks-container">
-            <!-- LEFT COLUMN: Requisition Grid -->
-            <div class="requisition-grid">
-                <?php foreach ($units as $key => $unit): ?>
-                    <?php
-                    $ownedKey = $key;
-                    $ownedCount = $resources->{$ownedKey} ?? 0;
-                    $maxByCredits = floor($resources->credits / max(1, $unit['credits']));
-                    $maxByCitizens = floor($resources->untrained_citizens / max(1, $unit['citizens']));
-                    $maxAffordable = min($maxByCredits, $maxByCitizens);
-                    ?>
-                    
-                    <div class="unit-row" 
-                         data-unit="<?= $key ?>" 
-                         data-name="<?= htmlspecialchars($unit['name']) ?>"
-                         data-desc="<?= htmlspecialchars($unit['desc']) ?>"
-                         data-atk="<?= $unit['atk'] ?>"
-                         data-def="<?= $unit['def'] ?>"
-                         data-cost-credits="<?= $unit['credits'] ?>"
-                         data-cost-citizens="<?= $unit['citizens'] ?>"
-                         data-icon="<?= $unit['icon'] ?>"
-                         data-max="<?= $maxAffordable ?>"
-                         onclick="selectUnit(this)">
-                        
-                        <div class="unit-icon-box">
-                            <i class="<?= $unit['icon'] ?> text-neon-blue"></i>
+
+
+            <main class="training-main-content">
+
+                <?php if(isset($_SESSION['training_message'])): ?>
+                    <div class="flash-message-success">
+                        <?php echo htmlspecialchars($_SESSION['training_message']); unset($_SESSION['training_message']); ?>
+                    </div>
+                <?php endif; ?>
+                <?php if(isset($_SESSION['training_error'])): ?>
+                    <div class="flash-message-error">
+                        <?php echo htmlspecialchars($_SESSION['training_error']); unset($_SESSION['training_error']); ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="content-box training-header">
+                    <div class="training-header-grid">
+                        <div>
+                            <p class="training-header-label">Citizens</p>
+                            <p id="available-citizens" data-amount="<?php echo $user_stats['untrained_citizens']; ?>" class="training-header-value">
+                                <?php echo number_format($user_stats['untrained_citizens']); ?>
+                            </p>
                         </div>
-                        
-                        <div class="unit-info">
-                            <h4><?= htmlspecialchars($unit['name']) ?></h4>
-                            <div class="meta">
-                                Role: <?= htmlspecialchars($unit['role']) ?> | Owned: <?= number_format($ownedCount) ?>
+                        <div>
+                            <p class="training-header-label">Credits</p>
+                            <p id="available-credits" data-amount="<?php echo $user_stats['credits']; ?>" class="training-header-value">
+                                <?php echo number_format($user_stats['credits']); ?>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="training-header-label">Total Cost</p>
+                            <p id="total-build-cost" class="text-lg font-bold text-yellow-400">0</p>
+                        </div>
+                        <div>
+                            <p class="training-header-label">Total Refund</p>
+                            <p id="total-refund-value" class="text-lg font-bold text-green-400">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tabs-nav">
+                    <a class="tab-link <?php if ($current_tab === 'train') echo 'active'; ?>" data-tab="train-tab-content">Train Units</a>
+                </div>
+
+                <!-- TRAIN TAB -->
+                <div id="train-tab-content" class="tab-content <?php if ($current_tab === 'train') echo 'active'; ?>">
+                    <form id="train-form" action="/training/train" method="POST" class="training-form" data-charisma-discount="<?php echo $charisma_discount; ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="action" value="train">
+                        <div class="training-unit-grid">
+                            <?php foreach($units as $key => $unit): 
+                                $discounted_cost = floor($unit['credits'] * $charisma_discount);
+                                $ownedCount = $user_stats[$key] ?? 0;
+                            ?>
+                            <div class="content-box training-unit-card">
+                                <img src="/img/<?php echo strtolower($unit['name']); ?>.avif" alt="<?php echo $unit['name']; ?> Icon" class="icon">
+                                <div class="details">
+                                    <p class="training-unit-name"><?php echo $unit['name']; ?></p>
+                                    <p class="training-unit-desc"><?php echo $unit['desc']; ?></p>
+                                    <p class="training-unit-stat">Cost: <?php echo number_format($discounted_cost); ?> Credits</p>
+                                    <p class="training-unit-stat">Owned: <?php echo number_format($ownedCount); ?></p>
+                                </div>
+                                <div class="actions">
+                                    <input type="number" name="units[<?php echo $key; ?>]" min="0" placeholder="0" data-cost="<?php echo $unit['credits']; ?>" class="training-input-field">
+                                    <button type="button" class="training-max-btn train">Max</button>
+                                </div>
                             </div>
+                            <?php endforeach; ?>
                         </div>
-
-                        <div class="unit-controls">
-                            <!-- Quick selection handled by main inspector, but we show affordability here -->
-                            <span class="cost-preview text-muted">
-                                <?= number_format($unit['credits']) ?> Cr
-                            </span>
+                        <div class="content-box training-submit-container">
+                            <button type="submit" class="training-submit-btn train">Train All Selected Units</button>
                         </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- RIGHT COLUMN: Tactical Inspector -->
-            <div class="tactical-inspector" id="inspector-panel">
-                <div class="inspector-header">
-                    <h3 class="inspector-title" id="insp-title">SELECT UNIT</h3>
+                    </form>
                 </div>
+                <!-- DISBAND TAB -->
 
-                <div class="wireframe-container">
-                    <div class="wireframe-placeholder" id="insp-wireframe">
-                        <i id="insp-icon" style="font-size: 3rem; color: var(--accent); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
-                    </div>
-                </div>
-
-                <div class="inspector-body">
-                    <p class="lore-text" id="insp-desc">
-                        Initializing tactical database... Select a unit from the requisition grid to view details and commence fabrication.
-                    </p>
-
-                    <!-- Dynamic Stats -->
-                    <div class="tactical-stats" id="insp-stats" style="opacity: 0.5;">
-                        <div class="stat-bar-group">
-                            <div class="stat-bar-label"><span>ATTACK POWER</span> <span id="val-atk">0</span></div>
-                            <div class="progress-track"><div class="progress-fill" id="bar-atk" style="width: 0%"></div></div>
-                        </div>
-                        <div class="stat-bar-group">
-                            <div class="stat-bar-label"><span>DEFENSE RATING</span> <span id="val-def">0</span></div>
-                            <div class="progress-track"><div class="progress-fill" id="bar-def" style="width: 0%"></div></div>
-                        </div>
-                    </div>
-
-                    <!-- Input Controls (Only visible when unit selected) -->
-                    <div id="insp-controls" style="display:none;">
-                        <div class="slider-container">
-                            <input type="range" id="insp-slider" min="0" value="0" style="width:100%;">
-                        </div>
-                        
-                        <div class="quick-actions" style="margin-bottom: 1rem; justify-content:space-between;">
-                            <button type="button" class="btn-pill" onclick="adjustAmount(1)">+1</button>
-                            <button type="button" class="btn-pill" onclick="adjustAmount(10)">+10</button>
-                            <button type="button" class="btn-pill" onclick="adjustAmount(100)">+100</button>
-                            <button type="button" class="btn-pill" onclick="setMax()">MAX</button>
-                        </div>
-
-                        <div style="text-align: center; margin-bottom: 1rem;">
-                            <span style="font-family: 'Courier New'; font-size: 1.5rem;" id="display-amount">0</span>
-                            <span class="text-muted">UNITS</span>
-                        </div>
-
-                        <button type="submit" class="fabricate-btn">
-                            INITIALIZE FABRICATION
-                        </button>
-                    </div>
-                </div>
-            </div>
+                <!-- RECOVERY TAB -->
+            </main>
         </div>
-    </form>
-
-    <!-- Ambient Comms Log -->
-    <div class="comms-log">
-        <span class="ticker-content">
-            SYSTEM: BARRACKS ONLINE ... UPDATE: SOLDIER TRAINING EFFICIENCY AT 98% ... INTEL: ENEMY ACTIVITY DETECTED IN SECTOR 4 ... MAINTENANCE: CLONING VAT 3 REQUIRES FLUSH ...
-        </span>
-    </div>
-</div>
-
-<script src="/js/training.js"></script>

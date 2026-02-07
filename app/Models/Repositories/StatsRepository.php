@@ -94,6 +94,29 @@ class StatsRepository
         return $stmt->execute([$pts, $str, $con, $wlth, $dex, $cha, $userId]);
     }
 
+    public function updateSingleBaseStat(int $userId, int $newLvlUpPoints, string $statColumn, int $newStatValue): bool
+    {
+        // Whitelist column to prevent SQL injection
+        $allowedColumns = [
+            'strength_points', 
+            'constitution_points', 
+            'wealth_points', 
+            'dexterity_points', 
+            'charisma_points'
+        ];
+        
+        if (!in_array($statColumn, $allowedColumns)) {
+            // Or throw an exception
+            return false; 
+        }
+
+        $sql = "UPDATE user_stats SET level_up_points = ?, {$statColumn} = ? WHERE user_id = ?";
+        $stmt = $this->db->prepare($sql);
+        
+        return $stmt->execute([$newLvlUpPoints, $newStatValue, $userId]);
+    }
+
+
     public function updateDepositCharges(int $userId, int $newCharges): bool
     {
         $stmt = $this->db->prepare("UPDATE user_stats SET deposit_charges = ?, last_deposit_at = NOW() WHERE user_id = ?");
@@ -226,6 +249,7 @@ class StatsRepository
             'battles_lost'  => 's.battles_lost DESC',
             'spy_success'   => 's.spy_successes DESC',
             'spy_fail'      => 's.spy_failures DESC',
+            'level'         => 's.level DESC',
             default         => 's.net_worth DESC' // 'net_worth' or fallback
         };
 

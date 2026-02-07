@@ -17,7 +17,67 @@ window.Armory = {
 
         this.initTabs();
         this.initSlots();
+        this.initClassicLoadout();
         this.initForms();
+    },
+
+    /**
+     * Classic Theme: Handle sidebar loadout dropdowns
+     */
+    initClassicLoadout: function() {
+        document.querySelectorAll('.equip-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const form = select.closest('.equip-form');
+                const catKey = select.dataset.categoryKey;
+                const itemKey = select.value;
+
+                // Update hidden fields
+                form.querySelector('.dynamic-category-key').value = catKey;
+                form.querySelector('.dynamic-item-key').value = itemKey;
+
+                // Trigger submit
+                this.submitClassicEquip(form);
+            });
+        });
+    },
+
+    /**
+     * Classic Theme: Submit Equip Form
+     */
+    submitClassicEquip: async function(form) {
+        form.classList.add('submitting');
+        const selects = form.querySelectorAll('select');
+        
+        try {
+            const formData = new FormData(form);
+            
+            // Explicitly ensure item_key is correct
+            const itemKeyInput = form.querySelector('.dynamic-item-key');
+            if (itemKeyInput) {
+                formData.set('item_key', itemKeyInput.value);
+            }
+
+            const response = await fetch('/armory/equip', {
+                method: 'POST',
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json' 
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                this.showToast(result.message, 'success');
+            } else {
+                this.showToast(result.error || 'Equip failed', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            this.showToast('Network error occurred.', 'error');
+        } finally {
+            form.classList.remove('submitting');
+        }
     },
 
     /**
@@ -239,13 +299,13 @@ window.Armory = {
         const unitKey = card.dataset.unit;
         const categoryKey = card.dataset.category;
         
-        const itemData = this.getItemData(card, itemKey);
-        if (!itemData) return;
-
-        // 1. Update Hidden Inputs in Forms
+        // 1. Update Hidden Inputs in Forms (Moved up to ensure submission works even if data lookup fails)
         card.querySelectorAll('.dynamic-item-key').forEach(input => {
             input.value = itemKey;
         });
+
+        const itemData = this.getItemData(card, itemKey);
+        if (!itemData) return;
 
         // 2. Update Stats
         const statsRow = card.querySelector('.item-stats-row');
@@ -353,7 +413,7 @@ window.Armory = {
         try {
             // Create FormData but override item_key to be empty
             const formData = new FormData(form);
-            formData.set('item_key', ''); // Empty string = unequip
+            formData.set('item_key', 'UNEQUIP_SLOT'); // Explicit unequip command
 
             const response = await fetch('/armory/equip', {
                 method: 'POST',
@@ -475,6 +535,16 @@ window.Armory = {
 
                 try {
                     const formData = new FormData(form);
+
+                    // FORCE: Always use the dropdown's current value as the source of truth
+                    const card = form.closest('.slot-card');
+                    if (card) {
+                        const select = card.querySelector('.config-select');
+                        if (select && select.value) {
+                             formData.set('item_key', select.value);
+                        }
+                    }
+
                     const response = await fetch('/armory/equip', {
                         method: 'POST',
                         headers: { 

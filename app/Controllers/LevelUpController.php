@@ -55,14 +55,11 @@ class LevelUpController extends BaseController
      */
     public function handleSpend(): void
     {
-        // 1. Validate Input (Strict Non-Negative Integers)
+        // 1. Validate Input (Single stat and amount)
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
-            'strength' => 'required|int|min:0',
-            'constitution' => 'required|int|min:0',
-            'wealth' => 'required|int|min:0',
-            'dexterity' => 'required|int|min:0',
-            'charisma' => 'required|int|min:0',
+            'stat' => 'required|string',
+            'amount' => 'required|int|min:1', // Must spend at least 1 point
         ]);
 
         // 2. Validate CSRF
@@ -77,11 +74,8 @@ class LevelUpController extends BaseController
         
         $response = $this->levelUpService->spendPoints(
             $userId,
-            $data['strength'],
-            $data['constitution'],
-            $data['wealth'],
-            $data['dexterity'],
-            $data['charisma']
+            $data['stat'],
+            $data['amount']
         );
         
         // 4. Handle Response

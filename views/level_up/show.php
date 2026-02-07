@@ -39,6 +39,8 @@ $statConfig = [
 ];
 ?>
 
+<link rel="stylesheet" href="/css/level_up.css">
+
 <div class="structures-page-content">
     
     <!-- 1. Page Header -->
@@ -61,88 +63,87 @@ $statConfig = [
     <form action="/level-up/spend" method="POST" id="level-up-form">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
         
-        <div class="structures-grid">
-            <?php foreach ($statConfig as $key => $config): ?>
-                <div class="structure-card">
-                    <!-- Header -->
-                    <div class="card-header-main">
-                        <span class="card-icon" style="color: <?= $config['color'] ?>; border-color: <?= $config['color'] ?>33; background: <?= $config['color'] ?>11;">
-                            <i class="<?= $config['icon'] ?>"></i>
-                        </span>
-                        <div class="card-title-group">
-                            <h3 class="card-title"><?= ucfirst($key) ?></h3>
-                            <p class="card-level" style="color: <?= $config['color'] ?>;">
-                                Current: <?= number_format($config['current']) ?>
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="card-body-main">
-                        <p class="card-description" style="min-height: 40px;">
-                            <?= htmlspecialchars($config['desc']) ?>
-                        </p>
+        <div class="level-up-container">
+            <!-- LEFT COLUMN: Stat Selection -->
+            <div class="stat-grid">
+                <?php foreach ($statConfig as $key => $config): ?>
+                    <div class="stat-row" 
+                         data-stat="<?= $key ?>"
+                         data-name="<?= ucfirst($key) ?>"
+                         data-desc="<?= htmlspecialchars($config['desc']) ?>"
+                         data-current="<?= $config['current'] ?>"
+                         data-icon="<?= $config['icon'] ?>"
+                         data-color="<?= $config['color'] ?>"
+                         onclick="selectStat(this)">
                         
-                        <div class="resource-cost-grid">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted">Cost per point:</span>
-                                <span class="text-warning font-weight-bold">1 Point</span>
+                        <div class="stat-icon-box" style="color: <?= $config['color'] ?>;">
+                            <i class="<?= $config['icon'] ?>"></i>
+                        </div>
+                        
+                        <div class="stat-info">
+                            <h4><?= ucfirst($key) ?></h4>
+                            <div class="meta">
+                                Current: <?= number_format($config['current']) ?>
                             </div>
                         </div>
                     </div>
+                <?php endforeach; ?>
+            </div>
 
-                    <!-- Footer (Input) -->
-                    <div class="card-footer-actions p-3 pt-0">
-                        <div class="d-flex align-items-center gap-2" style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 6px; border: 1px solid var(--border);">
-                            <button type="button" class="btn btn-sm btn-outline-warning btn-dec" data-target="<?= $key ?>">
+            <!-- RIGHT COLUMN: Inspector -->
+            <div class="stat-inspector" id="inspector-panel">
+                <div class="inspector-header">
+                    <h3 class="inspector-title" id="insp-title">SELECT STAT</h3>
+                </div>
+
+                <div class="wireframe-container">
+                    <div class="wireframe-placeholder" id="insp-wireframe">
+                        <i id="insp-icon" style="font-size: 3rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                    </div>
+                </div>
+
+                <div class="inspector-body">
+                    <p class="lore-text" id="insp-desc">
+                        Select a core attribute from the allocation grid to view details and assign augmentation points.
+                    </p>
+
+                    <!-- Input Controls (Only visible when stat selected) -->
+                    <div id="insp-controls" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted">Cost per point:</span>
+                            <span class="text-warning font-weight-bold">1 Point</span>
+                        </div>
+                        
+                        <div class="d-flex align-items-center gap-2 mb-3" style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 6px; border: 1px solid var(--border);">
+                            <button type="button" class="btn btn-sm btn-outline-warning btn-dec" data-target="">
                                 <i class="fas fa-minus"></i>
                             </button>
                             
                             <input type="number" 
-                                   name="<?= $key ?>" 
-                                   id="<?= $key ?>" 
+                                   name="amount" 
+                                   id="stat-input" 
                                    class="form-control stat-input text-center p-1" 
                                    value="0" 
                                    min="0" 
                                    max="<?= $stats->level_up_points ?>"
                                    style="border: none; background: transparent; height: 30px; font-size: 1.1rem; font-weight: bold;">
                             
-                            <button type="button" class="btn btn-sm btn-outline-success btn-inc" data-target="<?= $key ?>">
+                            <button type="button" class="btn btn-sm btn-outline-success btn-inc" data-target="">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
+
+                        <input type="hidden" name="stat" id="selected-stat" value="">
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="btn-confirm">
+                            <i class="fas fa-check-circle"></i> Confirm Upgrade
+                        </button>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-
-        <!-- Sticky Footer for Confirmation -->
-        <div class="hud-floating-bar" id="level-up-hud" style="bottom: 20px; right: 20px; left: auto; width: 300px; display: block; animation: none;">
-            <div class="hud-header">
-                <h3><i class="fas fa-dna"></i> Augmentation Queue</h3>
-            </div>
-            
-            <div class="hud-content p-3">
-                <div class="hud-total-row mb-2">
-                    <span>Available:</span>
-                    <strong class="text-success"><?= number_format($stats->level_up_points) ?></strong>
-                </div>
-                <div class="hud-total-row mb-3">
-                    <span>Allocated:</span>
-                    <strong class="text-warning" id="total-allocated">0</strong>
-                </div>
-                
-                <div class="progress mb-3" style="height: 6px; background: rgba(255,255,255,0.1);">
-                    <div class="progress-bar bg-warning" id="allocation-bar" style="width: 0%;"></div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100" id="btn-confirm" disabled>
-                    <i class="fas fa-check-circle"></i> Confirm Upgrades
-                </button>
             </div>
         </div>
 
     </form>
 </div>
-
+<script src="/js/level_up.js?v=<?= time() ?>"></script>
 <script src="/js/level_up.js?v=<?= time() ?>"></script>

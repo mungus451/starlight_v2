@@ -41,9 +41,6 @@ use App\Models\Repositories\UserNotificationPreferencesRepository;
 use App\Models\Repositories\HouseFinanceRepository;
 use App\Models\Repositories\SecurityRepository;
 use App\Models\Repositories\BountyRepository;
-use App\Models\Repositories\BlackMarketLogRepository;
-use App\Models\Repositories\GeneralRepository;
-use App\Models\Repositories\ScientistRepository;
 use App\Models\Repositories\EdictRepository;
 use App\Models\Repositories\EffectRepository; // --- NEW ---
 use App\Models\Repositories\IntelRepository;   // --- NEW ---
@@ -59,7 +56,6 @@ use App\Models\Services\TrainingService;
 use App\Models\Services\StructureService;
 use App\Models\Services\ArmoryService;
 use App\Models\Services\AdvisorService;
-use App\Models\Services\GeneralService;
 use App\Models\Services\SettingsService;
 use App\Models\Services\SpyService;
 use App\Models\Services\AttackService;
@@ -71,14 +67,12 @@ use App\Models\Services\AlliancePolicyService;
 use App\Models\Services\AllianceStructureService;
 use App\Models\Services\AllianceForumService;
 use App\Models\Services\DiplomacyService;
-use App\Models\Services\EmbassyService;
 use App\Models\Services\WarService;
 use App\Models\Services\PowerCalculatorService;
 use App\Models\Services\LevelCalculatorService;
 use App\Models\Services\NotificationService;
 use App\Models\Services\CurrencyConverterService;
 use App\Models\Services\LeaderboardService;
-use App\Models\Services\BlackMarketService;
 use App\Models\Services\ViewContextService;
 use App\Models\Services\NpcService;
 use App\Models\Services\TurnProcessorService;
@@ -497,13 +491,7 @@ class ContainerFactory
 
             BountyRepository::class => function (ContainerInterface $c) { return new BountyRepository($c->get(PDO::class)); },
 
-            BlackMarketLogRepository::class => function (ContainerInterface $c) { return new BlackMarketLogRepository($c->get(PDO::class)); },
-
-            GeneralRepository::class => function (ContainerInterface $c) { return new GeneralRepository($c->get(PDO::class)); },
-
-            ScientistRepository::class => function (ContainerInterface $c) { return new ScientistRepository($c->get(PDO::class)); },
-
-            EffectRepository::class => function (ContainerInterface $c) { return new EffectRepository($c->get(PDO::class)); },
+                        EdictRepository::class => function (ContainerInterface $c) { return new EdictRepository($c->get(PDO::class), $c->get(Config::class)); },
 
             IntelRepository::class => function (ContainerInterface $c) { return new IntelRepository($c->get(PDO::class)); },
 
@@ -619,41 +607,7 @@ class ContainerFactory
 
 
 
-            // Black Market Service
 
-            BlackMarketService::class => function (ContainerInterface $c) {
-
-                return new BlackMarketService(
-
-                    $c->get(PDO::class),
-
-                    $c->get(Config::class),
-
-                    $c->get(ResourceRepository::class),
-
-                    $c->get(StatsRepository::class),
-
-                    $c->get(UserRepository::class),
-
-                    $c->get(BountyRepository::class),
-
-                    $c->get(AttackService::class),
-
-                    $c->get(BlackMarketLogRepository::class),
-
-                    $c->get(EffectService::class),
-
-                    $c->get(HouseFinanceRepository::class),
-
-                    $c->get(LevelUpService::class),
-
-                    $c->get(StructureRepository::class),
-
-                    $c->get(GeneralService::class)
-
-                );
-
-            },
 
 
 
@@ -855,10 +809,6 @@ class ContainerFactory
 
                     $c->get(StatsRepository::class),
 
-                    $c->get(GeneralRepository::class),
-
-                    $c->get(ScientistRepository::class),
-
                     $c->get(ArmoryRepository::class),
 
                     $c->get(PowerCalculatorService::class),
@@ -977,21 +927,31 @@ class ContainerFactory
 
 
 
-            TrainingService::class => function (ContainerInterface $c) {
+                                    TrainingService::class => function (ContainerInterface $c) {
 
-                return new TrainingService(
 
-                    $c->get(Config::class),
 
-                    $c->get(ResourceRepository::class),
+                                        return new TrainingService(
 
-                    $c->get(GeneralService::class),
 
-                    $c->get(StructureRepository::class)
 
-                );
+                                            $c->get(Config::class),
 
-            },
+
+
+                                            $c->get(ResourceRepository::class),
+
+
+
+                                            $c->get(StructureRepository::class)
+
+
+
+                                        );
+
+
+
+                                    },
 
 
 
@@ -1017,21 +977,7 @@ class ContainerFactory
 
 
 
-            GeneralService::class => function (ContainerInterface $c) {
 
-                return new GeneralService(
-
-                    $c->get(Config::class),
-
-                    $c->get(GeneralRepository::class),
-
-                    $c->get(ResourceRepository::class),
-
-                    $c->get(PDO::class)
-
-                );
-
-            },
 
 
 
@@ -1103,7 +1049,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 
@@ -1133,7 +1079,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 
@@ -1163,7 +1109,7 @@ class ContainerFactory
 
                     $c->get(ArmoryService::class),
 
-                    $c->get(BlackMarketService::class),
+                    // $c->get(BlackMarketService::class),
 
                     $c->get(CurrencyConverterService::class),
 
@@ -1229,13 +1175,7 @@ class ContainerFactory
 
                     $c->get(AllianceBankLogRepository::class),
 
-                    $c->get(GeneralRepository::class),
-
-                    $c->get(ScientistRepository::class),
-
                     $c->get(EdictRepository::class),
-
-                    $c->get(EmbassyService::class),
 
                     $c->get(NetWorthCalculatorService::class)
 

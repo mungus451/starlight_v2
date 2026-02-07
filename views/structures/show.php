@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="/css/structures.css">
+
 <?php
 /**
  * @var array $groupedStructures Formatted ViewModel from StructurePresenter.
@@ -10,160 +12,111 @@
     <div class="page-header-container">
         <h1 class="page-title-neon">Strategic Structures</h1>
         <p class="page-subtitle-tech">
-            Build and upgrade infrastructure // Expand influence
+            Construct and enhance your imperial infrastructure.
         </p>
     </div>
 
-    <?php if (empty($groupedStructures)): ?>
-        <div style="text-align: center; padding: 2rem; color: var(--muted); border: 1px dashed var(--border); border-radius: 8px;">
-            <i class="fas fa-exclamation-triangle"></i> Configuration error: No structures found.
-        </div>
-    <?php else: ?>
+    <div class="structures-two-column-layout">
+        <!-- Left Column: Selectable List of Structures -->
+        <div class="requisition-grid">
+            <?php foreach ($groupedStructures as $categoryName => $structures): ?>
+                <h4 class="category-header"><?= htmlspecialchars($categoryName) ?></h4>
+                <?php foreach ($structures as $struct): ?>
+                    <div class="unit-row interactive <?= $struct['is_max_level'] ? 'max-level' : '' ?>"
+                         data-key="<?= htmlspecialchars($struct['key']) ?>"
+                         data-name="<?= htmlspecialchars($struct['name']) ?>"
+                         data-level="<?= $struct['current_level'] ?>"
+                         data-max-level="<?= $struct['max_level'] ?>"
+                         data-description="<?= htmlspecialchars($struct['description']) ?>"
+                         data-benefit-text="<?= htmlspecialchars($struct['benefit_text']) ?>"
+                         data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
+                         data-is-max-level="<?= $struct['is_max_level'] ? 'true' : 'false' ?>"
+                         data-can-afford="<?= $struct['can_afford'] ? 'true' : 'false' ?>"
+                         data-icon='<?= $struct['icon'] ?>'
+                         onclick="selectStructure(this)">
+                        
+                        <div class="unit-icon-box">
+                            <?= $struct['icon'] ?>
+                        </div>
+                        
+                        <div class="unit-info">
+                            <h4><?= htmlspecialchars($struct['name']) ?></h4>
+                            <div class="meta">
+                                Level: <?= $struct['current_level'] ?> / <?= $struct['max_level'] ?>
+                            </div>
+                        </div>
 
-        <!-- Category Navigation Deck -->
-        <div class="structure-nav-container">
-            <?php 
-            $firstCategory = true;
-            foreach ($groupedStructures as $categoryName => $structures): 
-                $catId = 'cat-' . md5($categoryName);
-            ?>
-                <button class="structure-nav-btn <?= $firstCategory ? 'active' : '' ?>" data-tab-target="<?= $catId ?>">
-                    <?php 
-                        // Optional: Add icons based on category name if desired, or just text
-                        $icon = match($categoryName) {
-                            'Economy' => '<i class="fas fa-coins"></i>',
-                            'Military' => '<i class="fas fa-crosshairs"></i>',
-                            'Defense' => '<i class="fas fa-shield-alt"></i>',
-                            'Intel' => '<i class="fas fa-satellite"></i>',
-                            default => '<i class="fas fa-layer-group"></i>'
-                        };
-                    ?>
-                    <?= $icon ?> <?= htmlspecialchars($categoryName) ?>
-                </button>
-                <?php $firstCategory = false; ?>
+                        <div class="unit-controls">
+                            <?php if ($struct['is_max_level']): ?>
+                                <span class="badge bg-success">MAX</span>
+                            <?php elseif (!$struct['can_afford']): ?>
+                                <span class="badge bg-danger">INSUFFICIENT</span>
+                            <?php else: ?>
+                                <span class="cost-preview text-warning">
+                                    <?= number_format($struct['upgrade_cost_credits'] ?? 0) ?> Cr
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
 
-        <!-- Central Viewing Containers -->
-        <div class="structure-deck">
-            <?php 
-            $firstCategory = true;
-            foreach ($groupedStructures as $categoryName => $structures): 
-                $catId = 'cat-' . md5($categoryName);
-            ?>
-                <div id="<?= $catId ?>" class="structure-category-container <?= $firstCategory ? 'active' : '' ?>">
-                    <div class="structures-grid">
-                        <?php foreach ($structures as $struct): ?>
-                            <div class="structure-card <?= $struct['is_max_level'] ? 'max-level' : '' ?>">
-                                
-                                <!-- Card Header -->
-                                <div class="card-header-main">
-                                    <span class="card-icon"><?= $struct['icon'] ?></span>
-                                    <div class="card-title-group">
-                                        <h3 class="card-title"><?= htmlspecialchars($struct['name']) ?></h3>
-                                        <p class="card-level">Level: <span class="text-white"><?= $struct['current_level'] ?></span></p>
-                                    </div>
-                                </div>
+        <!-- Right Column: Inspector Pane -->
+        <div class="tactical-inspector" id="inspector-panel">
+            <div class="inspector-header">
+                <h3 class="inspector-title" id="insp-title">SELECT STRUCTURE</h3>
+            </div>
 
-                                <!-- Card Body -->
-                                <div class="card-body-main">
-                                    <p class="card-description" style="min-height: 40px;"><?= htmlspecialchars($struct['description']) ?></p>
-                                    
-                                    <?php if (!empty($struct['benefit_text'])): ?>
-                                        <div class="card-benefit mb-3">
-                                            <span class="text-neon-blue" style="font-weight: 600; font-size: 0.9rem;">
-                                                <i class="fas fa-bolt" style="margin-right: 5px;"></i>
-                                                <?= htmlspecialchars($struct['benefit_text']) ?>
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
+            <div class="wireframe-container">
+                <div class="wireframe-placeholder" id="insp-wireframe">
+                    <span id="insp-icon" style="font-size: 3rem; position: absolute; top: 50%; left: 50%; transform: translate(--50%, -50%);"></span>
+                </div>
+            </div>
 
-                                    <?php if (!$struct['is_max_level']): ?>
-                                        <div class="resource-cost-grid">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="text-muted">Upgrade Cost:</span>
-                                                <span class="<?= !$struct['can_afford'] ? 'text-danger' : 'text-white' ?> font-weight-bold">
-                                                    <?= $struct['cost_formatted'] ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
+            <div class="inspector-body">
+                <p class="lore-text" id="insp-desc">
+                    Select a structure from the requisition grid to view details and manage construction.
+                </p>
 
-                                <!-- Card Footer (Actions) -->
-                                <div class="card-footer-actions p-3 pt-0 flex-gap-sm">
-                                    <?php if ($struct['is_max_level']): ?>
-                                        <div class="w-100 text-center p-2" style="border: 1px solid var(--accent-2); border-radius: 6px; color: var(--accent-2); background: rgba(249, 199, 79, 0.1);">
-                                            <i class="fas fa-check-circle"></i> Max Level
-                                        </div>
-                                    <?php else: ?>
-                                        <button type="button" 
-                                                class="btn btn-primary flex-grow-1 btn-upgrade-now" 
-                                                data-key="<?= htmlspecialchars($struct['key']) ?>"
-                                                <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                            Upgrade
-                                        </button>
-                                        <button type="button" 
-                                                class="btn btn-outline-info flex-grow-1 btn-add-cart" 
-                                                data-key="<?= htmlspecialchars($struct['key']) ?>"
-                                                data-name="<?= htmlspecialchars($struct['name']) ?>"
-                                                data-next-level="<?= $struct['next_level'] ?>"
-                                                data-cost-credits="<?= $struct['upgrade_cost_credits'] ?>"
-                                                data-cost-crystal="<?= $struct['upgrade_cost_crystals'] ?>"
-                                                data-cost-dm="<?= $struct['upgrade_cost_dark_matter'] ?? 0 ?>"
-                                                <?= !$struct['can_afford'] ? 'disabled' : '' ?>>
-                                            <i class="fas fa-plus"></i> Batch
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                                
-                            </div>
-                        <?php endforeach; ?>
+                <div id="insp-details" style="display:none;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Current Level:</span>
+                        <strong id="insp-level"></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Next Level Benefit:</span>
+                        <strong id="insp-benefit" class="text-success"></strong>
+                    </div>
+
+                    <hr class="border-secondary">
+                    
+                    <h4 class="text-neon-blue">UPGRADE COST</h4>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Credits:</span>
+                        <strong id="insp-cost-credits" class="text-warning"></strong>
+                    </div>
+
+                    <form action="/structures/upgrade" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                        <input type="hidden" name="structure_key" id="insp-structure-key" value="">
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="btn-confirm">
+                            <i class="fas fa-hammer"></i> Begin Construction
+                        </button>
+                    </form>
+                </div>
+
+                <div id="insp-max-level-notice" style="display:none;">
+                    <div class="alert alert-success text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h4 class="alert-heading">MAXIMUM LEVEL REACHED</h4>
+                        <p>This structure has been fully upgraded.</p>
                     </div>
                 </div>
-                <?php $firstCategory = false; ?>
-            <?php endforeach; ?>
-        </div>
-
-    <?php endif; ?>
-
-    <!-- New HUD Floating Bar (Replaces old checkout box) -->
-    <div id="structure-checkout-box" class="hud-floating-bar" style="display:none;">
-        <div class="hud-header">
-            <h3><i class="fas fa-list-ul"></i> Build Queue</h3>
-            <button id="btn-cancel-batch" class="hud-btn-close" title="Clear Queue">&times;</button>
-        </div>
-        
-        <div id="checkout-list" class="hud-content">
-            <!-- Items injected by JS -->
-        </div>
-        
-        <div class="hud-footer">
-            <div class="hud-total-row">
-                <span>Total Credits:</span>
-                <span class="icon-gold" id="checkout-total-credits">0</span>
             </div>
-            <div id="checkout-rare-resources" style="display: none;">
-                <div class="hud-total-row">
-                    <span>Naquadah:</span>
-                    <span class="icon-crystal" id="checkout-total-crystal">0</span>
-                </div>
-                <div class="hud-total-row">
-                    <span>Dark Matter:</span>
-                    <span class="icon-matter" id="checkout-total-dm">0</span>
-                </div>
-            </div>
-            
-            <form id="checkout-form" action="/structures/batch-upgrade" method="POST" class="mt-3">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-                <input type="hidden" name="structure_keys" id="checkout-input-keys" value="">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-hammer"></i> Confirm Construction
-                </button>
-            </form>
         </div>
     </div>
-
 </div>
 
 <script src="/js/structures.js"></script>

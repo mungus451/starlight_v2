@@ -22,29 +22,19 @@ $currentCharges = (int)$stats->deposit_charges;
             <div class="badge bg-dark border-secondary">
                 <i class="fas fa-bolt text-warning"></i> Deposit Charges: <?= $currentCharges ?> / <?= $maxCharges ?>
             </div>
-            <div class="badge bg-dark border-secondary">
-                <i class="fas fa-percent text-success"></i> Interest Rate: 0.03%
-            </div>
         </div>
     </div>
 
-    <!-- 2. Navigation Deck -->
-    <div class="structure-nav-container mb-4">
-        <button class="structure-nav-btn active" data-tab-target="vault-content">
-            <i class="fas fa-vault"></i> Personal Vault
-        </button>
-        <button class="structure-nav-btn" data-tab-target="transfer-content">
-            <i class="fas fa-exchange-alt"></i> Transfer
-        </button>
-        <!-- Future: Alliance Bank Tab -->
-        <!-- <button class="structure-nav-btn disabled"><i class="fas fa-users-cog"></i> Alliance Bank (Coming Soon)</button> -->
-    </div>
-
-    <!-- 3. Content Deck -->
-    <div class="structure-deck">
+    <!-- All content on one page -->
+    <div class="mt-4">
         
-        <!-- VAULT TAB -->
-        <div id="vault-content" class="structure-category-container active">
+        <!-- VAULT SECTION -->
+        <div id="bank-vault">
+            
+            <!-- Section Header -->
+            <div class="page-header-container mb-3">
+                <h2 class="page-title-neon smaller">Personal Vault</h2>
+            </div>
             
             <!-- Hero: Net Worth Summary -->
             <div class="structure-card mb-4" style="border-color: var(--accent-gold);">
@@ -163,14 +153,20 @@ $currentCharges = (int)$stats->deposit_charges;
             </div>
         </div>
 
-        <!-- TRANSFER TAB -->
-        <div id="transfer-content" class="structure-category-container">
+        <!-- SPACER -->
+        <hr class="my-5 border-secondary">
+
+        <!-- TRANSFER SECTION -->
+        <div id="bank-transfer">
+             <div class="page-header-container mb-3">
+                <h2 class="page-title-neon smaller">Wire Transfer</h2>
+            </div>
             <div class="structure-card mx-auto" style="max-width: 600px;">
                 <div class="card-header-main">
                     <span class="card-icon"><i class="fas fa-paper-plane"></i></span>
                     <div class="card-title-group">
-                        <h3 class="card-title">Wire Transfer</h3>
-                        <p class="card-level text-muted">Send credits to another commander.</p>
+                        <h3 class="card-title">Send Credits</h3>
+                        <p class="card-level text-muted">Transfer to another commander.</p>
                     </div>
                 </div>
                 

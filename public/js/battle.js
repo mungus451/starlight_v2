@@ -7,25 +7,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Modal Elements ---
     const modalOverlay = document.getElementById('attack-modal-overlay');
     const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalTargetNameInput = document.getElementById('modal-target-name');
+    const modalTargetIdInput = document.getElementById('modal-target-id');
     const modalTargetNameDisplay = document.getElementById('modal-target-name-display');
     const allAttackButtons = document.querySelectorAll('.btn-attack-modal');
 
     // If we aren't on the battle page (elements missing), exit
-    if (!modalOverlay || !modalTargetNameInput) return;
+    if (!modalOverlay || !modalTargetIdInput) return;
 
     // --- Function to open the modal ---
-    function openModal(targetName) {
-        if (!targetName) {
-            console.error('Battle script: Target name is missing.');
-            // Optionally, show a user-facing error here
+    function openModal(targetId, targetName) {
+        if (!targetId || !targetName) {
+            console.error('Battle script: Target ID or Name is missing.');
             return;
         }
-        modalTargetNameInput.value = targetName;
+        modalTargetIdInput.value = targetId;
         modalTargetNameDisplay.textContent = targetName;
         
         modalOverlay.style.display = 'flex';
-        // Small delay to allow display:flex to apply before opacity transition
         setTimeout(() => {
             modalOverlay.classList.add('active');
         }, 10); 
@@ -34,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Function to close the modal ---
     function closeModal() {
         modalOverlay.classList.remove('active');
-        // Wait for transition to finish before hiding
         setTimeout(() => {
             modalOverlay.style.display = 'none';
         }, 300); 
@@ -46,9 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
     allAttackButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            // Robustly get the target name directly from the clicked element's data attribute
+            const targetId = this.getAttribute('data-target-id');
             const targetName = this.getAttribute('data-target-name');
-            openModal(targetName);
+            openModal(targetId, targetName);
         });
     });
 

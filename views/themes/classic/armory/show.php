@@ -113,7 +113,7 @@
                                                 </span>
                                             </div>
                                             
-                                            <p class="item-notes mb-075"><?= htmlspecialchars($item['notes']) ?></p>
+                                            <p class="item-notes mb-075"><?= htmlspecialchars($item['notes'] ?? '') ?></p>
                                             
                                             <div class="item-stats">
                                                 <?php foreach ($item['stat_badges'] as $badge): ?>

@@ -102,16 +102,11 @@ class SpyReportPresenter
             'sentries_lost_defender' => $report->sentries_lost_defender,
             'defender_workers_lost' => $report->defender_workers_lost, // Added
             'credits_seen' => $report->credits_seen,
-            'naquadah_crystals_stolen' => $report->naquadah_crystals_stolen,
-            'dark_matter_stolen' => $report->dark_matter_stolen,
-            'naquadah_crystals_seen' => $report->naquadah_crystals_seen,
-            'dark_matter_seen' => $report->dark_matter_seen,
             'protoform_stolen' => $report->protoform_stolen,
             'protoform_seen' => $report->protoform_seen,
             'soldiers_seen' => $report->soldiers_seen,
             'guards_seen' => $report->guards_seen,
             'sentries_seen' => $report->sentries_seen,
-            'fortification_level_seen' => $report->fortification_level_seen,
             'armory_level_seen' => $report->armory_level_seen,
         ];
     }
@@ -148,10 +143,8 @@ class SpyReportPresenter
         $line4 = "";
         if ($isSuccess) {
             $line4 = "Full intelligence dossier downloaded.";
-            if ($report->naquadah_crystals_stolen > 0 || $report->dark_matter_stolen > 0 || $report->protoform_stolen > 0) {
+            if ($report->protoform_stolen > 0) {
                 $stolen = [];
-                if ($report->naquadah_crystals_stolen > 0) $stolen[] = "<strong>" . number_format($report->naquadah_crystals_stolen, 2) . "</strong> Naquadah Crystals";
-                if ($report->dark_matter_stolen > 0) $stolen[] = "<strong>" . number_format($report->dark_matter_stolen) . "</strong> Dark Matter";
                 if ($report->protoform_stolen > 0) $stolen[] = "<strong>" . number_format($report->protoform_stolen, 2) . "</strong> Protoform";
                 $line4 .= " Extracted: " . implode(", ", $stolen) . ".";
             }
@@ -175,10 +168,6 @@ class SpyReportPresenter
         if ($report->operation_result !== 'success') return "";
         
                 $stolen = [];
-        
-                if ($report->naquadah_crystals_stolen > 0) $stolen[] = "+" . number_format($report->naquadah_crystals_stolen, 2) . " Crystals";
-        
-                if ($report->dark_matter_stolen > 0) $stolen[] = "+" . number_format($report->dark_matter_stolen) . " Dark Matter";
         
                 if ($report->protoform_stolen > 0) $stolen[] = "+" . number_format($report->protoform_stolen, 2) . " Protoform";
         

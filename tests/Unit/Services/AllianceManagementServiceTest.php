@@ -836,7 +836,6 @@ class AllianceManagementServiceTest extends TestCase
             credits: $credits,
             banked_credits: 0,
             gemstones: 0,
-            naquadah_crystals: 0.0,
             untrained_citizens: 0,
             workers: 0,
             soldiers: 0,

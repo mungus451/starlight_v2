@@ -43,22 +43,6 @@ class SpyController extends BaseController
     }
 
     /**
-     * Displays the main spy page (conduct operation).
-     */
-    public function show(array $vars): void
-    {
-        $userId = $this->session->get('user_id');
-        $page = (int)($vars['page'] ?? 1);
-        $limit = (int)($_GET['limit'] ?? 25);
-        
-        $data = $this->spyService->getSpyData($userId, $page, $limit);
-
-        $data['layoutMode'] = 'full';
-
-        $this->render('spy/show.php', $data + ['title' => 'Espionage']);
-    }
-
-    /**
      * Handles the "all-in" spy operation form.
      */
     public function handleSpy(): void
@@ -66,20 +50,20 @@ class SpyController extends BaseController
         // 1. Validate Input
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
-            'target_name' => 'required|string'
+            'target_id' => 'required|int'
         ]);
 
         // 2. Validate CSRF
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
             $this->session->setFlash('error', 'Invalid security token.');
-            $this->redirect('/spy');
+            $this->redirect('/profile/' . $data['target_id']);
             return;
         }
         
         // 3. Execute Logic
         $userId = $this->session->get('user_id');
         
-        $response = $this->spyService->conductOperation($userId, $data['target_name']);
+        $response = $this->spyService->conductOperation($userId, $data['target_id']);
         
         // 4. Handle Response
         if ($response->isSuccess()) {
@@ -87,7 +71,7 @@ class SpyController extends BaseController
             $this->redirect('/spy/reports');
         } else {
             $this->session->setFlash('error', $response->message);
-            $this->redirect('/spy');
+            $this->redirect('/profile/' . $data['target_id']);
         }
     }
 

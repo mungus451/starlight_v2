@@ -10,10 +10,8 @@
     <a class="tab-link active" data-tab="structures">Structures</a>
     <a class="tab-link" data-tab="units">Units</a>
     <a class="tab-link" data-tab="armory">Armory</a>
-    <a class="tab-link" data-tab="edicts">Edicts</a>
     <a class="tab-link" data-tab="directives">Directives</a>
     <a class="tab-link" data-tab="theater-ops">Theater Ops</a>
-    <a class="tab-link" data-tab="black-market">Black Market</a>
     <a class="tab-link" data-tab="resources">Resources</a>
 </div>
 
@@ -27,15 +25,11 @@
                         <?php 
                         // Map structure types to icons
                         $icon = match($key) {
-                            'fortification', 'defense_upgrade', 'planetary_shield', 'phase_bunker' => 'fa-shield-alt',
-                            'offense_upgrade', 'weapon_vault', 'nanite_forge', 'ion_cannon_network' => 'fa-crosshairs',
-                            'spy_upgrade', 'quantum_research_lab', 'embassy', 'neural_uplink', 'subspace_scanner' => 'fa-user-secret',
-                            'economy_upgrade', 'accounting_firm', 'bank', 'fusion_plant', 'orbital_trade_port', 'banking_datacenter' => 'fa-coins',
-                            'population', 'cloning_vats', 'war_college', 'mercenary_outpost' => 'fa-users',
+                            'planetary_shield' => 'fa-shield-alt',
+                            'economy_upgrade', 'bank' => 'fa-coins',
+                            'population', 'mercenary_outpost' => 'fa-users',
                             'armory' => 'fa-cogs',
-                            'naquadah_mining_complex' => 'fa-gem',
-                            'dark_matter_siphon' => 'fa-atom',
-                            'protoform_vat' => 'fa-flask',
+                            'neural_uplink', 'subspace_scanner' => 'fa-user-secret',
                             default => 'fa-building'
                         };
                         ?>
@@ -57,18 +51,6 @@
                             <span class="text-muted">Base Cost:</span><br>
                             <span class="text-warning"><?= number_format($building['base_cost']) ?></span>
                         </div>
-                        <?php if (isset($building['base_crystal_cost'])): ?>
-                            <div>
-                                <span class="text-muted">Crystals:</span><br>
-                                <span class="text-neon-blue"><?= number_format($building['base_crystal_cost']) ?></span>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (isset($building['base_dark_matter_cost'])): ?>
-                            <div>
-                                <span class="text-muted">Dark Matter:</span><br>
-                                <span style="color: #a855f7;"><?= number_format($building['base_dark_matter_cost']) ?></span>
-                            </div>
-                        <?php endif; ?>
                         <div>
                             <span class="text-muted">Scale Factor:</span><br>
                             <span class="text-info">x<?= $building['multiplier'] ?></span>
@@ -90,45 +72,17 @@
             <div class="structure-card">
                 <div class="card-header-main">
                     <div class="card-icon">
-                        <?php 
-                        $icon = match($key) {
-                            'workers' => 'fa-hammer text-warning',
-                            'soldiers' => 'fa-crosshairs text-danger',
-                            'guards' => 'fa-shield-alt text-success',
-                            'spies' => 'fa-user-secret text-info',
-                            'sentries' => 'fa-eye text-primary',
-                            default => 'fa-user'
-                        };
-                        
-                        $role = match($key) {
-                            'workers' => 'Resource Generation',
-                            'soldiers' => 'Offensive Combat',
-                            'guards' => 'Defensive Combat',
-                            'spies' => 'Espionage & Theft',
-                            'sentries' => 'Counter-Espionage',
-                            default => 'Unit'
-                        };
-
-                        $desc = match($key) {
-                            'workers' => 'The backbone of your economy. Each worker generates 100 Credits per turn.',
-                            'soldiers' => 'Frontline troops trained to attack enemy empires and plunder resources.',
-                            'guards' => 'Defenders of your realm. They protect your citizens and resources from invasion.',
-                            'spies' => 'Covert operatives used to gather intelligence and steal from rivals.',
-                            'sentries' => 'Specialized security units that detect and neutralize enemy spies.',
-                            default => 'Standard unit.'
-                        };
-                        ?>
-                        <i class="fas <?= $icon ?>"></i>
+                        <i class="fas <?= htmlspecialchars($unit['icon']) ?>"></i>
                     </div>
                     <div class="card-title-group">
-                        <h3 class="card-title"><?= ucfirst($key) ?></h3>
-                        <span class="card-category text-muted"><?= $role ?></span>
+                        <h3 class="card-title"><?= htmlspecialchars($unit['name']) ?></h3>
+                        <span class="card-category text-muted"><?= htmlspecialchars($unit['role']) ?></span>
                     </div>
                 </div>
 
                 <div class="card-body-main">
                     <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= $desc ?>
+                        <?= htmlspecialchars($unit['description']) ?>
                     </p>
 
                     <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
@@ -158,55 +112,6 @@
             <!-- Dynamic Armory Container -->
             <div id="armory-dynamic-container"></div>
         </div>
-    </div>
-</div>
-
-<!-- ======================= EDICTS TAB ======================= -->
-<div id="edicts" class="tab-content">
-    <div class="structures-grid">
-        <?php foreach ($edicts as $key => $edict): ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <?php 
-                        $icon = match($edict['type']) {
-                            'economic' => 'fa-chart-line text-warning',
-                            'military' => 'fa-crosshairs text-danger',
-                            'espionage' => 'fa-user-secret text-info',
-                            'special' => 'fa-star text-neon-blue',
-                            default => 'fa-scroll'
-                        };
-                        ?>
-                        <i class="fas <?= $icon ?>"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($edict['name']) ?></h3>
-                        <span class="card-category text-muted"><?= ucfirst($edict['type']) ?> Policy</span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($edict['description']) ?>
-                    </p>
-                    
-                    <div class="mb-3 text-muted small fst-italic">
-                        "<?= htmlspecialchars($edict['lore']) ?>"
-                    </div>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Upkeep:</span><br>
-                            <?php if ($edict['upkeep_cost'] > 0): ?>
-                                <span class="text-warning"><?= $edict['upkeep_cost'] ?> <?= ucfirst($edict['upkeep_resource']) ?></span>
-                            <?php else: ?>
-                                <span class="text-success">None</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
     </div>
 </div>
 
@@ -304,122 +209,6 @@
     </div>
 </div>
 
-<!-- ======================= BLACK MARKET TAB ======================= -->
-<div id="black-market" class="tab-content">
-    <div class="row mb-5">
-        <div class="col-12">
-            <h3 class="border-bottom border-secondary pb-2 mb-4 text-neon-blue">Market Services</h3>
-            <div class="table-responsive">
-                <table class="table table-dark table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Item / Service</th>
-                            <th>Description</th>
-                            <th>Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        $costs = $blackMarket['costs'] ?? [];
-                        $quantities = $blackMarket['quantities'] ?? [];
-                        
-                        $services = [
-                            'stat_respec' => ['name' => 'Stat Respec', 'desc' => 'Reset and redistribute your core stat points.'],
-                            'turn_refill' => ['name' => 'Turn Refill', 'desc' => 'Instantly restores ' . ($quantities['turn_refill_amount'] ?? 50) . ' turns.'],
-                            'citizen_package' => ['name' => 'Citizen Stimulus', 'desc' => 'Adds ' . number_format($quantities['citizen_package_amount'] ?? 50000) . ' citizens to your population.'],
-                            'void_container' => ['name' => 'Void Container', 'desc' => 'A mysterious container from the Void. Contains random loot.'],
-                            'shadow_contract' => ['name' => 'Shadow Contract', 'desc' => 'Hires a mercenary fleet for temporary protection.'],
-                            'radar_jamming' => ['name' => 'Radar Jamming', 'desc' => 'Blocks all incoming spy attempts for 4 hours.'],
-                            'safehouse' => ['name' => 'Safehouse Protocol', 'desc' => 'Protect your empire from all attacks for 4 hours. 12-hour total cooldown cycle.'],
-                            'safehouse_cracker' => ['name' => 'Safehouse Cracker', 'desc' => 'Bypass one enemy safehouse protection.'],
-                            'high_risk_buff' => ['name' => 'High Risk Booster', 'desc' => 'Grants significant bonuses but with dangerous side effects.']
-                        ];
-                        
-                        foreach ($services as $key => $info):
-                            if (!isset($costs[$key])) continue;
-                        ?>
-                        <tr>
-                            <td class="fw-bold text-light"><?= $info['name'] ?></td>
-                            <td class="text-muted"><?= $info['desc'] ?></td>
-                            <td class="text-neon-blue"><?= number_format($costs[$key]) ?> Crystals</td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <h3 class="border-bottom border-secondary pb-2 mb-4 text-purple">Void Container Probability Matrix</h3>
-            <p class="text-muted mb-4">
-                The Void Container extracts items from across the multiverse. 
-                <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Warning:</span> Not all outcomes are beneficial.
-            </p>
-            
-            <div class="table-responsive">
-                <table class="table table-dark table-sm table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Outcome</th>
-                            <th>Type</th>
-                            <th>Probability</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        $loot = $blackMarket['void_container_loot'] ?? [];
-                        $totalWeight = array_sum(array_column($loot, 'weight'));
-                        
-                        // Sort by probability desc
-                        uasort($loot, function($a, $b) {
-                            return $b['weight'] <=> $a['weight'];
-                        });
-
-                        foreach ($loot as $key => $item):
-                            $chance = ($item['weight'] / $totalWeight) * 100;
-                            $rowClass = '';
-                            $typeLabel = '';
-                            
-                            if (str_contains($key, 'trap') || str_contains($key, 'ambush') || str_contains($key, 'debuff') || str_contains($key, 'cursed')) {
-                                $rowClass = 'text-danger';
-                                $typeLabel = 'DANGER';
-                            } elseif (str_contains($key, 'jackpot')) {
-                                $rowClass = 'text-warning fw-bold';
-                                $typeLabel = 'JACKPOT';
-                            } elseif ($key === 'space_dust' || $key === 'scrap_metal') {
-                                $rowClass = 'text-muted';
-                                $typeLabel = 'Junk';
-                            } else {
-                                $rowClass = 'text-success';
-                                $typeLabel = 'Reward';
-                            }
-                        ?>
-                        <tr>
-                            <td class="<?= $rowClass ?>">
-                                <?= htmlspecialchars($item['label']) ?>
-                                <?php if(isset($item['text'])): ?>
-                                    <div class="small text-muted fst-italic"><?= htmlspecialchars($item['text']) ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-dark border border-secondary text-light"><?= $typeLabel ?></span>
-                            </td>
-                            <td>
-                                <div class="progress" style="height: 20px; background: rgba(255,255,255,0.1);">
-                                    <div class="progress-bar bg-info" role="progressbar" style="width: <?= $chance ?>%;" aria-valuenow="<?= $chance ?>" aria-valuemin="0" aria-valuemax="100">
-                                        <?= number_format($chance, 1) ?>%
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- ======================= RESOURCES TAB ======================= -->

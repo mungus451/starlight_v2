@@ -248,12 +248,30 @@ class Validator
         return true;
     }
 
+    private function checkArray($field, $value, $params): bool
+    {
+        if (!is_array($value)) {
+            $this->addError($field, $this->formatLabel($field) . ' must be a collection of items.');
+            return false;
+        }
+        return true;
+    }
+
     // --- Sanitization & Extraction ---
 
     private function sanitizeAndStore(string $field, $value, array $ruleSet): void
     {
         // Automatic Type Casting based on rules
-        if (in_array('int', $ruleSet)) {
+        if (in_array('array', $ruleSet)) {
+            $sanitizedArray = [];
+            foreach ((array)$value as $key => $item) {
+                $sKey = htmlspecialchars(trim((string)$key), ENT_QUOTES, 'UTF-8');
+                $sValue = is_numeric($item) ? trim($item) : htmlspecialchars(trim((string)$item), ENT_QUOTES, 'UTF-8');
+                $sanitizedArray[$sKey] = $sValue;
+            }
+            $this->validatedData[$field] = $sanitizedArray;
+        } 
+        elseif (in_array('int', $ruleSet)) {
             $this->validatedData[$field] = (int)$value;
         } 
         elseif (in_array('float', $ruleSet) || in_array('numeric', $ruleSet)) {
