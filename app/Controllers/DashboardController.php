@@ -68,7 +68,7 @@ class DashboardController extends BaseController
         $data = $this->dashboardPresenter->present($data);
 
         // 2. Render the view
-        $this->render('dashboard/show.php', $data + ['title' => 'Dashboard']);
+        $this->render('dashboard/show_v2.php', $data + ['title' => 'Dashboard']);
     }
 
     /**
