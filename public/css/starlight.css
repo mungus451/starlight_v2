@@ -2131,15 +2131,7 @@ details[open] .tier-summary::after {
 }
 
 /* --- Dashboard V2 --- */
-.dashboard-v2-grid {
-    display: grid;
-    grid-template-columns: 320px 1fr 320px;
-    grid-template-rows: auto 1fr;
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 1800px;
-    margin: 0 auto;
-}
+
 
 .dashboard-v2-col {
     display: flex;

@@ -595,15 +595,7 @@ class ContainerFactory
 
 
 
-            AdvisorService::class => function (ContainerInterface $c) {
 
-                return new AdvisorService(
-
-                    $c->get(StatsRepository::class)
-
-                );
-
-            },
 
 
 
@@ -671,7 +663,7 @@ class ContainerFactory
 
                     $c->get(NotificationRepository::class),
 
-                    $c->get(AdvisorService::class),
+
 
                     $c->get(BountyRepository::class),
 

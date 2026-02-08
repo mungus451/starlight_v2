@@ -51,7 +51,7 @@ class DashboardService
         StructureRepository $structureRepository,
         EffectRepository $effectRepo,
         NotificationRepository $notificationRepo,
-        AdvisorService $advisorService,
+
         BountyRepository $bountyRepo,
         WarRepository $warRepo,
         BattleRepository $battleRepo, // Added
@@ -64,7 +64,7 @@ class DashboardService
         $this->structureRepository = $structureRepository;
         $this->effectRepo = $effectRepo;
         $this->notificationRepo = $notificationRepo;
-        $this->advisorService = $advisorService;
+
         $this->bountyRepo = $bountyRepo;
         $this->warRepo = $warRepo;
         $this->battleRepo = $battleRepo; // Added
@@ -88,7 +88,7 @@ class DashboardService
         $structures = $this->structureRepository->findByUserId($userId);
         $activeEffects = $this->effectRepo->getAllActiveEffects($userId);
         $criticalAlerts = $this->notificationRepo->getRecent($userId, 3);
-        $advisorSuggestions = $this->advisorService->getSuggestions($user);
+
         
         // Fetch recent battles for the oscilloscope
         $recentBattles = $this->battleRepo->getPaginatedUserBattles($userId, 20, 0);
@@ -149,7 +149,6 @@ class DashboardService
             'structures' => $structures,
             'activeEffects' => $activeEffects,
             'critical_alerts' => $criticalAlerts,
-            'advisor_suggestions' => $advisorSuggestions,
             'recent_battles' => $recentBattles, // Added
             'threat_and_opportunity' => $threatData,
             'incomeBreakdown' => $incomeBreakdown,

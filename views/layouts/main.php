@@ -148,37 +148,24 @@
     </nav>
     <?php endif; ?>
 
-<div class="advisor-layout-grid">
-
-
-
-    <?php if ($isLoggedIn && isset($advisorData)): ?>
-        <aside class="lg:col-span-1 space-y-4">
-        <?php include 'advisor.php'; ?>
-    </aside>
+    <?php 
+    if (isset($layoutMode) && $layoutMode === 'full'): 
+    ?>
+        <div class="container-full">
+    <?php else: ?>
+        <div class="container">
     <?php endif; ?>
-
-    <div class="advisor-main-content">
-        <?php 
-        if (isset($layoutMode) && $layoutMode === 'full'): 
-        ?>
-            <div class="container-full">
-        <?php else: ?>
-            <div class="container">
+    
+        <?php if ($flashError): ?>
+            <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
         <?php endif; ?>
         
-            <?php if ($flashError): ?>
-                <div class="flash flash-error"><?= htmlspecialchars($flashError) ?></div>
-            <?php endif; ?>
-            
-            <?php if ($flashSuccess): ?>
-                <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
-            <?php endif; ?>
+        <?php if ($flashSuccess): ?>
+            <div class="flash flash-success"><?= htmlspecialchars($flashSuccess) ?></div>
+        <?php endif; ?>
 
-            <?= $content ?>
-        </div>
+        <?= $content ?>
     </div>
-</div>
 
 <script src="/js/utils.js?v=<?= time() ?>"></script>
 <script src="/js/notifications.js"></script>
