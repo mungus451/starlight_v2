@@ -6236,3 +6236,29 @@ details[open] .tier-summary::after {
         border-right: none;
     }
 }
+
+/* Under Construction Page - No Background */
+body.no-background {
+    background-image: none !important;
+    background-color: #000 !important; /* Ensuring a dark solid background */
+}
+
+
+
+/* Centering for Under Construction Page */
+body.no-background .advisor-layout-grid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full viewport height */
+    padding: 0;
+    grid-template-columns: 1fr; /* Override grid columns */
+}
+
+body.no-background .advisor-main-content {
+    grid-column: 1 / -1; /* Ensure it spans the single column */
+    padding: 1.5rem; /* Restore some padding for aesthetics */
+    max-width: 800px;
+    width: 100%;
+}
+

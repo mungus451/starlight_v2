@@ -24,8 +24,9 @@
     <link rel="stylesheet" href="/css/armory-command-bridge.css?v=<?= time() ?>">
 
 </head>
-<body class="">
+<body class="<?= (isset($layoutMode) && $layoutMode === 'blank') ? 'no-background' : '' ?>">
 
+    <?php if (!isset($layoutMode) || $layoutMode !== 'blank'): ?>
     <!-- ======================= MOBILE TOP BAR (Hidden on Desktop) ======================= -->
     <header class="mobile-top-bar">
         <button class="menu-toggle-btn" id="mobile-menu-toggle">
@@ -145,6 +146,7 @@
             </ul>
         <?php endif; ?>
     </nav>
+    <?php endif; ?>
 
 <div class="advisor-layout-grid">
 

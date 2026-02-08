@@ -43,7 +43,7 @@ class PagesController extends BaseController
         }
 
         // Otherwise, show the "Under Construction" page as the landing page
-        $this->render('pages/under_construction.php', ['title' => 'Under Construction', 'layoutMode' => 'full']);
+        $this->render('pages/under_construction.php', ['title' => 'Under Construction', 'layoutMode' => 'blank']);
     }
 
     /**
