@@ -35,14 +35,14 @@ return [
             'name' => 'Population',
             'base_cost' => 1500,
             'multiplier' => 1.52,
-            'category' => 'Economy',
+            'category' => 'Population',
             'description' => 'Increases the number of untrained citizens that arrive each turn.'
         ],
         'armory' => [
             'name' => 'Armory',
             'base_cost' => 92000,
             'multiplier' => 1.51,
-            'category' => 'Offense',
+            'category' => 'Armory',
             'description' => 'Unlocks and improves advanced schematic for military units.'
         ],
         'planetary_shield' => [
@@ -56,7 +56,7 @@ return [
             'name' => 'Mercenary Outpost',
             'base_cost' => 100000,
             'multiplier' => 1.65,
-            'category' => 'Military',
+            'category' => 'Mercenary',
             'description' => 'Allows for the instant emergency drafting of units.'
         ],
         'neural_uplink' => [

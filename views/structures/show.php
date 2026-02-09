@@ -70,7 +70,7 @@
 
             <div class="wireframe-container">
                 <div class="wireframe-placeholder" id="insp-wireframe">
-                    <span id="insp-icon" style="font-size: 3rem; position: absolute; top: 50%; left: 50%; transform: translate(--50%, -50%);"></span>
+                    <span id="insp-icon"></span>
                 </div>
             </div>
 
