@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'node:path';
+
+const outDir = new URL('../public/spa', import.meta.url).pathname;
+const notificationsEntry = new URL('./src/notifications.tsx', import.meta.url).pathname;
 
 export default defineConfig({
     plugins: [react()],
     build: {
-        outDir: path.resolve(__dirname, '../public/spa'),
+        outDir,
         emptyOutDir: false,
-        sourcemap: true,
+        sourcemap: false,
         rollupOptions: {
             input: {
-                notifications: path.resolve(__dirname, 'src/notifications.tsx'),
+                notifications: notificationsEntry,
             },
             output: {
                 entryFileNames: '[name].js',

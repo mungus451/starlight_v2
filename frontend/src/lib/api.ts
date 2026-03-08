@@ -35,7 +35,30 @@ function getCsrfToken(): string {
 
 async function parseJson<T>(response: Response): Promise<T> {
     if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
+        let message = `Request failed: ${response.status}`;
+
+        try {
+            const data = await response.json();
+            if (data && typeof data === 'object') {
+                const anyData = data as { error?: unknown; message?: unknown };
+                if (typeof anyData.error === 'string' && anyData.error.trim() !== '') {
+                    message = anyData.error;
+                } else if (typeof anyData.message === 'string' && anyData.message.trim() !== '') {
+                    message = anyData.message;
+                }
+            }
+        } catch {
+            try {
+                const text = await response.text();
+                if (text && text.trim() !== '') {
+                    message = text;
+                }
+            } catch {
+                // Ignore secondary errors and fall back to the default message.
+            }
+        }
+
+        throw new Error(message);
     }
     return (await response.json()) as T;
 }

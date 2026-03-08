@@ -114,7 +114,7 @@ Implement API routes that map to existing service methods:
 - `POST /api/v1/notifications/{id}/read`
 - `POST /api/v1/notifications/read-all`
 - `GET /api/v1/notification-preferences`
-- `PUT /api/v1/notification-preferences`
+- `POST /api/v1/notification-preferences`
 
 Requirements:
 - Session auth required (same middleware behavior as web routes).

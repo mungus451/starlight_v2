@@ -302,6 +302,24 @@ class NotificationController extends BaseController
 
     private function toBool(mixed $value): bool
     {
-        return filter_var($value, FILTER_VALIDATE_BOOL);
+        if (!is_scalar($value)) {
+            return false;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        $normalized = strtolower(trim((string)$value));
+
+        if ($normalized === '1' || $normalized === 'true' || $normalized === 'on' || $normalized === 'yes') {
+            return true;
+        }
+
+        return false;
     }
 }

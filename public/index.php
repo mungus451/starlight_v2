@@ -381,8 +381,7 @@ try {
                 '/embassy',
                 '/generals',
                 '/almanac',
-                '/glossary',
-                '/api/v1'
+                '/glossary'
 
             ];
 
