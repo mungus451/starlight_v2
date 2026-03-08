@@ -34,6 +34,8 @@ function getCsrfToken(): string {
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
+    // TODO(next-iteration, PR review 3911538619): Read body once (or use response.clone())
+    // so JSON/text fallback never loses server error details after stream consumption.
     if (!response.ok) {
         let message = `Request failed: ${response.status}`;
 

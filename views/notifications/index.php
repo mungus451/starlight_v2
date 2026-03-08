@@ -4,6 +4,8 @@
         <script type="module" src="/spa/notifications.js"></script>
     <?php endif; ?>
 
+    <!-- TODO(next-iteration, PR review 3911538619): prevent duplicate UI flash by
+         server-hiding legacy root when SPA flag is on, then reveal only if SPA mount fails. -->
     <div id="notifications-legacy-root">
 
         <div class="flex-between mb-1">

@@ -164,6 +164,8 @@ class NotificationController extends BaseController
 
     public function apiList(): void
     {
+        // TODO(next-iteration, PR review 3911538619): Add API tests covering 401 auth,
+        // 422 CSRF failures on POST routes, pagination bounds, and success paths.
         $userId = (int)$this->session->get('user_id', 0);
         if ($userId <= 0) {
             $this->jsonResponse(['error' => 'Not authenticated'], 401);

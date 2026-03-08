@@ -109,6 +109,8 @@ services:
     container_name: starlight_frontend
     restart: unless-stopped
     working_dir: /workspace/frontend
+    # TODO(next-iteration, PR review 3911538619): switch to npm ci and cache
+    # node_modules (volume or image layer) to avoid reinstalling on each restart.
     command: >
       sh -c "npm install && npm run build -- --watch"
     volumes:

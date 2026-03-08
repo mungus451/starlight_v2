@@ -4,6 +4,8 @@ declare(strict_types=1);
 /**
  * Metrics & Logs Viewer — session login only (no Basic Auth)
  * Credentials: admin / devTeamRed
+ * TODO(next-iteration, PR review 3911538619): remove hard-coded credentials,
+ * use environment/secret-backed auth, and restrict access behind existing auth/RBAC.
  */
 
 // =================== AUTH CONFIG ===================
@@ -114,7 +116,8 @@ if (empty($_SESSION['authed'])) {
     </div>
     <button class="btn" type="submit">Sign in</button>
   </form>
-  <div class="help">Authorized Personel Only</div>
+    <div class="help">Authorized Personel Only</div>
+    <!-- TODO(next-iteration, PR review 3911538619): fix typo to "Authorized Personnel Only". -->
 </div>
 </body>
 </html>
