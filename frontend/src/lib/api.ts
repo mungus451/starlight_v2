@@ -34,35 +34,39 @@ function getCsrfToken(): string {
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
-    // TODO(next-iteration, PR review 3911538619): Read body once (or use response.clone())
-    // so JSON/text fallback never loses server error details after stream consumption.
+    const text = await response.text();
+
     if (!response.ok) {
         let message = `Request failed: ${response.status}`;
 
-        try {
-            const data = await response.json();
-            if (data && typeof data === 'object') {
-                const anyData = data as { error?: unknown; message?: unknown };
-                if (typeof anyData.error === 'string' && anyData.error.trim() !== '') {
-                    message = anyData.error;
-                } else if (typeof anyData.message === 'string' && anyData.message.trim() !== '') {
-                    message = anyData.message;
-                }
-            }
-        } catch {
+        if (text.trim() !== '') {
             try {
-                const text = await response.text();
-                if (text && text.trim() !== '') {
-                    message = text;
+                const data = JSON.parse(text);
+                if (data && typeof data === 'object') {
+                    const anyData = data as { error?: unknown; message?: unknown };
+                    if (typeof anyData.error === 'string' && anyData.error.trim() !== '') {
+                        message = anyData.error;
+                    } else if (typeof anyData.message === 'string' && anyData.message.trim() !== '') {
+                        message = anyData.message;
+                    } else {
+                        message = text.trim();
+                    }
+                } else {
+                    message = text.trim();
                 }
             } catch {
-                // Ignore secondary errors and fall back to the default message.
+                message = text.trim();
             }
         }
 
         throw new Error(message);
     }
-    return (await response.json()) as T;
+
+    if (text.trim() === '') {
+        return {} as T;
+    }
+
+    return JSON.parse(text) as T;
 }
 
 export async function fetchNotifications(page = 1, perPage = 20): Promise<NotificationsApiResponse> {

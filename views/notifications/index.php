@@ -1,12 +1,21 @@
 <div class="container">
     <?php if (!empty($spa_notifications_enabled)): ?>
         <div id="notifications-spa-root" data-page="<?= htmlspecialchars((string)($pagination['current_page'] ?? 1)) ?>"></div>
+        <script>
+            window.__notificationsSpaMounted = false;
+            window.setTimeout(() => {
+                if (!window.__notificationsSpaMounted) {
+                    const legacyRoot = document.getElementById('notifications-legacy-root');
+                    if (legacyRoot) {
+                        legacyRoot.style.display = '';
+                    }
+                }
+            }, 2000);
+        </script>
         <script type="module" src="/spa/notifications.js"></script>
     <?php endif; ?>
 
-    <!-- TODO(next-iteration, PR review 3911538619): prevent duplicate UI flash by
-         server-hiding legacy root when SPA flag is on, then reveal only if SPA mount fails. -->
-    <div id="notifications-legacy-root">
+    <div id="notifications-legacy-root" <?= !empty($spa_notifications_enabled) ? ' style="display:none" data-spa-hidden="1"' : '' ?>>
 
         <div class="flex-between mb-1">
             <h1 style="margin: 0; text-align: left; font-size: 1.8rem;">

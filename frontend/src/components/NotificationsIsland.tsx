@@ -10,7 +10,7 @@ interface Props {
     initialPage: number;
 }
 
-export function NotificationsIsland({ initialPage }: Props): JSX.Element {
+export function NotificationsIsland({ initialPage }: Props) {
     const [data, setData] = useState<NotificationsApiResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,6 +33,10 @@ export function NotificationsIsland({ initialPage }: Props): JSX.Element {
     useEffect(() => {
         void load(initialPage);
     }, [initialPage]);
+
+    useEffect(() => {
+        window.dispatchEvent(new Event('notifications-spa-mounted'));
+    }, []);
 
     const onMarkRead = async (id: number): Promise<void> => {
         try {
