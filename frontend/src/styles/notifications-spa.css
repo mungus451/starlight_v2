@@ -1,0 +1,12 @@
+.notifications-spa-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.notifications-spa-status {
+    color: var(--muted);
+    font-size: 0.9rem;
+}

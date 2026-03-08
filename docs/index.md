@@ -98,6 +98,7 @@ Cross-cutting concerns:
 - **[Security](guides/security.md)** — Authentication, CSRF, RBAC, and safe practices
 - **[Accessibility](guides/accessibility.md)** — Building inclusive interfaces
 - **[Performance](guides/performance.md)** — Optimization strategies
+- **[Phased SPA + PWA Migration Plan](guides/spa-migration-plan.md)** — 90-day rollout, parity checklist, and offline/installability track
 
 ## Resources
 

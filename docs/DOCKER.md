@@ -30,6 +30,7 @@ The application will be available at: http://localhost:8080
 - **redis**: Redis in-memory data store (default port 6379) — required for sessions, CSRF protection, and rate limiting
 - **cron**: Background process for turn processing (runs every 5 minutes)
 - **docs**: MkDocs documentation server (default port 8000) — for local preview of documentation
+- **frontend**: SPA asset watcher that rebuilds `public/spa` on file changes
 
 **Note:** External ports can be customized by setting `DOCKER_APP_PORT`, `DOCKER_DB_PORT`, `DOCKER_REDIS_PORT`, and `DOCKER_DOCS_PORT` in your `.env` file. If not set, the defaults listed above will be used.
 
@@ -103,6 +104,21 @@ After changing dependencies or Dockerfile:
 ```bash
 docker compose down
 docker compose up -d --build
+```
+
+## Frontend Watch Mode
+
+The `frontend` service watches files under `frontend/` and continuously rebuilds the SPA bundle into `public/spa`.
+
+```bash
+# Start only frontend watcher
+docker compose up frontend
+
+# Or run full stack including watcher
+docker compose up -d --build
+
+# Follow watcher logs
+docker compose logs -f frontend
 ```
 
 ## Documentation Preview

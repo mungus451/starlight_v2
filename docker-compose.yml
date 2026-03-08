@@ -104,6 +104,20 @@ services:
     environment:
       - WATCHDOG_FALLBACK_POLL=500 # forces polling file watcher
 
+  frontend:
+    image: node:20-alpine
+    container_name: starlight_frontend
+    restart: unless-stopped
+    working_dir: /workspace/frontend
+    command: >
+      sh -c "npm install && npm run build -- --watch"
+    volumes:
+      - .:/workspace
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - starlight_network
+
 networks:
   starlight_network:
     driver: bridge

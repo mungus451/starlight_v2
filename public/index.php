@@ -87,10 +87,10 @@ try {
 try {
     $redis = $container->get(Predis\Client::class);
     $handler = new RedisSessionHandler($redis);
-    
+
     // Register the custom handler
     session_set_save_handler($handler, true);
-    
+
     // Now start the session
     session_start();
 } catch (Exception $e) {
@@ -98,8 +98,8 @@ try {
 }
 
 // 6. Router Definition
-$dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
-    
+$dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
+
     // --- Public Pages ---
     $r->addRoute('GET', '/', [PagesController::class, 'showHome']);
     $r->addRoute('GET', '/contact', [PagesController::class, 'showContact']);
@@ -144,7 +144,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // --- Military ---
     $r->addRoute('GET', '/training', [TrainingController::class, 'show']);
     $r->addRoute('POST', '/training/train', [TrainingController::class, 'handleTrain']);
-    
+
     $r->addRoute('GET', '/structures', [StructureController::class, 'show']);
     $r->addRoute('POST', '/structures/upgrade', [StructureController::class, 'handleUpgrade']);
     $r->addRoute('POST', '/structures/batch-upgrade', [StructureController::class, 'handleBatchUpgrade']);
@@ -214,7 +214,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     // Alliance SOS
     $r->addRoute('GET', '/alliance/sos/manage', ['App\Controllers\AllianceSOSController', 'showPage']);
     $r->addRoute('POST', '/alliance/sos/broadcast', ['App\Controllers\AllianceSOSController', 'broadcast']);
-    
+
     // Refactored: Recruitment (Applications & Invites) -> AllianceApplicationController
     $r->addRoute('POST', '/alliance/apply/{id:\d+}', [AllianceApplicationController::class, 'handleApply']);
     $r->addRoute('POST', '/alliance/cancel-app/{id:\d+}', [AllianceApplicationController::class, 'handleCancelApp']);
@@ -234,20 +234,20 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/loan/deny/{id:\d+}', [AllianceFundingController::class, 'handleLoanDeny']);
     $r->addRoute('POST', '/alliance/loan/repay/{id:\d+}', [AllianceFundingController::class, 'handleLoanRepay']);
     $r->addRoute('POST', '/alliance/loan/forgive/{id:\d+}', [AllianceFundingController::class, 'handleForgiveLoan']);
-    
+
     // Refactored: Settings -> AllianceSettingsController
     $r->addRoute('POST', '/alliance/profile/edit', [AllianceSettingsController::class, 'handleUpdateProfile']);
-    
+
     // Roles
     $r->addRoute('GET', '/alliance/roles', [AllianceRoleController::class, 'showAll']);
     $r->addRoute('POST', '/alliance/roles/create', [AllianceRoleController::class, 'handleCreate']);
     $r->addRoute('POST', '/alliance/roles/update/{id:\d+}', [AllianceRoleController::class, 'handleUpdate']);
     $r->addRoute('POST', '/alliance/roles/delete/{id:\d+}', [AllianceRoleController::class, 'handleDelete']);
-    
+
     // Structures
     $r->addRoute('GET', '/alliance/structures', [AllianceStructureController::class, 'show']);
     $r->addRoute('POST', '/alliance/structures/upgrade', [AllianceStructureController::class, 'handleUpgrade']);
-    
+
     // Forums
     $r->addRoute('GET', '/alliance/forum', [AllianceForumController::class, 'showForum']);
     $r->addRoute('GET', '/alliance/forum/page/{page:\d+}', [AllianceForumController::class, 'showForum']);
@@ -257,7 +257,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/reply', [AllianceForumController::class, 'handleCreatePost']);
     $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/pin', [AllianceForumController::class, 'handlePinTopic']);
     $r->addRoute('POST', '/alliance/forum/topic/{id:\d+}/lock', [AllianceForumController::class, 'handleLockTopic']);
-    
+
     // Diplomacy & War
     $r->addRoute('GET', '/alliance/diplomacy', [DiplomacyController::class, 'show']);
     $r->addRoute('POST', '/alliance/diplomacy/treaty/propose', [DiplomacyController::class, 'handleProposeTreaty']);
@@ -265,14 +265,14 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/alliance/diplomacy/treaty/decline/{id:\d+}', [DiplomacyController::class, 'handleDeclineTreaty']);
     $r->addRoute('POST', '/alliance/diplomacy/treaty/break/{id:\d+}', [DiplomacyController::class, 'handleBreakTreaty']);
     $r->addRoute('POST', '/alliance/diplomacy/rivalry/declare', [DiplomacyController::class, 'handleDeclareRivalry']);
-    
-        // Alliance War
-        $r->addRoute(['GET', 'POST'], '/alliance/war', ['App\\Controllers\\WarController', 'show']);
-        $r->addRoute(['POST'], '/alliance/war/declare', ['App\\Controllers\\WarController', 'handleDeclareWar']);
-        $r->addRoute(['GET'], '/alliance/war/dashboard/{warId:\d+}', ['App\\Controllers\\WarController', 'showDashboard']);
-        $r->addRoute(['GET'], '/alliance/war/{warId:\d+}/score', ['App\\Controllers\\WarController', 'getWarScoreData']);
 
-        // Alliance Forum
+    // Alliance War
+    $r->addRoute(['GET', 'POST'], '/alliance/war', ['App\\Controllers\\WarController', 'show']);
+    $r->addRoute(['POST'], '/alliance/war/declare', ['App\\Controllers\\WarController', 'handleDeclareWar']);
+    $r->addRoute(['GET'], '/alliance/war/dashboard/{warId:\d+}', ['App\\Controllers\\WarController', 'showDashboard']);
+    $r->addRoute(['GET'], '/alliance/war/{warId:\d+}/score', ['App\\Controllers\\WarController', 'getWarScoreData']);
+
+    // Alliance Forum
     $r->addRoute('GET', '/almanac', [AlmanacController::class, 'index']);
     $r->addRoute('GET', '/almanac/search_players', [AlmanacController::class, 'searchPlayers']);
     $r->addRoute('GET', '/almanac/search_alliances', [AlmanacController::class, 'searchAlliances']);
@@ -287,6 +287,14 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('POST', '/notifications/read/{id:\d+}', [NotificationController::class, 'handleMarkRead']);
     $r->addRoute('POST', '/notifications/read-all', [NotificationController::class, 'handleMarkAllRead']);
 
+    // --- API v1: Notifications (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/notifications', [NotificationController::class, 'apiList']);
+    $r->addRoute('GET', '/api/v1/notifications/unread', [NotificationController::class, 'apiUnread']);
+    $r->addRoute('POST', '/api/v1/notifications/{id:\d+}/read', [NotificationController::class, 'apiMarkRead']);
+    $r->addRoute('POST', '/api/v1/notifications/read-all', [NotificationController::class, 'apiMarkAllRead']);
+    $r->addRoute('GET', '/api/v1/notification-preferences', [NotificationController::class, 'apiGetPreferences']);
+    $r->addRoute('POST', '/api/v1/notification-preferences', [NotificationController::class, 'apiUpdatePreferences']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
@@ -298,179 +306,176 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
 
 try {
 
-        $httpMethod = $_SERVER['REQUEST_METHOD'];
+    $httpMethod = $_SERVER['REQUEST_METHOD'];
 
-        $uri = $_SERVER['REQUEST_URI'];
-
-
-
-        if (false !== $pos = strpos($uri, '?')) {
-
-            $uri = substr($uri, 0, $pos);
-
-        }
-
-        $uri = rawurldecode($uri);
+    $uri = $_SERVER['REQUEST_URI'];
 
 
 
-        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+    if (false !== $pos = strpos($uri, '?')) {
+
+        $uri = substr($uri, 0, $pos);
+    }
+
+    $uri = rawurldecode($uri);
 
 
 
-        switch ($routeInfo[0]) {
-
-            case FastRoute\Dispatcher::NOT_FOUND:
-
-                http_response_code(404);
-
-                echo '404 - Page Not Found';
-
-                break;
+    $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
 
 
-            case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+    switch ($routeInfo[0]) {
 
-                http_response_code(405);
+        case FastRoute\Dispatcher::NOT_FOUND:
 
-                echo '405 - Method Not Allowed';
+            http_response_code(404);
 
-                break;
+            echo '404 - Page Not Found';
 
-
-
-            case FastRoute\Dispatcher::FOUND:
-
-                $handler = $routeInfo[1];
-
-                $vars = $routeInfo[2];
+            break;
 
 
 
-                // --- Auth Middleware Logic ---
+        case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
 
-                $protectedPrefixes = [
+            http_response_code(405);
 
-                    '/dashboard', '/bank', '/training', '/structures', '/armory',
+            echo '405 - Method Not Allowed';
 
-                    '/settings', '/spy', '/battle', '/level-up', '/alliance', '/profile',
+            break;
 
-                    '/serve/avatar', '/serve/alliance_avatar', '/notifications', '/black-market',
 
-                    '/leaderboard', '/embassy', '/generals', '/almanac', '/glossary'
 
-                ];
+        case FastRoute\Dispatcher::FOUND:
 
-                
+            $handler = $routeInfo[1];
 
-                $isProtected = false;
+            $vars = $routeInfo[2];
 
-                foreach ($protectedPrefixes as $prefix) {
 
-                    if (str_starts_with($uri, $prefix)) {
 
-                        $isProtected = true;
+            // --- Auth Middleware Logic ---
 
-                        break;
+            $protectedPrefixes = [
 
+                '/dashboard',
+                '/bank',
+                '/training',
+                '/structures',
+                '/armory',
+
+                '/settings',
+                '/spy',
+                '/battle',
+                '/level-up',
+                '/alliance',
+                '/profile',
+
+                '/serve/avatar',
+                '/serve/alliance_avatar',
+                '/notifications',
+                '/black-market',
+
+                '/leaderboard',
+                '/embassy',
+                '/generals',
+                '/almanac',
+                '/glossary',
+                '/api/v1'
+
+            ];
+
+
+
+            $isProtected = false;
+
+            foreach ($protectedPrefixes as $prefix) {
+
+                if (str_starts_with($uri, $prefix)) {
+
+                    $isProtected = true;
+
+                    break;
+                }
+            }
+
+
+
+            if ($isProtected) {
+
+
+
+                $container->get(AuthMiddleware::class)->handle();
+
+
+
+
+
+
+
+                // --- Identity Selection Check ---
+
+
+
+                $userId = $container->get(App\Core\Session::class)->get('user_id');
+
+
+
+                $userRepo = $container->get(App\Models\Repositories\UserRepository::class);
+
+
+
+                $user = $userRepo->findById($userId);
+
+
+
+
+
+
+
+                if ($user && (!$user->race || !$user->class)) {
+
+
+
+                    $currentUri = $_SERVER['REQUEST_URI'];
+
+
+
+                    if (!str_contains($currentUri, '/choose-identity') && !str_contains($currentUri, '/logout')) {
+
+
+
+                        header('Location: /choose-identity');
+
+
+
+                        exit;
                     }
-
                 }
+            }
 
 
 
-                                if ($isProtected) {
+            // --- Dispatch Controller ---
 
+            [$class, $method] = $handler;
 
 
-                                    $container->get(AuthMiddleware::class)->handle();
 
+            if ($container->has($class)) {
 
+                $controller = $container->get($class);
 
-                                    
+                call_user_func_array([$controller, $method], [$vars]);
+            } else {
 
+                throw new Exception("Controller class $class not found in DI container.");
+            }
 
-
-                                    // --- Identity Selection Check ---
-
-
-
-                                    $userId = $container->get(App\Core\Session::class)->get('user_id');
-
-
-
-                                    $userRepo = $container->get(App\Models\Repositories\UserRepository::class);
-
-
-
-                                    $user = $userRepo->findById($userId);
-
-
-
-                                    
-
-
-
-                                    if ($user && (!$user->race || !$user->class)) {
-
-
-
-                                        $currentUri = $_SERVER['REQUEST_URI'];
-
-
-
-                                        if (!str_contains($currentUri, '/choose-identity') && !str_contains($currentUri, '/logout')) {
-
-
-
-                                            header('Location: /choose-identity');
-
-
-
-                                            exit;
-
-
-
-                                        }
-
-
-
-                                    }
-
-
-
-                                }
-
-
-
-                // --- Dispatch Controller ---
-
-                [$class, $method] = $handler;
-
-                
-
-                if ($container->has($class)) {
-
-                    $controller = $container->get($class);
-
-                    call_user_func_array([$controller, $method], [$vars]);
-
-                } else {
-
-                    throw new Exception("Controller class $class not found in DI container.");
-
-                }
-
-                                break;
-
-                
-
-                        }
-
-                
-
-                } catch (RedirectException $e) {
+            break;
+    }
+} catch (RedirectException $e) {
     // Handle graceful redirect
     header("Location: " . $e->getMessage());
     exit; // Legitimate entry point exit
