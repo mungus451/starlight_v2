@@ -16,7 +16,7 @@ This project adheres to strict MVC-S standards. The testing suite provided ensur
 To verify that Controllers, Services, Repositories, Entities, and Views adhere to strict separation of concerns, run:
 
 ```bash
-docker exec starlight_app php tests/Compliance/StrictArchitectureAudit.php
+docker compose exec app php tests/Compliance/StrictArchitectureAudit.php
 ```
 
 **What it checks:**
@@ -31,7 +31,7 @@ docker exec starlight_app php tests/Compliance/StrictArchitectureAudit.php
 To ensure all Controllers can be instantiated by the container (verifying all dependencies are resolvable):
 
 ```bash
-docker exec starlight_app php tests/Compliance/verify_di_resolution.php
+docker compose exec app php tests/Compliance/verify_di_resolution.php
 ```
 
 ## 3. Feature Logic Tests
@@ -40,16 +40,16 @@ Individual feature tests ensure complex calculations (like game balance formulas
 
 ```bash
 # Alliance Structure Bonuses
-docker exec starlight_app php tests/Integration/AllianceStructureBonusCheck.php
+docker compose exec app php tests/Integration/AllianceStructureBonusCheck.php
 
 # Armory Integration
-docker exec starlight_app php tests/Integration/ArmoryIntegrationCheck.php
+docker compose exec app php tests/Integration/ArmoryIntegrationCheck.php
 
 # Bank System
-docker exec starlight_app php tests/Integration/BankSystemCheck.php
+docker compose exec app php tests/Integration/BankSystemCheck.php
 
 # Refactor Stability (End-to-End simulation)
-docker exec starlight_app php tests/Compliance/verify_refactor.php
+docker compose exec app php tests/Compliance/verify_refactor.php
 ```
 
 ## 4. Simulations
@@ -57,8 +57,8 @@ docker exec starlight_app php tests/Compliance/verify_refactor.php
 To run game loop simulations:
 
 ```bash
-docker exec starlight_app php tests/Simulations/BattleSimulation.php
-docker exec starlight_app php tests/Simulations/GameLoopSimulation.php
+docker compose exec app php tests/Simulations/BattleSimulation.php
+docker compose exec app php tests/Simulations/GameLoopSimulation.php
 ```
 
 ## 5. Linting
@@ -66,7 +66,7 @@ docker exec starlight_app php tests/Simulations/GameLoopSimulation.php
 For general MVC compliance checks (Regex/Token based):
 
 ```bash
-docker exec starlight_app php tests/Compliance/mvc_lint.php
+docker compose exec app php tests/Compliance/mvc_lint.php
 ```
 
 ## 5. Compliance Suite
@@ -74,5 +74,5 @@ docker exec starlight_app php tests/Compliance/mvc_lint.php
 To run all compliance checks in one go:
 
 ```bash
-docker exec starlight_app php tests/Compliance/run_compliance_suite.php
+docker compose exec app php tests/Compliance/run_compliance_suite.php
 ```

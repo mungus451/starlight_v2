@@ -6,7 +6,6 @@ This directory contains Phinx migration files for schema evolution.
 
 - `migrations/` - Schema migrations (CREATE, ALTER, DROP)
 - `seeds/` - Data seeding for testing/development
-- `snapshots/` - Schema snapshots for baselining and auditing
 
 ## Migration Naming
 
@@ -20,19 +19,19 @@ Phinx automatically generates the timestamp prefix when you create a migration.
 
 ```bash
 # Check migration status
-docker exec starlight_app composer phinx status
+docker compose exec app composer phinx status
 
 # Run all pending migrations
-docker exec starlight_app composer phinx migrate
+docker compose exec app composer phinx migrate
 
 # Rollback last migration
-docker exec starlight_app composer phinx rollback
+docker compose exec app composer phinx rollback
 
 # Create a new migration
-docker exec starlight_app composer phinx create MyMigrationName
+docker compose exec app composer phinx create MyMigrationName
 
 # Run migrations in testing environment
-docker exec starlight_app composer phinx migrate -e testing
+docker compose exec app composer phinx migrate -e testing
 ```
 
 ### Using Local PHP (Without Docker)
@@ -62,10 +61,10 @@ If you have an existing database already running in production, use the baseline
 
 ```bash
 # Using Docker
-docker exec starlight_app php scripts/phinx_baseline.php
+docker compose exec app php scripts/phinx_baseline.php
 
 # With snapshot generation
-docker exec starlight_app php scripts/phinx_baseline.php --snapshot
+docker compose exec app php scripts/phinx_baseline.php --snapshot
 
 # Or locally (if not using Docker)
 php scripts/phinx_baseline.php

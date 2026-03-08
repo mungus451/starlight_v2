@@ -18,12 +18,9 @@ return [
 Services and controllers are autowired with constructor injection:
 
 ```php
-// config/dependencies.php
-use function DI\autowire;
+use App\Core\ContainerFactory;
+use App\Models\Services\TrainingService;
 
-return [
-    PDO::class => fn () => Database::getInstance()->getConnection(),
-    TrainingService::class => autowire(),
-    TrainingController::class => autowire(),
-];
+$container = ContainerFactory::createContainer();
+$service = $container->get(TrainingService::class);
 ```

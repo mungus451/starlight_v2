@@ -8,7 +8,8 @@ Verification scripts and tests that enforce the architecture and game rules:
 - Feature-specific tests (e.g., alliance bonuses)
 
 See the `tests/` directory for:
-- `VerifySystemIntegrity.php`
-- `VerifySessionDecoupling.php`
-- `AllianceStructureBonusTest.php`
-- `GameLoopSimulationTest.php`
+- `Compliance/VerifySystemIntegrity.php`
+- `Compliance/VerifySessionDecoupling.php`
+- `Compliance/StrictArchitectureAudit.php`
+- `Integration/AllianceStructureBonusCheck.php`
+- `Simulations/GameLoopSimulation.php`

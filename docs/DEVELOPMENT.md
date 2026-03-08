@@ -35,33 +35,28 @@ mkdocs serve
 
 ```
 docs/
-├── mkdocs.yml              # MkDocs configuration
+├── _config.yml             # Docs site config
+├── CONTRIBUTING.md         # Docs contribution guide
 ├── DEVELOPMENT.md          # This file
 ├── DOCKER.md               # Docker setup guide
-├── ARCHITECTURE.md         # System architecture
-├── index.md                # Main landing page
-├── README.md               # Quick navigation
+├── architecture/           # System architecture
+├── agents/                 # Agent documentation
+│   ├── backend/
+│   ├── database/
+│   ├── frontend/
+│   ├── game-balance/
+│   └── index.md
+├── balance-overhaul/       # Game balance documentation
+├── features/               # Feature docs
+├── game-balance/           # Balance analysis
+├── getting-started/        # Install and onboarding
+├── guides/                 # How-to guides
+├── includes/               # Term definitions
+├── javascripts/            # Math rendering
+├── reference/              # Reference docs
 ├── requirements.txt        # Python dependencies
-├── stylesheets/
-│   └── extra.css          # Custom styling
-├── javascripts/
-│   └── mathjax.js         # Math rendering
-├── includes/
-│   └── abbreviations.md   # Term definitions
-├── agents/                # Agent documentation
-│   ├── index.md
-│   ├── backend-agent.md
-│   ├── database-architect.md
-│   ├── docs-agent.md
-│   ├── frontend-agent.md
-│   ├── game-balance-architect.md
-│   ├── testing-agent.md
-│   └── .pages
-├── balance-overhaul/      # Game balance documentation
-│   ├── 00-INDEX.md
-│   ├── 01-PROBLEM-STATEMENT.md
-│   └── ...
-└── _site/                 # Built documentation (generated)
+├── stylesheets/            # Custom styling
+└── index.md                # Main landing page
 ```
 
 ## Writing Documentation

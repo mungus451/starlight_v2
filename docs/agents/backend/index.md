@@ -90,10 +90,10 @@ class ResourceRepository {
 php -S localhost:8000 -t public
 
 # Run architecture audit
-php tests/StrictArchitectureAudit.php
+docker compose exec app php tests/Compliance/StrictArchitectureAudit.php
 
 # Run migrations
-php migrations/filename.php
+composer phinx migrate
 ```
 
 ---

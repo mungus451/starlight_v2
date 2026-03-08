@@ -6,7 +6,7 @@ The primary goal of this architecture is strict separation of concerns and trans
 
 ## 📚 Documentation
 
-- **Architecture Guide**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Architecture Guide**: [docs/architecture/index.md](docs/architecture/index.md)
 - **Getting Started**: [docs/getting-started/index.md](docs/getting-started/index.md)
 - **Contributing**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - **Docker Guide**: [docs/DOCKER.md](docs/DOCKER.md)
@@ -38,7 +38,7 @@ Game Loop (Cron): A standalone script for processing turn-based income, citizen 
 📁 Project Structure
 ### This application follows a strict Model-View-Controller (MVC) pattern.
 
-`/usr/local/var/www/starlight_v2/` <br>
+`starlight_v2/` <br>
 `├── app/` <br>
 `│   ├── Controllers/    # (The "C") Handles HTTP requests.` <br>
 `│   ├── Core/           # Core bootstrap (Database, Session, Config, CSRF).` <br>
@@ -52,7 +52,7 @@ Game Loop (Cron): A standalone script for processing turn-based income, citizen 
 `├── logs/               # Error and cron logs.` <br>
 `├── public/             # The *only* web-accessible directory.` <br>
 `│   └── index.php       # (The "Front Controller") All requests come here.` <br>
-`├── sql/                # All database migration scripts (in order).` <br>
+`├── database/           # Phinx migrations and seeds.` <br>
 `├── vendor/             # Composer packages.` <br>
 `└── views/              # (The "V") All "dumb" HTML/PHP templates.` <br>
 `    ├── alliance/` <br>
@@ -96,13 +96,13 @@ cd starlight_v2
 cp .env.example .env
 
 # Start containers
-docker-compose up -d
+docker compose up -d
 
 # Run database migrations
-docker exec starlight_app composer phinx migrate
+docker compose exec app composer phinx migrate
 
 # Check migration status
-docker exec starlight_app composer phinx status
+docker compose exec app composer phinx status
 ```
 
 The application will be available at http://localhost:8080
@@ -127,19 +127,19 @@ EXIT;
 Run database migrations:
 
 ```bash
-cd /usr/local/var/www/starlight_v2
+cd /path/to/starlight_v2
 composer install
 php vendor/bin/phinx migrate --configuration=config/phinx.php
 ```
 
 3. Application Setup
 
-Place the project files in `/usr/local/var/www/starlight_v2`.
+Place the project files in `/path/to/starlight_v2`.
 
 Install Dependencies:
 
 ```bash
-cd /usr/local/var/www/starlight_v2
+cd /path/to/starlight_v2
 composer install
 ```
 
@@ -177,12 +177,12 @@ Grant the Apache user write access to storage directories:
 
 ```bash
 # Grant ownership to web server user
-sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/storage
-sudo chown -R www-data:www-data /usr/local/var/www/starlight_v2/public/uploads
+sudo chown -R www-data:www-data /path/to/starlight_v2/storage
+sudo chown -R www-data:www-data /path/to/starlight_v2/public/uploads
 
 # Set correct permissions
-sudo chmod -R 755 /usr/local/var/www/starlight_v2/storage
-sudo chmod -R 755 /usr/local/var/www/starlight_v2/public/uploads
+sudo chmod -R 755 /path/to/starlight_v2/storage
+sudo chmod -R 755 /path/to/starlight_v2/public/uploads
 ```
 
 ## 🏃 Running the Application
@@ -246,7 +246,7 @@ crontab -e
 Add this line to run every 10 minutes:
 
 ```cron
-*/10 * * * * cd /usr/local/var/www/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/10 * * * * cd /path/to/starlight_v2 && /usr/local/bin/php cron/process_turn.php >> /path/to/starlight_v2/logs/cron.log 2>&1
 ```
 
 #### Ubuntu/Linux Setup
@@ -258,7 +258,7 @@ crontab -e
 Add this line:
 
 ```cron
-*/10 * * * * cd /usr/local/var/www/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /usr/local/var/www/starlight_v2/logs/cron.log 2>&1
+*/10 * * * * cd /path/to/starlight_v2 && /usr/bin/php8.4 cron/process_turn.php >> /path/to/starlight_v2/logs/cron.log 2>&1
 ```
 
 #### Monitor Logs

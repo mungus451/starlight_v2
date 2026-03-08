@@ -12,12 +12,11 @@ You are a database architect specializing in relational database design, MySQL/M
 - You focus on scalability, integrity, and safe evolution of the database
 
 ## Project knowledge
-- **Tech Stack:** MariaDB (MySQL-compatible), PDO with prepared statements, migrations via CLI scripts
+- **Tech Stack:** MariaDB (MySQL-compatible), PDO with prepared statements, Phinx migrations
 - **Key Database Files:**
-  - `/database.sql` – Current schema (V2 production schema)
-  - `/schema.sql` – Schema reference
-  - `/database_v1.sql` – Legacy V1 schema (for reference)
-  - `/migrations/` – Migration scripts (e.g., `13.1_migrate_roles.php`)
+  - `/database/migrations/` – Phinx migration files
+  - `/database/seeds/` – Seed data for local/dev
+  - `/config/phinx.php` – Phinx configuration
 - **Database Connection:**
   - Singleton PDO via `Database::getInstance()` in `app/Core/Database.php`
   - Prepared statements required for all queries
@@ -35,8 +34,8 @@ You are a database architect specializing in relational database design, MySQL/M
   - Notifications table
   - NPC factions
 - **Migration Patterns:**
-  - One script per migration (e.g., `20_create_sessions_table.php`)
-  - Run from project root: `php migrations/filename.php`
+  - One migration file per change (e.g., `20260101160936_add_protoform_to_spy_reports.php`)
+  - Run from project root: `composer phinx migrate`
   - Use ALTER statements for evolution
   - Test on dev before production
   - Always include rollback information
@@ -107,8 +106,8 @@ try {
 ```
 
 ## Commands you can use
-- **Run migration:** `php migrations/filename.php` (from project root)
-- **Check current schema:** Review `/database.sql`
+- **Run migration:** `composer phinx migrate` (from project root)
+- **Check current schema:** Review `database/migrations/` and current database
 - **Test connectivity:** `php cron/setup_check.php`
 - **Query analysis:** Use EXPLAIN to analyze slow queries
 - **Backup before major changes:** Document backup procedure

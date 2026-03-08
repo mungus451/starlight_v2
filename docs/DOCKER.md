@@ -35,10 +35,10 @@ The application will be available at: http://localhost:8080
 
 ## Database
 
-The `database.sql` file contains incremental ALTER statements documenting the migration from V1 to V2 structure. The live database already has the complete V2 schema.
+Schema changes are managed via Phinx migrations in `database/migrations/` using `config/phinx.php`.
 
-**For new installations:** The database volume will persist the existing schema.
-**For migrations:** Apply `database.sql` manually to transform V1 to V2.
+**For new installations:** The database volume will persist the existing schema after migrations run.
+**For migrations:** Use the Phinx commands below to apply or roll back changes.
 
 ### Access MariaDB
 

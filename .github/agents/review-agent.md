@@ -82,10 +82,10 @@ class BattleController {
 ```
 
 ## Commands you can use
-- **Lint check:** `php tests/mvc_lint.php` – Check for MVC violations
-- **Architecture audit:** `php tests/StrictArchitectureAudit.php` – Verify architecture
-- **Compliance verify:** `php tests/verify_mvc_compliance.php` – Full validation
-- **Run tests:** `php tests/[test_file].php`
+- **Lint check:** `docker compose exec app php tests/Compliance/mvc_lint.php` – Check for MVC violations
+- **Architecture audit:** `docker compose exec app php tests/Compliance/StrictArchitectureAudit.php` – Verify architecture
+- **Compliance verify:** `docker compose exec app php tests/Compliance/run_compliance_suite.php` – Full validation
+- **Run tests:** `docker compose exec app php tests/[test_file].php`
 - **Git diff review:** Use git tools to analyze changes
 
 ## Review focus areas

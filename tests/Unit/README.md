@@ -40,8 +40,9 @@ tests/
 │   ├── TestCase.php                      # Base test case with helper methods
 │   └── Services/
 │       └── TrainingServiceTest.php       # Example Service test
-├── verify_refactor.php                   # Legacy integration test (kept for reference)
-└── VerifySessionDecoupling.php           # Legacy architectural audit (kept for reference)
+└── Compliance/
+    ├── verify_refactor.php               # Legacy integration test (kept for reference)
+    └── VerifySessionDecoupling.php       # Legacy architectural audit (kept for reference)
 ```
 
 ## Writing Unit Tests

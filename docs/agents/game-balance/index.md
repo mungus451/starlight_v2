@@ -65,8 +65,8 @@ vendor/bin/phpunit --testsuite Unit
 vendor/bin/phpunit --testsuite Integration
 
 # Run game simulations
-vendor/bin/phpunit tests/GameLoopSimulationTest.php
-vendor/bin/phpunit tests/BattleSimulationTest.php
+docker compose exec app php tests/Simulations/GameLoopSimulation.php
+docker compose exec app php tests/Simulations/BattleSimulation.php
 ```
 
 ## Boundaries
