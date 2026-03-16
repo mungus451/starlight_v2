@@ -4,6 +4,7 @@ import {
     fetchNotifications,
     markAllNotificationsRead,
     markNotificationRead,
+    updateNotificationPreferences,
 } from './api';
 
 describe('notifications API client', () => {
@@ -120,6 +121,28 @@ describe('notifications API client', () => {
                 'X-CSRF-Token': 'csrf-123',
             },
             body: 'csrf_token=csrf-123',
+        });
+    });
+
+    it('updateNotificationPreferences posts toggles and CSRF token', async () => {
+        fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+        await updateNotificationPreferences({
+            attack_enabled: true,
+            spy_enabled: false,
+            alliance_enabled: true,
+            system_enabled: false,
+            push_notifications_enabled: true,
+        });
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/v1/notification-preferences', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': 'csrf-123',
+            },
+            body: 'csrf_token=csrf-123&attack_enabled=1&spy_enabled=0&alliance_enabled=1&system_enabled=0&push_notifications_enabled=1',
         });
     });
 });

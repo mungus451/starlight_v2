@@ -112,3 +112,24 @@ export async function fetchNotificationPreferences(): Promise<NotificationPrefer
 
     return parseJson<NotificationPreferences>(response);
 }
+
+export async function updateNotificationPreferences(preferences: NotificationPreferences): Promise<void> {
+    const response = await fetch('/api/v1/notification-preferences', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            attack_enabled: preferences.attack_enabled ? '1' : '0',
+            spy_enabled: preferences.spy_enabled ? '1' : '0',
+            alliance_enabled: preferences.alliance_enabled ? '1' : '0',
+            system_enabled: preferences.system_enabled ? '1' : '0',
+            push_notifications_enabled: preferences.push_notifications_enabled ? '1' : '0',
+        }).toString(),
+    });
+
+    await parseJson<{ success: boolean }>(response);
+}
