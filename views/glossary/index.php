@@ -1,213 +1,231 @@
-<div id="glossary-top" class="row mb-4">
-    <div class="col-12">
-        <h1 class="page-title text-center"><i class="fas fa-book-open text-neon-blue"></i> Game Glossary</h1>
-        <p class="text-center text-muted">A comprehensive database of Starlight Dominion technology and resources.</p>
-    </div>
-</div>
+<?php if (!empty($spa_glossary_enabled)): ?>
+    <div id="glossary-spa-root"></div>
+    <script>
+        window.__glossarySpaMounted = false;
+        window.setTimeout(() => {
+            if (!window.__glossarySpaMounted) {
+                const legacyRoot = document.getElementById('glossary-legacy-root');
+                if (legacyRoot) {
+                    legacyRoot.style.display = '';
+                }
+            }
+        }, 2000);
+    </script>
+    <script type="module" src="/spa/glossary.js"></script>
+<?php endif; ?>
 
-<!-- Navigation Tabs -->
-<div class="tabs-nav mb-4 justify-content-center">
-    <a class="tab-link active" data-tab="structures">Structures</a>
-    <a class="tab-link" data-tab="units">Units</a>
-    <a class="tab-link" data-tab="armory">Armory</a>
-    <a class="tab-link" data-tab="directives">Directives</a>
-    <a class="tab-link" data-tab="theater-ops">Theater Ops</a>
-    <a class="tab-link" data-tab="resources">Resources</a>
-</div>
+<div id="glossary-legacy-root" <?= !empty($spa_glossary_enabled) ? ' style="display:none" data-spa-hidden="1"' : '' ?>>
 
-<!-- ======================= STRUCTURES TAB ======================= -->
-<div id="structures" class="tab-content active">
-    <div class="structures-grid">
-        <?php foreach ($structures as $key => $building): ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <?php 
-                        // Map structure types to icons
-                        $icon = match($key) {
-                            'planetary_shield' => 'fa-shield-alt',
-                            'economy_upgrade', 'bank' => 'fa-coins',
-                            'population', 'mercenary_outpost' => 'fa-users',
-                            'armory' => 'fa-cogs',
-                            'neural_uplink', 'subspace_scanner' => 'fa-user-secret',
-                            default => 'fa-building'
-                        };
-                        ?>
-                        <i class="fas <?= $icon ?>"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($building['name']) ?></h3>
-                        <span class="card-category text-muted"><?= htmlspecialchars($building['category'] ?? 'General') ?></span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($building['description']) ?>
-                    </p>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Base Cost:</span><br>
-                            <span class="text-warning"><?= number_format($building['base_cost']) ?></span>
-                        </div>
-                        <div>
-                            <span class="text-muted">Scale Factor:</span><br>
-                            <span class="text-info">x<?= $building['multiplier'] ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-</div>
-
-<!-- ======================= UNITS TAB ======================= -->
-<div id="units" class="tab-content">
-    <div class="structures-grid">
-        <?php foreach ($units as $key => $unit): 
-            // Skip configuration values that aren't units
-            if (!is_array($unit) || !isset($unit['credits'])) continue;
-        ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <i class="fas <?= htmlspecialchars($unit['icon']) ?>"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($unit['name']) ?></h3>
-                        <span class="card-category text-muted"><?= htmlspecialchars($unit['role']) ?></span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($unit['description']) ?>
-                    </p>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Credit Cost:</span><br>
-                            <span class="text-warning"><?= number_format($unit['credits']) ?></span>
-                        </div>
-                        <div>
-                            <span class="text-muted">Citizens:</span><br>
-                            <span class="text-info"><?= number_format($unit['citizens']) ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-            
-    <div class="alert alert-info mt-4">
-        <i class="fas fa-info-circle"></i> <strong>Note:</strong> Unit power scales with your Stats (Strength, Defense, etc.) and equipment from the Armory.
-    </div>
-</div>
-
-<!-- ======================= ARMORY TAB ======================= -->
-<div id="armory" class="tab-content" style="padding: 15px;">
-    <div class="row">
+    <div id="glossary-top" class="row mb-4">
         <div class="col-12">
-            <!-- Dynamic Armory Container -->
-            <div id="armory-dynamic-container"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ======================= DIRECTIVES TAB ======================= -->
-<div id="directives" class="tab-content">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="text-neon-blue"><i class="fas fa-satellite-dish"></i> Alliance Command Directives</h3>
-            <p class="text-muted">Directives are strategic mandates set by Alliance Leaders to coordinate members toward a unified objective. Completing directives earns the alliance permanent Merit Badges.</p>
+            <h1 class="page-title text-center"><i class="fas fa-book-open text-neon-blue"></i> Game Glossary</h1>
+            <p class="text-center text-muted">A comprehensive database of Starlight Dominion technology and resources.</p>
         </div>
     </div>
 
-    <div class="structures-grid">
-        <?php foreach ($directives as $key => $dir): ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <i class="fas <?= $dir['icon'] ?> text-neon-blue"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($dir['name']) ?></h3>
-                        <span class="card-category text-muted">Command Directive</span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($dir['description']) ?>
-                    </p>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Primary Goal:</span><br>
-                            <span class="text-info"><?= $dir['goal'] ?></span>
-                        </div>
-                        <div>
-                            <span class="text-muted">Merit Badge:</span><br>
-                            <span class="text-warning"><?= $dir['badge'] ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav mb-4 justify-content-center">
+        <a class="tab-link active" data-tab="structures">Structures</a>
+        <a class="tab-link" data-tab="units">Units</a>
+        <a class="tab-link" data-tab="armory">Armory</a>
+        <a class="tab-link" data-tab="directives">Directives</a>
+        <a class="tab-link" data-tab="theater-ops">Theater Ops</a>
+        <a class="tab-link" data-tab="resources">Resources</a>
     </div>
 
-    <div class="alert alert-info mt-4">
-        <i class="fas fa-award"></i> <strong>Merit Badges:</strong> Badges upgrade visually as your alliance completes more directives of that type (Bronze &rarr; Silver &rarr; Gold &rarr; Platinum &rarr; Diamond &rarr; Starlight).
-    </div>
-</div>
+    <!-- ======================= STRUCTURES TAB ======================= -->
+    <div id="structures" class="tab-content active">
+        <div class="structures-grid">
+            <?php foreach ($structures as $key => $building): ?>
+                <div class="structure-card">
+                    <div class="card-header-main">
+                        <div class="card-icon">
+                            <?php
+                            // Map structure types to icons
+                            $icon = match ($key) {
+                                'planetary_shield' => 'fa-shield-alt',
+                                'economy_upgrade', 'bank' => 'fa-coins',
+                                'population', 'mercenary_outpost' => 'fa-users',
+                                'armory' => 'fa-cogs',
+                                'neural_uplink', 'subspace_scanner' => 'fa-user-secret',
+                                default => 'fa-building'
+                            };
+                            ?>
+                            <i class="fas <?= $icon ?>"></i>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= htmlspecialchars($building['name']) ?></h3>
+                            <span class="card-category text-muted"><?= htmlspecialchars($building['category'] ?? 'General') ?></span>
+                        </div>
+                    </div>
 
-<!-- ======================= THEATER OPS TAB ======================= -->
-<div id="theater-ops" class="tab-content">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h3 class="text-neon-blue"><i class="fas fa-tasks"></i> Theater Operations</h3>
-            <p class="text-muted">Temporary, high-intensity missions that require active contributions from alliance members. Completing these operations grants powerful global buffs.</p>
+                    <div class="card-body-main">
+                        <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                            <?= htmlspecialchars($building['description']) ?>
+                        </p>
+
+                        <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <div>
+                                <span class="text-muted">Base Cost:</span><br>
+                                <span class="text-warning"><?= number_format($building['base_cost']) ?></span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Scale Factor:</span><br>
+                                <span class="text-info">x<?= $building['multiplier'] ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
-    <div class="structures-grid">
-        <?php foreach ($allianceOps as $key => $op): ?>
-            <div class="structure-card">
-                <div class="card-header-main">
-                    <div class="card-icon">
-                        <i class="fas <?= $op['icon'] ?> text-neon-blue"></i>
-                    </div>
-                    <div class="card-title-group">
-                        <h3 class="card-title"><?= htmlspecialchars($op['name']) ?></h3>
-                        <span class="card-category text-muted">Alliance Operation</span>
-                    </div>
-                </div>
-
-                <div class="card-body-main">
-                    <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
-                        <?= htmlspecialchars($op['description']) ?>
-                    </p>
-
-                    <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <div>
-                            <span class="text-muted">Requirement:</span><br>
-                            <span class="text-warning"><?= $op['requirement'] ?></span>
+    <!-- ======================= UNITS TAB ======================= -->
+    <div id="units" class="tab-content">
+        <div class="structures-grid">
+            <?php foreach ($units as $key => $unit):
+                // Skip configuration values that aren't units
+                if (!is_array($unit) || !isset($unit['credits'])) continue;
+            ?>
+                <div class="structure-card">
+                    <div class="card-header-main">
+                        <div class="card-icon">
+                            <i class="fas <?= htmlspecialchars($unit['icon']) ?>"></i>
                         </div>
-                        <div>
-                            <span class="text-muted">Reward:</span><br>
-                            <span class="text-success"><?= $op['reward'] ?></span>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= htmlspecialchars($unit['name']) ?></h3>
+                            <span class="card-category text-muted"><?= htmlspecialchars($unit['role']) ?></span>
                         </div>
                     </div>
+
+                    <div class="card-body-main">
+                        <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                            <?= htmlspecialchars($unit['description']) ?>
+                        </p>
+
+                        <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <div>
+                                <span class="text-muted">Credit Cost:</span><br>
+                                <span class="text-warning"><?= number_format($unit['credits']) ?></span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Citizens:</span><br>
+                                <span class="text-info"><?= number_format($unit['citizens']) ?></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle"></i> <strong>Note:</strong> Unit power scales with your Stats (Strength, Defense, etc.) and equipment from the Armory.
+        </div>
+    </div>
+
+    <!-- ======================= ARMORY TAB ======================= -->
+    <div id="armory" class="tab-content" style="padding: 15px;">
+        <div class="row">
+            <div class="col-12">
+                <!-- Dynamic Armory Container -->
+                <div id="armory-dynamic-container"></div>
             </div>
-        <?php endforeach; ?>
+        </div>
     </div>
-    
-    <div class="alert alert-info mt-4">
-        <i class="fas fa-info-circle"></i> <strong>Alliance Energy (AE):</strong> Participating in operations generates Alliance Energy, which leaders can spend on Tactical Strikes against rival alliances.
+
+    <!-- ======================= DIRECTIVES TAB ======================= -->
+    <div id="directives" class="tab-content">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="text-neon-blue"><i class="fas fa-satellite-dish"></i> Alliance Command Directives</h3>
+                <p class="text-muted">Directives are strategic mandates set by Alliance Leaders to coordinate members toward a unified objective. Completing directives earns the alliance permanent Merit Badges.</p>
+            </div>
+        </div>
+
+        <div class="structures-grid">
+            <?php foreach ($directives as $key => $dir): ?>
+                <div class="structure-card">
+                    <div class="card-header-main">
+                        <div class="card-icon">
+                            <i class="fas <?= $dir['icon'] ?> text-neon-blue"></i>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= htmlspecialchars($dir['name']) ?></h3>
+                            <span class="card-category text-muted">Command Directive</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body-main">
+                        <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                            <?= htmlspecialchars($dir['description']) ?>
+                        </p>
+
+                        <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <div>
+                                <span class="text-muted">Primary Goal:</span><br>
+                                <span class="text-info"><?= $dir['goal'] ?></span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Merit Badge:</span><br>
+                                <span class="text-warning"><?= $dir['badge'] ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-award"></i> <strong>Merit Badges:</strong> Badges upgrade visually as your alliance completes more directives of that type (Bronze &rarr; Silver &rarr; Gold &rarr; Platinum &rarr; Diamond &rarr; Starlight).
+        </div>
     </div>
-</div>
+
+    <!-- ======================= THEATER OPS TAB ======================= -->
+    <div id="theater-ops" class="tab-content">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="text-neon-blue"><i class="fas fa-tasks"></i> Theater Operations</h3>
+                <p class="text-muted">Temporary, high-intensity missions that require active contributions from alliance members. Completing these operations grants powerful global buffs.</p>
+            </div>
+        </div>
+
+        <div class="structures-grid">
+            <?php foreach ($allianceOps as $key => $op): ?>
+                <div class="structure-card">
+                    <div class="card-header-main">
+                        <div class="card-icon">
+                            <i class="fas <?= $op['icon'] ?> text-neon-blue"></i>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title"><?= htmlspecialchars($op['name']) ?></h3>
+                            <span class="card-category text-muted">Alliance Operation</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body-main">
+                        <p class="text-light mb-3" style="min-height: 40px; font-size: 0.9em;">
+                            <?= htmlspecialchars($op['description']) ?>
+                        </p>
+
+                        <div class="stats-row" style="display: flex; justify-content: space-between; font-size: 0.85em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <div>
+                                <span class="text-muted">Requirement:</span><br>
+                                <span class="text-warning"><?= $op['requirement'] ?></span>
+                            </div>
+                            <div>
+                                <span class="text-muted">Reward:</span><br>
+                                <span class="text-success"><?= $op['reward'] ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle"></i> <strong>Alliance Energy (AE):</strong> Participating in operations generates Alliance Energy, which leaders can spend on Tactical Strikes against rival alliances.
+        </div>
+    </div>
 
 </div>
 
@@ -223,7 +241,7 @@
                         </div>
                         <h4 class="card-title text-light mb-2"><?= $resource['name'] ?></h4>
                         <p class="card-text text-muted mb-4"><?= $resource['description'] ?></p>
-                        
+
                         <div class="text-start p-3 rounded" style="background: rgba(0,0,0,0.3);">
                             <small class="text-uppercase text-muted" style="font-size: 0.75em;">Primary Source</small>
                             <div class="text-light"><?= $resource['source'] ?></div>
@@ -249,3 +267,5 @@
     });
 </script>
 <script src="/js/glossary_armory.js?v=<?= time() ?>"></script>
+
+</div><!-- #glossary-legacy-root -->

@@ -37,6 +37,8 @@ coverage/
 # Build artifacts
 site/
 docs/site/
+/public/spa/*
+!/public/spa/.gitkeep
 
 # Generated outputs
 /outputs/*
