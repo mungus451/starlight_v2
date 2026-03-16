@@ -199,13 +199,8 @@ if ($response->isSuccess()) {
 
 ## Migration
 
-To apply the database schema changes, run the migration:
+To apply the database schema changes, run the migration with Phinx:
 
-```bash
-php database/migrations/20251221000000_create_user_notification_preferences.php
-```
-
-Or using Phinx:
 ```bash
 composer phinx migrate
 ```

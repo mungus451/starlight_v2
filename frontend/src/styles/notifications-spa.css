@@ -1,0 +1,133 @@
+.notifications-spa-heading {
+    margin: 0;
+    text-align: left;
+    font-size: 1.8rem;
+}
+
+.notifications-spa-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.notifications-spa-status {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.notifications-spa-subheading {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.notifications-spa-preferences {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem;
+    background: var(--bg-card);
+    margin-bottom: 0.9rem;
+}
+
+.notifications-spa-preferences-grid {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.notifications-spa-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notifications-spa-master-toggle {
+    grid-column: 1 / -1;
+}
+
+.notifications-spa-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.notifications-spa-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.notifications-spa-empty-icon {
+    display: block;
+    font-size: 2.25rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+}
+
+.notifications-spa-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.notifications-spa-item {
+    margin-bottom: 0;
+}
+
+.notifications-spa-item.read {
+    opacity: 0.8;
+}
+
+.notifications-spa-item-content {
+    flex: 1;
+}
+
+.notifications-spa-item-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.notifications-spa-time {
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.notifications-spa-message {
+    margin: 0.5rem 0;
+}
+
+.notifications-spa-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.notifications-spa-mark-read {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+    .notifications-spa-item-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

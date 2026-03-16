@@ -29,9 +29,9 @@ cd starlight_v2
 
 # Using Docker (Recommended)
 cp .env.example .env
-docker-compose up -d
-docker exec starlight_app composer install
-docker exec starlight_app composer phinx migrate
+docker compose up -d
+docker compose exec app composer install
+docker compose exec app composer phinx migrate
 
 # Manual Setup
 composer install
@@ -49,7 +49,7 @@ php -S localhost:8000 -t public
 
 ## Architecture Overview
 
-StarlightDominion V2 follows a strict **MVC-S (Model-View-Controller-Service)** pattern. Please read [ARCHITECTURE.md](architecture) for detailed architecture documentation.
+StarlightDominion V2 follows a strict **MVC-S (Model-View-Controller-Service)** pattern. Please read [docs/architecture/index.md](docs/architecture/index.md) for detailed architecture documentation.
 
 ### Key Principles
 
@@ -436,7 +436,7 @@ return [
 
 - Add PHPDoc blocks for public methods
 - Explain complex business logic with inline comments
-- Update ARCHITECTURE.md if introducing new patterns
+- Update docs/architecture/ if introducing new patterns
 
 Example:
 
@@ -461,16 +461,13 @@ public function repairItem(int $userId, int $itemId): array
 
 ```bash
 # Verify MVC compliance
-php tests/verify_mvc_compliance.php
+docker compose exec app php tests/Compliance/StrictArchitectureAudit.php
 
 # Verify dependency injection
-php tests/verify_di_resolution.php
-
-# Verify session decoupling
-php tests/VerifySessionDecoupling.php
+docker compose exec app php tests/Compliance/verify_di_resolution.php
 
 # Run alliance structure tests
-php tests/AllianceStructureBonusTest.php
+docker compose exec app php tests/Integration/AllianceStructureBonusCheck.php
 ```
 
 ### Manual Testing
@@ -595,7 +592,7 @@ $this->csrfService->validateToken($_POST['csrf_token'] ?? '');
 
 ## Questions or Issues?
 
-- Check [ARCHITECTURE.md](architecture) for architectural details
+- Check [docs/architecture/index.md](docs/architecture/index.md) for architectural details
 - Review existing code for examples
 - Open an issue for questions or suggestions
 - Join our development discussions

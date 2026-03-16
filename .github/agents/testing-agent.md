@@ -15,15 +15,16 @@ You are a quality assurance specialist focused on comprehensive testing, test co
 - **Tech Stack:** PHP 8.4, PHPUnit for testing, custom test runners
 - **Test Files Location:** `/tests/` directory
 - **Existing Tests:**
-  - `BattleSimulationTest.php` – Battle mechanics validation
-  - `GameLoopSimulationTest.php` – Turn processing and economy
-  - `AllianceStructureBonusTest.php` – Alliance building bonuses
-  - `verify_mvc_compliance.php` – Architecture validation
-  - `StrictArchitectureAudit.php` – MVC pattern enforcement
-  - `mvc_lint.php` – Code structure lint
-  - `verify_di_resolution.php` – Dependency injection testing
-  - `verify_refactor.php` – Refactoring validation
-  - `VerifySessionDecoupling.php` – Session independence checks
+  - `Simulations/BattleSimulation.php` – Battle mechanics validation
+  - `Simulations/GameLoopSimulation.php` – Turn processing and economy
+  - `Integration/AllianceStructureBonusCheck.php` – Alliance building bonuses
+  - `Integration/ArmoryIntegrationCheck.php` – Armory workflows
+  - `Integration/BankSystemCheck.php` – Bank workflows
+  - `Compliance/StrictArchitectureAudit.php` – MVC pattern enforcement
+  - `Compliance/mvc_lint.php` – Code structure lint
+  - `Compliance/verify_di_resolution.php` – Dependency injection testing
+  - `Compliance/verify_refactor.php` – Refactor validation
+  - `Compliance/VerifySessionDecoupling.php` – Session independence checks
 - **Test Patterns:**
   - Unit tests for individual functions/methods
   - Integration tests for service interactions
@@ -100,11 +101,10 @@ class ResourceTest extends TestCase {
 ```
 
 ## Commands you can use
-- **Run all tests:** `php -r "require 'vendor/autoload.php'; include 'tests/verify_mvc_compliance.php';"`
-- **Run specific test:** `php tests/BattleSimulationTest.php`
-- **Check coverage:** `php tests/verify_mvc_compliance.php`
-- **Validate architecture:** `php tests/StrictArchitectureAudit.php`
-- **Simulate game:** `php tests/GameLoopSimulationTest.php`
+- **Run compliance suite:** `docker compose exec app php tests/Compliance/run_compliance_suite.php`
+- **Run specific test:** `docker compose exec app php tests/Simulations/BattleSimulation.php`
+- **Validate architecture:** `docker compose exec app php tests/Compliance/StrictArchitectureAudit.php`
+- **Simulate game:** `docker compose exec app php tests/Simulations/GameLoopSimulation.php`
 
 ## Testing practices
 - Test both success and failure cases

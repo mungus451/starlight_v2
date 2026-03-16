@@ -23,8 +23,9 @@ The Database Architect specializes in relational database design, MySQL/MariaDB 
 
 | File | Purpose |
 |------|---------|
-| `/database.sql` | Current production schema (V2) |
-| `/migrations/` | Migration scripts numbered sequentially |
+| `/database/migrations/` | Phinx migration files |
+| `/database/seeds/` | Seed data for local/dev |
+| `/config/phinx.php` | Phinx configuration |
 | `/app/Core/Database.php` | Database singleton connection |
 
 ## Schema Principles
@@ -104,11 +105,11 @@ $stmt->execute(['user@example.com', 1]);
 ## Commands
 
 ```bash
-# View current schema
-cat database.sql
+# Check migration status
+composer phinx status
 
-# Run a migration
-php migrations/filename.php
+# Run migrations
+composer phinx migrate
 
 # Backup database
 mysqldump -u user -p database > backup.sql

@@ -60,11 +60,11 @@ class ResourceController {
 ```
 
 ## Commands you can use
-- **Run tests:** `cd /home/jray/code/starlight_v2 && php tests/verify_mvc_compliance.php`
+- **Run tests:** `docker compose exec app php tests/Compliance/run_compliance_suite.php`
 - **Start dev server:** `php -S localhost:8000 -t public` (from project root)
 - **Process turns:** `php cron/process_turn.php` (manual execution)
-- **Database migrations:** `php migrations/[filename].php` (from project root)
-- **Check lint:** `cd tests && php mvc_lint.php`
+- **Database migrations:** `composer phinx migrate` (from project root)
+- **Check lint:** `docker compose exec app php tests/Compliance/mvc_lint.php`
 
 ## Important patterns
 - Always use prepared statements for SQL queries

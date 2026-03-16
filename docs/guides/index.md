@@ -6,3 +6,4 @@ Practical guides for cross-cutting concerns.
 - Accessibility
 - Performance
 - Themes
+- [Phased SPA + PWA Migration Plan](spa-migration-plan.md)

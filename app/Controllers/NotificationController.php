@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
+use App\Core\Config;
 use App\Models\Services\NotificationService;
 use App\Models\Services\ViewContextService;
 
@@ -16,6 +17,7 @@ use App\Models\Services\ViewContextService;
 class NotificationController extends BaseController
 {
     private NotificationService $notificationService;
+    private Config $config;
 
     /**
      * DI Constructor.
@@ -31,10 +33,12 @@ class NotificationController extends BaseController
         Session $session,
         CSRFService $csrfService,
         Validator $validator,
-        ViewContextService $viewContextService
+        ViewContextService $viewContextService,
+        Config $config
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
         $this->notificationService = $notificationService;
+        $this->config = $config;
     }
 
     /**
@@ -44,17 +48,20 @@ class NotificationController extends BaseController
     public function index(): void
     {
         $userId = $this->session->get('user_id');
-        
+
         // Get page number from query string, default to 1
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $perPage = 20; // Items per page
-        
+
         $data = $this->notificationService->getPaginatedNotifications($userId, $page, $perPage);
+
+        $spaNotificationsEnabled = (bool)$this->config->get('spa.notifications_enabled', false);
 
         $this->render('notifications/index.php', [
             'title' => 'Command Uplink',
             'notifications' => $data['notifications'],
-            'pagination' => $data['pagination']
+            'pagination' => $data['pagination'],
+            'spa_notifications_enabled' => $spaNotificationsEnabled,
         ]);
     }
 
@@ -66,7 +73,7 @@ class NotificationController extends BaseController
     public function check(): void
     {
         $userId = $this->session->get('user_id');
-        
+
         if (!$userId) {
             $this->jsonResponse(['unread' => 0, 'latest' => null]);
             return;
@@ -88,7 +95,7 @@ class NotificationController extends BaseController
         $notifId = (int)($vars['id'] ?? 0);
 
         $response = $this->notificationService->markAsRead($notifId, $userId);
-        
+
         if ($response->isSuccess()) {
             $this->jsonResponse(['success' => true]);
         } else {
@@ -111,7 +118,7 @@ class NotificationController extends BaseController
             $this->jsonResponse(['success' => false, 'error' => 'Invalid input data']);
             return;
         }
-        
+
         $data = $val->validated();
 
         // 2. Validate CSRF
@@ -121,9 +128,9 @@ class NotificationController extends BaseController
         }
 
         $userId = $this->session->get('user_id');
-        
+
         $response = $this->notificationService->markAllRead($userId);
-        
+
         if ($response->isSuccess()) {
             $this->jsonResponse(['success' => true]);
         } else {
@@ -138,7 +145,7 @@ class NotificationController extends BaseController
     public function getPreferences(): void
     {
         $userId = $this->session->get('user_id');
-        
+
         if (!$userId) {
             $this->jsonResponse(['error' => 'Not authenticated'], 401);
             return;
@@ -153,5 +160,166 @@ class NotificationController extends BaseController
             'system_enabled' => $preferences->system_enabled,
             'push_notifications_enabled' => $preferences->push_notifications_enabled
         ]);
+    }
+
+    public function apiList(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = isset($_GET['per_page']) ? max(1, min(50, (int)$_GET['per_page'])) : 20;
+        $data = $this->notificationService->getPaginatedNotifications($userId, $page, $perPage);
+
+        $notifications = array_map(function ($notif): array {
+            return [
+                'id' => (int)$notif->id,
+                'type' => (string)$notif->type,
+                'title' => (string)$notif->title,
+                'message' => (string)$notif->message,
+                'link' => $notif->link !== null ? (string)$notif->link : null,
+                'is_read' => (bool)$notif->is_read,
+                'created_at' => (string)$notif->created_at,
+            ];
+        }, $data['notifications']);
+
+        $this->jsonResponse([
+            'notifications' => $notifications,
+            'pagination' => $data['pagination'],
+        ]);
+    }
+
+    public function apiUnread(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $data = $this->notificationService->getPollingData($userId);
+        $this->jsonResponse($data);
+    }
+
+    public function apiMarkRead(array $vars): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        if (!$this->isValidApiCsrf()) {
+            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
+            return;
+        }
+
+        $notificationId = (int)($vars['id'] ?? 0);
+        $response = $this->notificationService->markAsRead($notificationId, $userId);
+
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $this->jsonResponse(['success' => true]);
+    }
+
+    public function apiMarkAllRead(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        if (!$this->isValidApiCsrf()) {
+            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
+            return;
+        }
+
+        $response = $this->notificationService->markAllRead($userId);
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $this->jsonResponse(['success' => true]);
+    }
+
+    public function apiGetPreferences(): void
+    {
+        $this->getPreferences();
+    }
+
+    public function apiUpdatePreferences(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        if (!$this->isValidApiCsrf()) {
+            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
+            return;
+        }
+
+        $attackEnabled = $this->toBool($_POST['attack_enabled'] ?? false);
+        $spyEnabled = $this->toBool($_POST['spy_enabled'] ?? false);
+        $allianceEnabled = $this->toBool($_POST['alliance_enabled'] ?? false);
+        $systemEnabled = $this->toBool($_POST['system_enabled'] ?? false);
+        $pushEnabled = $this->toBool($_POST['push_notifications_enabled'] ?? false);
+
+        $response = $this->notificationService->updatePreferences(
+            $userId,
+            $attackEnabled,
+            $spyEnabled,
+            $allianceEnabled,
+            $systemEnabled,
+            $pushEnabled
+        );
+
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $this->jsonResponse(['success' => true]);
+    }
+
+    private function isValidApiCsrf(): bool
+    {
+        $headerToken = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        $postToken = (string)($_POST['csrf_token'] ?? '');
+        $token = $headerToken !== '' ? $headerToken : $postToken;
+
+        return $token !== '' && $this->csrfService->validateToken($token);
+    }
+
+    private function toBool(mixed $value): bool
+    {
+        if (!is_scalar($value)) {
+            return false;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        $normalized = strtolower(trim((string)$value));
+
+        if ($normalized === '1' || $normalized === 'true' || $normalized === 'on' || $normalized === 'yes') {
+            return true;
+        }
+
+        return false;
     }
 }

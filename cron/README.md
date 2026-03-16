@@ -8,33 +8,26 @@ on a schedule (e.g., via `cron`).
 The `process_turn.php` script is the "heartbeat" of the game. It loops
 through all users and applies turn-based income (credits, interest, citizens).
 
----
-
 ### Manual Execution
 
-You can run the script manually from your project's root directory:
+Run the script from the project root:
 
-
-php /usr/local/var/www/starlight_v2/cron/process_turn.php
-
-or simply
-
+```bash
 php cron/process_turn.php
+```
 
 You should see output like:
 
+```
 Starting turn processing... [2025-11-11 10:30:01]
-Turn processing complete. 
-Processed 5 users in 0.02 seconds. 
-Automatic Execution (Cron)
+Turn processing complete.
+Processed 5 users in 0.02 seconds.
+```
 
-Cron Jobs
+### Automatic Execution (Cron)
 
-This directory contains scripts that are intended to be run automatically
-on a schedule (e.g., via `cron`).
+To get the exact crontab lines for your environment, run the helper script:
 
-## 1. Setup Helper
-
-To get the exact crontab lines for your specific environment, run the helper script:
-
-`php cron/setup_check.php`
+```bash
+php cron/setup_check.php
+```
