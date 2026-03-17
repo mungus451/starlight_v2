@@ -33,6 +33,29 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
 }
 ?>
 
+<?php if (!empty($spa_leaderboard_enabled)): ?>
+    <div
+        id="leaderboard-spa-root"
+        data-type="<?= htmlspecialchars($type) ?>"
+        data-page="<?= htmlspecialchars((string)$pagination['currentPage']) ?>"
+        data-sort="<?= htmlspecialchars($currentSort) ?>"
+    ></div>
+    <script>
+        window.__leaderboardSpaMounted = false;
+        window.setTimeout(() => {
+            if (!window.__leaderboardSpaMounted) {
+                const legacyRoot = document.getElementById('leaderboard-legacy-root');
+                if (legacyRoot) {
+                    legacyRoot.style.display = '';
+                }
+            }
+        }, 2000);
+    </script>
+    <script type="module" src="/spa/leaderboard.js"></script>
+<?php endif; ?>
+
+<div id="leaderboard-legacy-root"<?= !empty($spa_leaderboard_enabled) ? ' style="display:none" data-spa-hidden="1"' : '' ?>>
+
 <div class="structures-page-content">
     
     <!-- 1. Page Header -->
@@ -414,3 +437,5 @@ if ($pagination['currentPage'] == 1 && count($data) >= 3) {
     .podium-card { width: 100%; max-width: 100%; height: auto !important; }
 }
 </style>
+
+</div>

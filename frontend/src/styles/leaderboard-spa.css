@@ -1,0 +1,13 @@
+.leaderboard-spa-status {
+    margin: 0 0 1rem;
+    color: var(--muted);
+}
+
+.leaderboard-spa-single-col {
+    grid-template-columns: 1fr;
+}
+
+.leaderboard-spa-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
