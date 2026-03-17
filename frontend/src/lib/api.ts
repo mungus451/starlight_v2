@@ -105,6 +105,86 @@ export async function markAllNotificationsRead(): Promise<void> {
     await parseJson<{ success: boolean }>(response);
 }
 
+export interface GlossaryStructure {
+    name: string;
+    category?: string;
+    description: string;
+    base_cost: number;
+    multiplier: number;
+}
+
+export interface GlossaryUnit {
+    name: string;
+    role: string;
+    description: string;
+    icon: string;
+    credits: number;
+    citizens: number;
+}
+
+export interface GlossaryArmoryItem {
+    name: string;
+    offense?: number;
+    defense?: number;
+    cost_credits: number;
+    description: string;
+    requires?: string;
+    armory_level_req?: number;
+}
+
+export interface GlossaryArmoryCategory {
+    title: string;
+    slots: number;
+    items: Record<string, GlossaryArmoryItem>;
+}
+
+export interface GlossaryArmoryLoadout {
+    title: string;
+    unit: string;
+    categories: Record<string, GlossaryArmoryCategory>;
+}
+
+export interface GlossaryDirective {
+    name: string;
+    description: string;
+    goal: string;
+    icon: string;
+    badge: string;
+}
+
+export interface GlossaryAllianceOp {
+    name: string;
+    description: string;
+    requirement: string;
+    reward: string;
+    icon: string;
+}
+
+export interface GlossaryResource {
+    name: string;
+    description: string;
+    source: string;
+    icon: string;
+    color: string;
+}
+
+export interface GlossaryData {
+    structures: Record<string, GlossaryStructure>;
+    units: Record<string, GlossaryUnit>;
+    armory: Record<string, GlossaryArmoryLoadout>;
+    directives: Record<string, GlossaryDirective>;
+    allianceOps: Record<string, GlossaryAllianceOp>;
+    resources: Record<string, GlossaryResource>;
+}
+
+export async function fetchGlossaryData(): Promise<GlossaryData> {
+    const response = await fetch('/api/v1/glossary', {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<GlossaryData>(response);
+}
+
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {
     const response = await fetch('/api/v1/notification-preferences', {
         credentials: 'same-origin',

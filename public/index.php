@@ -295,6 +295,9 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/api/v1/notification-preferences', [NotificationController::class, 'apiGetPreferences']);
     $r->addRoute('POST', '/api/v1/notification-preferences', [NotificationController::class, 'apiUpdatePreferences']);
 
+    // --- API v1: Glossary (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/glossary', [GlossaryController::class, 'apiData']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
