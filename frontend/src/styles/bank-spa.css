@@ -1,0 +1,124 @@
+.bank-spa {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.bank-spa-status {
+    color: var(--text-secondary, #9aa3ad);
+}
+
+.bank-spa-summary {
+    margin-top: 0;
+}
+
+.bank-spa-transfer-card {
+    max-width: 600px;
+}
+
+.bank-spa .flash {
+    margin-bottom: 0;
+}
+
+.bank-spa .mt-2 {
+    margin-top: 0.5rem;
+}
+
+.bank-spa .mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.bank-spa .mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.bank-spa .mb-3 {
+    margin-bottom: 1rem;
+}
+
+.bank-spa .mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.bank-spa .my-5 {
+    margin: 2rem 0;
+}
+
+.bank-spa .mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.bank-spa .w-100 {
+    width: 100%;
+}
+
+.bank-spa .d-flex {
+    display: flex;
+}
+
+.bank-spa .justify-content-center {
+    justify-content: center;
+}
+
+.bank-spa .justify-content-between {
+    justify-content: space-between;
+}
+
+.bank-spa .text-center {
+    text-align: center;
+}
+
+.bank-spa .gap-4 {
+    gap: 1.5rem;
+}
+
+.bank-spa .input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+
+.bank-spa .input-group .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.bank-spa .input-group .btn {
+    flex: 0 0 auto;
+}
+
+.bank-spa .vr {
+    width: 1px;
+    min-height: 3rem;
+    align-self: stretch;
+}
+
+.bank-spa .structures-grid {
+    align-items: start;
+}
+
+.bank-spa .structure-card {
+    min-width: 0;
+}
+
+.bank-spa .card-body-main,
+.bank-spa form {
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .bank-spa .input-group {
+        flex-direction: column;
+    }
+
+    .bank-spa .d-flex.justify-content-center.gap-4 {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bank-spa .vr {
+        width: 100%;
+        min-height: 1px;
+    }
+}

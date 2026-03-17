@@ -301,6 +301,12 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     // --- API v1: Leaderboard (SPA Adapter) ---
     $r->addRoute('GET', '/api/v1/leaderboard', [LeaderboardController::class, 'apiData']);
 
+    // --- API v1: Bank (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/bank', [BankController::class, 'apiData']);
+    $r->addRoute('POST', '/api/v1/bank/deposit', [BankController::class, 'apiDeposit']);
+    $r->addRoute('POST', '/api/v1/bank/withdraw', [BankController::class, 'apiWithdraw']);
+    $r->addRoute('POST', '/api/v1/bank/transfer', [BankController::class, 'apiTransfer']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);

@@ -5,6 +5,7 @@ const outDir = new URL('../public/spa', import.meta.url).pathname;
 const notificationsEntry = new URL('./src/notifications.tsx', import.meta.url).pathname;
 const glossaryEntry = new URL('./src/glossary.tsx', import.meta.url).pathname;
 const leaderboardEntry = new URL('./src/leaderboard.tsx', import.meta.url).pathname;
+const bankEntry = new URL('./src/bank.tsx', import.meta.url).pathname;
 
 export default defineConfig({
     plugins: [react()],
@@ -17,6 +18,7 @@ export default defineConfig({
                 notifications: notificationsEntry,
                 glossary: glossaryEntry,
                 leaderboard: leaderboardEntry,
+                bank: bankEntry,
             },
             output: {
                 entryFileNames: '[name].js',
