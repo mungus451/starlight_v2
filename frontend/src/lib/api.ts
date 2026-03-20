@@ -226,6 +226,27 @@ export interface LeaderboardApiResponse {
     pagination: LeaderboardPagination;
 }
 
+export interface BankApiResponse {
+    resources: {
+        credits: number;
+        banked_credits: number;
+    };
+    stats: {
+        deposit_charges: number;
+        last_deposit_at: string | null;
+    };
+    bankConfig: {
+        deposit_max_charges: number;
+        deposit_charge_regen_hours: number;
+        deposit_percent_limit: number;
+    };
+}
+
+export interface BankActionResponse {
+    success: boolean;
+    message: string;
+}
+
 export async function fetchLeaderboardData(
     type: LeaderboardType,
     page: number,
@@ -242,6 +263,66 @@ export async function fetchLeaderboardData(
     });
 
     return parseJson<LeaderboardApiResponse>(response);
+}
+
+export async function fetchBankData(): Promise<BankApiResponse> {
+    const response = await fetch('/api/v1/bank', {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<BankApiResponse>(response);
+}
+
+export async function postBankDeposit(amount: number): Promise<BankActionResponse> {
+    const response = await fetch('/api/v1/bank/deposit', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            amount: String(amount),
+        }).toString(),
+    });
+
+    return parseJson<BankActionResponse>(response);
+}
+
+export async function postBankWithdraw(amount: number): Promise<BankActionResponse> {
+    const response = await fetch('/api/v1/bank/withdraw', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            amount: String(amount),
+        }).toString(),
+    });
+
+    return parseJson<BankActionResponse>(response);
+}
+
+export async function postBankTransfer(recipientName: string, amount: number): Promise<BankActionResponse> {
+    const response = await fetch('/api/v1/bank/transfer', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            recipient_name: recipientName,
+            amount: String(amount),
+        }).toString(),
+    });
+
+    return parseJson<BankActionResponse>(response);
 }
 
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {
