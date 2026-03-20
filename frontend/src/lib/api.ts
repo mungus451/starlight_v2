@@ -185,6 +185,65 @@ export async function fetchGlossaryData(): Promise<GlossaryData> {
     return parseJson<GlossaryData>(response);
 }
 
+export type LeaderboardType = 'players' | 'alliances';
+
+export interface LeaderboardPagination {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    perPage: number;
+}
+
+export interface PlayerLeaderboardRow {
+    id: number;
+    rank: number;
+    character_name: string;
+    level: number;
+    net_worth: number;
+    overall_power: number;
+    battles_won: number;
+    battles_lost: number;
+    war_prestige: number;
+    alliance_id?: number | null;
+    alliance_tag?: string | null;
+    profile_picture_url?: string | null;
+}
+
+export interface AllianceLeaderboardRow {
+    id: number;
+    rank: number;
+    name: string;
+    tag: string;
+    member_count: number;
+    net_worth: number;
+    profile_picture_url?: string | null;
+}
+
+export interface LeaderboardApiResponse {
+    type: LeaderboardType;
+    currentSort: string;
+    data: Array<PlayerLeaderboardRow | AllianceLeaderboardRow>;
+    pagination: LeaderboardPagination;
+}
+
+export async function fetchLeaderboardData(
+    type: LeaderboardType,
+    page: number,
+    sort: string,
+): Promise<LeaderboardApiResponse> {
+    const params = new URLSearchParams({
+        type,
+        page: String(page),
+        sort,
+    });
+
+    const response = await fetch(`/api/v1/leaderboard?${params.toString()}`, {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<LeaderboardApiResponse>(response);
+}
+
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {
     const response = await fetch('/api/v1/notification-preferences', {
         credentials: 'same-origin',

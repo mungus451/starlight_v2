@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
@@ -13,9 +14,11 @@ use App\Models\Services\ViewContextService;
  */
 class LeaderboardController extends BaseController
 {
+    private Config $config;
     private LeaderboardService $leaderboardService;
 
     public function __construct(
+        Config $config,
         LeaderboardService $leaderboardService,
         Session $session,
         CSRFService $csrfService,
@@ -23,6 +26,7 @@ class LeaderboardController extends BaseController
         ViewContextService $viewContextService
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
+        $this->config = $config;
         $this->leaderboardService = $leaderboardService;
     }
 
@@ -35,22 +39,11 @@ class LeaderboardController extends BaseController
      */
     public function show(array $vars): void
     {
-        // 1. Parse Path Variables
-        $type = $vars['type'] ?? 'players';
-        $page = (int)($vars['page'] ?? 1);
-
-        // 2. Parse Query Parameters (Sorting)
-        // We use $_GET directly here as the Validator class is built for POST payloads
-        // and simple string extraction is safe for whitelisting in Service.
-        $sort = $_GET['sort'] ?? 'net_worth';
-
-        // Sanitize type
-        if (!in_array($type, ['players', 'alliances'])) {
-            $type = 'players';
-        }
-
-        // 3. Call Service
-        $response = $this->leaderboardService->getLeaderboardData($type, $page, $sort);
+        $response = $this->loadLeaderboardData(
+            $vars['type'] ?? 'players',
+            (int)($vars['page'] ?? 1),
+            (string)($_GET['sort'] ?? 'net_worth')
+        );
 
         if (!$response->isSuccess()) {
             $this->session->setFlash('error', $response->message);
@@ -61,8 +54,37 @@ class LeaderboardController extends BaseController
         // 4. Render View
         $viewData = $response->data;
         $viewData['layoutMode'] = 'full';
-        $viewData['title'] = 'Leaderboard - ' . ucfirst($type);
+        $viewData['title'] = 'Leaderboard - ' . ucfirst($viewData['type']);
+        $viewData['spa_leaderboard_enabled'] = (bool)$this->config->get('spa.leaderboard_enabled', false);
 
         $this->render('leaderboard/show.php', $viewData);
+    }
+
+    /**
+     * API endpoint: return leaderboard data as JSON for the SPA island.
+     */
+    public function apiData(): void
+    {
+        $response = $this->loadLeaderboardData(
+            (string)($_GET['type'] ?? 'players'),
+            (int)($_GET['page'] ?? 1),
+            (string)($_GET['sort'] ?? 'net_worth')
+        );
+
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $this->jsonResponse($response->data);
+    }
+
+    private function loadLeaderboardData(string $type, int $page, string $sort)
+    {
+        if (!in_array($type, ['players', 'alliances'], true)) {
+            $type = 'players';
+        }
+
+        return $this->leaderboardService->getLeaderboardData($type, $page, $sort);
     }
 }

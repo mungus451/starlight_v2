@@ -298,6 +298,9 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     // --- API v1: Glossary (SPA Adapter) ---
     $r->addRoute('GET', '/api/v1/glossary', [GlossaryController::class, 'apiData']);
 
+    // --- API v1: Leaderboard (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/leaderboard', [LeaderboardController::class, 'apiData']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
