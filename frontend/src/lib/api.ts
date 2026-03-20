@@ -301,6 +301,37 @@ export interface BankActionResponse {
     message: string;
 }
 
+export interface StructureItem {
+    key: string;
+    name: string;
+    description: string;
+    current_level: number;
+    max_level: number;
+    next_level: number;
+    upgrade_cost_credits: number | null;
+    cost_formatted: string;
+    is_max_level: boolean;
+    can_afford: boolean;
+    benefit_text: string;
+    icon: string;
+    status_class: string;
+}
+
+export interface StructuresApiResponse {
+    resources: {
+        credits: number;
+    };
+    categories: Record<string, StructureItem[]>;
+}
+
+export interface StructuresActionResponse {
+    success: boolean;
+    message: string;
+    new_level?: number;
+    cost?: number;
+    total_cost?: number;
+}
+
 export interface ProfileApiResponse {
     profile: {
         id: number;
@@ -348,6 +379,14 @@ export async function fetchBankData(): Promise<BankApiResponse> {
     });
 
     return parseJson<BankApiResponse>(response);
+}
+
+export async function fetchStructuresData(): Promise<StructuresApiResponse> {
+    const response = await fetch('/api/v1/structures', {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<StructuresApiResponse>(response);
 }
 
 export async function fetchProfileData(profileId: number): Promise<ProfileApiResponse> {
@@ -408,6 +447,40 @@ export async function postBankTransfer(recipientName: string, amount: number): P
     });
 
     return parseJson<BankActionResponse>(response);
+}
+
+export async function postStructureUpgrade(structureKey: string): Promise<StructuresActionResponse> {
+    const response = await fetch('/api/v1/structures/upgrade', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            structure_key: structureKey,
+        }).toString(),
+    });
+
+    return parseJson<StructuresActionResponse>(response);
+}
+
+export async function postStructureBatchUpgrade(structureKeys: string[]): Promise<StructuresActionResponse> {
+    const response = await fetch('/api/v1/structures/batch-upgrade', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: new URLSearchParams({
+            csrf_token: getCsrfToken(),
+            structure_keys: JSON.stringify(structureKeys),
+        }).toString(),
+    });
+
+    return parseJson<StructuresActionResponse>(response);
 }
 
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {

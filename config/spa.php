@@ -9,4 +9,5 @@ return [
     'bank_enabled'          => filter_var($_ENV['FEATURE_SPA_BANK'] ?? false, FILTER_VALIDATE_BOOL),
     'training_enabled'      => filter_var($_ENV['FEATURE_SPA_TRAINING'] ?? false, FILTER_VALIDATE_BOOL),
     'profile_enabled'       => filter_var($_ENV['FEATURE_SPA_PROFILE'] ?? false, FILTER_VALIDATE_BOOL),
+    'structures_enabled'    => filter_var($_ENV['FEATURE_SPA_STRUCTURES'] ?? false, FILTER_VALIDATE_BOOL),
 ];

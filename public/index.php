@@ -312,6 +312,11 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/api/v1/training', [TrainingController::class, 'apiData']);
     $r->addRoute('POST', '/api/v1/training/train', [TrainingController::class, 'apiTrain']);
 
+    // --- API v1: Structures (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/structures', [StructureController::class, 'apiData']);
+    $r->addRoute('POST', '/api/v1/structures/upgrade', [StructureController::class, 'apiUpgrade']);
+    $r->addRoute('POST', '/api/v1/structures/batch-upgrade', [StructureController::class, 'apiBatchUpgrade']);
+
     // --- API v1: Profile (SPA Adapter) ---
     $r->addRoute('GET', '/api/v1/profile/{id:\d+}', [ProfileController::class, 'apiData']);
 

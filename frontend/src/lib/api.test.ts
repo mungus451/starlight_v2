@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    fetchStructuresData,
     fetchNotificationPreferences,
     fetchNotifications,
     markAllNotificationsRead,
     markNotificationRead,
+    postStructureUpgrade,
     updateNotificationPreferences,
 } from './api';
 
@@ -108,6 +110,44 @@ describe('notifications API client', () => {
         expect(payload.spy_enabled).toBe(false);
     });
 
+    it('fetchStructuresData loads grouped structure payload', async () => {
+        fetchMock.mockResolvedValueOnce(
+            new Response(
+                JSON.stringify({
+                    resources: { credits: 1500 },
+                    categories: {
+                        Economy: [
+                            {
+                                key: 'economy_upgrade',
+                                name: 'Economy Upgrade',
+                                description: 'Increases income.',
+                                current_level: 2,
+                                max_level: 3,
+                                next_level: 3,
+                                upgrade_cost_credits: 500,
+                                cost_formatted: '500 C',
+                                is_max_level: false,
+                                can_afford: true,
+                                benefit_text: '+ 100 Credits / Turn',
+                                icon: '<svg></svg>',
+                                status_class: 'affordable',
+                            },
+                        ],
+                    },
+                }),
+                { status: 200 },
+            ),
+        );
+
+        const payload = await fetchStructuresData();
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/v1/structures', {
+            credentials: 'same-origin',
+        });
+        expect(payload.resources.credits).toBe(1500);
+        expect(payload.categories.Economy[0]?.key).toBe('economy_upgrade');
+    });
+
     it('markAllNotificationsRead calls read-all endpoint', async () => {
         fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
@@ -143,6 +183,24 @@ describe('notifications API client', () => {
                 'X-CSRF-Token': 'csrf-123',
             },
             body: 'csrf_token=csrf-123&attack_enabled=1&spy_enabled=0&alliance_enabled=1&system_enabled=0&push_notifications_enabled=1',
+        });
+    });
+
+    it('postStructureUpgrade includes structure key and CSRF token', async () => {
+        fetchMock.mockResolvedValueOnce(
+            new Response(JSON.stringify({ success: true, message: 'Upgraded!' }), { status: 200 }),
+        );
+
+        await postStructureUpgrade('economy_upgrade');
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/v1/structures/upgrade', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': 'csrf-123',
+            },
+            body: 'csrf_token=csrf-123&structure_key=economy_upgrade',
         });
     });
 });

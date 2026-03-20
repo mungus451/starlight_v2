@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Config;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
@@ -16,6 +17,7 @@ use App\Models\Services\ViewContextService; // --- NEW DEPENDENCY ---
  */
 class StructureController extends BaseController
 {
+    private Config $config;
     private StructureService $structureService;
     private StructurePresenter $presenter;
 
@@ -30,6 +32,7 @@ class StructureController extends BaseController
      * @param ViewContextService $viewContextService // --- REPLACES LevelCalculator & StatsRepo ---
      */
     public function __construct(
+        Config $config,
         StructureService $structureService,
         StructurePresenter $presenter,
         Session $session,
@@ -38,6 +41,7 @@ class StructureController extends BaseController
         ViewContextService $viewContextService
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
+        $this->config = $config;
         $this->structureService = $structureService;
         $this->presenter = $presenter;
     }
@@ -48,7 +52,7 @@ class StructureController extends BaseController
     public function show(): void
     {
         $userId = $this->session->get('user_id');
-        
+
         // 1. Get raw data from Service
         $rawData = $this->structureService->getStructureData($userId);
 
@@ -60,9 +64,98 @@ class StructureController extends BaseController
         $this->render('structures/show.php', [
             'title' => 'Structures',
             'layoutMode' => 'full',
-            'resources' => $rawData['resources'], 
-            'groupedStructures' => $groupedStructures
+            'resources' => $rawData['resources'],
+            'groupedStructures' => $groupedStructures,
+            'spa_structures_enabled' => (bool)$this->config->get('spa.structures_enabled', false),
         ]);
+    }
+
+    public function apiData(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $rawData = $this->structureService->getStructureData($userId);
+        $groupedStructures = $this->presenter->present($rawData);
+        $resources = $rawData['resources'];
+
+        $this->jsonResponse([
+            'resources' => [
+                'credits' => (int)$resources->credits,
+            ],
+            'categories' => $groupedStructures,
+        ]);
+    }
+
+    public function apiUpgrade(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $structureKey = (string)($_POST['structure_key'] ?? '');
+        if ($structureKey === '') {
+            $this->jsonResponse(['error' => 'Invalid structure type.'], 400);
+            return;
+        }
+
+        $response = $this->structureService->upgradeStructure($userId, $structureKey);
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $payload = ['success' => true, 'message' => $response->message];
+        if (isset($response->data['new_level'])) {
+            $payload['new_level'] = (int)$response->data['new_level'];
+        }
+        if (isset($response->data['cost'])) {
+            $payload['cost'] = (int)$response->data['cost'];
+        }
+
+        $this->jsonResponse($payload);
+    }
+
+    public function apiBatchUpgrade(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $rawKeys = $_POST['structure_keys'] ?? [];
+        if (is_string($rawKeys)) {
+            $decoded = json_decode($rawKeys, true);
+            $structureKeys = is_array($decoded) ? $decoded : [];
+        } elseif (is_array($rawKeys)) {
+            $structureKeys = $rawKeys;
+        } else {
+            $structureKeys = [];
+        }
+
+        if (empty($structureKeys)) {
+            $this->jsonResponse(['error' => 'No structures selected for batch upgrade.'], 400);
+            return;
+        }
+
+        $response = $this->structureService->processBatchUpgrade($userId, $structureKeys);
+        if (!$response->isSuccess()) {
+            $this->jsonResponse(['error' => $response->message], 400);
+            return;
+        }
+
+        $payload = ['success' => true, 'message' => $response->message];
+        if (isset($response->data['total_cost'])) {
+            $payload['total_cost'] = (int)$response->data['total_cost'];
+        }
+
+        $this->jsonResponse($payload);
     }
 
     /**
@@ -80,16 +173,16 @@ class StructureController extends BaseController
             $this->redirect('/structures');
             return;
         }
-        
+
         $userId = $this->session->get('user_id');
         $response = $this->structureService->upgradeStructure($userId, $data['structure_key']);
-        
+
         if ($response->isSuccess()) {
             $this->session->setFlash('success', $response->message);
         } else {
             $this->session->setFlash('error', $response->message);
         }
-        
+
         $this->redirect('/structures');
     }
 
@@ -100,7 +193,7 @@ class StructureController extends BaseController
     {
         $data = $this->validate($_POST, [
             'csrf_token' => 'required',
-            'structure_keys' => 'required' 
+            'structure_keys' => 'required'
         ]);
 
         if (!$this->csrfService->validateToken($data['csrf_token'])) {
@@ -108,26 +201,26 @@ class StructureController extends BaseController
             $this->redirect('/structures');
             return;
         }
-        
+
         // Expecting JSON string from the frontend checkout form
         // We use $_POST directly because the Validator sanitizes strings with htmlspecialchars, which breaks JSON.
         $keys = json_decode($_POST['structure_keys'], true);
-        
+
         if (!is_array($keys) || empty($keys)) {
-             $this->session->setFlash('error', 'No structures selected for batch upgrade.');
-             $this->redirect('/structures');
-             return;
+            $this->session->setFlash('error', 'No structures selected for batch upgrade.');
+            $this->redirect('/structures');
+            return;
         }
 
         $userId = $this->session->get('user_id');
         $response = $this->structureService->processBatchUpgrade($userId, $keys);
-        
+
         if ($response->isSuccess()) {
             $this->session->setFlash('success', $response->message);
         } else {
             $this->session->setFlash('error', $response->message);
         }
-        
+
         $this->redirect('/structures');
     }
 
@@ -166,7 +259,7 @@ class StructureController extends BaseController
             'structures' => $categoryData,
             'csrf_token' => $this->csrfService->generateToken()
         ];
-        
+
         ob_start();
         extract($viewData);
         require __DIR__ . '/../../views/mobile/structures/partials/structure_category.php';
