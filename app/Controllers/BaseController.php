@@ -64,9 +64,9 @@ class BaseController
         if ($val->fails()) {
             // Combine all errors into a single string for the simple Flash system
             $errorMessages = implode(' ', $val->errors());
-            
+
             $this->session->setFlash('error', $errorMessages);
-            
+
             // Redirect back to the form
             $referer = $_SERVER['HTTP_REFERER'] ?? '/dashboard';
             throw new RedirectException($referer);
@@ -87,11 +87,11 @@ class BaseController
     {
         // 1. Global: CSRF Token
         $data['csrf_token'] = $this->csrfService->generateToken();
-        
+
         // 2. Global: Authentication State
         $data['isLoggedIn'] = $this->session->has('user_id');
         $data['currentUserAllianceId'] = $this->session->get('alliance_id');
-        
+
         // 3. Global: Flash Messages (Extract and Remove)
         $data['flashError'] = $this->session->getFlash('error');
         $data['flashSuccess'] = $this->session->getFlash('success');
@@ -99,14 +99,14 @@ class BaseController
         // 4. Global: View Context (XP, Level, etc.)
         if ($data['isLoggedIn']) {
             $userId = $this->session->get('user_id');
-            
+
             // Delegate to service, keep Controller clean
             $globalContext = $this->viewContextService->getGlobalLayoutData($userId);
-            
+
             // Merge context into data
             $data = array_merge($data, $globalContext);
         }
-        
+
         // Determine if it's a mobile request
         $isMobile = $this->session->get('is_mobile', false);
 
@@ -135,7 +135,7 @@ class BaseController
         if ($isMobile && file_exists($baseViewPath . 'mobile/' . $view)) {
             $viewPath = $baseViewPath . 'mobile/' . $view;
         }
-        
+
         // Include the specific page content
         require $viewPath;
 
@@ -147,7 +147,7 @@ class BaseController
         if ($isMobile && file_exists(__DIR__ . '/../../views/mobile/layouts/app.php')) {
             $layoutPath = __DIR__ . '/../../views/mobile/layouts/app.php';
         }
-        
+
         // Now, load the main layout
         require $layoutPath;
     }
@@ -172,18 +172,5 @@ class BaseController
     protected function jsonResponse(array $data, int $statusCode = 200): void
     {
         JsonResponse::send($data, $statusCode);
-    }
-
-    /**
-     * Validates CSRF token for SPA API endpoints.
-     * Accepts token from X-CSRF-Token header first, then falls back to csrf_token POST field.
-     */
-    protected function isValidApiCsrf(): bool
-    {
-        $headerToken = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-        $postToken = (string)($_POST['csrf_token'] ?? '');
-        $token = $headerToken !== '' ? $headerToken : $postToken;
-
-        return $token !== '' && $this->csrfService->validateToken($token);
     }
 }

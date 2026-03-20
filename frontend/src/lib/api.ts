@@ -91,6 +91,60 @@ export async function markNotificationRead(id: number): Promise<void> {
     await parseJson<{ success: boolean }>(response);
 }
 
+export interface TrainingUnit {
+    key: string;
+    name: string;
+    role: string;
+    desc: string;
+    credits: number;
+    citizens: number;
+    atk: number;
+    def: number;
+    owned: number;
+}
+
+export interface TrainingApiResponse {
+    resources: {
+        credits: number;
+        untrained_citizens: number;
+    };
+    units: TrainingUnit[];
+}
+
+export interface TrainingActionResponse {
+    success: boolean;
+    message: string;
+}
+
+export async function fetchTrainingData(): Promise<TrainingApiResponse> {
+    const response = await fetch('/api/v1/training', {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<TrainingApiResponse>(response);
+}
+
+export async function postTrainUnits(amounts: Record<string, number>): Promise<TrainingActionResponse> {
+    const params = new URLSearchParams({ csrf_token: getCsrfToken() });
+    for (const [key, amount] of Object.entries(amounts)) {
+        if (amount > 0) {
+            params.set(`units[${key}]`, String(amount));
+        }
+    }
+
+    const response = await fetch('/api/v1/training/train', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': getCsrfToken(),
+        },
+        body: params.toString(),
+    });
+
+    return parseJson<TrainingActionResponse>(response);
+}
+
 export async function markAllNotificationsRead(): Promise<void> {
     const response = await fetch('/api/v1/notifications/read-all', {
         method: 'POST',

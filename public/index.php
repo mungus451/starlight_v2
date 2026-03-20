@@ -46,6 +46,7 @@ use App\Controllers\LeaderboardController;
 // use App\Controllers\BlackMarketController;
 use App\Controllers\EmbassyController;
 use App\Controllers\ThemeController;
+use App\Middleware\ApiCsrfMiddleware;
 use App\Middleware\AuthMiddleware;
 
 
@@ -307,6 +308,10 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('POST', '/api/v1/bank/withdraw', [BankController::class, 'apiWithdraw']);
     $r->addRoute('POST', '/api/v1/bank/transfer', [BankController::class, 'apiTransfer']);
 
+    // --- API v1: Training (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/training', [TrainingController::class, 'apiData']);
+    $r->addRoute('POST', '/api/v1/training/train', [TrainingController::class, 'apiTrain']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
@@ -464,6 +469,13 @@ try {
                         exit;
                     }
                 }
+            }
+
+            $isApiMutation = str_starts_with($uri, '/api/v1/')
+                && in_array($httpMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
+
+            if ($isApiMutation) {
+                $container->get(ApiCsrfMiddleware::class)->handle();
             }
 
 

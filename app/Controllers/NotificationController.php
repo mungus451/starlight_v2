@@ -212,11 +212,6 @@ class NotificationController extends BaseController
             return;
         }
 
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
-            return;
-        }
-
         $notificationId = (int)($vars['id'] ?? 0);
         $response = $this->notificationService->markAsRead($notificationId, $userId);
 
@@ -233,11 +228,6 @@ class NotificationController extends BaseController
         $userId = (int)$this->session->get('user_id', 0);
         if ($userId <= 0) {
             $this->jsonResponse(['error' => 'Not authenticated'], 401);
-            return;
-        }
-
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
             return;
         }
 
@@ -260,11 +250,6 @@ class NotificationController extends BaseController
         $userId = (int)$this->session->get('user_id', 0);
         if ($userId <= 0) {
             $this->jsonResponse(['error' => 'Not authenticated'], 401);
-            return;
-        }
-
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
             return;
         }
 

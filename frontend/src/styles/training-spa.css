@@ -1,0 +1,10 @@
+/* Training SPA island styles — extends the existing training CSS classes */
+
+#training-spa-root {
+    width: 100%;
+}
+
+#training-spa-root .training-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -99,11 +99,6 @@ class BankController extends BaseController
             return;
         }
 
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
-            return;
-        }
-
         $amount = (int)($_POST['amount'] ?? 0);
         $response = $this->bankService->deposit($userId, $amount);
 
@@ -123,11 +118,6 @@ class BankController extends BaseController
             return;
         }
 
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
-            return;
-        }
-
         $amount = (int)($_POST['amount'] ?? 0);
         $response = $this->bankService->withdraw($userId, $amount);
 
@@ -144,11 +134,6 @@ class BankController extends BaseController
         $userId = (int)$this->session->get('user_id', 0);
         if ($userId <= 0) {
             $this->jsonResponse(['error' => 'Not authenticated'], 401);
-            return;
-        }
-
-        if (!$this->isValidApiCsrf()) {
-            $this->jsonResponse(['error' => 'Invalid CSRF token'], 422);
             return;
         }
 
@@ -260,5 +245,4 @@ class BankController extends BaseController
 
         $this->redirect('/bank');
     }
-
 }

@@ -1,7 +1,39 @@
 
 
 
-        <div class="training-page-wrapper">
+<?php
+// This file supports dual rendering: SPA island (when spa_training_enabled) with legacy fallback.
+/* @var bool $spa_training_enabled */
+/* @var array $units */
+/* @var array $user_stats */
+/* @var float $charisma_discount */
+
+if (!empty($spa_training_enabled)):
+    $spaUnits = [];
+    foreach ($units as $key => $unit) {
+        $spaUnits[] = [
+            'key'      => $key,
+            'name'     => $unit['name'],
+            'role'     => $unit['role'] ?? '',
+            'desc'     => $unit['desc'] ?? '',
+            'credits'  => (int)floor(($unit['credits'] ?? 0) * $charisma_discount),
+            'citizens' => (int)($unit['citizens'] ?? 1),
+            'atk'      => (int)($unit['atk'] ?? 0),
+            'def'      => (int)($unit['def'] ?? 0),
+            'owned'    => (int)($user_stats[$key] ?? 0),
+        ];
+    }
+?>
+    <div
+        id="training-spa-root"
+        data-credits="<?= htmlspecialchars((string)$user_stats['credits'], ENT_QUOTES, 'UTF-8') ?>"
+        data-untrained-citizens="<?= htmlspecialchars((string)$user_stats['untrained_citizens'], ENT_QUOTES, 'UTF-8') ?>"
+        data-units="<?= htmlspecialchars(json_encode($spaUnits, JSON_THROW_ON_ERROR), ENT_QUOTES, 'UTF-8') ?>"></div>
+    <script type="module" src="/spa/training.js"></script>
+<?php endif; ?>
+
+<div id="training-legacy-root"<?= !empty($spa_training_enabled) ? ' style="display:none" data-spa-hidden="1"' : '' ?>>
+    <div class="training-page-wrapper">
 
 
 
@@ -81,4 +113,5 @@
 
                 <!-- RECOVERY TAB -->
             </main>
-        </div>
+        </div><!-- .training-page-wrapper -->
+</div><!-- #training-legacy-root -->

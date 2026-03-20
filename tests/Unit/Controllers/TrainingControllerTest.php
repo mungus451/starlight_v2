@@ -9,6 +9,7 @@ use App\Models\Services\ViewContextService;
 use App\Core\Session;
 use App\Core\CSRFService;
 use App\Core\Validator;
+use App\Core\Config;
 use App\Core\ServiceResponse;
 use App\Presenters\TrainingPresenter;
 use Mockery;
@@ -22,6 +23,7 @@ class TrainingControllerTest extends TestCase
     private Validator|Mockery\MockInterface $mockValidator;
     private ViewContextService|Mockery\MockInterface $mockViewContextService;
     private TrainingPresenter|Mockery\MockInterface $mockTrainingPresenter;
+    private Config|Mockery\MockInterface $mockConfig;
 
     protected function setUp(): void
     {
@@ -33,8 +35,10 @@ class TrainingControllerTest extends TestCase
         $this->mockValidator = Mockery::mock(Validator::class);
         $this->mockViewContextService = Mockery::mock(ViewContextService::class);
         $this->mockTrainingPresenter = Mockery::mock(TrainingPresenter::class);
+        $this->mockConfig = Mockery::mock(Config::class);
 
         $this->controller = new TrainingController(
+            $this->mockConfig,
             $this->mockTrainingService,
             $this->mockSession,
             $this->mockCsrfService,
