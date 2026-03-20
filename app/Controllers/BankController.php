@@ -261,12 +261,4 @@ class BankController extends BaseController
         $this->redirect('/bank');
     }
 
-    private function isValidApiCsrf(): bool
-    {
-        $headerToken = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-        $postToken = (string)($_POST['csrf_token'] ?? '');
-        $token = $headerToken !== '' ? $headerToken : $postToken;
-
-        return $token !== '' && $this->csrfService->validateToken($token);
-    }
 }

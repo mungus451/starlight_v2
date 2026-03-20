@@ -173,4 +173,17 @@ class BaseController
     {
         JsonResponse::send($data, $statusCode);
     }
+
+    /**
+     * Validates CSRF token for SPA API endpoints.
+     * Accepts token from X-CSRF-Token header first, then falls back to csrf_token POST field.
+     */
+    protected function isValidApiCsrf(): bool
+    {
+        $headerToken = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        $postToken = (string)($_POST['csrf_token'] ?? '');
+        $token = $headerToken !== '' ? $headerToken : $postToken;
+
+        return $token !== '' && $this->csrfService->validateToken($token);
+    }
 }

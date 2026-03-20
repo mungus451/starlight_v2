@@ -291,15 +291,6 @@ class NotificationController extends BaseController
         $this->jsonResponse(['success' => true]);
     }
 
-    private function isValidApiCsrf(): bool
-    {
-        $headerToken = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-        $postToken = (string)($_POST['csrf_token'] ?? '');
-        $token = $headerToken !== '' ? $headerToken : $postToken;
-
-        return $token !== '' && $this->csrfService->validateToken($token);
-    }
-
     private function toBool(mixed $value): bool
     {
         if (!is_scalar($value)) {
