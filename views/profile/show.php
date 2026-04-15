@@ -131,7 +131,6 @@ $spaProfilePayload = [
 
         </div>
     </div>
-</div>
 
     <!-- Attack Modal -->
     <div class="modal-overlay" id="attack-modal-overlay">
