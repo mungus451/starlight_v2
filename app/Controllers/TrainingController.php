@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Session;
+use App\Core\Config;
 use App\Core\CSRFService;
 use App\Core\Validator;
 use App\Models\Services\TrainingService;
@@ -16,6 +17,7 @@ use App\Presenters\TrainingPresenter; // --- NEW DEPENDENCY ---
  */
 class TrainingController extends BaseController
 {
+    private Config $config;
     private TrainingService $trainingService;
     private TrainingPresenter $presenter; // --- NEW DEPENDENCY ---
 
@@ -23,6 +25,7 @@ class TrainingController extends BaseController
      * DI Constructor.
      */
     public function __construct(
+        Config $config,
         TrainingService $trainingService,
         Session $session,
         CSRFService $csrfService,
@@ -31,6 +34,7 @@ class TrainingController extends BaseController
         TrainingPresenter $presenter // --- NEW DEPENDENCY ---
     ) {
         parent::__construct($session, $csrfService, $validator, $viewContextService);
+        $this->config = $config;
         $this->trainingService = $trainingService;
         $this->presenter = $presenter; // --- NEW DEPENDENCY ---
     }
@@ -41,17 +45,18 @@ class TrainingController extends BaseController
     public function show(): void
     {
         $userId = $this->session->get('user_id');
-        
+
         $serviceData = $this->trainingService->getTrainingData($userId);
 
         // Add the CSRF token to the data for the presenter
         $serviceData['csrf_token'] = $this->csrfService->generateToken();
-        
+
         // Use the presenter to prepare data for the view
         $viewData = $this->presenter->present($serviceData);
 
         $this->render('training/show.php', $viewData + [
-            'title' => 'Training'
+            'title' => 'Training',
+            'spa_training_enabled' => (bool)$this->config->get('spa.training_enabled', false),
         ]);
     }
 
@@ -92,9 +97,76 @@ class TrainingController extends BaseController
                 return;
             }
         }
-        
+
         // 4. Handle Response
         $this->session->setFlash('success', 'Units have been queued for training.');
         $this->redirect('/training');
+    }
+
+    public function apiData(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $data = $this->trainingService->getTrainingData($userId);
+        $resources = $data['resources'];
+        $units = $data['units'];
+
+        $apiUnits = [];
+        foreach ($units as $key => $unit) {
+            $apiUnits[] = [
+                'key'      => $key,
+                'name'     => $unit['name'],
+                'role'     => $unit['role'],
+                'desc'     => $unit['desc'],
+                'credits'  => (int)($unit['credits'] ?? 0),
+                'citizens' => (int)($unit['citizens'] ?? 1),
+                'atk'      => (int)($unit['atk'] ?? 0),
+                'def'      => (int)($unit['def'] ?? 0),
+                'owned'    => (int)($resources->{$key} ?? 0),
+            ];
+        }
+
+        $this->jsonResponse([
+            'resources' => [
+                'credits'             => (int)$resources->credits,
+                'untrained_citizens'  => (int)$resources->untrained_citizens,
+            ],
+            'units' => $apiUnits,
+        ]);
+    }
+
+    public function apiTrain(): void
+    {
+        $userId = (int)$this->session->get('user_id', 0);
+        if ($userId <= 0) {
+            $this->jsonResponse(['error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $units = $_POST['units'] ?? [];
+        if (!is_array($units)) {
+            $this->jsonResponse(['error' => 'Invalid units data.'], 400);
+            return;
+        }
+
+        $unitsToTrain = array_filter($units, fn($amount) => (int)$amount > 0);
+        if (empty($unitsToTrain)) {
+            $this->jsonResponse(['error' => 'You did not select any units to train.'], 400);
+            return;
+        }
+
+        foreach ($unitsToTrain as $unitType => $amount) {
+            $response = $this->trainingService->trainUnits($userId, (string)$unitType, (int)$amount);
+            if (!$response->isSuccess()) {
+                $this->jsonResponse(['error' => $response->message], 400);
+                return;
+            }
+        }
+
+        $this->jsonResponse(['success' => true, 'message' => 'Units have been queued for training.']);
     }
 }

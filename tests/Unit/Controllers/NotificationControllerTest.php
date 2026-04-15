@@ -119,41 +119,30 @@ class NotificationControllerTest extends TestCase
         $this->assertSame('Signal', $payload['notifications'][0]['title']);
     }
 
-    public function testApiMarkReadReturns422OnInvalidCsrf(): void
+    public function testApiMarkReadReturns400OnServiceFailure(): void
     {
-        $_SERVER['HTTP_X_CSRF_TOKEN'] = 'bad-token';
-
         $this->session->shouldReceive('get')
             ->with('user_id', 0)
             ->once()
             ->andReturn(3);
 
-        $this->csrfService->shouldReceive('validateToken')
-            ->with('bad-token')
+        $this->notificationService->shouldReceive('markAsRead')
+            ->with(12, 3)
             ->once()
-            ->andReturn(false);
-
-        $this->notificationService->shouldNotReceive('markAsRead');
+            ->andReturn(ServiceResponse::error('Unable to mark notification.'));
 
         [$statusCode, $payload] = $this->invokeAndCapture(fn() => $this->controller->apiMarkRead(['id' => '12']));
 
-        $this->assertSame(422, $statusCode);
-        $this->assertSame(['error' => 'Invalid CSRF token'], $payload);
+        $this->assertSame(400, $statusCode);
+        $this->assertSame(['error' => 'Unable to mark notification.'], $payload);
     }
 
     public function testApiMarkReadSuccess(): void
     {
-        $_POST['csrf_token'] = 'good-token';
-
         $this->session->shouldReceive('get')
             ->with('user_id', 0)
             ->once()
             ->andReturn(3);
-
-        $this->csrfService->shouldReceive('validateToken')
-            ->with('good-token')
-            ->once()
-            ->andReturn(true);
 
         $this->notificationService->shouldReceive('markAsRead')
             ->with(12, 3)
@@ -168,17 +157,10 @@ class NotificationControllerTest extends TestCase
 
     public function testApiMarkAllReadSuccess(): void
     {
-        $_POST['csrf_token'] = 'valid-token';
-
         $this->session->shouldReceive('get')
             ->with('user_id', 0)
             ->once()
             ->andReturn(9);
-
-        $this->csrfService->shouldReceive('validateToken')
-            ->with('valid-token')
-            ->once()
-            ->andReturn(true);
 
         $this->notificationService->shouldReceive('markAllRead')
             ->with(9)
@@ -194,7 +176,6 @@ class NotificationControllerTest extends TestCase
     public function testApiUpdatePreferencesSuccessWithBooleanConversion(): void
     {
         $_POST = [
-            'csrf_token' => 'valid-token',
             'attack_enabled' => 'yes',
             'spy_enabled' => '0',
             'alliance_enabled' => 'on',
@@ -206,11 +187,6 @@ class NotificationControllerTest extends TestCase
             ->with('user_id', 0)
             ->once()
             ->andReturn(42);
-
-        $this->csrfService->shouldReceive('validateToken')
-            ->with('valid-token')
-            ->once()
-            ->andReturn(true);
 
         $this->notificationService->shouldReceive('updatePreferences')
             ->with(42, true, false, true, false, false)
