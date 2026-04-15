@@ -133,88 +133,89 @@ $spaProfilePayload = [
     </div>
 </div>
 
-<!-- Attack Modal -->
-<div class="modal-overlay" id="attack-modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirm Attack</h3>
-            <button class="modal-close-btn" id="attack-modal-close">&times;</button>
+    <!-- Attack Modal -->
+    <div class="modal-overlay" id="attack-modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Attack</h3>
+                <button class="modal-close-btn" id="attack-modal-close">&times;</button>
+            </div>
+            <form action="/battle/attack" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <input type="hidden" name="attack_type" value="plunder">
+                <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
+
+                <div class="modal-summary">
+                    Launch a full scale attack on <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?
+                </div>
+
+                <div class="mb-3">
+                    <label for="attack_turns" class="form-label text-muted">Select Attack Turns (1-10):</label>
+                    <select name="attack_turns" id="attack_turns" class="form-select bg-dark text-light border-secondary">
+                        <?php for ($i = 1; $i <= 10; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?> Turn(s)</option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit btn-reject" style="width: 100%;">Launch Attack</button>
+            </form>
         </div>
-        <form action="/battle/attack" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="hidden" name="attack_type" value="plunder">
-            <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
-
-            <div class="modal-summary">
-                Launch a full scale attack on <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?
-            </div>
-
-            <div class="mb-3">
-                <label for="attack_turns" class="form-label text-muted">Select Attack Turns (1-10):</label>
-                <select name="attack_turns" id="attack_turns" class="form-select bg-dark text-light border-secondary">
-                    <?php for ($i = 1; $i <= 10; $i++): ?>
-                        <option value="<?= $i ?>"><?= $i ?> Turn(s)</option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-
-            <button type="submit" class="btn-submit btn-reject" style="width: 100%;">Launch Attack</button>
-        </form>
     </div>
-</div>
 
-<!-- Spy Modal -->
-<div class="modal-overlay" id="spy-modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirm Espionage</h3>
-            <button class="modal-close-btn" id="spy-modal-close">&times;</button>
+    <!-- Spy Modal -->
+    <div class="modal-overlay" id="spy-modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Espionage</h3>
+                <button class="modal-close-btn" id="spy-modal-close">&times;</button>
+            </div>
+            <form action="/spy/handle" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
+                <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
+
+                <div class="modal-summary">
+                    Deploy spies against <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?
+                </div>
+                <button type="submit" class="btn-submit btn-accent" style="width: 100%;">Launch Operation</button>
+            </form>
         </div>
-        <form action="/spy/handle" method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
-            <input type="hidden" name="target_id" value="<?= $profile['id'] ?>">
-
-            <div class="modal-summary">
-                Deploy spies against <strong><?= htmlspecialchars($profile['character_name']) ?></strong>?
-            </div>
-            <button type="submit" class="btn-submit btn-accent" style="width: 100%;">Launch Operation</button>
-        </form>
     </div>
-</div>
 
-<!-- Simple script to handle profile specific modals since battle.js/spy.js might assume list view -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Attack Modal
-        const atkModal = document.getElementById('attack-modal-overlay');
-        const atkBtns = document.querySelectorAll('.btn-attack-modal');
-        const atkClose = document.getElementById('attack-modal-close');
+    <!-- Simple script to handle profile specific modals since battle.js/spy.js might assume list view -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attack Modal
+            const atkModal = document.getElementById('attack-modal-overlay');
+            const atkBtns = document.querySelectorAll('.btn-attack-modal');
+            const atkClose = document.getElementById('attack-modal-close');
 
-        if (atkModal && atkBtns) {
-            atkBtns.forEach(btn => btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                atkModal.classList.add('active');
-            }));
-            atkClose.addEventListener('click', () => atkModal.classList.remove('active'));
-        }
+            if (atkModal && atkBtns) {
+                atkBtns.forEach(btn => btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    atkModal.classList.add('active');
+                }));
+                atkClose.addEventListener('click', () => atkModal.classList.remove('active'));
+            }
 
-        // Spy Modal
-        const spyModal = document.getElementById('spy-modal-overlay');
-        const spyBtns = document.querySelectorAll('.btn-spy-modal');
-        const spyClose = document.getElementById('spy-modal-close');
+            // Spy Modal
+            const spyModal = document.getElementById('spy-modal-overlay');
+            const spyBtns = document.querySelectorAll('.btn-spy-modal');
+            const spyClose = document.getElementById('spy-modal-close');
 
-        if (spyModal && spyBtns) {
-            spyBtns.forEach(btn => btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                spyModal.classList.add('active');
-            }));
-            spyClose.addEventListener('click', () => spyModal.classList.remove('active'));
-        }
+            if (spyModal && spyBtns) {
+                spyBtns.forEach(btn => btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    spyModal.classList.add('active');
+                }));
+                spyClose.addEventListener('click', () => spyModal.classList.remove('active'));
+            }
 
-        // Close on outside click
-        window.addEventListener('click', (e) => {
-            if (e.target === atkModal) atkModal.classList.remove('active');
-            if (e.target === spyModal) spyModal.classList.remove('active');
+            // Close on outside click
+            window.addEventListener('click', (e) => {
+                if (e.target === atkModal) atkModal.classList.remove('active');
+                if (e.target === spyModal) spyModal.classList.remove('active');
+            });
         });
-    });
-</script>
+    </script>
+</div>

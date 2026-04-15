@@ -34,6 +34,9 @@ if (mountNode) {
         () => {
             profileWindow.__profileSpaMounted = true;
             window.clearTimeout(fallbackTimeout);
+            if (legacyRoot) {
+                legacyRoot.style.display = 'none';
+            }
         },
         { once: true },
     );
