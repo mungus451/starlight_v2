@@ -301,6 +301,29 @@ export interface BankActionResponse {
     message: string;
 }
 
+export interface ProfileApiResponse {
+    profile: {
+        id: number;
+        character_name: string;
+        bio: string;
+        profile_picture_url: string | null;
+        formatted_created_at: string;
+    };
+    stats: {
+        level: number;
+        net_worth: number;
+        war_prestige: number;
+    };
+    alliance: {
+        id: number;
+        name: string;
+        tag: string;
+    } | null;
+    viewer: {
+        can_invite: boolean;
+    };
+}
+
 export async function fetchLeaderboardData(
     type: LeaderboardType,
     page: number,
@@ -325,6 +348,14 @@ export async function fetchBankData(): Promise<BankApiResponse> {
     });
 
     return parseJson<BankApiResponse>(response);
+}
+
+export async function fetchProfileData(profileId: number): Promise<ProfileApiResponse> {
+    const response = await fetch(`/api/v1/profile/${profileId}`, {
+        credentials: 'same-origin',
+    });
+
+    return parseJson<ProfileApiResponse>(response);
 }
 
 export async function postBankDeposit(amount: number): Promise<BankActionResponse> {

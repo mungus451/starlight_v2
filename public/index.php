@@ -312,6 +312,9 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('GET', '/api/v1/training', [TrainingController::class, 'apiData']);
     $r->addRoute('POST', '/api/v1/training/train', [TrainingController::class, 'apiTrain']);
 
+    // --- API v1: Profile (SPA Adapter) ---
+    $r->addRoute('GET', '/api/v1/profile/{id:\d+}', [ProfileController::class, 'apiData']);
+
     // --- MOBILE AJAX ROUTES ---
     $r->addRoute('GET', '/dashboard/mobile-tab/{tabName}', [DashboardController::class, 'getMobileTabData']);
     $r->addRoute('GET', '/structures/mobile-tab/{category:[a-zA-Z-]+}', [StructureController::class, 'getMobileStructureTabData']);
