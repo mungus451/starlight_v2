@@ -8,6 +8,7 @@ const leaderboardEntry = new URL('./src/leaderboard.tsx', import.meta.url).pathn
 const bankEntry = new URL('./src/bank.tsx', import.meta.url).pathname;
 const trainingEntry = new URL('./src/training.tsx', import.meta.url).pathname;
 const profileEntry = new URL('./src/profile.tsx', import.meta.url).pathname;
+const structuresEntry = new URL('./src/structures.tsx', import.meta.url).pathname;
 
 export default defineConfig({
     plugins: [react()],
@@ -23,6 +24,7 @@ export default defineConfig({
                 bank: bankEntry,
                 training: trainingEntry,
                 profile: profileEntry,
+                structures: structuresEntry,
             },
             output: {
                 entryFileNames: '[name].js',
