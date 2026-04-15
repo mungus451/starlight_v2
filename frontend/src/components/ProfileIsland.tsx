@@ -162,10 +162,10 @@ export function ProfileIsland({
             ) : null}
 
             {attackModalOpen ? (
-                <div className="modal-overlay active" id="attack-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="attack-modal-title">
+                <div className="modal-overlay active" id="spa-attack-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="spa-attack-modal-title">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h3 id="attack-modal-title">Confirm Attack</h3>
+                            <h3 id="spa-attack-modal-title">Confirm Attack</h3>
                             <button className="modal-close-btn" type="button" aria-label="Close attack modal" onClick={() => setAttackModalOpen(false)}>
                                 &times;
                             </button>
@@ -180,10 +180,10 @@ export function ProfileIsland({
                             </div>
 
                             <div className="mb-3">
-                                <label htmlFor="attack_turns" className="form-label text-muted">Select Attack Turns (1-10):</label>
+                                <label htmlFor="spa_attack_turns" className="form-label text-muted">Select Attack Turns (1-10):</label>
                                 <select
                                     name="attack_turns"
-                                    id="attack_turns"
+                                    id="spa_attack_turns"
                                     className="form-select bg-dark text-light border-secondary"
                                     value={attackTurns}
                                     onChange={(event) => setAttackTurns(Math.max(1, Math.min(10, Number(event.target.value))))}
@@ -206,10 +206,10 @@ export function ProfileIsland({
             ) : null}
 
             {spyModalOpen ? (
-                <div className="modal-overlay active" id="spy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="spy-modal-title">
+                <div className="modal-overlay active" id="spa-spy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="spa-spy-modal-title">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h3 id="spy-modal-title">Confirm Espionage</h3>
+                            <h3 id="spa-spy-modal-title">Confirm Espionage</h3>
                             <button className="modal-close-btn" type="button" aria-label="Close spy modal" onClick={() => setSpyModalOpen(false)}>
                                 &times;
                             </button>

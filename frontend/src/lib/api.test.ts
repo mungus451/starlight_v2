@@ -3,6 +3,7 @@ import {
     fetchStructuresData,
     fetchNotificationPreferences,
     fetchNotifications,
+    fetchProfileData,
     markAllNotificationsRead,
     markNotificationRead,
     postStructureUpgrade,
@@ -202,5 +203,55 @@ describe('notifications API client', () => {
             },
             body: 'csrf_token=csrf-123&structure_key=economy_upgrade',
         });
+    });
+});
+
+describe('profile API client', () => {
+    const fetchMock = vi.fn<typeof fetch>();
+
+    beforeEach(() => {
+        vi.stubGlobal('fetch', fetchMock);
+        document.head.innerHTML = '<meta name="csrf-token" content="csrf-123">';
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        document.head.innerHTML = '';
+        fetchMock.mockReset();
+    });
+
+    it('fetchProfileData calls /api/v1/profile/{id} with credentials', async () => {
+        const payload = {
+            profile: {
+                id: 7,
+                character_name: 'Commander Rex',
+                bio: 'Test bio',
+                profile_picture_url: null,
+                formatted_created_at: '2025-01-01',
+            },
+            stats: { level: 10, net_worth: 50000, war_prestige: 200 },
+            alliance: null,
+            viewer: { can_invite: false },
+        };
+        fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(payload), { status: 200 }));
+
+        const result = await fetchProfileData(7);
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/v1/profile/7', {
+            credentials: 'same-origin',
+        });
+        expect(result.profile.character_name).toBe('Commander Rex');
+        expect(result.stats.level).toBe(10);
+    });
+
+    it('fetchProfileData surfaces error via parseJson on non-OK response', async () => {
+        fetchMock.mockResolvedValueOnce(
+            new Response(JSON.stringify({ error: 'Not found' }), {
+                status: 404,
+                statusText: 'Not Found',
+            }),
+        );
+
+        await expect(fetchProfileData(99)).rejects.toThrow('Not found');
     });
 });
